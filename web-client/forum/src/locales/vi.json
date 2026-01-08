@@ -1,0 +1,16 @@
+{
+  "auth": {
+    "loginTitle": "Đăng Nhập",
+    "registerTitle": "Tạo Tài Khoản",
+    "email": "Email",
+    "username": "Tên Đăng Nhập",
+    "password": "Mật Khẩu",
+    "confirmPassword": "Xác Nhận Mật Khẩu",
+    "rememberMe": "Ghi nhớ tôi",
+    "forgotPassword": "Quên mật khẩu?",
+    "noAccount": "Chưa có tài khoản? Đăng ký",
+    "haveAccount": "Đã có tài khoản? Đăng nhập",
+    "signUp": "Đăng Ký",
+    "signIn": "Đăng Nhập"
+  }
+}

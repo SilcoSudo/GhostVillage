@@ -1,0 +1,506 @@
+/* ============================================
+   SIDEBAR NAVIGATION STYLES - REFACTORED
+   ============================================ */
+
+.sidebar-nav {
+  position: fixed;
+  left: 0;
+  top: 70px;
+  width: 250px;
+  height: calc(100vh - 70px);
+  background-color: var(--card-bg);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  /* Hide scrollbar */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.sidebar-nav.collapsed {
+  width: 70px;
+}
+
+/* ============================================
+   SIDEBAR HEADER WITH LOGO AND TOGGLE
+   ============================================ */
+
+.sidebar-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 16px 12px;
+  border-bottom: 1px solid var(--border-color);
+  gap: 8px;
+  min-height: 70px;
+}
+
+.sidebar-logo-spacer {
+  flex: 1;
+}
+
+.sidebar-toggle-btn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: var(--bg-secondary, rgba(255, 255, 255, 0.02));
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-toggle-btn:hover {
+  color: var(--accent-color);
+  background: rgba(244, 128, 36, 0.12);
+}
+
+.sidebar-toggle-btn:active {
+  transform: scale(0.96);
+}
+
+.sidebar-toggle-btn svg {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   SIDEBAR CONTENT AREA - SCROLLABLE
+   ============================================ */
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.sidebar-content::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================
+   SIDEBAR SECTIONS
+   ============================================ */
+
+.sidebar-section {
+  padding: 8px 8px;
+}
+
+.sidebar-section:first-child {
+  padding-top: 8px;
+}
+
+.sidebar-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px 8px 8px;
+  margin-bottom: 4px;
+}
+
+.sidebar-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+  padding-bottom: 4px;
+  display: flex;
+  align-items: center;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.sidebar-add-btn:hover {
+  background: rgba(244, 128, 36, 0.1);
+  color: var(--accent-color);
+}
+
+/* ============================================
+   SIDEBAR ITEMS LIST
+   ============================================ */
+
+.sidebar-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar-item-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 2px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: visible;
+  min-height: 40px;
+}
+
+.sidebar-item:hover {
+  color: var(--accent-color);
+  background: rgba(244, 128, 36, 0.08);
+}
+
+.sidebar-item.active {
+  background: linear-gradient(135deg, rgba(244, 128, 36, 0.15) 0%, rgba(244, 128, 36, 0.05) 100%);
+  color: var(--accent-color);
+  font-weight: 500;
+  border-left: 3px solid var(--accent-color);
+  padding-left: 9px;
+}
+
+.sidebar-item svg {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.sidebar-item span {
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+
+
+/* ============================================
+   TAG ITEMS
+   ============================================ */
+
+.sidebar-tag-item {
+  gap: 8px;
+}
+
+.tag-hash {
+  flex-shrink: 0;
+  color: var(--accent-color);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.tag-count {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: rgba(244, 128, 36, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.sidebar-tag-item:hover .tag-count {
+  background: rgba(244, 128, 36, 0.2);
+}
+
+.sidebar-tag-item.active .tag-count {
+  background: rgba(244, 128, 36, 0.3);
+  color: var(--accent-color);
+}
+
+/* ============================================
+   TOOLTIP ON COLLAPSED
+   ============================================ */
+
+.sidebar-tooltip {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1000;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-left: 8px;
+  transform: translateY(-50%) translateX(-4px);
+}
+
+.sidebar-item-wrapper:hover .sidebar-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* ============================================
+   SHOW MORE/LESS BUTTONS
+   ============================================ */
+
+.sidebar-toggle-more {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  margin: 4px 0;
+}
+
+.sidebar-toggle-more:hover {
+  background: rgba(244, 128, 36, 0.08);
+  color: var(--accent-color);
+}
+
+.sidebar-loading,
+.sidebar-empty {
+  padding: 12px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* ============================================
+   SIDEBAR FOOTER - USER PROFILE
+   ============================================ */
+
+.sidebar-footer {
+  border-top: 1px solid var(--border-color);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--bg-secondary, rgba(255, 255, 255, 0.02));
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-user-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.sidebar-user-profile:hover {
+  background: rgba(244, 128, 36, 0.08);
+}
+
+.sidebar-user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid var(--accent-color);
+}
+
+.sidebar-user-info {
+  min-width: 0;
+  flex: 1;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.sidebar-user-name {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-user-email {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-user-menu {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.sidebar-user-menu:hover {
+  background: rgba(244, 128, 36, 0.1);
+  color: var(--accent-color);
+}
+
+.sidebar-logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+  cursor: pointer;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.sidebar-logout-btn:hover {
+  background: rgba(220, 53, 69, 0.2);
+  color: #ff6b6b;
+}
+
+/* ============================================
+   COLLAPSED STATE
+   ============================================ */
+
+.sidebar-nav.collapsed .sidebar-section-title {
+  width: 0;
+  opacity: 0;
+  margin: 0;
+}
+
+.sidebar-nav.collapsed .sidebar-item span {
+  width: 0;
+  opacity: 0;
+  margin: 0;
+}
+
+.sidebar-nav.collapsed .sidebar-user-info {
+  width: 0;
+  opacity: 0;
+}
+
+.sidebar-nav.collapsed .sidebar-logout-btn span {
+  width: 0;
+  opacity: 0;
+  margin: 0;
+}
+
+.sidebar-nav.collapsed .sidebar-section-header {
+  justify-content: center;
+}
+
+.sidebar-nav.collapsed .sidebar-add-btn {
+  margin: 0 auto;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 991px) {
+  .sidebar-nav {
+    width: 200px;
+  }
+
+  .sidebar-nav.collapsed {
+    width: 60px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar-nav {
+    position: fixed;
+    left: -250px;
+    width: 250px;
+    z-index: 1050;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  .sidebar-nav.expanded {
+    left: 0;
+  }
+
+  .sidebar-nav.collapsed {
+    left: 0;
+    width: 60px;
+  }
+}
+
+/* Adjust main content margin to follow sidebar state */
+.app-main {
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Default: sidebar visible (desktop) */
+.sidebar-nav + .app-main,
+.sidebar-nav ~ .app-main {
+  margin-left: 250px !important;
+}
+
+/* Collapsed sidebar -> smaller margin */
+.sidebar-nav.collapsed + .app-main,
+.sidebar-nav.collapsed ~ .app-main {
+  margin-left: 70px !important;
+}
+
+/* On small screens the main should not be offset */
+@media (max-width: 768px) {
+  .sidebar-nav + .app-main,
+  .sidebar-nav ~ .app-main {
+    margin-left: 0 !important;
+  }
+}

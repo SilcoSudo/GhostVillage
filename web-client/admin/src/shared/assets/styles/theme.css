@@ -1,0 +1,28 @@
+:root {
+  /* Làng Ma 3 Palette */
+  --primary-color: #1B5E2F;      /* Dark Green */
+  --secondary-color: #D63031;    /* Vibrant Red */
+  --accent-color: #6B3E38;       /* Dark Reddish Brown */
+  --dark-color: #000000;         /* Black */
+  
+  /* Legacy colors for compatibility */
+  --success-color: #28a745;
+  --danger-color: #dc3545;
+  --warning-color: #ffc107;
+  --info-color: #17a2b8;
+  --light-color: #f8f9fa;
+}
+
+body.light-theme {
+  background-color: #ffffff;
+  color: #333;
+}
+
+body.dark-theme {
+  background-color: #0d0d0d;
+  color: #e0e0e0;
+}
+
+.theme-transition {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}

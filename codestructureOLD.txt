@@ -1,0 +1,212 @@
+Dưới đây là CẤU TRÚC TỔNG THỂ cho toàn bộ dự án Làng Ma, theo hướng dùng JavaScript, KHÔNG bao gồm
+docs, phù hợp với Unity + Web + Backend + MongoDB, và dễ quản lý – dễ bảo vệ
+Mình trình bày theo tầng cao nhất → chi tiết
+ 
+
+# I. CẤU TRÚC TỔNG (ROOT PROJECT)
+
+ghost-village/
+│
+├──game-client/            # Unity Game App
+├──web-client/             # Web Forum + Web Admin
+├──backend/                # Backend API (NodeJS - JavaScript)
+│
+├──database/               # MongoDB scripts, seed, backup
+├──scripts/                # Tool, build, deploy (nếu có)
+│
+├──.gitignore
+├──README.md
+└── docker-compose.yml      # (optional)
+ 
+
+# II. GAME CLIENT (UNITY)
+ 
+
+> Unity chỉ là Client, không có business logic.
+
+game-client/
+└── Assets/
+   └── _Game/
+        ├── _Boot/
+        │  ├── AppLifetimeScope.cs
+        │  └── AppManager.cs
+        │
+        ├── Art/
+        ├──ImportedPackage/
+        ├──Resources/
+        │
+        ├──ScriptableObjects/
+        │  ├── Items/
+        │  ├── Maps/
+        │  └── GameConfig/
+        │
+        ├──Scripts/
+        │  ├── Core/                    # Infrastructure
+        │  │   ├──Constants/
+        │  │   ├── DI/
+        │  │   ├──Network/
+        │  │   │   ├──API/             # REST API Client
+        │  │   │   └── Realtime/        # Photon
+        │  │   ├──Utilities/
+        │  │   └── Inputs/
+        │  │
+        │  ├── Domain/                 # Feature modules
+        │  │   ├──Authentication/
+        │  │   ├──Profile/
+        │  │   ├──Achievement/
+        │  │   ├──Inventory/
+        │  │   ├── Lobby/
+        │  │   └── Gameplay/
+        │  │
+        │  └── ThirdParty/
+        │
+        └── Scenes/
+            ├── 00_Boot
+            ├──01_Login
+            ├──02_Lobby
+            └── 03_Gameplay
+
+
+
+# III. WEB CLIENT (FORUM + ADMIN)
+
+> Web chỉ gọi API, không xử lý nghiệp vụ.
+
+web-client/
+├── forum/
+│  ├── src/
+│  │   ├── app/
+│  │   ├──features/
+│  │   │   ├── auth/
+│  │   │   ├──profile/
+│  │   │   ├── forum/
+│  │   │   └── achievement/
+│  │   ├── shared/
+│  │   │   ├──components/
+│  │   │   ├── hooks/
+│  │   │   └── services/
+│  │   └── pages/
+│  └── public/
+│
+└── admin/
+   ├── src/
+   │   ├── app/
+   │   ├──features/
+   │   │   ├──user-management/
+   │   │   ├──moderation/
+   │   │   ├──game-config/
+   │   │   └── report/
+   │   ├── shared/
+   │   └── pages/
+   └── public/
+
+# IV. BACKEND (NODEJS – JAVASCRIPT)
+
+> Backend là TRUNG TÂM NGHIỆP VỤ DUY NHẤT
+
+backend/
+├── src/
+│  ├── app.js                    # Express config
+│  ├── server.js                 # Start server
+│  │
+│  ├── config/
+│  │   ├──db.js                  # MongoDB connection
+│  │   ├── env.js
+│  │   └── logger.js
+│  │
+│  ├── modules/                  # Feature-based modules
+│  │   ├── auth/
+│  │   │   ├──authController.js
+│  │   │   ├──authService.js
+│  │   │   ├──authDataAccess.js
+│  │   │   ├──authRoutes.js
+│  │   │   ├── web/
+│  │   │   │   └── authController.js (Web-specific)
+│  │   │   └── game/
+│  │   │       └── authController.js (Game-specific)
+│  │   │
+│  │   ├── user/
+│  │   │   ├──userController.js
+│  │   │   ├──userService.js
+│  │   │   ├──userDataAccess.js
+│  │   │   ├──userRoutes.js
+│  │   │   └── userModel.js
+│  │   │
+│  │   ├── player/
+│  │   │   ├──playerController.js
+│  │   │   ├──playerService.js
+│  │   │   ├──playerDataAccess.js
+│  │   │   ├──playerRoutes.js
+│  │   │   └── playerModel.js
+│  │   │
+│  │   ├──achievement/
+│  │   │   ├──achievementController.js
+│  │   │   ├──achievementService.js
+│  │   │   ├──achievementDataAccess.js
+│  │   │   ├──achievementRoutes.js
+│  │   │   └── achievementModel.js
+│  │   │
+│  │   └── forum/
+│  │       ├──postController.js
+│  │       ├──postService.js
+│  │       ├──postDataAccess.js
+│  │       ├──postRoutes.js
+│  │       └── postModel.js
+│  │
+│  ├── middlewares/
+│  │   ├──authMiddleware.js
+│  │   └── errorMiddleware.js
+│  │
+│  ├── utils/
+│  └── routes.js                  # Central route loader (web + game)
+│
+├── public/
+├── logs/
+├──seedData.js
+├── .env
+└── package.json
+
+```
+
+ 
+
+# V. DATABASE (MONGODB)
+
+
+database/
+├── init/
+│  └── init-db.js
+├── seed/
+│  ├── users.seed.js
+│  └── achievements.seed.js
+└── backup/
+
+
+ 
+
+# VI. QUY ƯỚC QUẢN LÝ (CỰC QUAN TRỌNG)
+
+ 
+1. Không trộn vai trò
+
+| Layer           | Được làm    | Không được làm  |
+| --------------- | ----------- |---------------  |
+| Client          | UI, gọi API | Logic nghiệp vụ |
+| Backend Service | Nghiệp vụ   | UI message      |
+| DataAccess      | Query DB    | If/else         |
+| DB              | Lưu data    | Logic           |
+
+ 
+
+---
+ 2. Tên gọi thống nhất - CamelCase
+
+* `*Controller.js` → nhận request
+* `*Service.js` → nghiệp vụ
+* `*DataAccess.js` → MongoDB
+* `*Model.js` → schema
+* `*Routes.js` → route definitions
+* `*Middleware.js` → middleware functions
+
+ 
+ đây so với cấu trúc này
