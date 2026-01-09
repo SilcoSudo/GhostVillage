@@ -320,6 +320,3 @@ database/
 * `*Model.js` → schema
 * `*Routes.js` → route definitions
 * `*Middleware.js` → middleware functions
-
- 
- đây so với cấu trúc này

@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import { config } from './env.js';
-import logger from './logger.js';
 
 export const connectDB = async () => {
   try {
@@ -11,25 +10,25 @@ export const connectDB = async () => {
       socketTimeoutMS: 45000,
     });
     
-    logger.info(`MongoDB Connected: ${conn.connection.host} in ${Date.now() - start}ms`);
+    console.log(`✓ MongoDB Connected: ${conn.connection.host} in ${Date.now() - start}ms`);
     
     // Handle connection events
     mongoose.connection.on('disconnected', () => {
-      logger.warn('MongoDB disconnected');
+      console.warn('⚠️  MongoDB disconnected');
     });
     
     mongoose.connection.on('error', (err) => {
-      logger.error('MongoDB connection error:', err);
+      console.error('❌ MongoDB connection error:', err);
     });
     
     process.on('SIGINT', async () => {
       await mongoose.connection.close();
-      logger.info('MongoDB connection closed through app termination');
+      console.log('✓ MongoDB connection closed through app termination');
       process.exit(0);
     });
     
   } catch (error) {
-    logger.error('Database connection failed:', error);
+    console.error('❌ Database connection failed:', error);
     process.exit(1);
   }
 };

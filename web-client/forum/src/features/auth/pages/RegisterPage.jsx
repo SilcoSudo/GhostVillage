@@ -72,14 +72,16 @@ const RegisterPage = () => {
 
     setLoading(true);
 
-    const { confirmPassword, ...registrationData } = formData;
-    const result = await register(registrationData);
+    const result = await register(formData);
     
-    if (result.success) {
+    if (result?.success) {
       localStorage.setItem('pendingVerificationEmail', formData.email);
       setMessage('Registration successful! Please check your email to verify your account.');
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
     } else {
-      setError(result.message);
+      setError(result?.message || 'Registration failed');
     }
     
     setLoading(false);

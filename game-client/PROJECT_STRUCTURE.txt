@@ -1,0 +1,252 @@
+GhostVillage-LangMa/
+│
+├── LICENSE
+├── README.md
+├── PROJECT_STRUCTURE.txt
+│
+├── Packages/
+│   ├── manifest.json
+│   └── packages-lock.json
+│
+├── ProjectSettings/
+│   ├── AudioManager.asset
+│   ├── ClusterInputManager.asset
+│   ├── DynamicsManager.asset
+│   ├── EditorBuildSettings.asset
+│   ├── EditorSettings.asset
+│   ├── GraphicsSettings.asset
+│   ├── InputManager.asset
+│   ├── MemorySettings.asset
+│   ├── MultiplayerManager.asset
+│   ├── NavMeshAreas.asset
+│   ├── PackageManagerSettings.asset
+│   ├── Physics2DSettings.asset
+│   ├── PresetManager.asset
+│   ├── ProjectSettings.asset
+│   ├── ProjectVersion.txt
+│   ├── QualitySettings.asset
+│   ├── SceneTemplateSettings.json
+│   ├── ShaderGraphSettings.asset
+│   ├── TagManager.asset
+│   ├── TimeManager.asset
+│   ├── UnityConnectSettings.asset
+│   ├── URPProjectSettings.asset
+│   ├── VersionControlSettings.asset
+│   ├── VFXManager.asset
+│   └── XRSettings.asset
+│
+└── Assets/
+    │
+    ├── .vscode/
+    │   └── [VS Code settings]
+    │
+    ├── Game/
+    │   ├── Boot/
+    │   │   ├── AppManager.cs
+    │   │   ├── AppManager.cs.meta
+    │   │   └── Boot.meta
+    │   │
+    │   ├── Prefab/
+    │   │   ├── Boot/
+    │   │   │   └── [Prefab files]
+    │   │   └── Prefab.meta
+    │   │
+    │   ├── Resources/
+    │   │   └── Resources.meta
+    │   │
+    │   ├── Scenes/
+    │   │   ├── SceneLoaderService.cs
+    │   │   ├── SceneLoaderService.cs.meta
+    │   │   └── Scenes.meta
+    │   │
+    │   ├── ScriptableObjects/
+    │   │   ├── GameConfig/
+    │   │   │   ├── GameConfigSO.cs
+    │   │   │   ├── GameConfigSO.cs.meta
+    │   │   │   └── GameConfig.meta
+    │   │   ├── Items/
+    │   │   │   └── Items.meta
+    │   │   ├── Maps/
+    │   │   │   └── Maps.meta
+    │   │   └── ScriptableObjects.meta
+    │   │
+    │   ├── Scripts/
+    │   │   ├── Core/
+    │   │   │   ├── DI/
+    │   │   │   │   ├── AppLifetimeScope.cs
+    │   │   │   │   ├── AppLifetimeScope.cs.meta
+    │   │   │   │   ├── GeneralSceneScope.cs
+    │   │   │   │   ├── GeneralSceneScope.cs.meta
+    │   │   │   │   └── DI.meta
+    │   │   │   │
+    │   │   │   ├── Network/
+    │   │   │   │   ├── NetworkManager.cs
+    │   │   │   │   ├── NetworkManager.cs.meta
+    │   │   │   │   ├── API/
+    │   │   │   │   │   ├── APIClient.cs
+    │   │   │   │   │   ├── APIClient.cs.meta
+    │   │   │   │   │   └── API.meta
+    │   │   │   │   ├── Realtime/
+    │   │   │   │   │   └── Realtime.meta
+    │   │   │   │   └── Network.meta
+    │   │   │   │
+    │   │   │   ├── Constants/
+    │   │   │   │   └── Constants.meta
+    │   │   │   │
+    │   │   │   ├── InputSystem/
+    │   │   │   │   └── InputSystem.meta
+    │   │   │   │
+    │   │   │   ├── Utilities/
+    │   │   │   │   └── Utilities.meta
+    │   │   │   │
+    │   │   │   └── Core.meta
+    │   │   │
+    │   │   ├── Domain/
+    │   │   │   ├── Authentication/
+    │   │   │   │   └── Authentication.meta
+    │   │   │   │
+    │   │   │   ├── Gameplay/
+    │   │   │   │   └── Gameplay.meta
+    │   │   │   │
+    │   │   │   ├── Inventory/
+    │   │   │   │   └── Inventory.meta
+    │   │   │   │
+    │   │   │   ├── Map/
+    │   │   │   │   ├── Models/
+    │   │   │   │   │   ├── MapConfigDTO.cs
+    │   │   │   │   │   └── MapConfigDTO.cs.meta
+    │   │   │   │   ├── Services/
+    │   │   │   │   │   ├── MapDataService.cs
+    │   │   │   │   │   └── MapDataService.cs.meta
+    │   │   │   │   └── Map.meta
+    │   │   │   │
+    │   │   │   ├── Shop/
+    │   │   │   │   └── Shop.meta
+    │   │   │   │
+    │   │   │   └── Domain.meta
+    │   │   │
+    │   │   ├── ThirdParty/
+    │   │   │   └── ThirdParty.meta
+    │   │   │
+    │   │   └── Scripts.meta
+    │   │
+    │   ├── UI/
+    │   │   ├── MapDebugUI.cs
+    │   │   ├── MapDebugUI.cs.meta
+    │   │   └── UI.meta
+    │   │
+    │   ├── Art.meta
+    │   ├── Game.meta
+    │   └── [Additional folders]
+    │
+    ├── Scenes/
+    │   ├── 00_Boot.unity
+    │   ├── 00_Boot.unity.meta
+    │   ├── GameScene.unity
+    │   ├── GameScene.unity.meta
+    │   ├── Map1.unity
+    │   ├── Map1.unity.meta
+    │   ├── SampleScene.unity
+    │   ├── SampleScene.unity.meta
+    │   └── Scenes.meta
+    │
+    ├── Settings/
+    │   ├── DefaultVolumeProfile.asset
+    │   ├── DefaultVolumeProfile.asset.meta
+    │   ├── Mobile_Renderer.asset
+    │   ├── Mobile_Renderer.asset.meta
+    │   ├── Mobile_RPAsset.asset
+    │   ├── Mobile_RPAsset.asset.meta
+    │   ├── PC_Renderer.asset
+    │   ├── PC_Renderer.asset.meta
+    │   ├── PC_RPAsset.asset
+    │   ├── PC_RPAsset.asset.meta
+    │   ├── SampleSceneProfile.asset
+    │   ├── SampleSceneProfile.asset.meta
+    │   ├── UniversalRenderPipelineGlobalSettings.asset
+    │   ├── UniversalRenderPipelineGlobalSettings.asset.meta
+    │   └── Settings.meta
+    │
+    ├── TutorialInfo/
+    │   ├── Layout.wlt
+    │   ├── Layout.wlt.meta
+    │   ├── Icons/
+    │   │   ├── URP.png
+    │   │   └── URP.png.meta
+    │   ├── Scripts/
+    │   │   ├── Readme.cs
+    │   │   ├── Readme.cs.meta
+    │   │   ├── Editor/
+    │   │   │   ├── ReadmeEditor.cs
+    │   │   │   └── ReadmeEditor.cs.meta
+    │   │   └── Scripts.meta
+    │   ├── Icons.meta
+    │   └── TutorialInfo.meta
+    │
+    ├── InputSystem_Actions.inputactions
+    ├── InputSystem_Actions.inputactions.meta
+    ├── New Terrain.asset
+    ├── New Terrain.asset.meta
+    ├── Readme.asset
+    ├── Readme.asset.meta
+    ├── VContainerSettings.asset
+    ├── VContainerSettings.asset.meta
+    └── [Other root assets]
+
+═════════════════════════════════════════════════════════════════════════════════
+
+STATISTICS:
+───────────
+
+Total Folders: 40+
+Total C# Scripts: 10
+  - Core: 5 scripts (DI, Network)
+  - Domain: 2 scripts (Map module)
+  - UI: 1 script
+  - Boot: 1 script
+  - Scenes: 1 script
+
+ScriptableObjects: 1 (GameConfigSO)
+Scenes: 4 (00_Boot, GameScene, Map1, SampleScene)
+Settings: Multiple render & quality profiles
+
+═════════════════════════════════════════════════════════════════════════════════
+
+KEY OBSERVATIONS:
+─────────────────
+
+1. ✅ Core Infrastructure Solid
+   - AppLifetimeScope.cs (VContainer DI)
+   - GeneralSceneScope.cs
+   - Network layer with API & Realtime structure
+
+2. ⚠️ Domain Modules Incomplete
+   - Authentication (folder only)
+   - Gameplay (folder only)
+   - Inventory (folder only)
+   - Shop (folder only)
+   - Map (has Models + Services)
+
+3. 📦 ScriptableObjects
+   - GameConfig folder has config
+   - Items & Maps folders exist but empty
+
+4. 🎬 Scenes Organization
+   - Need renaming: GameScene → 03_Gameplay, Map1 → contextual
+
+5. 📌 Missing from Proposed Structure
+   - _Boot folder (currently Boot/)
+   - _Game prefix (currently just Game/)
+   - Profile/ module
+   - Achievement/ module
+   - Lobby/ module
+   - Quest/ module
+
+═════════════════════════════════════════════════════════════════════════════════
+
+EXCLUDED FOLDERS:
+─────────────────
+✂️ Assets/Photon/          (Photon networking library - excluded per request)
+✂️ Assets/TextMesh Pro/    (Text rendering library - excluded per request)
+
+═════════════════════════════════════════════════════════════════════════════════

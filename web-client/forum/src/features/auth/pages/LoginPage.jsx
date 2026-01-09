@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../app/hooks/useAuth';
-import LangmaText from '../../../shared/assets/images/Langma_text.png';
+import LangmaText from '../../../shared/assets/images/logo.png';
 import FogEffect from '../components/FogEffect';
 import './LoginPage.css';
 
@@ -35,17 +35,17 @@ const LoginPage = () => {
 
     const result = await login(formData);
     
-    if (result.success) {
+    if (result?.success) {
       navigate('/');
     } else {
-      setError(result.message);
+      setError(result?.message || 'Login failed');
     }
     
     setLoading(false);
   };
 
   return (
-    <div className="login-container">
+    <div className="login-page">
       {/* Left side - Form */}
       <div className="login-form-section">
         <div className="login-form-wrapper">

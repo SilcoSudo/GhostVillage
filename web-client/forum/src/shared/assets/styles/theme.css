@@ -1,16 +1,52 @@
 :root {
-  /* Làng Ma 3 Palette */
-  --primary-color: #1B5E2F;      /* Dark Green */
-  --secondary-color: #D63031;    /* Vibrant Red */
-  --accent-color: #6B3E38;       /* Dark Reddish Brown */
-  --dark-color: #000000;         /* Black */
+  /* =====================================
+     GHOST VILLAGE - Dark Blood Red + Muted Gold + Black Theme
+     ===================================== */
+  
+  /* Primary Colors - Deep Dark Red */
+  --primary-color: #5C0000;      /* Very Dark Blood Red */
+  --primary-dark: #3D0000;       /* Almost Black Red */
+  --primary-light: #7A0000;      /* Dark Blood Red */
+  
+  /* Accent Colors - Muted Gold */
+  --accent-color: #C4A000;       /* Muted Gold (Deep) */
+  --accent-dark: #9B7F00;        /* Dark Muted Gold */
+  --accent-light: #D4B000;       /* Light Muted Gold */
+  
+  /* Secondary Colors */
+  --secondary-color: #0d0d0d;    /* Pure Black */
+  --secondary-light: #1a1a1a;    /* Dark Gray */
+  
+  /* Background Colors (Dark Theme) */
+  --bg-primary: #050505;         /* Very Dark Black */
+  --bg-secondary: #0d0d0d;       /* Ultra Dark Gray/Black */
+  --bg-tertiary: #1a1a1a;        /* Medium Dark */
+  --card-bg: #0d0d0d;            /* Card Background (Very Dark) */
+  
+  /* Text Colors */
+  --text-primary: #C4A000;       /* Muted Gold Text (Primary) */
+  --text-secondary: #D4D4D4;     /* Off-White Text (Secondary) */
+  --text-tertiary: #808080;      /* Gray Text */
+  --text-dark: #0d0d0d;          /* Dark Text on light bg */
+  
+  /* Accent Text */
+  --text-blood: #A60000;         /* Deep Red for alerts */
+  
+  /* Border Colors */
+  --border-color: #5C0000;       /* Dark Blood Red Border */
+  --border-subtle: #262626;      /* Subtle Dark Border */
+  --card-border: #4A0000;        /* Card Border (Very Dark Red) */
   
   /* Legacy colors for compatibility */
   --success-color: #28a745;
-  --danger-color: #dc3545;
-  --warning-color: #ffc107;
-  --info-color: #17a2b8;
-  --light-color: #f8f9fa;
+  --danger-color: #A60000;       /* Deep Red */
+  --warning-color: #C4A000;      /* Muted Gold */
+  --info-color: #D4D4D4;
+  --light-color: #C4A000;        /* Muted Gold */
+  
+  /* Shadow & Effects */
+  --shadow-glow: 0 0 20px rgba(196, 160, 0, 0.2);
+  --shadow-blood: 0 0 20px rgba(92, 0, 0, 0.3);
 }
 
 body.light-theme {
@@ -19,8 +55,8 @@ body.light-theme {
 }
 
 body.dark-theme {
-  background-color: #0d0d0d;
-  color: #e0e0e0;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 .theme-transition {

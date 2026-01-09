@@ -1,8 +1,14 @@
-/* Login Page Styles */
-.login-container {
+.login-page {
   display: flex;
   height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8e8e8 100%);
+  width: 100vw;
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  margin: 0;
+  padding: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
 }
 
 .login-form-section {
@@ -12,8 +18,8 @@
   justify-content: center;
   align-items: center;
   padding: 40px;
-  background: #1a1a1a;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--primary-dark) 50%);
+  box-shadow: 2px 0 10px rgba(139, 0, 0, 0.3);
 }
 
 .login-form-wrapper {
@@ -24,7 +30,7 @@
 .login-form-wrapper h2 {
   font-size: 32px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--accent-color);
   margin-bottom: 10px;
 }
 
@@ -49,20 +55,20 @@
 .login-form-wrapper input {
   width: 100%;
   padding: 12px 15px;
-  border: 1px solid #333;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 14px;
   transition: all 0.3s ease;
   font-family: inherit;
-  background: #2a2a2a;
-  color: #e0e0e0;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
 }
 
 .login-form-wrapper input:focus {
   outline: none;
-  border-color: #D63031;
-  box-shadow: 0 0 0 3px rgba(214, 48, 49, 0.1);
-  background-color: #333;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+  background-color: var(--bg-secondary);
 }
 
 .login-form-wrapper .forgot-password {
@@ -72,22 +78,22 @@
 
 .login-form-wrapper .forgot-password a {
   font-size: 12px;
-  color: #1B5E2F;
+  color: var(--accent-color);
   text-decoration: none;
   transition: color 0.3s ease;
 }
 
 .login-form-wrapper .forgot-password a:hover {
-  color: #D63031;
+  color: var(--primary-light);
   text-decoration: underline;
 }
 
 .login-form-wrapper .btn-signin {
   width: 100%;
   padding: 13px;
-  background: #1B5E2F;
-  color: white;
-  border: none;
+  background: var(--primary-color);
+  color: var(--accent-color);
+  border: 2px solid var(--accent-color);
   border-radius: 6px;
   font-size: 15px;
   font-weight: 600;
@@ -96,8 +102,9 @@
 }
 
 .login-form-wrapper .btn-signin:hover:not(:disabled) {
-  background: #D63031;
-  box-shadow: 0 4px 12px rgba(214, 48, 49, 0.3);
+  background: var(--primary-dark);
+  color: var(--accent-light);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3), 0 0 20px rgba(139, 0, 0, 0.3);
   transform: translateY(-2px);
 }
 
@@ -137,14 +144,14 @@
 }
 
 .login-form-wrapper .signup-link a {
-  color: #1B5E2F;
+  color: var(--accent-color);
   text-decoration: none;
   font-weight: 600;
   transition: color 0.3s ease;
 }
 
 .login-form-wrapper .signup-link a:hover {
-  color: #D63031;
+  color: var(--primary-light);
 }
 
 .login-image-section {
@@ -154,8 +161,8 @@
   justify-content: center;
   align-items: center;
   padding: 40px;
-  background: #050505;
-  color: white;
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--primary-dark) 100%);
+  color: var(--accent-color);
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -168,7 +175,7 @@
   transform: translate(-50%, -50%);
   z-index: 10;
   text-align: center;
-  color: #fff;
+  color: var(--accent-color);
   pointer-events: none;
   mix-blend-mode: overlay;
 }
@@ -178,17 +185,18 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.8);
-  opacity: 0.8;
+  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 215, 0, 0.3);
+  opacity: 0.9;
   margin: 0;
   font-family: 'Cinzel', serif;
+  color: var(--accent-color);
 }
 
 .fog-subtitle {
   font-family: 'Montserrat', sans-serif;
   font-size: clamp(1rem, 2vw, 1.2rem);
   letter-spacing: 0.5em;
-  color: #ccc;
+  color: var(--text-secondary);
   text-transform: uppercase;
   margin-top: 10px;
   margin: 10px 0 0 0;
@@ -269,6 +277,11 @@
 
   .login-image-section img {
     max-width: 200px;
+  }
+
+  .langma-image {
+    max-width: 250px;
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
   }
 
   .login-image-section h3 {

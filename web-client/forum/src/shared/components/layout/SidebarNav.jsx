@@ -1,5 +1,6 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../app/hooks/useAuth';
 import api from '../../services/axios';
 import {
@@ -34,6 +35,7 @@ const useSidebarContext = () => {
 };
 
 const SidebarNav = () => {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const location = useLocation();
   const [loading, setLoading] = useState(true);
