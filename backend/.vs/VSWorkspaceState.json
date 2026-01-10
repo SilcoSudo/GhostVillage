@@ -2,11 +2,13 @@
   "ExpandedNodes": [
     "",
     "\\src",
+    "\\src\\config",
     "\\src\\modules",
     "\\src\\modules\\auth",
     "\\src\\modules\\auth\\game",
-    "\\src\\modules\\player"
+    "\\src\\modules\\player",
+    "\\src\\modules\\user"
   ],
-  "SelectedNode": "\\src\\modules\\auth\\game\\authService.js",
+  "SelectedNode": "\\src\\modules\\auth\\authService.js",
   "PreviewInSolutionExplorer": false
 }
