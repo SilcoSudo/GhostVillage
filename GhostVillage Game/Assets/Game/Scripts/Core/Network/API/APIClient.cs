@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using System;
 using Game.ScriptableObjects.GameConfig;
+using System.Text;
 
 namespace Game.Core.Network.API
 {
@@ -64,6 +65,55 @@ namespace Game.Core.Network.API
                     if (wrapper != null && wrapper.success)
                     {
                         return wrapper.data; // Trả về lõi dữ liệu thật
+                    }
+                    else
+                    {
+                        Debug.LogError($"[API] Server Logic Error: {wrapper?.error}");
+                        return default;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[API] Parse JSON Error: {e.Message}");
+                    return default;
+                }
+            }
+        }
+
+        // Hàm POST Generic (Thêm đoạn này vào)
+        public async UniTask<T> PostAsync<T>(string endpoint, string jsonBody)
+        {
+            string url = $"{_baseUrl.TrimEnd('/')}/{endpoint.TrimStart('/')}";
+
+            if (_config.IsDebugMode) Debug.Log($"[API] POST Request: {url} | Body: {jsonBody}");
+
+            // Setup Request thủ công để gửi JSON (UnityWebRequest.Post mặc định là form-data)
+            using (var request = new UnityWebRequest(url, "POST"))
+            {
+                byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonBody);
+                request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+                request.downloadHandler = new DownloadHandlerBuffer();
+                request.SetRequestHeader("Content-Type", "application/json");
+
+                await request.SendWebRequest();
+
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogError($"[API] Error: {request.error} | Response: {request.downloadHandler.text}");
+                    return default;
+                }
+
+                string jsonResponse = request.downloadHandler.text;
+                // Debug.Log($"[API] Response: {jsonResponse}");
+
+                try
+                {
+                    // Tái sử dụng logic parse wrapper giống hàm GET
+                    var wrapper = JsonUtility.FromJson<ResponseWrapper<T>>(jsonResponse);
+
+                    if (wrapper != null && wrapper.success)
+                    {
+                        return wrapper.data;
                     }
                     else
                     {

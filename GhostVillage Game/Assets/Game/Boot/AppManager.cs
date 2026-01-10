@@ -6,6 +6,7 @@ using Cysharp.Threading.Tasks; // Khuyên dùng UniTask thay vì Coroutine
 using Game.Core.Scenes;
 using Game.ScriptableObjects.GameConfig;
 using UnityEngine.SceneManagement;
+using Game.Domain.Account.Service;
 
 namespace Game.Boot
 {
@@ -14,29 +15,37 @@ namespace Game.Boot
     public class AppManager : IStartable
     {
         private readonly ISceneLoaderService _sceneLoader;
+        private readonly AccountService _account;
         private readonly GameConfigSO _config;
 
         // Constructor Injection: Tự động nhận Service đã đăng ký bên Scope
         [Inject]
-        public AppManager(ISceneLoaderService sceneLoader, GameConfigSO config)
+        public AppManager(ISceneLoaderService sceneLoader, AccountService account)
         {
             _sceneLoader = sceneLoader;
-            _config = config;
+            _account = account;
         }
 
         public void Start()
         {
-            LoadGameScene().Forget();
+            RunFlow().Forget();
         }
 
-        private async UniTaskVoid LoadGameScene()
+        private async UniTaskVoid RunFlow()
         {
-            // Giả lập loading nhẹ
+            // 1. Giả lập Splash Screen / Loading Config
             await UniTask.Delay(1000);
 
-            // Chuyển sang Scene tên là "GameScene"
-            // Đảm bảo bạn đã add scene này vào Build Settings
-            SceneManager.LoadScene("GameScene");
+            // 2. Check xem đã đăng nhập chưa (Iteration sau sẽ check Token lưu ở LocalStorage)
+            if (_account.IsLoggedIn)
+            {
+                await _sceneLoader.LoadSceneAsync("GameScene");
+            }
+            else
+            {
+                // Theo Flow: Boot -> Login
+                await _sceneLoader.LoadSceneAsync("LoginScene");
+            }
         }
     }
 }
