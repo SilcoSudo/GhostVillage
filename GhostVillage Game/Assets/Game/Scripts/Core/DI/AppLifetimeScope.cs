@@ -6,6 +6,9 @@ using Game.Core.Scenes;
 using Game.Core.Network.API;
 using Game.Domain.Maps;
 using Game.ScriptableObjects.GameConfig;
+using Game.Domain.Authentication;
+using Game.UI.Login;
+using Game.Domain.Account.Service;
 // using Game.Domain.Authentication; // Sau này sẽ dùng
 // Lmao
 
@@ -35,6 +38,15 @@ namespace Game.Core.DI
 
             // 4. Scene Loader
             builder.Register<SceneLoaderService>(Lifetime.Singleton).As<ISceneLoaderService>();
+
+            // Account Service (Singleton - Giữ data trọn đời)
+            builder.Register<AccountService>(Lifetime.Singleton);
+
+            // Auth Service
+            builder.Register<AuthService>(Lifetime.Singleton);
+
+            // Login Controller (Transient hoặc Singleton đều được)
+            builder.Register<LoginController>(Lifetime.Transient);
 
             // 5. Entry Point (AppManager)
             builder.RegisterEntryPoint<Boot.AppManager>();
