@@ -1,121 +1,106 @@
-/**
- * GhostVillage-Web seedData.js — Node.js seeder (MongoDB Node driver)
- *
- * Usage:
- *   1) npm i mongodb
- *   2) PowerShell (Windows):
- *        $env:MONGO_URI="mongodb://localhost:27017"
- *        $env:DB_NAME="Ghostvillage_web_test"
- *        node backend/seedData.js
- *      Bash:
- *        MONGO_URI="mongodb://localhost:27017" DB_NAME="Ghostvillage_web_test" node backend/seedData.js
- *
- * ENV:
- *   - MONGO_URI   (default: mongodb://localhost:27017)
- *   - DB_NAME     (default: Ghostvillage_web_test)
- *
- * All users have password: "Password123"
- */
+import dotenv from 'dotenv';
+import mongoose from 'mongoose';
+import User from './src/modules/user/userModel.js';
+import Player from './src/modules/player/playerModel.js';
+import { config } from './src/config/env.js';
 
-import { MongoClient, ObjectId } from "mongodb";
+dotenv.config();
 
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017";
-const DB_NAME = process.env.DB_NAME || "Ghostvillage_web_test";
+const seedData = async () => {
+    try {
+        // 1. KẾT NỐI DATABASE
+        await mongoose.connect(config.mongodb.uri);
+        console.log('🔌 Đã kết nối MongoDB');
 
-const oid = (s) => new ObjectId(s);
-const d = (s) => new Date(s);
+        // 2. DỌN DẸP DỮ LIỆU CŨ
+        await User.deleteMany({});
+        await Player.deleteMany({});
+        console.log('🗑️  Đã xóa dữ liệu cũ (Users & Players).');
 
-async function main() {
-  const startSeed = Date.now();
-  console.log("🌱 Starting GhostVillage-Web data seeding...");
-  const client = new MongoClient(MONGO_URI, { ignoreUndefined: true });
+        // 3. CHUẨN BỊ ID (Để link giữa các bảng)
+        const user1_Id = new mongoose.Types.ObjectId('659d4b1e9d3e2a1b3c4d5e6f');
+        const user2_Id = new mongoose.Types.ObjectId();
 
-  try {
-    await client.connect();
-    const db = client.db(DB_NAME);
+        // --- TẠO USER 1: Web Auth User (Email-only) ---
+        // Role: user | admin
+        // Game sẽ dùng chung tài khoản này
+        const user1 = {
+            _id: user1_Id,
+            email: 'hung@ghostvillage.com',
+            password: '123456', // Sẽ được hash bởi pre-save hook
+            avatar: 'avatar_default_01',
+            bio: 'Hùng Đẹp Trai',
+            role: 'user', // Chỉ có user hoặc admin
+            isActive: true,
+            isBanned: false,
+            lastLogin: new Date()
+        };
 
-    console.log(`🔗 Connected: ${MONGO_URI}/${DB_NAME}`);
-    console.log("🧹 Dropping database (clean slate)...");
-    await db.dropDatabase();
+        // --- TẠO USER 2: Web Auth User thứ 2 ---
+        const user2 = {
+            _id: user2_Id,
+            email: 'belan.support@gmail.com',
+            password: '123456',
+            avatar: 'avatar_default_01',
+            bio: 'Bé Lan Support',
+            role: 'user',
+            isActive: true,
+            isBanned: false
+        };
 
-    // -------------------------
-    // Collections data (minimal example)
-    // -------------------------
-    const users = [
-      {
-        _id: oid("66f000000000000000000001"),
-        email: "admin@ghostvillage.dev",
-        username: "admin",
-        passwordHash:
-          "$2a$10$SxeMzRb1oRXYbmYDcemu1uXojh0IU6srY6QbZoOrJUCmddUVDtDpS", // Password123
-        roles: ["admin"],
-        bio: "Site admin.",
-        avatarUrl: "https://i.pravatar.cc/150?img=1",
-        isDeactivated: false,
-        karma: 100,
-        lastLoginAt: null,
-        emailVerifiedAt: d("2025-09-02T00:00:00Z"),
-        verification: {},
-        createdAt: d("2025-09-01T09:00:00Z"),
-        updatedAt: d("2025-09-01T09:00:00Z"),
-      },
-      {
-        _id: oid("66f000000000000000000002"),
-        email: "user@ghostvillage.dev",
-        username: "user",
-        passwordHash:
-          "$2a$10$SxeMzRb1oRXYbmYDcemu1uXojh0IU6srY6QbZoOrJUCmddUVDtDpS",
-        roles: ["user"],
-        bio: "Regular user.",
-        avatarUrl: "https://i.pravatar.cc/150?img=2",
-        isDeactivated: false,
-        karma: 10,
-        lastLoginAt: null,
-        emailVerifiedAt: d("2025-09-02T00:00:00Z"),
-        verification: {},
-        createdAt: d("2025-09-02T01:00:00Z"),
-        updatedAt: d("2025-09-02T01:00:00Z"),
-      },
-    ];
+        // --- TẠO PLAYER 1: Game Profile của User 1 ---
+        // Player tham chiếu User qua userId
+        // Chứa game-specific data: level, exp, coin, skins, perks
+        const player1 = {
+            _id: new mongoose.Types.ObjectId('659d4b1e9d3e2a1b3c4d5e70'),
+            userId: user1_Id,
+            profile: {
+                displayName: 'Hùng Đẹp Trai',
+                avatar: 'avatar_default_01',
+                level: 1,
+                exp: 0,
+                coin: 1000
+            },
+            inventory: {
+                unlockedSkins: ['skin_default'],
+                unlockedPerks: []
+            }
+        };
 
-    const posts = [
-      {
-        _id: oid("66f130000000000000000001"),
-        title: "Welcome to GhostVillage!",
-        body: "This is the first post.",
-        authorId: oid("66f000000000000000000001"),
-        status: "approved",
-        score: 1,
-        deletedAt: null,
-        createdAt: d("2025-11-26T08:00:00Z"),
-        updatedAt: d("2025-11-26T08:00:00Z"),
-      },
-    ];
+        // --- TẠO PLAYER 2: Game Profile của User 2 ---
+        const player2 = {
+            userId: user2_Id,
+            profile: {
+                displayName: 'Bé Lan Support',
+                avatar: 'avatar_default_01',
+                level: 1,
+                exp: 0,
+                coin: 1000
+            },
+            inventory: {
+                unlockedSkins: ['skin_default'],
+                unlockedPerks: []
+            }
+        };
 
-    // -------------------------
-    // Insert (order matters)
-    // -------------------------
-    console.log("🧩 Inserting documents...");
-    await db.collection("users").insertMany(users);
-    await db.collection("posts").insertMany(posts);
+        // 4. LƯU VÀO DB
+        console.log('⏳ Đang tạo Users...');
+        await User.create([user1, user2]);
 
-    // -------------------------
-    // Indexes (minimal)
-    // -------------------------
-    console.log("📚 Creating indexes...");
-    await db.collection("users").createIndex({ email: 1 }, { unique: true });
-    await db.collection("users").createIndex({ username: 1 }, { unique: true });
-    await db.collection("posts").createIndex({ authorId: 1 });
-    await db.collection("posts").createIndex({ createdAt: -1 });
+        console.log('⏳ Đang tạo Players (Game Profiles)...');
+        await Player.create([player1, player2]);
 
-    console.log("✅ Seeded GhostVillage-Web database successfully.");
-    console.log(`🌱 Seeding completed in ${Date.now() - startSeed}ms`);
-  } catch (err) {
-    console.error("❌ Seed error:", err);
-    process.exitCode = 1;
-  } finally {
-    await client.close();
-  }
-}
+        console.log('✅ KHỞI TẠO DỮ LIỆU THÀNH CÔNG!');
+        console.log('👤 User 1: hung@ghostvillage.com | 👤 User 2: lan.support@gmail.com');
+        console.log('🎮 Player 1: Hùng Đẹp Trai | 🎮 Player 2: Lan Support');
+        
+        // 5. Ngắt kết nối
+        process.exit();
 
-main();
+    } catch (error) {
+        console.error('❌ Có lỗi xảy ra:', error);
+        process.exit(1);
+    }
+};
+
+seedData();

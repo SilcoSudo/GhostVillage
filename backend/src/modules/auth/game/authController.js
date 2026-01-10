@@ -1,171 +1,73 @@
-import userModel from '../../user/userModel.js';
-import jwt from 'jsonwebtoken';
-import { config } from '../../../config/env.js';
+import AuthService from '../authService.js';
 
-const generateToken = (userId) => {
-  return jwt.sign({ userId }, config.jwt.secret, {
-    expiresIn: config.jwt.expiresIn
-  });
-};
+/**
+ * Game Auth Controller
+ * Handles authentication for game clients (game players)
+ * 
+ * Note: Game registration is handled through Web Auth
+ * Only game-side login logic is implemented here
+ */
 
-export const register = async (req, res) => {
+export const loginGame = async (req, res) => {
   try {
-    const { email, username, password, confirmPassword } = req.body;
+    const { email, password, displayName } = req.body;
 
-    // Validation
-    if (!email || !username || !password || !confirmPassword) {
+    if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'All fields are required'
+        message: 'Email and password are required'
       });
     }
 
-    if (password !== confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        message: 'Passwords do not match'
-      });
-    }
+    // Step 1: Authenticate with User credentials (web auth)
+    const { token, user } = await AuthService.loginWeb(email, password);
 
-    // Check if user exists
-    const existingUser = await userModel.findOne({
-      $or: [{ email }, { username }]
-    });
-
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email or username already exists'
-      });
-    }
-
-    // Create new user
-    const user = new userModel({
-      email,
-      username,
-      password
-    });
-
-    await user.save();
-
-    const token = generateToken(user._id);
-
-    res.cookie('token', token, {
-      httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    });
-
-    return res.status(201).json({
-      success: true,
-      message: 'User registered successfully',
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        username: user.username
-      }
-    });
-  } catch (error) {
-    console.error('Register error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Registration failed',
-      error: error.message,
-      details: error.errors || error.details
-    });
-  }
-};
-
-export const login = async (req, res) => {
-  try {
-    const { identifier, password } = req.body;
-
-    // Validation
-    if (!identifier || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email/username and password are required'
-      });
-    }
-
-    // Find user by email or username
-    const user = await userModel.findOne({
-      $or: [{ email: identifier }, { username: identifier }]
-    });
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials'
-      });
-    }
-
-    // Check password
-    const isPasswordValid = await user.comparePassword(password);
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials'
-      });
-    }
-
-    const token = generateToken(user._id);
-
-    res.cookie('token', token, {
-      httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    });
+    // Step 2: Get or create Player profile for this user
+    const player = await AuthService.getOrCreatePlayerProfile(user._id, displayName);
 
     return res.status(200).json({
       success: true,
-      message: 'Login successful',
+      message: 'Game login successful',
       token,
-      user: {
-        id: user._id,
-        email: user.email,
-        username: user.username
-      }
+      user,
+      player
     });
   } catch (error) {
-    console.error('Login error:', error);
-    return res.status(500).json({
+    console.error('Game Login error:', error);
+    return res.status(401).json({
       success: false,
-      message: 'Login failed',
-      error: error.message
+      message: error.message || 'Login failed'
     });
   }
 };
 
-export const logout = (req, res) => {
-  res.clearCookie('token');
+export const logoutGame = (req, res) => {
   return res.status(200).json({
     success: true,
     message: 'Logout successful'
   });
 };
 
-export const getMe = async (req, res) => {
+export const getMeGame = async (req, res) => {
   try {
-    const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
-    
-    if (!token) {
+    const playerId = req.user?.userId;
+    if (!playerId) {
       return res.status(401).json({
         success: false,
-        message: 'Not authenticated'
+        message: 'Unauthorized'
       });
     }
 
-    const decoded = jwt.verify(token, config.jwt.secret);
-    const user = await User.findById(decoded.userId).select('-password');
-
+    const player = await AuthService.getPlayerById(playerId);
     return res.status(200).json({
       success: true,
-      user
+      player
     });
   } catch (error) {
+    console.error('Get Me error:', error);
     return res.status(401).json({
       success: false,
-      message: 'Invalid token'
+      message: error.message || 'Unauthorized'
     });
   }
 };

@@ -1,90 +1,68 @@
 import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
 
 const playerSchema = new mongoose.Schema(
   {
-    // Auth fields
-    email: {
-      type: String,
+    // Reference to User (Web account)
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
       required: true,
-      unique: true,
-      trim: true,
-      lowercase: true
-    },
-    username: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true
-    },
-    password: {
-      type: String,
-      required: true,
-      minlength: 6
+      unique: true
     },
 
-    // Profile fields
-    avatar: {
-      type: String,
-      default: null
-    },
-    bio: {
-      type: String,
-      default: ''
+    // Player profile (Game-specific)
+    profile: {
+      displayName: {
+        type: String,
+        required: true,
+        trim: true
+      },
+      avatar: {
+        type: String,
+        default: 'avatar_default_01'
+      },
+      level: {
+        type: Number,
+        default: 1,
+        min: 1
+      },
+      exp: {
+        type: Number,
+        default: 0,
+        min: 0
+      },
+      coin: {
+        type: Number,
+        default: 1000,
+        min: 0
+      }
     },
 
-    // Status fields
-    isActive: {
-      type: Boolean,
-      default: true
-    },
-    isBanned: {
-      type: Boolean,
-      default: false
-    },
-    
-    // Game fields (for future use)
-    level: {
-      type: Number,
-      default: 1
-    },
-    experience: {
-      type: Number,
-      default: 0
-    },
-    coins: {
-      type: Number,
-      default: 0
+    // Inventory (Game items)
+    inventory: {
+      unlockedSkins: {
+        type: [String],
+        default: ['skin_default']
+      },
+      unlockedPerks: {
+        type: [String],
+        default: []
+      }
     }
   },
   { timestamps: true }
 );
 
-// Hash password before saving
-playerSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Method to compare password
-playerSchema.methods.comparePassword = async function (password) {
-  return await bcrypt.compare(password, this.password);
-};
-
-// Remove password from JSON response
+// Populate User reference when returning JSON
 playerSchema.methods.toJSON = function () {
   const obj = this.toObject();
-  delete obj.password;
   return obj;
 };
 
 const Player = mongoose.model('Player', playerSchema);
+
+// Drop old email/username indexes if they exist (migration from old schema)
+Player.collection.dropIndex('email_1').catch(() => {});
+Player.collection.dropIndex('username_1').catch(() => {});
 
 export default Player;

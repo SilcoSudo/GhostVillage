@@ -2,15 +2,15 @@ import AuthService from '../authService.js';
 
 /**
  * Web Auth Controller
- * Handles authentication for web clients
+ * Handles authentication for web clients (forum users)
  */
 
 export const registerWeb = async (req, res) => {
   try {
-    const { email, username, password, confirmPassword } = req.body;
+    const { email, password, confirmPassword } = req.body;
 
     // Validation
-    if (!email || !username || !password || !confirmPassword) {
+    if (!email || !password || !confirmPassword) {
       return res.status(400).json({
         success: false,
         message: 'All fields are required'
@@ -24,7 +24,7 @@ export const registerWeb = async (req, res) => {
       });
     }
 
-    const { token, user } = await AuthService.register(email, username, password);
+    const { token, user } = await AuthService.registerWeb(email, password);
 
     res.cookie('token', token, {
       httpOnly: true,
@@ -48,16 +48,16 @@ export const registerWeb = async (req, res) => {
 
 export const loginWeb = async (req, res) => {
   try {
-    const { identifier, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!identifier || !password) {
+    if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Email/username and password are required'
+        message: 'Email and password are required'
       });
     }
 
-    const { token, user } = await AuthService.login(identifier, password);
+    const { token, user } = await AuthService.loginWeb(email, password);
 
     res.cookie('token', token, {
       httpOnly: true,

@@ -14,7 +14,7 @@ export const config = {
     // Fallbacks: MONGODB_URI may already include DB path; if so, we keep it.
     uri: (() => {
       const base = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017';
-      const dbName = process.env.DB_NAME || process.env.MONGODB_DB_NAME || 'Ghostvillage_web_test';
+      const dbName = process.env.DB_NAME || process.env.MONGODB_DB_NAME || 'GhostVillage';
       // If base already contains a database segment after the host (e.g., /something), respect it
       try {
         const hasDbPath = /\/[^/?]+(\?|$)/.test(base);

@@ -1,10 +1,14 @@
 import jwt from 'jsonwebtoken';
 import { config } from '../../config/env.js';
-import AuthDataAccess from './authDataAccess.js';
+import User from '../user/userModel.js';
+import Player from '../player/playerModel.js';
 
 /**
  * Auth Service
  * Business logic for authentication
+ * - Web uses User model (forum user)
+ * - Game uses Player model (game player)
+ * Handles validation, password hashing, and token generation
  */
 
 const generateToken = (userId) => {
@@ -14,19 +18,21 @@ const generateToken = (userId) => {
 };
 
 export const AuthService = {
-  // Register new user
-  register: async (email, username, password) => {
+  /**
+   * WEB: Register user (forum/web)
+   */
+  registerWeb: async (email, password) => {
     // Check if user already exists
-    const existingUser = await AuthDataAccess.userExists(email, username);
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
-      throw new Error('Email or username already exists');
+      throw new Error('Email already exists');
     }
 
     // Create new user
-    const user = await AuthDataAccess.createUser({
+    const user = await User.create({
       email: email.toLowerCase(),
-      username,
-      password
+      password,
+      role: 'user'
     });
 
     const token = generateToken(user._id);
@@ -37,10 +43,12 @@ export const AuthService = {
     };
   },
 
-  // Login user
-  login: async (identifier, password) => {
-    // Find user by email or username
-    const user = await AuthDataAccess.findByEmailOrUsername(identifier, identifier);
+  /**
+   * WEB: Login user (forum/web)
+   */
+  loginWeb: async (email, password) => {
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() });
     
     if (!user) {
       throw new Error('User not found');
@@ -60,6 +68,35 @@ export const AuthService = {
     };
   },
 
+  /**
+   * GAME: Auto-create Player profile on first login
+   * Game login logic handled by game team
+   */
+  getOrCreatePlayerProfile: async (userId, displayName) => {
+    // Check if player exists
+    let player = await Player.findOne({ userId });
+    
+    if (!player) {
+      // Auto-create player profile on first login
+      player = await Player.create({
+        userId,
+        profile: {
+          displayName: displayName || `Player_${userId.toString().slice(-6)}`,
+          avatar: 'avatar_default_01',
+          level: 1,
+          exp: 0,
+          coin: 1000
+        },
+        inventory: {
+          unlockedSkins: ['skin_default'],
+          unlockedPerks: []
+        }
+      });
+    }
+
+    return player.toJSON();
+  },
+
   // Verify token
   verifyToken: (token) => {
     try {
@@ -69,13 +106,22 @@ export const AuthService = {
     }
   },
 
-  // Get user by ID
+  // Get user by ID (web)
   getUserById: async (userId) => {
-    const user = await AuthDataAccess.getUserById(userId);
+    const user = await User.findById(userId);
     if (!user) {
       throw new Error('User not found');
     }
     return user.toJSON();
+  },
+
+  // Get player by ID (game)
+  getPlayerById: async (playerId) => {
+    const player = await Player.findById(playerId);
+    if (!player) {
+      throw new Error('Player not found');
+    }
+    return player.toJSON();
   }
 };
 
