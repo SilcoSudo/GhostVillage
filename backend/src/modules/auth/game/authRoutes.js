@@ -1,21 +1,18 @@
-import express from 'express';
-import { loginGame, logoutGame, getMeGame } from './authController.js';
-import { authMiddleware } from '../../../middlewares/auth.middleware.js';
+import express from "express";
+import { loginGame, logoutGame, getMeGame } from "./authController.js";
+import { authMiddleware } from "../../../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
 /**
- * Game Auth Routes
- * POST /api/game/auth/login
- * POST /api/game/auth/logout
- * GET  /api/game/auth/me
- * 
- * Note: Game registration is handled through Web registration
- * Game login logic implemented by game team
+ * GAME AUTH ROUTES
+ * Prefix: /api/auth (Do hack route bên src/routes.js)
  */
 
-router.post('/login', loginGame);
-router.post('/logout', logoutGame);
-router.get('/me', authMiddleware, getMeGame);
+router.post("/login", loginGame);
+router.post("/logout", logoutGame);
+
+// Route lấy thông tin bản thân (cần Token)
+router.get("/me", authMiddleware, getMeGame);
 
 export default router;
