@@ -20,12 +20,28 @@ export const config = {
       const dbName =
         process.env.DB_NAME || process.env.MONGODB_DB_NAME || "Test_Hung";
       // If base already contains a database segment after the host (e.g., /something), respect it
-      try {
-        const hasDbPath = /\/[^/?]+(\?|$)/.test(base);
-        return hasDbPath ? base : `${base.replace(/\/+$/, "")}/${dbName}`;
-      } catch {
+      // try {
+      //   const hasDbPath = /\/[^/?]+(\?|$)/.test(base);
+      //   return hasDbPath ? base : `${base.replace(/\/+$/, "")}/${dbName}`;
+      // } catch {
+      //   return `${base}/${dbName}`;
+      // }
+
+      // 3. Xử lý sạch chuỗi base (bỏ dấu / ở cuối nếu có)
+      if (base.endsWith("/")) {
+        base = base.slice(0, -1);
+      }
+
+      // 4. Kiểm tra xem base đã có tên DB chưa (để tránh nối thành Test_Hung/Test_Hung)
+      // Logic đơn giản: Nếu base chứa tên DB rồi thì giữ nguyên, chưa có thì nối thêm
+      // Nhưng để chắc ăn cho trường hợp của bạn, ta ÉP CỨNG luôn:
+
+      // Nếu chuỗi base chỉ là server thuần (ví dụ mongodb://localhost:27017), nối tên DB vào
+      if (!base.includes(`/${dbName}`)) {
         return `${base}/${dbName}`;
       }
+
+      return base;
     })(),
   },
 
