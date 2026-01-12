@@ -6,6 +6,8 @@ import Header from '../shared/components/layout/Header';
 import SidebarNav from '../shared/components/layout/SidebarNav';
 import LoginPage from '../features/auth/pages/LoginPage';
 import RegisterPage from '../features/auth/pages/RegisterPage';
+import RegistrationSuccessPage from '../features/auth/pages/RegistrationSuccessPage';
+import VerifyEmailPage from '../features/auth/pages/VerifyEmailPage';
 import HomePage from '../pages/HomePage';
 import ProtectedRoute from './router/ProtectedRoute';
 import '../shared/assets/styles/theme.css';
@@ -23,6 +25,8 @@ function AppContent() {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/registration-success" element={<RegistrationSuccessPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
             <Route 
               path="/" 
               element={

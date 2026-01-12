@@ -1,4 +1,4 @@
-import AuthService from '../authService.js';
+import AuthService from "../authService.js";
 
 /**
  * Web Auth Controller
@@ -7,42 +7,68 @@ import AuthService from '../authService.js';
 
 export const registerWeb = async (req, res) => {
   try {
-    const { email, password, confirmPassword } = req.body;
+    const { email, fullName, password, confirmPassword, dateOfBirth } =
+      req.body;
 
     // Validation
-    if (!email || !password || !confirmPassword) {
+    if (!email || !fullName || !password || !confirmPassword || !dateOfBirth) {
       return res.status(400).json({
         success: false,
-        message: 'All fields are required'
+        message: "All fields are required",
       });
     }
 
     if (password !== confirmPassword) {
       return res.status(400).json({
         success: false,
-        message: 'Passwords do not match'
+        message: "Passwords do not match",
       });
     }
 
-    const { token, user } = await AuthService.registerWeb(email, password);
+    // Send verification email (no DB save yet)
+    await AuthService.register(email, fullName, password, dateOfBirth);
 
-    res.cookie('token', token, {
-      httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    });
-
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
-      message: 'User registered successfully',
-      token,
-      user
+      message: "Verification email sent. Please check your inbox.",
     });
   } catch (error) {
-    console.error('Web Register error:', error);
+    console.error("Web Register error:", error);
     return res.status(400).json({
       success: false,
-      message: error.message || 'Registration failed'
+      message: error.message || "Registration failed",
     });
+  }
+};
+
+export const verifyWeb = async (req, res) => {
+  try {
+    const token = req.query.token || req.body.token;
+    if (!token) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Token is required" });
+    }
+
+    const result = await AuthService.completeRegistration(token);
+
+    // Set auth cookie and return token + user
+    res.cookie("token", result.token, {
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res
+      .status(200)
+      .json({ success: true, token: result.token, user: result.user });
+  } catch (error) {
+    console.error("Verify error:", error);
+    return res
+      .status(400)
+      .json({
+        success: false,
+        message: error.message || "Verification failed",
+      });
   }
 };
 
@@ -53,37 +79,37 @@ export const loginWeb = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Email and password are required'
+        message: "Email/username and password are required",
       });
     }
 
     const { token, user } = await AuthService.loginWeb(email, password);
 
-    res.cookie('token', token, {
+    res.cookie("token", token, {
       httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     return res.status(200).json({
       success: true,
-      message: 'Login successful',
+      message: "Login successful",
       token,
-      user
+      user,
     });
   } catch (error) {
-    console.error('Web Login error:', error);
+    console.error("Web Login error:", error);
     return res.status(401).json({
       success: false,
-      message: error.message || 'Login failed'
+      message: error.message || "Login failed",
     });
   }
 };
 
 export const logoutWeb = (req, res) => {
-  res.clearCookie('token');
+  res.clearCookie("token");
   return res.status(200).json({
     success: true,
-    message: 'Logout successful'
+    message: "Logout successful",
   });
 };
 
@@ -93,20 +119,20 @@ export const getMeWeb = async (req, res) => {
     if (!userId) {
       return res.status(401).json({
         success: false,
-        message: 'Unauthorized'
+        message: "Unauthorized",
       });
     }
 
     const user = await AuthService.getUserById(userId);
     return res.status(200).json({
       success: true,
-      user
+      user,
     });
   } catch (error) {
-    console.error('Get Me error:', error);
+    console.error("Get Me error:", error);
     return res.status(401).json({
       success: false,
-      message: error.message || 'Unauthorized'
+      message: error.message || "Unauthorized",
     });
   }
 };

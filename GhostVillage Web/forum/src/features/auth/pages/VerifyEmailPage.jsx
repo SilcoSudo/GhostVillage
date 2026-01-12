@@ -3,13 +3,13 @@ import { Container, Row, Col, Card, Alert, Spinner, Button } from 'react-bootstr
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle, XCircle, Mail } from 'lucide-react';
-import { useAuth } from '../../../context/AuthContext';
-import api from '../api/axios';
+import { useAuth } from '../../../app/hooks/useAuth';
+import api from '../../../shared/services/axios';
 
 const VerifyEmailPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { setSession } = useAuth();
   
   const [verificationStatus, setVerificationStatus] = useState('loading'); // loading, success, error
   const [message, setMessage] = useState('');
@@ -37,15 +37,20 @@ const VerifyEmailPage = () => {
       });
 
       if (response.data.success) {
+        const { accessToken, user } = response.data;
+        if (accessToken && user) {
+          setSession(accessToken, user);
+        }
+
         setVerificationStatus('success');
-        setMessage('Email verified successfully! You can now access all features.');
+        setMessage('Email verified successfully! You are now logged in.');
         
         // Clear pending email from localStorage
         localStorage.removeItem('pendingVerificationEmail');
         
         // Auto redirect after 3 seconds
         setTimeout(() => {
-          navigate('/login');
+          navigate('/');
         }, 3000);
       }
     } catch (error) {
@@ -102,9 +107,9 @@ const VerifyEmailPage = () => {
             <CheckCircle size={64} className="text-success mb-3" />
             <h3 className="text-success">Email Verified Successfully!</h3>
             <p className="mb-4">{message}</p>
-            <p className="text-muted">Redirecting to login page in 3 seconds...</p>
-            <Button as={Link} to="/login" variant="primary" size="lg">
-              Continue to Login
+            <p className="text-muted">Redirecting to home page in 3 seconds...</p>
+            <Button as={Link} to="/" variant="primary" size="lg">
+              Go to Homepage
             </Button>
           </div>
         );

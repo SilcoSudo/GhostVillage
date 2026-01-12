@@ -1,13 +1,18 @@
 import { useState } from 'react';
-import { Form, Button, Alert } from 'react-bootstrap';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../app/hooks/useAuth';
+import LangmaText from '../../../shared/assets/images/logo.png';
+import FogEffect from '../components/FogEffect';
+import './LoginPage.css';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
-    username: '',
+    fullName: '',
     email: '',
     password: '',
+    dateOfBirth: null,
     confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
@@ -23,260 +28,167 @@ const RegisterPage = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
-    
     if (errors[e.target.name]) {
-      setErrors({
-        ...errors,
-        [e.target.name]: ''
-      });
+      setErrors({ ...errors, [e.target.name]: '' });
     }
+    if (error) setError('');
+  };
+
+  const handleDateChange = (date) => {
+    setFormData({ ...formData, dateOfBirth: date });
+    if (errors.dateOfBirth) setErrors({ ...errors, dateOfBirth: '' });
+    if (error) setError('');
   };
 
   const validateForm = () => {
     const newErrors = {};
+    if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required.';
+    else if (formData.fullName.length < 3) newErrors.fullName = 'Full name must be at least 3 characters.';
+    if (!formData.email.trim()) newErrors.email = 'Email is required.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Please enter a valid email address.';
 
-    if (!formData.username.trim()) {
-      newErrors.username = 'Username is required';
-    } else if (formData.username.length < 3) {
-      newErrors.username = 'Username must be at least 3 characters';
+    // Password strength: match backend rule (min 8 chars, uppercase, lowercase, special)
+    const pwd = formData.password || '';
+    const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
+    if (!pwd) newErrors.password = 'Password is required.';
+    else if (!pwdRegex.test(pwd)) newErrors.password = 'Password must be at least 8 characters and include uppercase, lowercase, and a special character.';
+
+    if (!formData.confirmPassword) newErrors.confirmPassword = 'Please confirm your password.';
+    else if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match.';
+    // date of birth validation: required, valid date, not in future, age >= 13
+    if (!formData.dateOfBirth) {
+      newErrors.dateOfBirth = 'Date of birth is required.';
+    } else {
+      const dob = formData.dateOfBirth instanceof Date ? formData.dateOfBirth : new Date(formData.dateOfBirth);
+      const now = new Date();
+      if (isNaN(dob.getTime()) || dob > now) {
+        newErrors.dateOfBirth = 'Please enter a valid date of birth.';
+      } else {
+        // calculate age in years reliably
+        let age = now.getFullYear() - dob.getFullYear();
+        const m = now.getMonth() - dob.getMonth();
+        if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) {
+          age--;
+        }
+        if (age < 13) newErrors.dateOfBirth = 'You must be at least 13 years old.';
+      }
     }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
     setLoading(true);
-
-    const result = await register(formData);
-    
+    // convert dateOfBirth to ISO date string (yyyy-mm-dd) before sending
+    const payload = {
+      ...formData,
+      dateOfBirth: formData.dateOfBirth ? formData.dateOfBirth.toISOString().split('T')[0] : ''
+    };
+    const result = await register(payload);
     if (result?.success) {
       localStorage.setItem('pendingVerificationEmail', formData.email);
-      setMessage('Registration successful! Please check your email to verify your account.');
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
+      navigate('/registration-success');
     } else {
       setError(result?.message || 'Registration failed');
     }
-    
     setLoading(false);
   };
 
   return (
-    <div style={{
-      background: 'var(--bg-primary)',
-      minHeight: '100vh',
-      display: 'flex'
-    }}>
-      {/* Left side - Form (20%) */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '40px 20px',
-        background: 'var(--card-bg)',
-        minWidth: 0
-      }}>
-        <div style={{ width: '100%', maxWidth: '350px' }}>
-          <div style={{ marginBottom: '40px' }}>
-            <h2 style={{ fontSize: '28px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '10px' }}>
-              Create Account
-            </h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-              Join GhostVillage today
-            </p>
-          </div>
-          
-          {error && (
-            <Alert variant="danger" onClose={() => setError('')} dismissible>
-              {error}
-            </Alert>
-          )}
-          
-          {message && (
-            <Alert variant="success" onClose={() => setMessage('')} dismissible>
-              {message}
-            </Alert>
-          )}
-          
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3">
-              <Form.Label style={{ color: 'var(--text-primary)', fontWeight: '500' }}>Username</Form.Label>
-              <Form.Control
-                type="text"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
-                isInvalid={!!errors.username}
-                placeholder="Choose a username"
-                style={{
-                  background: 'var(--bg-tertiary)',
-                  border: `1px solid var(--card-border)`,
-                  color: 'var(--text-primary)',
-                  borderRadius: '6px',
-                  padding: '12px'
-                }}
-              />
-              {errors.username && <Form.Text className="text-danger">{errors.username}</Form.Text>}
-            </Form.Group>
+    <div className="login-page">
+      <div className="login-form-section">
+        <div className="login-form-wrapper">
+          <h2>Create Account</h2>
+          <p className="form-subtitle">Join GhostVillage today</p>
 
-            <Form.Group className="mb-3">
-              <Form.Label style={{ color: 'var(--text-primary)', fontWeight: '500' }}>Email Address</Form.Label>
-              <Form.Control
+          {error && <div className="alert-message alert-danger">{error}</div>}
+          {message && <div className="alert-message alert-success">{message}</div>}
+
+          <form onSubmit={handleSubmit} noValidate>
+            <div className="form-group">
+              <label>Full Name</label>
+              <input
+                type="text"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleChange}
+                placeholder="Enter your full name"
+              />
+              {errors.fullName && <div className="text-danger">{errors.fullName}</div>}
+            </div>
+
+            <div className="form-group">
+              <label>Email Address</label>
+              <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                isInvalid={!!errors.email}
                 placeholder="Enter your email"
-                style={{
-                  background: 'var(--bg-tertiary)',
-                  border: `1px solid var(--card-border)`,
-                  color: 'var(--text-primary)',
-                  borderRadius: '6px',
-                  padding: '12px'
-                }}
               />
-              {errors.email && <Form.Text className="text-danger">{errors.email}</Form.Text>}
-            </Form.Group>
+              {errors.email && <div className="text-danger">{errors.email}</div>}
+            </div>
 
-            <Form.Group className="mb-3">
-              <Form.Label style={{ color: 'var(--text-primary)', fontWeight: '500' }}>Password</Form.Label>
-              <Form.Control
+            <div className="form-group date-input-wrapper">
+              <label>Date of Birth</label>
+              <DatePicker
+                selected={formData.dateOfBirth}
+                onChange={handleDateChange}
+                dateFormat="yyyy-MM-dd"
+                placeholderText="Select your date of birth"
+                maxDate={new Date()}
+                showYearDropdown
+                showMonthDropdown
+                dropdownMode="select"
+              />
+              {errors.dateOfBirth && <div className="text-danger">{errors.dateOfBirth}</div>}
+            </div>
+
+            <div className="form-group">
+              <label>Password</label>
+              <input
                 type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                isInvalid={!!errors.password}
                 placeholder="Create a password"
-                style={{
-                  background: 'var(--bg-tertiary)',
-                  border: `1px solid var(--card-border)`,
-                  color: 'var(--text-primary)',
-                  borderRadius: '6px',
-                  padding: '12px'
-                }}
               />
-              {errors.password && <Form.Text className="text-danger">{errors.password}</Form.Text>}
-            </Form.Group>
+              {errors.password && <div className="text-danger">{errors.password}</div>}
+            </div>
 
-            <Form.Group className="mb-4">
-              <Form.Label style={{ color: 'var(--text-primary)', fontWeight: '500' }}>Confirm Password</Form.Label>
-              <Form.Control
+            <div className="form-group">
+              <label>Confirm Password</label>
+              <input
                 type="password"
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                isInvalid={!!errors.confirmPassword}
                 placeholder="Confirm your password"
-                style={{
-                  background: 'var(--bg-tertiary)',
-                  border: `1px solid var(--card-border)`,
-                  color: 'var(--text-primary)',
-                  borderRadius: '6px',
-                  padding: '12px'
-                }}
               />
-              {errors.confirmPassword && <Form.Text className="text-danger">{errors.confirmPassword}</Form.Text>}
-            </Form.Group>
+              {errors.confirmPassword && <div className="text-danger">{errors.confirmPassword}</div>}
+            </div>
 
-            <Button 
-              type="submit" 
-              disabled={loading}
-              style={{
-                background: 'var(--primary-color)',
-                border: 'none',
-                color: 'var(--text-primary)',
-                fontWeight: '600',
-                padding: '12px 20px',
-                borderRadius: '6px',
-                width: '100%',
-                marginBottom: '15px'
-              }}
-            >
-              {loading ? 'Creating Account...' : 'Sign Up'}
-            </Button>
-          </Form>
+            <button type="submit" className="btn-signin" disabled={loading}>
+              {loading ? 'Creating Account...' : 'Register'}
+            </button>
+          </form>
 
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: 0 }}>
+          <div className="form-divider"><span>Or</span></div>
+
+          <div className="signup-link">
+            <p>
               Already have an account?{' '}
-              <Link to="/login" style={{ color: 'var(--secondary-color)', fontWeight: '600' }}>
-                Sign in
-              </Link>
+              <Link to="/login">Login</Link>
             </p>
           </div>
         </div>
       </div>
 
-      {/* Right side - Illustration (80%) */}
-      <div style={{
-        flex: 4,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundImage: 'url(/src/shared/assets/images/langma.jpg)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        minHeight: '100vh',
-        minWidth: 0,
-        position: 'relative'
-      }}>
-        {/* Dark overlay for better text readability */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.3)'
-        }} />
-        
-        <div style={{
-          textAlign: 'center',
-          padding: '40px 20px',
-          position: 'relative',
-          zIndex: 1
-        }}>
-          <div style={{
-            fontSize: '100px',
-            marginBottom: '20px'
-          }}>
-            👥
-          </div>
-          <h3 style={{ color: '#fff', marginBottom: '10px', fontSize: '24px', fontWeight: '600' }}>
-            Join Us
-          </h3>
-          <p style={{ color: '#ddd', lineHeight: '1.6' }}>
-            Create your account and become part of our vibrant community
-          </p>
-        </div>
+      <div className="login-image-section">
+        <FogEffect />
+        <img src={LangmaText} alt="Langma" className="langma-image" />
       </div>
     </div>
   );

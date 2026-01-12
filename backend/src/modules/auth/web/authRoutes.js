@@ -1,6 +1,12 @@
-import express from 'express';
-import { registerWeb, loginWeb, logoutWeb, getMeWeb } from './authController.js';
-import { authMiddleware } from '../../../middlewares/auth.middleware.js';
+import express from "express";
+import {
+  registerWeb,
+  loginWeb,
+  logoutWeb,
+  getMeWeb,
+  verifyWeb,
+} from "./authController.js";
+import { authMiddleware } from "../../../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
@@ -12,9 +18,10 @@ const router = express.Router();
  * GET  /api/web/auth/me
  */
 
-router.post('/register', registerWeb);
-router.post('/login', loginWeb);
-router.post('/logout', logoutWeb);
-router.get('/me', authMiddleware, getMeWeb);
+router.post("/register", registerWeb);
+router.get("/verify", verifyWeb);
+router.post("/login", loginWeb);
+router.post("/logout", logoutWeb);
+router.get("/me", authMiddleware, getMeWeb);
 
 export default router;

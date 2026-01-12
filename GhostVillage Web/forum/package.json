@@ -27,6 +27,7 @@
     "react": "^18.2.0",
     "react-bootstrap": "^2.9.1",
     "react-bootstrap-icons": "^1.11.6",
+    "react-datepicker": "^9.1.0",
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.3.8",
     "react-easy-crop": "^5.5.1",
