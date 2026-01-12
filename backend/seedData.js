@@ -1,121 +1,170 @@
-/**
- * GhostVillage-Web seedData.js — Node.js seeder (MongoDB Node driver)
- *
- * Usage:
- *   1) npm i mongodb
- *   2) PowerShell (Windows):
- *        $env:MONGO_URI="mongodb://localhost:27017"
- *        $env:DB_NAME="Ghostvillage_web_test"
- *        node backend/seedData.js
- *      Bash:
- *        MONGO_URI="mongodb://localhost:27017" DB_NAME="Ghostvillage_web_test" node backend/seedData.js
- *
- * ENV:
- *   - MONGO_URI   (default: mongodb://localhost:27017)
- *   - DB_NAME     (default: Ghostvillage_web_test)
- *
- * All users have password: "Password123"
- */
+require('dotenv').config();
+const mongoose = require('mongoose');
 
-import { MongoClient, ObjectId } from "mongodb";
+// Import các Models
+const Player = require('./models/Player'); 
+const Post = require('./models/Post'); // Import thêm model Post vừa tạo
 
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017";
-const DB_NAME = process.env.DB_NAME || "Ghostvillage_web_test";
+const seedData = async () => {
+    try {
+        // 1. KẾT NỐI DATABASE: GHOSTVILLAGE
+        await mongoose.connect(process.env.MONGO_URI, {
+            dbName: 'GhostVillage' // Đảm bảo chính xác tên DB
+        });
+        console.log('🔌 Đã kết nối MongoDB -> Database: GhostVillage');
 
-const oid = (s) => new ObjectId(s);
-const d = (s) => new Date(s);
+        // 2. DỌN DẸP DỮ LIỆU CŨ (Xóa User và Post cũ)
+        await Player.deleteMany({});
+        await Post.deleteMany({});
+        console.log('🗑️  Đã xóa dữ liệu cũ (Players & Posts).');
 
-async function main() {
-  const startSeed = Date.now();
-  console.log("🌱 Starting GhostVillage-Web data seeding...");
-  const client = new MongoClient(MONGO_URI, { ignoreUndefined: true });
+        // 3. CHUẨN BỊ ID (Để link giữa các bảng)
+        const user1_Id = new mongoose.Types.ObjectId();
+        const user2_Id = new mongoose.Types.ObjectId();
 
-  try {
-    await client.connect();
-    const db = client.db(DB_NAME);
+        // --- TẠO USER 1: Người chơi hệ "Cày cuốc" (Level 5) ---
+        const user1 = {
+            _id: user1_Id,
+            auth: {
+                email: 'nam.game thủ@gmail.com',
+                username: 'NamGhostHunter',
+                passwordHash: '123456', // Pass đơn giản
+                role: 'user',
+                isBanned: false
+            },
+            profile: {
+                displayName: 'Nam Thợ Săn',
+                avatar: 'avatar_boy_01.png',
+                level: 5,
+                exp: 1250,
+                coin: 500, // Tiền ít
+                gold: 0,
+                title: 'Newbie'
+            },
+            stats: { // Chỉ số bình thường
+                totalMatches: 10,
+                wins: 4,
+                losses: 6,
+                timesRevivedTeammate: 2,
+                timesJumpscared: 15
+            },
+            inventory: {
+                unlockedSkins: ['skin_default'],
+                unlockedPerks: [],
+                consumables: [{ itemId: 'item_flashlight_battery', quantity: 2 }]
+            },
+            loadout: {
+                equippedSkin: 'skin_default',
+                equippedPerks: []
+            },
+            social: {
+                friendList: [user2_Id], // Kết bạn với User 2
+                friendRequests: [],
+                blockList: []
+            },
+            settings: {
+                masterVolume: 80,
+                sensitivity: 2.5
+            }
+        };
 
-    console.log(`🔗 Connected: ${MONGO_URI}/${DB_NAME}`);
-    console.log("🧹 Dropping database (clean slate)...");
-    await db.dropDatabase();
+        // --- TẠO USER 2: Người chơi hệ "Diễn đàn" (Level 2) ---
+        const user2 = {
+            _id: user2_Id,
+            auth: {
+                email: 'lan.support@gmail.com',
+                username: 'LanSupport',
+                passwordHash: '123456',
+                role: 'user',
+                isBanned: false
+            },
+            profile: {
+                displayName: 'Lan Meo Meo',
+                avatar: 'avatar_girl_02.png',
+                level: 2,
+                exp: 300,
+                coin: 150,
+                gold: 0,
+                title: 'Villager'
+            },
+            stats: {
+                totalMatches: 3,
+                wins: 1,
+                losses: 2,
+                timesRevivedTeammate: 0,
+                timesJumpscared: 50 // Rất hay bị hù
+            },
+            inventory: {
+                unlockedSkins: ['skin_default'],
+                unlockedPerks: [],
+                consumables: []
+            },
+            loadout: {
+                equippedSkin: 'skin_default',
+                equippedPerks: []
+            },
+            social: {
+                friendList: [user1_Id],
+                friendRequests: [],
+                blockList: []
+            },
+            settings: {
+                masterVolume: 100,
+                sensitivity: 4.0
+            }
+        };
 
-    // -------------------------
-    // Collections data (minimal example)
-    // -------------------------
-    const users = [
-      {
-        _id: oid("66f000000000000000000001"),
-        email: "admin@ghostvillage.dev",
-        username: "admin",
-        passwordHash:
-          "$2a$10$SxeMzRb1oRXYbmYDcemu1uXojh0IU6srY6QbZoOrJUCmddUVDtDpS", // Password123
-        roles: ["admin"],
-        bio: "Site admin.",
-        avatarUrl: "https://i.pravatar.cc/150?img=1",
-        isDeactivated: false,
-        karma: 100,
-        lastLoginAt: null,
-        emailVerifiedAt: d("2025-09-02T00:00:00Z"),
-        verification: {},
-        createdAt: d("2025-09-01T09:00:00Z"),
-        updatedAt: d("2025-09-01T09:00:00Z"),
-      },
-      {
-        _id: oid("66f000000000000000000002"),
-        email: "user@ghostvillage.dev",
-        username: "user",
-        passwordHash:
-          "$2a$10$SxeMzRb1oRXYbmYDcemu1uXojh0IU6srY6QbZoOrJUCmddUVDtDpS",
-        roles: ["user"],
-        bio: "Regular user.",
-        avatarUrl: "https://i.pravatar.cc/150?img=2",
-        isDeactivated: false,
-        karma: 10,
-        lastLoginAt: null,
-        emailVerifiedAt: d("2025-09-02T00:00:00Z"),
-        verification: {},
-        createdAt: d("2025-09-02T01:00:00Z"),
-        updatedAt: d("2025-09-02T01:00:00Z"),
-      },
-    ];
+        // --- TẠO POSTS (Bài viết diễn đàn) ---
+        
+        // Bài 1: User 1 hỏi về game
+        const post1 = {
+            title: 'Làm sao để thoát khỏi con ma ở Nhà Kho?',
+            content: 'Mọi người ơi, tui chơi tới màn 2 đoạn nhà kho thì bị kẹt. Con ma nó cứ camp ở cửa hoài không ra được. Ai có mẹo gì không?',
+            author: user1_Id,
+            category: 'Discussion',
+            views: 15,
+            likes: [user2_Id], // User 2 đã like
+            createdAt: new Date('2023-10-25') // Giả lập ngày cũ
+        };
 
-    const posts = [
-      {
-        _id: oid("66f130000000000000000001"),
-        title: "Welcome to GhostVillage!",
-        body: "This is the first post.",
-        authorId: oid("66f000000000000000000001"),
-        status: "approved",
-        score: 1,
-        deletedAt: null,
-        createdAt: d("2025-11-26T08:00:00Z"),
-        updatedAt: d("2025-11-26T08:00:00Z"),
-      },
-    ];
+        // Bài 2: User 2 báo lỗi
+        const post2 = {
+            title: '[BUG] Game bị văng khi nhặt chìa khóa',
+            content: 'Admin xem giúp, mình nhặt chìa khóa màu đỏ ở map Làng Cổ thì game bị crash văng ra desktop luôn. Cấu hình máy mình: Win 10, Ram 8GB.',
+            author: user2_Id,
+            category: 'Bug Report',
+            views: 5,
+            likes: [],
+            createdAt: new Date() // Ngày hiện tại
+        };
 
-    // -------------------------
-    // Insert (order matters)
-    // -------------------------
-    console.log("🧩 Inserting documents...");
-    await db.collection("users").insertMany(users);
-    await db.collection("posts").insertMany(posts);
+        // Bài 3: User 1 rủ chơi chung
+        const post3 = {
+            title: 'Tìm team chơi tối nay (20h)',
+            content: 'Cần tìm 2 bạn nữa đi map Bệnh Viện bỏ hoang. Yêu cầu có mic để call team nhé.',
+            author: user1_Id,
+            category: 'General',
+            views: 30,
+            likes: [],
+            createdAt: new Date()
+        };
 
-    // -------------------------
-    // Indexes (minimal)
-    // -------------------------
-    console.log("📚 Creating indexes...");
-    await db.collection("users").createIndex({ email: 1 }, { unique: true });
-    await db.collection("users").createIndex({ username: 1 }, { unique: true });
-    await db.collection("posts").createIndex({ authorId: 1 });
-    await db.collection("posts").createIndex({ createdAt: -1 });
+        // 4. LƯU VÀO DB
+        console.log('⏳ Đang tạo Players...');
+        await Player.create([user1, user2]); // Dùng create để kích hoạt hash password
 
-    console.log("✅ Seeded GhostVillage-Web database successfully.");
-    console.log(`🌱 Seeding completed in ${Date.now() - startSeed}ms`);
-  } catch (err) {
-    console.error("❌ Seed error:", err);
-    process.exitCode = 1;
-  } finally {
-    await client.close();
-  }
-}
+        console.log('⏳ Đang tạo Forum Posts...');
+        await Post.create([post1, post2, post3]);
 
-main();
+        console.log('✅ KHỞI TẠO DỮ LIỆU THÀNH CÔNG CHO GHOSTVILLAGE!');
+        
+        // 5. Ngắt kết nối
+        process.exit();
+
+    } catch (error) {
+        console.error('❌ Có lỗi xảy ra:', error);
+        process.exit(1);
+    }
+};
+
+seedData();

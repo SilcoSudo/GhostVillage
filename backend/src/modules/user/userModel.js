@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema(
   {
@@ -8,42 +8,52 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
       trim: true,
-      lowercase: true
+      lowercase: true,
     },
-    username: {
+    fullname: {
       type: String,
       required: true,
       unique: true,
-      trim: true
+      trim: true,
     },
     password: {
       type: String,
       required: true,
-      minlength: 6
+      minlength: 8,
+    },
+    dateOfBirth: {
+      type: Date,
+      required: true,
     },
     avatar: {
       type: String,
-      default: null
+      default: null,
     },
     bio: {
       type: String,
-      default: ''
+      default: "",
     },
-    isActive: {
+    isMute: {
       type: Boolean,
-      default: true
+      default: true,
     },
-    isBanned: {
-      type: Boolean,
-      default: false
-    }
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
   },
   { timestamps: true }
 );
 
 // Hash password before saving
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+
+  // If password already looks like a bcrypt hash, skip re-hashing
+  if (typeof this.password === "string" && this.password.startsWith("$2")) {
+    return next();
+  }
 
   try {
     const salt = await bcrypt.genSalt(10);
@@ -66,6 +76,6 @@ userSchema.methods.toJSON = function () {
   return obj;
 };
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model("User", userSchema);
 
 export default User;

@@ -1,64 +1,77 @@
-import api from '../../../shared/services/axios';
+import api from "../../../shared/services/axios";
 
 export const authService = {
   login: async (identifier, password) => {
     try {
-      const response = await api.post('/web/auth/login', {
+      const response = await api.post("/auth/login", {
         identifier,
-        password
+        password,
       });
       return response.data;
     } catch (error) {
       return {
         success: false,
-        message: error.response?.data?.message || 'Login failed'
+        message: error.response?.data?.message || "Login failed",
       };
     }
   },
 
-  register: async (email, username, password, confirmPassword) => {
+  register: async (email, fullName, password, confirmPassword, dateOfBirth) => {
     try {
-      const response = await api.post('/web/auth/register', {
+      const response = await api.post("/auth/register", {
         email,
-        username,
+        fullName,
         password,
-        confirmPassword
+        confirmPassword,
+        dateOfBirth,
       });
       return response.data;
     } catch (error) {
       return {
         success: false,
-        message: error.response?.data?.message || 'Registration failed'
+        message: error.response?.data?.message || "Registration failed",
+      };
+    }
+  },
+
+  verify: async (token) => {
+    try {
+      const response = await api.get("/auth/verify", { params: { token } });
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Verification failed",
       };
     }
   },
 
   logout: async () => {
     try {
-      await api.post('/web/auth/logout');
+      await api.post("/auth/logout");
       return {
         success: true,
-        message: 'Logout successful'
+        message: "Logout successful",
       };
     } catch (error) {
       return {
         success: false,
-        message: 'Logout failed'
+        message: "Logout failed",
       };
     }
   },
 
   getMe: async () => {
     try {
-      const response = await api.get('/web/auth/me');
+      const response = await api.get("/auth/me");
       return response.data;
     } catch (error) {
       return {
         success: false,
-        message: 'Failed to fetch user info'
+        message: "Failed to fetch user info",
       };
     }
-  }
+  },
 };
 
 export default authService;

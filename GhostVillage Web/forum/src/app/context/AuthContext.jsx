@@ -22,18 +22,20 @@ export const AuthProvider = ({ children }) => {
   const register = async (formData) => {
     const result = await authService.register(
       formData.email,
-      formData.username,
+      formData.fullName,
       formData.password,
-      formData.confirmPassword
+      formData.confirmPassword,
+      formData.dateOfBirth
     );
-    
-    if (result.success) {
-      setUser(result.user);
-      setToken(result.token);
-      localStorage.setItem('token', result.token);
-    }
-    
+    // register now only sends verification email; frontend should show message
     return result;
+  };
+
+  const setSession = (tokenValue, userValue) => {
+    setUser(userValue);
+    setToken(tokenValue);
+    if (tokenValue) localStorage.setItem('token', tokenValue);
+    else localStorage.removeItem('token');
   };
 
   const logout = async () => {
@@ -44,7 +46,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout, setSession }}>
       {children}
     </AuthContext.Provider>
   );

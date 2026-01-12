@@ -5,7 +5,7 @@ dotenv.config();
 export const config = {
   port: process.env.PORT || 5000,
   nodeEnv: process.env.NODE_ENV || 'development',
-  appUrl: process.env.APP_URL || 'http://localhost:3000',
+  appUrl: process.env.APP_URL || 'http://localhost:5173',
   
   // Database
   mongodb: {
@@ -101,5 +101,18 @@ export const config = {
     clientId: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     redirectUri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/v1/auth/google/callback'
+  },
+  
+  // Email (Nodemailer)
+  email: {
+    service: process.env.EMAIL_SERVICE || 'gmail',
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    port: process.env.EMAIL_PORT || 587,
+    secure: process.env.EMAIL_SECURE === 'true', // Use 'true' for 465, 'false' for other ports
+    auth: {
+      user: process.env.EMAIL_USER, // Your Gmail address or other mail user
+      pass: process.env.EMAIL_PASS, // Your Gmail password or App Password
+    },
+    from: process.env.EMAIL_FROM || '"GhostVillage" <noreply@ghostvillage.com>',
   }
 };
