@@ -7,7 +7,7 @@ import './LoginPage.css';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
-    identifier: '',
+    email: '',
     password: ''
   });
   const [loading, setLoading] = useState(false);
@@ -56,14 +56,14 @@ const LoginPage = () => {
           
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Email or Username</label>
+              <label>Email</label>
               <input
-                type="text"
-                name="identifier"
-                value={formData.identifier}
+                type="email"
+                name="email"
+                value={formData.email}
                 onChange={handleChange}
                 required
-                placeholder="Enter your email or username"
+                placeholder="Enter your email"
               />
             </div>
 

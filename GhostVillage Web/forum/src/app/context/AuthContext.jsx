@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token') || null);
 
   const login = async (credentials) => {
-    const result = await authService.login(credentials.identifier, credentials.password);
+    const result = await authService.login(credentials.email, credentials.password);
     
     if (result.success) {
       setUser(result.user);
