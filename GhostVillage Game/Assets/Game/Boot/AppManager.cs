@@ -18,8 +18,6 @@ namespace Game.Boot
         private readonly AccountService _account;
         private readonly GameConfigSO _config;
 
-        // Constructor Injection: Tự động nhận Service đã đăng ký bên Scope
-        [Inject]
         public AppManager(ISceneLoaderService sceneLoader, AccountService account)
         {
             _sceneLoader = sceneLoader;

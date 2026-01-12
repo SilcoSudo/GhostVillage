@@ -49,3 +49,5 @@ MonoBehaviour:
   autoRun: 1
   autoInjectGameObjects: []
   _gameConfig: {fileID: 11400000, guid: 5b8660f54ebec2341827859a3be647e5, type: 2}
+  _photonPrefab: {fileID: 7330448355312895030, guid: 2551b8290e1de2a46948984f13346ad8, type: 3}
+  _globalUIPrefab: {fileID: 5679983149472565504, guid: f69cc90b8b5c99846b5c1a5287d9fc32, type: 3}
