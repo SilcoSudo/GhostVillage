@@ -35,12 +35,28 @@ const userSchema = new mongoose.Schema(
     },
     isMute: {
       type: Boolean,
-      default: true,
+      default: false,
     },
     role: {
       type: String,
       enum: ["user", "admin"],
       default: "user",
+    },
+    verificationTokenHash: {
+      type: String,
+      default: null,
+    },
+    verificationUsed: {
+      type: Boolean,
+      default: false,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationExpires: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true }
@@ -79,7 +95,7 @@ userSchema.methods.toJSON = function () {
 const User = mongoose.model("User", userSchema);
 
 // Drop old username index if it exists (migration from old schema)
-User.collection.dropIndex('username_1').catch(() => {
+User.collection.dropIndex("username_1").catch(() => {
   // Index doesn't exist, that's fine
 });
 

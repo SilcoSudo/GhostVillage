@@ -3,9 +3,11 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export const config = {
-  port: process.env.PORT || 3000,
+  // Backend API port and public URL
+  port: process.env.PORT || 5000,
   nodeEnv: process.env.NODE_ENV || "development",
-  appUrl: process.env.APP_URL || "http://localhost:3000",
+  appUrl: process.env.APP_URL || "http://localhost:5000",
+  frontendUrl: process.env.FRONTEND_URL || "http://localhost:5173",
 
   // Database
   mongodb: {
@@ -125,4 +127,39 @@ export const config = {
       process.env.GOOGLE_REDIRECT_URI ||
       "http://localhost:5000/api/v1/auth/google/callback",
   },
+  // Email (nodemailer)
+  email: (() => {
+    const service = process.env.EMAIL_SERVICE;
+    const isGmail = (service || "").toLowerCase() === "gmail";
+
+    const host =
+      process.env.EMAIL_HOST ||
+      (isGmail ? "smtp.gmail.com" : "smtp.mailtrap.io");
+
+    const port = process.env.EMAIL_PORT
+      ? Number(process.env.EMAIL_PORT)
+      : isGmail
+      ? 465
+      : 587;
+
+    const secure = process.env.EMAIL_SECURE
+      ? process.env.EMAIL_SECURE === "true"
+      : isGmail
+      ? true
+      : false;
+
+    return {
+      service: service || undefined,
+      host,
+      port,
+      secure,
+      auth: {
+        user: process.env.EMAIL_USER || "",
+        pass: process.env.EMAIL_PASS || "",
+      },
+      from:
+        process.env.EMAIL_FROM ||
+        `"Ghost Village" <no-reply@ghostvillage.local>`,
+    };
+  })(),
 };

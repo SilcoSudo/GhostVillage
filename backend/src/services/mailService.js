@@ -1,17 +1,18 @@
 import nodemailer from "nodemailer";
 import { config } from "../config/env.js";
 
-// Create a transporter object using the default SMTP transport
+const { email } = config;
+
+// Build transporter options so Gmail (service) and custom SMTP both work
 const transporter = nodemailer.createTransport({
-  host: config.email.host,
-  port: config.email.port,
-  secure: config.email.secure, // true for 465, false for other ports
+  service: email.service,
+  host: email.host,
+  port: email.port,
+  secure: email.secure,
   auth: {
-    user: config.email.auth.user,
-    pass: config.email.auth.pass,
+    user: email.auth.user,
+    pass: email.auth.pass,
   },
-  // If using Gmail, you might need to enable "Less secure app access"
-  // or use an App Password if 2-Factor Authentication is enabled.
 });
 
 // Function to send a verification email

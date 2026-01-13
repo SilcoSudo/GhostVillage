@@ -1,19 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Alert, Spinner, Button } from 'react-bootstrap';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { CheckCircle, XCircle, Mail } from 'lucide-react';
 import { useAuth } from '../../../app/hooks/useAuth';
 import api from '../../../shared/services/axios';
+import LangmaText from '../../../shared/assets/images/logo.png';
+import FogEffect from '../components/FogEffect';
+import './Auth.css';
 
 const VerifyEmailPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { setSession } = useAuth();
+  const verifyOnceRef = useRef(false);
   
   const [verificationStatus, setVerificationStatus] = useState('loading'); // loading, success, error
   const [message, setMessage] = useState('');
   const [resendLoading, setResendLoading] = useState(false);
+  const [countdown, setCountdown] = useState(3);
 
   const token = searchParams.get('token');
   const email = searchParams.get('email') || localStorage.getItem('pendingVerificationEmail');
@@ -25,66 +27,55 @@ const VerifyEmailPage = () => {
       return;
     }
 
+    // Guard against double effect execution (React StrictMode) causing duplicate API calls
+    if (verifyOnceRef.current) return;
+    verifyOnceRef.current = true;
     verifyEmail(token);
   }, [token]);
+
+  // Countdown and auto-redirect on success
+  useEffect(() => {
+    if (verificationStatus === 'success') {
+      // Auto-redirect to home after 2 seconds
+      const timer = setTimeout(() => {
+        navigate('/');
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [verificationStatus, navigate]);
 
   const verifyEmail = async (verificationToken) => {
     try {
       setVerificationStatus('loading');
-      
-      const response = await api.post('/auth/verify-email', {
-        token: verificationToken
+
+      const response = await api.get('/auth/verify', {
+        params: { token: verificationToken },
       });
 
       if (response.data.success) {
-        const { accessToken, user } = response.data;
+        const { token: accessToken, user } = response.data;
         if (accessToken && user) {
           setSession(accessToken, user);
+          // Save token to localStorage for persistence (verified email = auto-login)
+          localStorage.setItem('token', accessToken);
         }
 
         setVerificationStatus('success');
         setMessage('Email verified successfully! You are now logged in.');
-        
-        // Clear pending email from localStorage
+
         localStorage.removeItem('pendingVerificationEmail');
-        
-        // Auto redirect after 3 seconds
-        setTimeout(() => {
-          navigate('/');
-        }, 3000);
+
+        // TODO: Auto-redirect after user views (uncomment when ready)
+        // setTimeout(() => {
+        //   navigate('/');
+        // }, 3000);
       }
     } catch (error) {
       setVerificationStatus('error');
       setMessage(
-        error.response?.data?.message || 
-        'Email verification failed. The link may be expired or invalid.'
+        error.response?.data?.message ||
+          'Email verification failed. The link may be expired or invalid.'
       );
-    }
-  };
-
-  const handleResendVerification = async () => {
-    if (!email) {
-      setMessage('Email address not found. Please try registering again.');
-      return;
-    }
-
-    try {
-      setResendLoading(true);
-      
-      const response = await api.post('/auth/resend-verification', {
-        email: email
-      });
-
-      if (response.data.success) {
-        setMessage('New verification email sent! Please check your inbox.');
-      }
-    } catch (error) {
-      setMessage(
-        error.response?.data?.message || 
-        'Failed to resend verification email. Please try again later.'
-      );
-    } finally {
-      setResendLoading(false);
     }
   };
 
@@ -92,10 +83,10 @@ const VerifyEmailPage = () => {
     switch (verificationStatus) {
       case 'loading':
         return (
-          <div className="text-center">
-            <Spinner animation="border" role="status" className="mb-3">
-              <span className="visually-hidden">Verifying...</span>
-            </Spinner>
+          <div className="verify-content">
+            <div className="spinner-wrapper">
+              <div className="spinner"></div>
+            </div>
             <h3>Verifying your email...</h3>
             <p className="text-muted">Please wait while we verify your email address.</p>
           </div>
@@ -103,57 +94,27 @@ const VerifyEmailPage = () => {
 
       case 'success':
         return (
-          <div className="text-center">
-            <CheckCircle size={64} className="text-success mb-3" />
-            <h3 className="text-success">Email Verified Successfully!</h3>
-            <p className="mb-4">{message}</p>
-            <p className="text-muted">Redirecting to home page in 3 seconds...</p>
-            <Button as={Link} to="/" variant="primary" size="lg">
-              Go to Homepage
-            </Button>
+          <div className="verify-content success">
+            <div className="success-icon">✓</div>
+            <h3>Email Verified Successfully!</h3>
+            <p className="success-message">{message}</p>
+            
+            <div className="redirect-loading">
+              <div className="spinner"></div>
+              <p>Redirecting to home page...</p>
+            </div>
           </div>
         );
 
       case 'error':
         return (
-          <div className="text-center">
-            <XCircle size={64} className="text-danger mb-3" />
-            <h3 className="text-danger">Verification Failed</h3>
-            <Alert variant="danger" className="mb-4">
-              {message}
-            </Alert>
+          <div className="verify-content error">
+            <div className="error-icon">✕</div>
+            <h3>Verification Failed</h3>
+            <div className="alert-message alert-danger">{message}</div>
             
-            {email && (
-              <div className="mb-4">
-                <p>Didn't receive the verification email or link expired?</p>
-                <Button
-                  variant="outline-primary"
-                  onClick={handleResendVerification}
-                  disabled={resendLoading}
-                  className="me-3"
-                >
-                  {resendLoading ? (
-                    <>
-                      <Spinner animation="border" size="sm" className="me-2" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Mail size={16} className="me-2" />
-                      Resend Verification Email
-                    </>
-                  )}
-                </Button>
-              </div>
-            )}
-            
-            <div className="mt-4">
-              <Button as={Link} to="/register" variant="outline-secondary" className="me-2">
-                Register Again
-              </Button>
-              <Button as={Link} to="/login" variant="primary">
-                Back to Login
-              </Button>
+            <div className="action-links">
+              <Link to="/register" className="btn-signin">Register Again</Link>
             </div>
           </div>
         );
@@ -164,21 +125,21 @@ const VerifyEmailPage = () => {
   };
 
   return (
-    <Container className="py-5">
-      <Row className="justify-content-center">
-        <Col md={8} lg={6}>
-          <Card>
-            <Card.Body className="p-5">
-              <div className="text-center mb-4">
-                <h1 className="h3">Email Verification</h1>
-              </div>
-              
-              {renderContent()}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+    <div className="login-page">
+      <div className="login-form-section">
+        <div className="login-form-wrapper">
+          <h2>Email Verification</h2>
+          <p className="form-subtitle">Verify your email address</p>
+          
+          {renderContent()}
+        </div>
+      </div>
+
+      <div className="login-image-section">
+        <FogEffect />
+        <img src={LangmaText} alt="Langma" className="langma-image" />
+      </div>
+    </div>
   );
 };
 

@@ -40,7 +40,31 @@ export const registerWeb = async (req, res) => {
     });
   }
 };
+export const resendVerificationWeb = async (req, res) => {
+  try {
+    const { email } = req.body;
 
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    await AuthService.resendVerification(email);
+
+    return res.status(200).json({
+      success: true,
+      message: "Verification email sent. Please check your inbox.",
+    });
+  } catch (error) {
+    console.error("Resend Verification error:", error);
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to resend verification email",
+    });
+  }
+};
 export const verifyWeb = async (req, res) => {
   try {
     const token = req.query.token || req.body.token;
@@ -63,18 +87,16 @@ export const verifyWeb = async (req, res) => {
       .json({ success: true, token: result.token, user: result.user });
   } catch (error) {
     console.error("Verify error:", error);
-    return res
-      .status(400)
-      .json({
-        success: false,
-        message: error.message || "Verification failed",
-      });
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Verification failed",
+    });
   }
 };
 
 export const loginWeb = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
@@ -83,11 +105,20 @@ export const loginWeb = async (req, res) => {
       });
     }
 
-    const { token, user } = await AuthService.loginWeb(email, password);
+    const { token, user } = await AuthService.loginWeb(
+      email,
+      password,
+      rememberMe
+    );
+
+    // Set cookie expiry based on rememberMe
+    const maxAge = rememberMe
+      ? 30 * 24 * 60 * 60 * 1000
+      : 1 * 24 * 60 * 60 * 1000; // 30 days or 1 day
 
     res.cookie("token", token, {
       httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge,
     });
 
     return res.status(200).json({

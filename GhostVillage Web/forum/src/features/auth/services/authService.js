@@ -1,11 +1,12 @@
 import api from "../../../shared/services/axios";
 
 export const authService = {
-  login: async (email, password) => {
+  login: async (email, password, rememberMe = false) => {
     try {
-      const response = await api.post('/web/auth/login', {
+      const response = await api.post("/auth/login", {
         email,
-        password
+        password,
+        rememberMe,
       });
       return response.data;
     } catch (error) {
@@ -64,6 +65,22 @@ export const authService = {
   getMe: async () => {
     try {
       const response = await api.get("/auth/me");
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: "Failed to fetch user info",
+      };
+    }
+  },
+
+  getCurrentUser: async (token) => {
+    try {
+      const response = await api.get("/auth/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       return response.data;
     } catch (error) {
       return {

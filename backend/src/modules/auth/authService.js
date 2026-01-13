@@ -1,9 +1,10 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { config } from "../../config/env.js";
 import MailService from "../../services/mailService.js";
 import userModel from "../user/userModel.js";
-import Player from '../player/playerModel.js';
+import Player from "../player/playerModel.js";
 
 /**
  * Auth Service
@@ -13,13 +14,17 @@ import Player from '../player/playerModel.js';
  * Handles validation, password hashing, and token generation
  */
 
-const generateToken = (userId) => {
+const generateToken = (userId, rememberMe = false) => {
+  const expiresIn = rememberMe ? "30d" : "1d"; // 30 days if remember me, else 1 day
   return jwt.sign({ userId }, config.jwt.secret, {
-    expiresIn: config.jwt.expiresIn,
+    expiresIn,
   });
 };
 
 export const AuthService = {
+  /**
+   * WEB: User Registration with Email Verification
+   */
   // Register new user (do NOT save to DB yet) - send verification email
   register: async (email, fullname, password, dateOfBirth) => {
     // password strength validation
@@ -30,78 +35,146 @@ export const AuthService = {
       );
     }
 
-    // Check if user already exists
+    // Check for existing user
     const existingUser = await userModel.findOne({
-      $or: [{ email: email.toLowerCase() }, { fullname }],
+      email: email.toLowerCase(),
     });
-    if (existingUser) {
-      throw new Error("Email or fullname already exists");
+
+    if (existingUser && existingUser.isVerified) {
+      throw new Error("Email already exists");
     }
 
-    // Hash password before embedding in token
+    // Hash password for storage in pending user
     const saltRounds = parseInt(config.bcryptRounds, 10) || 12;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    // Create a short-lived verification token containing necessary data
-    const verificationPayload = {
-      email: email.toLowerCase(),
-      fullname,
-      passwordHash,
-      dateOfBirth,
-    };
+    // Generate opaque token and store hash + expiry (stateful)
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(rawToken)
+      .digest("hex");
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-    const verificationToken = jwt.sign(verificationPayload, config.jwt.secret, {
-      expiresIn: "1h",
-    });
+    if (existingUser) {
+      // Update pending user details and reissue verification
+      existingUser.fullname = fullname;
+      existingUser.password = passwordHash;
+      existingUser.dateOfBirth = new Date(dateOfBirth);
+      existingUser.verificationTokenHash = tokenHash;
+      existingUser.verificationExpires = expiresAt;
+      existingUser.verificationUsed = false;
+      existingUser.isVerified = false;
+      await existingUser.save();
+    } else {
+      await userModel.create({
+        email: email.toLowerCase(),
+        fullname,
+        password: passwordHash,
+        dateOfBirth: new Date(dateOfBirth),
+        verificationTokenHash: tokenHash,
+        verificationExpires: expiresAt,
+        verificationUsed: false,
+        isVerified: false,
+      });
+    }
 
-    // Send verification email with link
-    const verificationLink = `${config.appUrl.replace(
+    // Send verification email with opaque token
+    const verificationLink = `${config.frontendUrl.replace(
       /\/+$/,
       ""
-    )}/verify-email?token=${verificationToken}`;
+    )}/verify-email?token=${rawToken}`;
     await MailService.sendVerificationEmail(email, verificationLink);
 
     return { sent: true };
   },
 
-  // Complete registration from verification token: create user and return auth token
+  /**
+   * WEB: Complete registration from verification token (one-time use)
+   */
   completeRegistration: async (token) => {
     try {
-      const payload = jwt.verify(token, config.jwt.secret);
-      const { email, fullname, passwordHash, dateOfBirth } = payload;
+      // Hash the opaque token
+      const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
-      // Double-check user doesn't already exist
-      const existingUser = await userModel.findOne({
-        $or: [{ email }, { fullname }],
+      // Find pending user by token hash, not used, and not expired
+      const now = new Date();
+      const user = await userModel.findOne({
+        verificationTokenHash: tokenHash,
+        verificationUsed: false,
+        verificationExpires: { $gt: now },
       });
-      if (existingUser) {
-        throw new Error("User already exists");
+
+      if (!user) {
+        throw new Error("Invalid or expired token");
       }
 
-      // Create user with hashed password (passwordHash is already bcrypt)
-      const newUser = new userModel({
-        email,
-        fullname,
-        password: passwordHash,
-        dateOfBirth: new Date(dateOfBirth),
-      });
+      // Mark as verified and consume the token
+      user.isVerified = true;
+      user.verificationUsed = true;
+      user.verificationExpires = null;
+      user.verificationTokenHash = null;
+      await user.save();
 
-      await newUser.save();
-
-      const authToken = generateToken(newUser._id);
-      return { token: authToken, user: newUser.toJSON() };
+      const authToken = generateToken(user._id, false);
+      return { token: authToken, user: user.toJSON() };
     } catch (err) {
       throw new Error(err.message || "Invalid or expired token");
     }
   },
 
   /**
+   * WEB: Resend verification email
+   */
+  resendVerification: async (email) => {
+    try {
+      // Find user by email
+      const user = await userModel.findOne({
+        email: email.toLowerCase(),
+      });
+
+      if (!user) {
+        throw new Error("Email not found");
+      }
+
+      if (user.isVerified) {
+        throw new Error("Email is already verified");
+      }
+
+      // Invalidate old token and generate new one
+      const rawToken = crypto.randomBytes(32).toString("hex");
+      const tokenHash = crypto
+        .createHash("sha256")
+        .update(rawToken)
+        .digest("hex");
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+      // Update user with new token
+      user.verificationTokenHash = tokenHash;
+      user.verificationExpires = expiresAt;
+      user.verificationUsed = false;
+      await user.save();
+
+      // Send verification email with new token
+      const verificationLink = `${config.frontendUrl.replace(
+        /\/+$/,
+        ""
+      )}/verify-email?token=${rawToken}&email=${encodeURIComponent(email)}`;
+      await MailService.sendVerificationEmail(email, verificationLink);
+
+      return { sent: true };
+    } catch (err) {
+      throw new Error(err.message || "Failed to resend verification email");
+    }
+  },
+
+  /**
    * WEB: Login user (forum/web)
    */
-  loginWeb: async (email, password) => {
+  loginWeb: async (email, password, rememberMe = false) => {
     // Find user by email
-    const user = await User.findOne({ email: email.toLowerCase() });
-    
+    const user = await userModel.findOne({ email: email.toLowerCase() });
+
     if (!user) {
       throw new Error("User not found");
     }
@@ -112,7 +185,7 @@ export const AuthService = {
       throw new Error("Invalid password");
     }
 
-    const token = generateToken(user._id);
+    const token = generateToken(user._id, rememberMe);
 
     return {
       token,
@@ -127,22 +200,22 @@ export const AuthService = {
   getOrCreatePlayerProfile: async (userId, displayName) => {
     // Check if player exists
     let player = await Player.findOne({ userId });
-    
+
     if (!player) {
       // Auto-create player profile on first login
       player = await Player.create({
         userId,
         profile: {
           displayName: displayName || `Player_${userId.toString().slice(-6)}`,
-          avatar: 'avatar_default_01',
+          avatar: "avatar_default_01",
           level: 1,
           exp: 0,
-          coin: 1000
+          coin: 1000,
         },
         inventory: {
-          unlockedSkins: ['skin_default'],
-          unlockedPerks: []
-        }
+          unlockedSkins: ["skin_default"],
+          unlockedPerks: [],
+        },
       });
     }
 
@@ -160,7 +233,7 @@ export const AuthService = {
 
   // Get user by ID (web)
   getUserById: async (userId) => {
-    const user = await User.findById(userId);
+    const user = await userModel.findById(userId);
     if (!user) {
       throw new Error("User not found");
     }
@@ -171,10 +244,10 @@ export const AuthService = {
   getPlayerById: async (playerId) => {
     const player = await Player.findById(playerId);
     if (!player) {
-      throw new Error('Player not found');
+      throw new Error("Player not found");
     }
     return player.toJSON();
-  }
+  },
 };
 
 export default AuthService;

@@ -1,20 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../app/hooks/useAuth';
 import LangmaText from '../../../shared/assets/images/logo.png';
 import FogEffect from '../components/FogEffect';
-import './LoginPage.css';
+import './Auth.css';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  // Load saved credentials on mount
+  useEffect(() => {
+    const rememberMeExpiry = localStorage.getItem('rememberMeExpiry');
+    if (rememberMeExpiry) {
+      const expiryDate = new Date(rememberMeExpiry);
+      const now = new Date();
+      
+      if (now < expiryDate) {
+        // Still within 30 days, user should be auto-logged in by AuthContext
+        setRememberMe(true);
+      } else {
+        // Expired, clear it
+        localStorage.removeItem('rememberMeExpiry');
+      }
+    }
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -33,7 +51,7 @@ const LoginPage = () => {
     setLoading(true);
     setError('');
 
-    const result = await login(formData);
+    const result = await login(formData, rememberMe);
     
     if (result?.success) {
       navigate('/');
@@ -49,7 +67,7 @@ const LoginPage = () => {
       {/* Left side - Form */}
       <div className="login-form-section">
         <div className="login-form-wrapper">
-          <h2>Sign In</h2>
+          <h2>Login</h2>
           <p className="form-subtitle">Login into your account</p>
           
           {error && <div className="alert-message alert-danger">{error}</div>}
@@ -79,14 +97,22 @@ const LoginPage = () => {
               />
             </div>
 
-            <div className="forgot-password">
-              <Link to="/forgot-password">
+            <div className="remember-forgot">
+              <label className="remember-me">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+                <span>Remember me</span>
+              </label>
+              <Link to="/forgot-password" className="forgot-link">
                 Forgot password?
               </Link>
             </div>
 
             <button type="submit" className="btn-signin" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Logging in...' : 'Log In'}
             </button>
           </form>
 
@@ -98,7 +124,7 @@ const LoginPage = () => {
             <p>
               Don't have an account?{' '}
               <Link to="/register">
-                Sign up now
+                Register now
               </Link>
             </p>
           </div>

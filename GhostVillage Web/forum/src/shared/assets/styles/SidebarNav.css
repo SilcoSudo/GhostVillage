@@ -6,7 +6,7 @@
   position: fixed;
   left: 0;
   top: 70px;
-  width: 250px;
+  width: 200px;
   height: calc(100vh - 70px);
   background-color: var(--card-bg);
   border-right: 1px solid var(--border-color);
@@ -39,6 +39,14 @@
   border-bottom: 1px solid var(--border-color);
   gap: 8px;
   min-height: 70px;
+}
+
+.sidebar-nav.collapsed .sidebar-header-top {
+  justify-content: center;
+}
+
+.sidebar-nav.collapsed .sidebar-logo-spacer {
+  display: none;
 }
 
 .sidebar-logo-spacer {
@@ -165,7 +173,6 @@
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 12px;
   padding: 10px 12px;
   border-radius: 8px;
   color: var(--text-secondary);
@@ -323,8 +330,6 @@
 .sidebar-user-profile {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px;
   border-radius: 8px;
   transition: all 0.2s ease;
 }
@@ -393,8 +398,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  width: 100%;
+  width: 40px;
+  height: 40px;
   padding: 10px;
   border: none;
   background: rgba(220, 53, 69, 0.1);
@@ -427,9 +432,17 @@
   margin: 0;
 }
 
+.sidebar-nav.collapsed .sidebar-item {
+  justify-content: center;
+}
+
 .sidebar-nav.collapsed .sidebar-user-info {
   width: 0;
   opacity: 0;
+}
+
+.sidebar-nav.collapsed .sidebar-user-email {
+  display: none;
 }
 
 .sidebar-nav.collapsed .sidebar-logout-btn span {
@@ -443,6 +456,19 @@
 }
 
 .sidebar-nav.collapsed .sidebar-add-btn {
+  margin: 0 auto;
+}
+
+.sidebar-nav.collapsed .sidebar-footer {
+  align-items: center;
+}
+
+.sidebar-nav.collapsed .sidebar-user-profile {
+  width: 40px;
+  justify-content: center;
+}
+
+.sidebar-nav.collapsed .sidebar-logout-btn {
   margin: 0 auto;
 }
 

@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../app/hooks/useAuth';
 import LangmaText from '../../../shared/assets/images/logo.png';
 import FogEffect from '../components/FogEffect';
-import './LoginPage.css';
+import './Auth.css';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
