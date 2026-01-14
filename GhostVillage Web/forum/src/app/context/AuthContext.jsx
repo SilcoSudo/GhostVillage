@@ -53,14 +53,22 @@ export const AuthProvider = ({ children }) => {
       setUser(result.user);
       setToken(result.token);
       
+      // Always save token to localStorage for axios interceptor to work, 
+      // but managed expiry differs
+      localStorage.setItem("token", result.token);
+
       if (rememberMe) {
-        // Save token and expiry for 30 days
+        // Save expiry for 30 days
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + 30);
-        localStorage.setItem('token', result.token);
+        localStorage.setItem('rememberMeExpiry', expiryDate.toISOString());
+      } else {
+        // For session-only, we store it in sessionStorage OR just don't set local expiry
+        // Choosing to set a short local expiry (1 day) to match backend
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 1);
         localStorage.setItem('rememberMeExpiry', expiryDate.toISOString());
       }
-      // If not remember me, don't save token anywhere - session only in memory
     }
     
     return result;
@@ -94,8 +102,31 @@ export const AuthProvider = ({ children }) => {
     sessionStorage.removeItem('token');
   };
 
+  const forgotPassword = async (email) => {
+    return await authService.forgotPassword(email);
+  };
+
+  const resetPassword = async (token, newPassword) => {
+    return await authService.resetPassword(token, newPassword);
+  };
+
+  const changePassword = async (oldPassword, newPassword) => {
+    return await authService.changePassword(oldPassword, newPassword);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, setSession }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      token, 
+      loading, 
+      login, 
+      register, 
+      logout, 
+      setSession,
+      forgotPassword,
+      resetPassword,
+      changePassword
+    }}>
       {children}
     </AuthContext.Provider>
   );

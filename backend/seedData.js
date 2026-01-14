@@ -27,10 +27,13 @@ const seedData = async () => {
         const user1 = {
             _id: user1_Id,
             email: 'hung@ghostvillage.com',
+            fullname: 'Hùng Đẹp Trai',
             password: '123456', // Sẽ được hash bởi pre-save hook
+            dateOfBirth: new Date('1995-01-01'),
             avatar: 'avatar_default_01',
             bio: 'Hùng Đẹp Trai',
-            role: 'user', // Chỉ có user hoặc admin
+            role: 'admin', // Chỉ có user hoặc admin
+            isVerified: true,
             isActive: true,
             isBanned: false,
             lastLogin: new Date()
@@ -40,10 +43,13 @@ const seedData = async () => {
         const user2 = {
             _id: user2_Id,
             email: 'belan.support@gmail.com',
+            fullname: 'Bé Lan Support',
             password: '123456',
+            dateOfBirth: new Date('2000-02-02'),
             avatar: 'avatar_default_01',
             bio: 'Bé Lan Support',
             role: 'user',
+            isVerified: true,
             isActive: true,
             isBanned: false
         };

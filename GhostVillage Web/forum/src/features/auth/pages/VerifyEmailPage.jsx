@@ -48,7 +48,7 @@ const VerifyEmailPage = () => {
     try {
       setVerificationStatus('loading');
 
-      const response = await api.get('/auth/verify', {
+      const response = await api.get('/web/auth/verify', {
         params: { token: verificationToken },
       });
 

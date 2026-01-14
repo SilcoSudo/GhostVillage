@@ -3,7 +3,7 @@ import api from "../../../shared/services/axios";
 export const authService = {
   login: async (email, password, rememberMe = false) => {
     try {
-      const response = await api.post("/auth/login", {
+      const response = await api.post("/web/auth/login", {
         email,
         password,
         rememberMe,
@@ -19,7 +19,7 @@ export const authService = {
 
   register: async (email, fullName, password, confirmPassword, dateOfBirth) => {
     try {
-      const response = await api.post("/auth/register", {
+      const response = await api.post("/web/auth/register", {
         email,
         fullName,
         password,
@@ -37,7 +37,7 @@ export const authService = {
 
   verify: async (token) => {
     try {
-      const response = await api.get("/auth/verify", { params: { token } });
+      const response = await api.get("/web/auth/verify", { params: { token } });
       return response.data;
     } catch (error) {
       return {
@@ -49,7 +49,7 @@ export const authService = {
 
   logout: async () => {
     try {
-      await api.post("/auth/logout");
+      await api.post("/web/auth/logout");
       return {
         success: true,
         message: "Logout successful",
@@ -64,7 +64,7 @@ export const authService = {
 
   getMe: async () => {
     try {
-      const response = await api.get("/auth/me");
+      const response = await api.get("/web/auth/me");
       return response.data;
     } catch (error) {
       return {
@@ -76,7 +76,7 @@ export const authService = {
 
   getCurrentUser: async (token) => {
     try {
-      const response = await api.get("/auth/me", {
+      const response = await api.get("/web/auth/me", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -86,6 +86,48 @@ export const authService = {
       return {
         success: false,
         message: "Failed to fetch user info",
+      };
+    }
+  },
+
+  forgotPassword: async (email) => {
+    try {
+      const response = await api.post("/web/auth/forgot-password", { email });
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to send reset link",
+      };
+    }
+  },
+
+  resetPassword: async (token, password) => {
+    try {
+      const response = await api.post("/web/auth/reset-password", {
+        token,
+        password,
+      });
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Password reset failed",
+      };
+    }
+  },
+
+  changePassword: async (oldPassword, newPassword) => {
+    try {
+      const response = await api.post("/web/auth/change-password", {
+        oldPassword,
+        newPassword,
+      });
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Password change failed",
       };
     }
   },

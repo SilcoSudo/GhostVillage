@@ -2,7 +2,8 @@ import axios from "axios";
 
 const instance = axios.create({
   // Frontend runs on 3000; backend API default is 5000
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api/web",
+  // Point to the root API so we can explicitly use /web or /game if needed
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
   timeout: 10000,
   withCredentials: true,
 });

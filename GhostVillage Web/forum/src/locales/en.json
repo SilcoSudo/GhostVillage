@@ -8,9 +8,31 @@
     "confirmPassword": "Confirm Password",
     "rememberMe": "Remember me",
     "forgotPassword": "Forgot password?",
-    "noAccount": "Don't have an account? Sign up",
-    "haveAccount": "Already have an account? Sign in",
-    "signUp": "Sign Up",
-    "signIn": "Sign In"
+    "noAccount": "Don't have an account? Register",
+    "haveAccount": "Already have an account? Login",
+    "signUp": "Register",
+    "signIn": "Login",
+    "login": "Login",
+    "register": "Register"
+  },
+  "navbar": {
+    "home": "Home",
+    "allPosts": "All Posts",
+    "myPosts": "My Posts",
+    "saved": "Saved Posts",
+    "createPost": "Create Post",
+    "browse": "Browse",
+    "myContent": "My Content",
+    "settings": "Settings",
+    "changePassword": "Change Password",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar",
+    "viewProfile": "View profile",
+    "userMenu": "User menu",
+    "followers": "Followers",
+    "following": "Following"
+  },
+  "common": {
+    "logout": "Logout"
   }
 }

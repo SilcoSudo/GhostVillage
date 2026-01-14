@@ -28,6 +28,9 @@ export const GameAuthService = {
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) throw new Error("Invalid password");
 
+    // Check verification status
+    if (!user.isVerified) throw new Error("ACCOUNT_NOT_VERIFIED");
+
     // 3. Xử lý Player Profile (Logic riêng của Game)
     let player = await Player.findOne({ userId: user._id });
 

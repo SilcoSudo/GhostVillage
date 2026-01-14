@@ -40,7 +40,7 @@ const RegistrationSuccessPage = () => {
       setResendLoading(true);
       setMessage('');
 
-      const response = await api.post('/auth/resend-verification', {
+      const response = await api.post('/web/auth/resend-verification', {
         email: email
       });
 

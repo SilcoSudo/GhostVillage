@@ -27,6 +27,21 @@
   width: 70px;
 }
 
+/* Mobile overlay backdrop - shows when sidebar expanded on mobile */
+@media (max-width: 768px) {
+  .sidebar-nav:not(.collapsed)::after {
+    content: '';
+    position: fixed;
+    top: 70px;
+    left: 250px;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: -1;
+    cursor: pointer;
+  }
+}
+
 /* ============================================
    SIDEBAR HEADER WITH LOGO AND TOGGLE
    ============================================ */
@@ -69,8 +84,9 @@
 }
 
 .sidebar-toggle-btn:hover {
-  color: var(--accent-color);
-  background: rgba(244, 128, 36, 0.12);
+  color: var(--text-primary);
+  background: rgba(153, 0, 0, 0.2); /* --primary-color with opacity */
+  box-shadow: 0 0 10px rgba(122, 0, 0, 0.3);
 }
 
 .sidebar-toggle-btn:active {
@@ -120,7 +136,7 @@
 .sidebar-section-title {
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin: 0;
@@ -147,8 +163,8 @@
 }
 
 .sidebar-add-btn:hover {
-  background: rgba(244, 128, 36, 0.1);
-  color: var(--accent-color);
+  background: rgba(122, 0, 0, 0.15);
+  color: var(--text-primary);
 }
 
 /* ============================================
@@ -175,7 +191,7 @@
   align-items: center;
   padding: 10px 12px;
   border-radius: 8px;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   text-decoration: none;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
@@ -185,16 +201,18 @@
 }
 
 .sidebar-item:hover {
-  color: var(--accent-color);
-  background: rgba(244, 128, 36, 0.08);
+  color: var(--text-primary);
+  background: rgba(122, 0, 0, 0.15);
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
 }
 
 .sidebar-item.active {
-  background: linear-gradient(135deg, rgba(244, 128, 36, 0.15) 0%, rgba(244, 128, 36, 0.05) 100%);
-  color: var(--accent-color);
-  font-weight: 500;
-  border-left: 3px solid var(--accent-color);
+  background: linear-gradient(90deg, rgba(82, 0, 0, 0.4) 0%, transparent 100%);
+  color: var(--text-primary);
+  font-weight: 600;
+  border-left: 3px solid var(--text-primary);
   padding-left: 9px;
+  box-shadow: inset 2px 0 10px rgba(0, 0, 0, 0.3);
 }
 
 .sidebar-item svg {
@@ -228,22 +246,25 @@
 
 .tag-count {
   flex-shrink: 0;
-  font-size: 12px;
-  color: var(--text-secondary);
-  background: rgba(244, 128, 36, 0.1);
-  padding: 2px 6px;
+  font-size: 11px;
+  color: var(--text-primary);
+  background: var(--horror-maroon);
+  border: 1px solid var(--border-subtle);
+  padding: 1px 6px;
   border-radius: 4px;
   font-weight: 600;
   transition: all 0.2s ease;
 }
 
 .sidebar-tag-item:hover .tag-count {
-  background: rgba(244, 128, 36, 0.2);
+  background: var(--primary-dark);
+  border-color: var(--primary-color);
 }
 
 .sidebar-tag-item.active .tag-count {
-  background: rgba(244, 128, 36, 0.3);
-  color: var(--accent-color);
+  background: var(--primary-color);
+  color: #fff;
+  border-color: var(--text-primary);
 }
 
 /* ============================================
@@ -301,8 +322,8 @@
 }
 
 .sidebar-toggle-more:hover {
-  background: rgba(244, 128, 36, 0.08);
-  color: var(--accent-color);
+  background: rgba(122, 0, 0, 0.15);
+  color: var(--text-primary);
 }
 
 .sidebar-loading,
@@ -332,10 +353,11 @@
   align-items: center;
   border-radius: 8px;
   transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .sidebar-user-profile:hover {
-  background: rgba(244, 128, 36, 0.08);
+  background: rgba(122, 0, 0, 0.2);
 }
 
 .sidebar-user-avatar {
@@ -390,30 +412,82 @@
 }
 
 .sidebar-user-menu:hover {
-  background: rgba(244, 128, 36, 0.1);
-  color: var(--accent-color);
+  background: var(--bg-secondary);
+  color: var(--primary-color);
+}
+
+/* User Menu Dropdown */
+.sidebar-user-menu-wrapper {
+  position: relative;
+}
+
+.sidebar-user-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  min-width: 180px;
+  overflow: hidden;
+  margin-top: 8px;
+  animation: slideDown 0.2s ease;
+  z-index: 1000;
+}
+
+.sidebar-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.sidebar-menu-item:hover {
+  background: var(--bg-secondary);
+  color: var(--primary-color);
+}
+
+.sidebar-menu-item span {
+  flex: 1;
+}
+
+.sidebar-user-menu:hover {
+  background: rgba(122, 0, 0, 0.1);
+  color: var(--primary-color);
 }
 
 .sidebar-logout-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
+  width: 100%;
   height: 40px;
   padding: 10px;
   border: none;
-  background: rgba(220, 53, 69, 0.1);
-  color: #dc3545;
+  background: rgba(82, 0, 0, 0.3);
+  color: var(--primary-light);
   cursor: pointer;
   border-radius: 6px;
   font-weight: 500;
   font-size: 13px;
   transition: all 0.2s ease;
+  border: 1px solid var(--border-subtle);
 }
 
 .sidebar-logout-btn:hover {
-  background: rgba(220, 53, 69, 0.2);
-  color: #ff6b6b;
+  background: var(--primary-color);
+  color: #fff;
+  box-shadow: 0 0 10px var(--primary-dark);
 }
 
 /* ============================================
@@ -500,6 +574,17 @@
     left: 0;
   }
 
+  .sidebar-nav.expanded::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 250px;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: -1;
+  }
+
   .sidebar-nav.collapsed {
     left: 0;
     width: 60px;
@@ -507,26 +592,105 @@
 }
 
 /* Adjust main content margin to follow sidebar state */
-.app-main {
-  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.main-content {
+  transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 /* Default: sidebar visible (desktop) */
-.sidebar-nav + .app-main,
-.sidebar-nav ~ .app-main {
-  margin-left: 250px !important;
+.sidebar-nav.expanded ~ .main-content.with-sidebar {
+  margin-left: 250px;
 }
 
 /* Collapsed sidebar -> smaller margin */
-.sidebar-nav.collapsed + .app-main,
-.sidebar-nav.collapsed ~ .app-main {
-  margin-left: 70px !important;
+.sidebar-nav.collapsed ~ .main-content.with-sidebar {
+  margin-left: 70px;
 }
 
 /* On small screens the main should not be offset */
 @media (max-width: 768px) {
-  .sidebar-nav + .app-main,
-  .sidebar-nav ~ .app-main {
+  .sidebar-nav.expanded ~ .main-content.with-sidebar,
+  .sidebar-nav.collapsed ~ .main-content.with-sidebar {
     margin-left: 0 !important;
   }
+}
+
+/* ============================================
+   AUTH BUTTONS (WHEN NOT LOGGED IN)
+   ============================================ */
+
+.sidebar-auth-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.sidebar-login-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(82, 0, 0, 0.2);
+  color: var(--text-primary);
+  border: 1px solid var(--primary-dark);
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  width: 100%;
+  white-space: nowrap;
+}
+
+.sidebar-signup-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+  color: var(--text-primary);
+  border: 1px solid var(--text-primary);
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(82, 0, 0, 0.5);
+  text-transform: uppercase;
+  width: 100%;
+  white-space: nowrap;
+}
+
+.sidebar-login-btn:hover {
+  background: rgba(153, 0, 0, 0.15);
+  border-color: var(--primary-color);
+  color: #fff;
+}
+
+.sidebar-signup-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 15px rgba(153, 0, 0, 0.6);
+  border-color: #fff;
+  color: #fff;
+}
+
+.sidebar-nav.collapsed .sidebar-auth-buttons {
+  gap: 8px;
+}
+
+.sidebar-nav.collapsed .sidebar-login-btn,
+.sidebar-nav.collapsed .sidebar-signup-btn {
+  padding: 10px;
+  font-size: 0;
+  border-width: 1px;
+}
+
+.sidebar-nav.collapsed .sidebar-login-btn svg,
+.sidebar-nav.collapsed .sidebar-signup-btn svg {
+  margin: 0;
 }

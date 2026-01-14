@@ -56,7 +56,22 @@ const LoginPage = () => {
     if (result?.success) {
       navigate('/');
     } else {
-      setError(result?.message || 'Login failed');
+      let errorMessage = result?.message || 'Login failed';
+      
+      // Handle unverified account specifically
+      if (errorMessage === 'ACCOUNT_NOT_VERIFIED') {
+        localStorage.setItem('pendingVerificationEmail', formData.email);
+        errorMessage = (
+          <span>
+            Your account is not verified. 
+            <Link to="/registration-success" style={{ color: '#fff', marginLeft: '5px', textDecoration: 'underline' }}>
+              Resend verification email?
+            </Link>
+          </span>
+        );
+      }
+      
+      setError(errorMessage);
     }
     
     setLoading(false);
@@ -112,7 +127,7 @@ const LoginPage = () => {
             </div>
 
             <button type="submit" className="btn-signin" disabled={loading}>
-              {loading ? 'Logging in...' : 'Log In'}
+              {loading ? 'Logging in...' : 'Login'}
             </button>
           </form>
 

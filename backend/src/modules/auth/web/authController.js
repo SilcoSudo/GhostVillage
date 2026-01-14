@@ -167,3 +167,85 @@ export const getMeWeb = async (req, res) => {
     });
   }
 };
+
+export const changePasswordWeb = async (req, res) => {
+  try {
+    const userId = req.user?.userId;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Current password and new password are required",
+      });
+    }
+
+    await AuthService.changePassword(userId, currentPassword, newPassword);
+
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully",
+    });
+  } catch (error) {
+    console.error("Change Password error:", error);
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to change password",
+    });
+  }
+};
+
+export const forgotPasswordWeb = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email is required" });
+    }
+
+    await AuthService.forgotPassword(email);
+
+    return res.status(200).json({
+      success: true,
+      message: "If an account exists, a reset link has been sent.",
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to process forgot password",
+    });
+  }
+};
+
+export const resetPasswordWeb = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Token and password are required" });
+    }
+
+    await AuthService.resetPassword(token, password);
+
+    return res.status(200).json({
+      success: true,
+      message: "Password has been reset successfully.",
+    });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to reset password",
+    });
+  }
+};

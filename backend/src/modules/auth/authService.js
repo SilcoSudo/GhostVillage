@@ -185,6 +185,11 @@ export const AuthService = {
       throw new Error("Invalid password");
     }
 
+    // Check if account is verified
+    if (!user.isVerified) {
+      throw new Error("ACCOUNT_NOT_VERIFIED");
+    }
+
     const token = generateToken(user._id, rememberMe);
 
     return {
@@ -247,6 +252,83 @@ export const AuthService = {
       throw new Error("Player not found");
     }
     return player.toJSON();
+  },
+
+  /**
+   * WEB: Change Password
+   */
+  changePassword: async (userId, currentPassword, newPassword) => {
+    const user = await userModel.findById(userId).select("+password");
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Verify current password
+    const isPasswordValid = await user.comparePassword(currentPassword);
+    if (!isPasswordValid) {
+      throw new Error("Invalid current password");
+    }
+
+    // Set new password
+    user.password = newPassword;
+    await user.save();
+
+    return { success: true };
+  },
+
+  /**
+   * WEB: Forgot Password - Send reset link
+   */
+  forgotPassword: async (email) => {
+    const user = await userModel.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      // Don't leak user existence? Actually for a forum it's fine.
+      // But for security, we usually say "If an account exists, an email was sent"
+      return { success: true };
+    }
+
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(rawToken)
+      .digest("hex");
+
+    user.resetPasswordToken = tokenHash;
+    user.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    await user.save();
+
+    const resetLink = `${config.frontendUrl.replace(
+      /\/+$/,
+      ""
+    )}/reset-password?token=${rawToken}`;
+    await MailService.sendResetPasswordEmail(email, resetLink);
+
+    return { success: true };
+  },
+
+  /**
+   * WEB: Reset Password - Use token to set new password
+   */
+  resetPassword: async (token, newPassword) => {
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+    const user = await userModel.findOne({
+      resetPasswordToken: tokenHash,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      throw new Error("Invalid or expired reset token");
+    }
+
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    return { success: true };
   },
 };
 
