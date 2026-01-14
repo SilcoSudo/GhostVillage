@@ -31,18 +31,20 @@
 }
 
 .brand-name {
-  font-family: 'Cinzel', serif;
+  font-family: 'Courier New', Courier, monospace;
   font-size: 26px;
   font-weight: bold;
-  color: #2E8B7E;
+  color: var(--accent-color);
   margin: 0;
   cursor: pointer;
   transition: color 0.3s ease;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  letter-spacing: 1px;
 }
 
 .brand-name:hover {
-  color: #4BA699;
+  color: var(--primary-light);
+  text-shadow: 0 0 10px rgba(122, 0, 0, 0.5);
 }
 
 /* Search Bar */
@@ -78,8 +80,8 @@
 
 .search-input:focus {
   outline: none;
-  border-color: #4BA699;
-  box-shadow: 0 0 0 3px rgba(75, 166, 153, 0.1);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(122, 0, 0, 0.15);
   background: var(--bg-tertiary);
 }
 
@@ -107,13 +109,13 @@
 
 .profile-trigger:hover {
   background: var(--bg-tertiary);
-  border-color: #4BA699;
+  border-color: var(--primary-color);
 }
 
 .profile-avatar {
   width: 36px;
   height: 36px;
-  background: linear-gradient(135deg, #2E8B7E, #4BA699);
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -171,7 +173,7 @@
 .profile-avatar-large {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #2E8B7E, #4BA699);
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -227,7 +229,7 @@
 
 .profile-menu-item:hover {
   background: var(--bg-secondary);
-  color: #4BA699;
+  color: var(--primary-color);
 }
 
 .profile-menu-item.logout {
@@ -290,4 +292,30 @@
     width: 32px;
     height: 32px;
   }
+}
+
+/* Language Toggle Button */
+.language-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.language-toggle:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--primary-color);
+  color: var(--primary-light);
+}
+
+.language-toggle:active {
+  transform: scale(0.98);
 }

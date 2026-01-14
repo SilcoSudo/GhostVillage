@@ -49,7 +49,7 @@ const LoginPage = () => {
       {/* Left side - Form */}
       <div className="login-form-section">
         <div className="login-form-wrapper">
-          <h2>Sign In</h2>
+          <h2>Login</h2>
           <p className="form-subtitle">Login into your account</p>
           
           {error && <div className="alert-message alert-danger">{error}</div>}
@@ -86,7 +86,7 @@ const LoginPage = () => {
             </div>
 
             <button type="submit" className="btn-signin" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Logging in...' : 'Login'}
             </button>
           </form>
 
@@ -98,7 +98,7 @@ const LoginPage = () => {
             <p>
               Don't have an account?{' '}
               <Link to="/register">
-                Sign up now
+                Register now
               </Link>
             </p>
           </div>

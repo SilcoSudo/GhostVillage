@@ -100,7 +100,7 @@ const RegisterPage = () => {
     <div className="login-page">
       <div className="login-form-section">
         <div className="login-form-wrapper">
-          <h2>Create Account</h2>
+          <h2>Register</h2>
           <p className="form-subtitle">Join GhostVillage today</p>
 
           {error && <div className="alert-message alert-danger">{error}</div>}

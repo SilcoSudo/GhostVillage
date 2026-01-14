@@ -34,15 +34,9 @@ body {
   transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Base style for content with sidebar */
 .main-content.with-sidebar {
-  margin-left: 250px;
-}
-
-/* When sidebar is collapsed */
-@media (min-width: 769px) {
-  .sidebar-nav.collapsed ~ .main-content.with-sidebar {
-    margin-left: 70px;
-  }
+  /* Default handled by SidebarNav.css selectors */
 }
 
 /* Mobile: No sidebar margin */

@@ -1,14 +1,14 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, User, LogOut, Settings } from 'lucide-react';
-import { AuthContext } from '../../../app/context/AuthContext';
+import { Search, Globe } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import i18nConfig from '../../../i18n';
 import '../../assets/styles/Header.css';
 
 const Header = () => {
-  const { user, logout } = useContext(AuthContext);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -17,9 +17,15 @@ const Header = () => {
     }
   };
 
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login');
+  const toggleLanguage = () => {
+    const currentLang = i18n.language || i18nConfig.language;
+    const newLang = currentLang === 'en' ? 'vi' : 'en';
+    
+    if (i18n.changeLanguage) {
+      i18n.changeLanguage(newLang);
+    } else {
+      i18nConfig.changeLanguage(newLang);
+    }
   };
 
   return (
@@ -44,56 +50,16 @@ const Header = () => {
           </div>
         </form>
 
-        {/* Profile Section */}
+        {/* Language Toggle */}
         <div className="header-profile">
-          <div 
-            className="profile-trigger"
-            onClick={() => setShowProfileMenu(!showProfileMenu)}
+          <button 
+            className="language-toggle"
+            onClick={toggleLanguage}
+            title="Chuyển đổi ngôn ngữ"
           >
-            <div className="profile-avatar">
-              <User size={20} />
-            </div>
-            <span className="profile-name">{user?.username || 'User'}</span>
-          </div>
-
-          {showProfileMenu && (
-            <div className="profile-menu">
-              <div className="profile-menu-header">
-                <div className="profile-info">
-                  <div className="profile-avatar-large">
-                    <User size={24} />
-                  </div>
-                  <div className="profile-details">
-                    <p className="profile-username">{user?.username}</p>
-                    <p className="profile-email">{user?.email}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="profile-menu-divider"></div>
-
-              <button 
-                className="profile-menu-item"
-                onClick={() => {
-                  setShowProfileMenu(false);
-                  navigate('/account/settings');
-                }}
-              >
-                <Settings size={18} />
-                <span>Cài đặt</span>
-              </button>
-
-              <div className="profile-menu-divider"></div>
-
-              <button 
-                className="profile-menu-item logout"
-                onClick={handleLogout}
-              >
-                <LogOut size={18} />
-                <span>Đăng xuất</span>
-              </button>
-            </div>
-          )}
+            <Globe size={20} />
+            <span>{i18n.language === 'en' ? 'EN' : 'VI'}</span>
+          </button>
         </div>
       </div>
     </header>

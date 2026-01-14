@@ -11,6 +11,28 @@
     "noAccount": "Chưa có tài khoản? Đăng ký",
     "haveAccount": "Đã có tài khoản? Đăng nhập",
     "signUp": "Đăng Ký",
-    "signIn": "Đăng Nhập"
+    "signIn": "Đăng Nhập",
+    "login": "Đăng Nhập",
+    "register": "Đăng Ký"
+  },
+  "navbar": {
+    "home": "Trang Chủ",
+    "allPosts": "Tất Cả Bài Viết",
+    "myPosts": "Bài Viết Của Tôi",
+    "saved": "Đã Lưu",
+    "createPost": "Tạo Bài Viết",
+    "browse": "Khám Phá",
+    "myContent": "Nội Dung Của Tôi",
+    "settings": "Cài Đặt",
+    "changePassword": "Đổi Mật Khẩu",
+    "collapse": "Thu gọn sidebar",
+    "expand": "Mở rộng sidebar",
+    "viewProfile": "Xem hồ sơ",
+    "userMenu": "Menu người dùng",
+    "followers": "Người theo dõi",
+    "following": "Đang theo dõi"
+  },
+  "common": {
+    "logout": "Đăng Xuất"
   }
 }

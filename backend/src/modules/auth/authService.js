@@ -100,7 +100,7 @@ export const AuthService = {
    */
   loginWeb: async (email, password) => {
     // Find user by email
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await userModel.findOne({ email: email.toLowerCase() });
     
     if (!user) {
       throw new Error("User not found");

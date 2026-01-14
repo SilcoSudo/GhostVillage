@@ -1,5 +1,5 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../app/hooks/useAuth';
 import api from '../../services/axios';
@@ -19,7 +19,9 @@ import {
   ChevronFirst,
   ChevronLast,
   MoreVertical,
-  LogOut
+  LogOut,
+  LogIn,
+  UserPlus
 } from 'lucide-react';
 import "../../assets/styles/SidebarNav.css";
 
@@ -38,6 +40,7 @@ const SidebarNav = () => {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(() => {
     try {
@@ -46,6 +49,7 @@ const SidebarNav = () => {
       return true;
     }
   });
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   // Ensure sidebar is collapsed automatically on small screens
   useEffect(() => {
@@ -64,19 +68,24 @@ const SidebarNav = () => {
 
   useEffect(() => {
     fetchNavigationData();
-    if (user) {
-      fetchUserProfile();
-    }
+    // User profile fetching is disabled for now as the route is not implemented
+    // if (user) {
+    //   fetchUserProfile();
+    // }
   }, [user]);
 
 
   const fetchUserProfile = async () => {
     try {
       if (!user?._id) return;
-      const res = await api.get(`/profile/${user._id}`);
+      // The profile route is currently not implemented in the backend (404)
+      // For now, we use the user object provided by useAuth()
+      /*
+      const res = await api.get(`/web/user/profile/${user._id}`);
       if (res.data.success) {
         setProfile(res.data.data);
       }
+      */
     } catch (error) {
       console.error('Error fetching user profile:', error);
     }
@@ -97,8 +106,8 @@ const SidebarNav = () => {
   ] : [];
 
   const userLinks = [
-    { icon: Users, label: 'Followers', path: '/followers' },
-    { icon: MessageSquare, label: 'Following', path: '/following' },
+    { icon: Users, label: t('navbar.followers'), path: '/followers' },
+    { icon: MessageSquare, label: t('navbar.following'), path: '/following' },
     { icon: Settings, label: t('navbar.settings'), path: '/account/settings' },
   ];
 
@@ -111,8 +120,8 @@ const SidebarNav = () => {
           <button
             onClick={() => setExpanded(!expanded)}
             className="sidebar-toggle-btn"
-            title={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
-            aria-label={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
+            title={expanded ? t('navbar.collapse') : t('navbar.expand')}
+            aria-label={expanded ? t('navbar.collapse') : t('navbar.expand')}
           >
             {expanded ? <ChevronFirst size={20} /> : <ChevronLast size={20} />}
           </button>
@@ -162,26 +171,61 @@ const SidebarNav = () => {
         {/* User Profile Footer - Only when logged in */}
         {user && (
           <div className="sidebar-footer">
-            <div className="sidebar-user-profile">
+            <div 
+              className="sidebar-user-profile"
+              onClick={() => navigate(`/profile/${user._id}`)}
+              title={t('navbar.viewProfile')}
+              style={{ cursor: 'pointer' }}
+            >
               <img
-                src={profile?.avatar || `https://ui-avatars.com/api/?name=${user.username}&background=f48024&color=fff`}
-                alt={user.username}
+                src={user.avatar || profile?.avatar || `https://ui-avatars.com/api/?name=${user.username || user.fullname}&background=f48024&color=fff`}
+                alt={user.username || user.fullname}
                 className="sidebar-user-avatar"
               />
               <div className="sidebar-user-info">
-                <h4 className="sidebar-user-name">{user.username}</h4>
+                <h4 className="sidebar-user-name">{user.username || user.fullname}</h4>
                 <p className="sidebar-user-email">{user.email}</p>
               </div>
               {expanded && (
-                <button
-                  className="sidebar-user-menu"
-                  title="User menu"
-                  onClick={() => {
-                    // Toggle user menu - can be expanded later
-                  }}
-                >
-                  <MoreVertical size={18} />
-                </button>
+                <div className="sidebar-user-menu-wrapper">
+                  <button
+                    className="sidebar-user-menu"
+                    title={t('navbar.userMenu')}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowUserMenu(!showUserMenu);
+                    }}
+                  >
+                    <MoreVertical size={18} />
+                  </button>
+                  
+                  {showUserMenu && (
+                    <div className="sidebar-user-menu-dropdown">
+                      <button
+                        className="sidebar-menu-item"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate('/account/settings');
+                          setShowUserMenu(false);
+                        }}
+                      >
+                        <Settings size={16} />
+                        <span>{t('navbar.settings')}</span>
+                      </button>
+                      <button
+                        className="sidebar-menu-item"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate('/account/change-password');
+                          setShowUserMenu(false);
+                        }}
+                      >
+                        <Edit size={16} />
+                        <span>{t('navbar.changePassword')}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
             <button
@@ -192,6 +236,30 @@ const SidebarNav = () => {
               <LogOut size={18} />
               {expanded && <span>{t('common.logout')}</span>}
             </button>
+          </div>
+        )}
+
+        {/* Auth Buttons - Only when not logged in */}
+        {!user && (
+          <div className="sidebar-footer">
+            <div className="sidebar-auth-buttons">
+              <button
+                className="sidebar-login-btn"
+                onClick={() => navigate('/login')}
+                title={t('auth.login')}
+              >
+                <LogIn size={18} />
+                {expanded && <span>{t('auth.login')}</span>}
+              </button>
+              <button
+                className="sidebar-signup-btn"
+                onClick={() => navigate('/register')}
+                title={t('auth.register')}
+              >
+                <UserPlus size={18} />
+                {expanded && <span>{t('auth.register')}</span>}
+              </button>
+            </div>
           </div>
         )}
       </aside>
