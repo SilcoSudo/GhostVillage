@@ -3,7 +3,7 @@ using VContainer;
 using TMPro;
 using System.Collections.Generic;
 using Game.Core.Network;
-using Game.Core.Scenes;
+using Game.Core.Scene;
 using Game.Core.Network.Lobby;
 using Game.Script.UI;
 
@@ -11,127 +11,161 @@ namespace Game.UI.Lobby
 {
     public class LobbyListSceneManager : MonoBehaviour
     {
-        [Header("UI")]
-        [SerializeField] private Transform _contentParent; // Chỗ chứa item
-        [SerializeField] private LobbyItemUI _itemPrefab;  // Prefab dòng lobby
-        [SerializeField] private GameObject _emptyText;    // Text "Không có phòng nào"
+        [Header("UI References")]
+        [SerializeField] private Transform _contentParent;
+        [SerializeField] private LobbyItemUI _itemPrefab;
+        [SerializeField] private GameObject _emptyText;
 
         [Header("Create Lobby UI")]
-        [SerializeField] private GameObject _createLobbyPopup; // Panel Popup nhập thông tin (Đã đổi tên)
-        [SerializeField] private TMP_InputField _inputLobbyName; // Ô nhập tên lobby (Đã đổi tên)
-        [SerializeField] private TMP_InputField _inputPassword; // Ô nhập pass
+        [SerializeField] private GameObject _createLobbyPopup;
+        [SerializeField] private TMP_InputField _inputLobbyName;
+        [SerializeField] private TMP_InputField _inputPassword;
 
         [Inject] private INetworkService _network;
         [Inject] private ISceneLoaderService _sceneLoader;
         [Inject] private GlobalUIManager _globalUI;
 
+        /// <summary>
+        /// Khoi tao trang thai UI ban dau va dang ky cac su kien mang.
+        /// Logic: Bat loading ngay lap tuc de cho phan hoi tu Hallway/Lobby.
+        /// </summary>
         private void Start()
         {
-            // 1. Đăng ký sự kiện
             _network.OnLobbyListUpdated += UpdateUI;
-
-            // Đăng ký sự kiện khi tạo thất bại để tắt loading
             _network.OnCreateLobbyFailed += OnCreateFailed;
-            _network.OnHallwayJoined += OnReadyToInteract; // Sự kiện quan trọng mới thêm
+            _network.OnHallwayJoined += OnReadyToInteract;
 
-            // 2. Mặc định tắt Popup tạo phòng
             if (_createLobbyPopup != null) _createLobbyPopup.SetActive(false);
 
-            // 3. Refresh logic
             if (_network.IsConnected)
             {
-                // BẬT LOADING NGAY LẬP TỨC để ngăn người dùng bấm lung tung khi chưa sẵn sàng
                 _globalUI.ShowLoading(true);
-                // Nếu đã kết nối, đảm bảo đang ở Hallway để nhận list
                 _network.JoinHallway();
             }
             else
             {
-                // Edge case: Nếu rớt mạng thì quay về MainMenu connect lại
-                Debug.LogWarning("Lost connection! Back to MainMenu.");
+                Debug.LogWarning("[UI] Connection lost. Redirecting to MainMenu.");
                 _sceneLoader.LoadSceneAsync("MainMenu");
             }
         }
 
+        /// <summary>
+        /// Huy dang ky cac su kien khi doi tuong bi pha huy.
+        /// </summary>
         private void OnDestroy()
         {
-            if (_network != null) _network.OnLobbyListUpdated -= UpdateUI;
+            if (_network != null)
+            {
+                _network.OnLobbyListUpdated -= UpdateUI;
+                _network.OnCreateLobbyFailed -= OnCreateFailed;
+                _network.OnHallwayJoined -= OnReadyToInteract;
+            }
         }
 
-        // Chỉ khi nào vào Sảnh xong mới tắt Loading
+        /// <summary>
+        /// Callback khi da vao Hallway/Lobby thanh cong va san sang tuong tac.
+        /// </summary>
         private void OnReadyToInteract()
         {
-            Debug.Log("✅ UI đã sẵn sàng tương tác!");
+            Debug.Log("[UI] Lobby system ready for interaction.");
             _globalUI.ShowLoading(false);
         }
 
+        /// <summary>
+        /// Quay lai man hinh chinh.
+        /// </summary>
         public void OnBackClick()
         {
             _sceneLoader.LoadSceneAsync("MainMenu");
         }
 
-        // Hàm xử lý hiển thị
+        /// <summary>
+        /// Cap nhat danh sach phong hien thi tren UI.
+        /// Tham so: lobbies - Danh sach du lieu phong nhan tu mang.
+        /// Logic: Don dep danh sach cu va khoi tao lai cac item moi dua tren LobbyData.
+        /// </summary>
         private void UpdateUI(List<LobbyData> lobbies)
         {
-            // Clear list cũ
-            foreach (Transform child in _contentParent) Destroy(child.gameObject);
+            Debug.Log($"[UI] Refreshing room list. Total rooms: {lobbies.Count}");
 
-            // Ẩn hiện text trống
-            if (_emptyText != null) _emptyText.SetActive(lobbies.Count == 0);
+            foreach (Transform child in _contentParent)
+            {
+                Destroy(child.gameObject);
+            }
 
-            // Spawn list mới
+            if (_emptyText != null)
+            {
+                _emptyText.SetActive(lobbies.Count == 0);
+            }
+
             foreach (var lobby in lobbies)
             {
                 var item = Instantiate(_itemPrefab, _contentParent);
-                // Setup item (Chỉ hiển thị, chưa cần logic Join phức tạp vội)
                 item.Setup(lobby, (data) =>
                 {
-                    Debug.Log($"Người dùng chọn phòng: {data.Name}");
+                    Debug.Log($"[UI] User selected room: {data.Name}");
+                    OnLobbyItemClicked(data);
                 });
             }
         }
 
-        // 1. Gắn vào nút "Create Room" ở góc màn hình -> Mở Popup
+        /// <summary>
+        /// Mo popup nhap thong tin tao phong.
+        /// </summary>
         public void OnOpenCreatePopupClick()
         {
             _createLobbyPopup.SetActive(true);
-            _inputLobbyName.text = ""; // Reset text
+            _inputLobbyName.text = "";
             _inputPassword.text = "";
         }
 
-        // 2. Gắn vào nút "Cancel" hoặc dấu X trong Popup -> Đóng Popup
+        /// <summary>
+        /// Dong popup tao phong.
+        /// </summary>
         public void OnCloseCreatePopupClick()
         {
             _createLobbyPopup.SetActive(false);
         }
 
-        // 3. Gắn vào nút "Confirm" trong Popup -> Gửi lệnh tạo
+        /// <summary>
+        /// Xu ly lenh xac nhan tao phong.
+        /// Logic: Trim khoang trang, kiem tra ten phong hop le va ngan chan double-click bang loading.
+        /// </summary>
         public void OnConfirmCreateClick()
         {
-            string roomName = _inputLobbyName.text;
-            string password = _inputPassword.text;
-
-
-            Debug.Log($"📝 Input Data -> Name: '{roomName}' | Pass: '{password}'");
-
+            string roomName = _inputLobbyName.text.Trim();
             if (string.IsNullOrEmpty(roomName))
             {
-                Debug.LogWarning("Tên phòng không được để trống!");
+                Debug.LogWarning("[UI] Room name cannot be empty.");
                 return;
             }
 
-            // Hiện loading xoay xoay
             _globalUI.ShowLoading(true);
+            _createLobbyPopup.SetActive(false);
 
-            // Gọi Network tạo phòng (Khi tạo xong, Photon tự chuyển scene nhờ logic bên NetworkManager)
-            _network.CreateLobby(roomName, password, 4); // Max 4 người
+            Debug.Log($"[UI] Sending create lobby request: {roomName}");
+            _network.CreateLobby(roomName, _inputPassword.text, 4);
         }
 
+        /// <summary>
+        /// Callback khi thao tac tao phong bi loi tu phia server.
+        /// </summary>
         private void OnCreateFailed()
         {
             _globalUI.ShowLoading(false);
-            Debug.LogError("Tạo phòng thất bại (Trùng tên hoặc lỗi server)!");
-            // Có thể hiện popup thông báo lỗi ở đây nếu muốn
+            Debug.LogError("[UI] Room creation failed on server.");
+        }
+
+        /// <summary>
+        /// Xu ly khi nguoi dung click vao mot phong trong danh sach.
+        /// Tham so: lobbyData - Du lieu phong duoc chon.
+        /// Logic: Hien thi loading va goi lenh gia nhap thong qua Network Service.
+        /// </summary>
+        private void OnLobbyItemClicked(LobbyData lobbyData)
+        {
+            _globalUI.ShowLoading(true);
+            Debug.Log($"[UI] Attempting to join room: {lobbyData.Name}");
+            _network.JoinLobbySession(lobbyData.Name);
         }
     }
 }

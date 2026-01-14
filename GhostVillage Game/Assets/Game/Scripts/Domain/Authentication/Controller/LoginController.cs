@@ -1,5 +1,5 @@
 using Cysharp.Threading.Tasks;
-using Game.Core.Scenes;
+using Game.Core.Scene;
 using Game.Domain.Authentication;
 using UnityEngine;
 

@@ -3,7 +3,7 @@ using VContainer.Unity;
 using UnityEngine;
 using System.Threading;
 using Cysharp.Threading.Tasks; // Khuyên dùng UniTask thay vì Coroutine
-using Game.Core.Scenes;
+using Game.Core.Scene;
 using Game.ScriptableObjects.GameConfig;
 using UnityEngine.SceneManagement;
 using Game.Domain.Account.Service;

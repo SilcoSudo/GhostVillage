@@ -2,7 +2,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine.SceneManagement;
 using UnityEngine; // Để dùng Debug
 
-namespace Game.Core.Scenes
+namespace Game.Core.Scene
 {
     public interface ISceneLoaderService
     {

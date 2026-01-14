@@ -1,7 +1,8 @@
 using UnityEngine;
 using Photon.Pun;
 using VContainer;
-using Game.Script.UI; // Để gọi GlobalUIManager
+using Game.Script.UI;
+using Cysharp.Threading.Tasks; // Để gọi GlobalUIManager
 
 namespace Game.Core.Lobby
 {
@@ -14,32 +15,43 @@ namespace Game.Core.Lobby
         // Inject GlobalUIManager để tắt loading
         [Inject] private GlobalUIManager _globalUI;
 
+        // ✅ BEST PRACTICE: Dùng async void Start với UniTask
+        // Không cần [System.Obsolete] nữa
         [System.Obsolete]
-        private void Start()
+        private async void Start()
         {
-            // 1. TẮT LOADING SCREEN (Quan trọng nhất để hết bị treo màn hình)
+            // 1. Đợi 1 frame để Unity ổn định Scene và UI
+            await UniTask.Yield(PlayerLoopTiming.Update);
+
+            // 2. Tắt Loading
             if (_globalUI != null)
             {
-                Debug.Log("✅ Đã vào Lobby Map. Tắt Loading...");
+                Debug.Log("✅ [LobbyManager] Scene Ready. Tắt Loading.");
                 _globalUI.ShowLoading(false);
             }
-
             else
             {
-                // Fallback nếu quên tạo Scope
-                Debug.LogWarning("⚠️ GlobalUI null! Kiểm tra xem đã tạo LobbyGameLifetimeScope chưa?");
+                // Fallback: Tìm thủ công nếu quên tạo Scope
                 var manualUI = FindObjectOfType<GlobalUIManager>();
                 if (manualUI != null) manualUI.ShowLoading(false);
             }
 
-            // 2. Spawn Nhân Vật
+            // 3. Sinh nhân vật
+            SpawnPlayer();
+        }
+
+        private void SpawnPlayer()
+        {
             if (PhotonNetwork.IsConnected)
             {
-                // Random nhẹ vị trí để không đè nhau
                 Vector3 randomPos = _spawnPoint.position + new Vector3(Random.Range(-2f, 2f), 0, Random.Range(-2f, 2f));
 
-                Debug.Log($"🚀 Spawning Player tại: {randomPos}");
+                Debug.Log($"👾 [LobbyManager] Spawning Player: {randomPos}");
                 PhotonNetwork.Instantiate(_playerPrefabName, randomPos, Quaternion.identity);
+            }
+            else
+            {
+                Debug.LogWarning("⚠️ [LobbyManager] Mất kết nối Photon! Không thể spawn.");
             }
         }
     }

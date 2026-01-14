@@ -1,6 +1,6 @@
 using UnityEngine;
 using VContainer;
-using Game.Core.Scenes; // Namespace chứa ISceneLoaderService
+using Game.Core.Scene; // Namespace chứa ISceneLoaderService
 using Game.Core.Network;
 using Game.Domain.Account.Service;
 using UnityEngine.UI;

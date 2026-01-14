@@ -2,7 +2,7 @@ using VContainer;
 using VContainer.Unity;
 using UnityEngine;
 using Game.Core.Network;
-using Game.Core.Scenes;
+using Game.Core.Scene;
 using Game.Core.Network.API;
 using Game.Domain.Maps;
 using Game.ScriptableObjects.GameConfig;
