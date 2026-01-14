@@ -93,6 +93,16 @@ export const AuthProvider = ({ children }) => {
     else localStorage.removeItem('token');
   };
 
+  const refreshUser = async () => {
+    const savedToken = localStorage.getItem('token');
+    if (savedToken) {
+      const result = await authService.getCurrentUser(savedToken);
+      if (result.success) {
+        setUser(result.user);
+      }
+    }
+  };
+
   const logout = async () => {
     await authService.logout();
     setUser(null);
@@ -122,8 +132,7 @@ export const AuthProvider = ({ children }) => {
       login, 
       register, 
       logout, 
-      setSession,
-      forgotPassword,
+      setSession,      refreshUser,      forgotPassword,
       resetPassword,
       changePassword
     }}>

@@ -1,14 +1,15 @@
 import express from 'express';
+import { getUserIdProfile, updateName, toggleEmailVisibility } from './userController.js';
+import { authMiddleware } from '../../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
 /**
  * User Routes
- * Placeholder for future user management routes
  */
 
-// TODO: Implement user routes
-// router.get('/profile', getUserProfile);
-// router.put('/profile', updateUserProfile);
+router.get('/profile/:id', getUserIdProfile);
+router.put('/profile/update-name', authMiddleware, updateName);
+router.put('/profile/toggle-email-visibility', authMiddleware, toggleEmailVisibility);
 
 export default router;
