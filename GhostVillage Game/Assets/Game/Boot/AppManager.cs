@@ -3,7 +3,7 @@ using VContainer.Unity;
 using UnityEngine;
 using System.Threading;
 using Cysharp.Threading.Tasks; // Khuyên dùng UniTask thay vì Coroutine
-using Game.Core.Scenes;
+using Game.Core.Scene;
 using Game.ScriptableObjects.GameConfig;
 using UnityEngine.SceneManagement;
 using Game.Domain.Account.Service;
@@ -18,8 +18,6 @@ namespace Game.Boot
         private readonly AccountService _account;
         private readonly GameConfigSO _config;
 
-        // Constructor Injection: Tự động nhận Service đã đăng ký bên Scope
-        [Inject]
         public AppManager(ISceneLoaderService sceneLoader, AccountService account)
         {
             _sceneLoader = sceneLoader;
