@@ -18,7 +18,15 @@ const ProfilePage = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('activity');
   const [isEditingName, setIsEditingName] = useState(false);
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [isEditingAvatar, setIsEditingAvatar] = useState(false);
   const [newName, setNewName] = useState('');
+  const [newBio, setNewBio] = useState('');
+  const [newAvatar, setNewAvatar] = useState('');
+  const [updating, setUpdating] = useState(false);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   const isOwnProfile = currentUser && (id ? currentUser._id === id : true);
 
@@ -33,10 +41,15 @@ const ProfilePage = () => {
           return;
         }
 
-        const response = await api.get(`/web/user/profile/${targetId}`);
+        // Use own profile endpoint if it's current user, else use public profile
+        const endpoint = isOwnProfile ? '/web/user/profile/me' : `/web/user/profile/${targetId}`;
+        const response = await api.get(endpoint);
+        
         if (response.data.success) {
           setProfileUser(response.data.data);
           setNewName(response.data.data.fullname);
+          setNewBio(response.data.data.bio || '');
+          setNewAvatar(response.data.data.avatar || '');
         } else {
           setError(response.data.message || 'Subject not found');
         }
@@ -49,7 +62,7 @@ const ProfilePage = () => {
     };
 
     fetchProfile();
-  }, [id, currentUser]);
+  }, [id, currentUser, isOwnProfile]);
 
   const handleUpdateName = async () => {
     try {
@@ -61,6 +74,104 @@ const ProfilePage = () => {
       }
     } catch (err) {
       alert('Failed to update name');
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!newName.trim()) {
+      alert('Name cannot be empty');
+      return;
+    }
+    if (newName.length > 100) {
+      alert('Name cannot exceed 100 characters');
+      return;
+    }
+    if (newBio.length > 500) {
+      alert('Bio cannot exceed 500 characters');
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      const response = await api.put('/web/user/profile/me', {
+        fullname: newName,
+        avatar: newAvatar || undefined,
+        bio: newBio || undefined
+      });
+      
+      if (response.data.success) {
+        const updatedData = response.data.data;
+        setProfileUser(updatedData);
+        setIsEditingName(false);
+        setIsEditingBio(false);
+        setIsEditingAvatar(false);
+        refreshUser();
+        alert('Profile updated successfully!');
+      }
+    } catch (err) {
+      console.error('Update error:', err);
+      alert(err.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleAvatarFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
+      alert('Only JPEG, PNG, and GIF images are allowed');
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size cannot exceed 5MB');
+      return;
+    }
+
+    setAvatarFile(file);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUploadAvatar = async () => {
+    if (!avatarFile) {
+      alert('Please select an image first');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('avatar', avatarFile);
+
+      const response = await api.post('/web/user/avatar/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.data.success) {
+        const updatedData = response.data.data;
+        setProfileUser(updatedData);
+        setAvatarFile(null);
+        setAvatarPreview('');
+        refreshUser();
+        alert('Avatar uploaded successfully!');
+      }
+    } catch (err) {
+      console.error('Upload error:', err);
+      alert(err.response?.data?.message || 'Failed to upload avatar');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -293,6 +404,104 @@ const ProfilePage = () => {
                 <h4 className="feed-title">ACCOUNT PREFERENCES</h4>
                 <div className="settings-grid">
                   <div className="settings-group">
+                    <label><UserCheck size={16} /> PROFILE DETAILS</label>
+                    <div className="profile-edit-form">
+                      <div className="form-group">
+                        <label>Display Name</label>
+                        <input 
+                          type="text"
+                          value={newName}
+                          onChange={(e) => setNewName(e.target.value.slice(0, 100))}
+                          className="horror-input"
+                          placeholder="Enter display name"
+                          maxLength={100}
+                        />
+                        <span className="char-count">{newName.length}/100</span>
+                      </div>
+
+                      <div className="form-group">
+                        <label>Bio</label>
+                        <textarea 
+                          value={newBio}
+                          onChange={(e) => setNewBio(e.target.value.slice(0, 500))}
+                          className="horror-input"
+                          placeholder="Enter bio (optional)"
+                          maxLength={500}
+                          rows={3}
+                        />
+                        <span className="char-count">{newBio.length}/500</span>
+                      </div>
+
+                      <div className="form-group">
+                        <label>Avatar Upload</label>
+                        <div className="avatar-upload-section">
+                          <input 
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarFileChange}
+                            className="file-input"
+                            disabled={uploading}
+                          />
+                          <span className="file-info">Supported: JPEG, PNG, GIF (Max 5MB)</span>
+                          
+                          {avatarPreview && (
+                            <div className="avatar-preview">
+                              <img src={avatarPreview} alt="Avatar preview" />
+                            </div>
+                          )}
+
+                          {avatarFile && (
+                            <button
+                              className="btn-horror-upload"
+                              onClick={handleUploadAvatar}
+                              disabled={uploading}
+                            >
+                              {uploading ? 'UPLOADING...' : 'UPLOAD AVATAR'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="form-group">
+                        <label>Avatar URL (Alternative)</label>
+                        <input 
+                          type="text"
+                          value={newAvatar}
+                          onChange={(e) => setNewAvatar(e.target.value)}
+                          className="horror-input"
+                          placeholder="Or enter image URL directly"
+                        />
+                        {newAvatar && !avatarFile && (
+                          <div className="avatar-preview">
+                            <img src={newAvatar} alt="Avatar preview" onError={(e) => e.target.style.display = 'none'} />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="form-actions">
+                        <button 
+                          className="btn-horror"
+                          onClick={handleUpdateProfile}
+                          disabled={updating}
+                        >
+                          {updating ? 'SAVING...' : 'SAVE CHANGES'}
+                        </button>
+                        <button 
+                          className="btn-horror-outline"
+                          onClick={() => {
+                            setNewName(profileUser.fullname);
+                            setNewBio(profileUser.bio || '');
+                            setNewAvatar(profileUser.avatar || '');
+                          }}
+                          disabled={updating}
+                        >
+                          CANCEL
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="settings-group">
                     <label><Lock size={16} /> SECURITY</label>
                     <button className="btn-horror-outline" onClick={() => navigate('/account/change-password')}>
                       CHANGE PASSWORD
@@ -310,13 +519,6 @@ const ProfilePage = () => {
                         {profileUser.emailVisibility ? 'ENABLED' : 'DISABLED'}
                       </button>
                     </div>
-                  </div>
-
-                  <div className="settings-group">
-                    <label><UserCheck size={16} /> PROFILE DETAILS</label>
-                    <button className="btn-horror-outline" onClick={() => setIsEditingName(true)}>
-                      UPDATE DISPLAY NAME
-                    </button>
                   </div>
                 </div>
               </div>

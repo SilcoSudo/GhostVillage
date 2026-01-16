@@ -460,3 +460,149 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Profile Edit Form */
+.profile-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.horror-input,
+.profile-edit-form textarea {
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.horror-input:focus,
+.profile-edit-form textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 8px rgba(204, 29, 29, 0.3);
+}
+
+.profile-edit-form textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.char-count {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  text-align: right;
+}
+
+.avatar-preview {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+}
+
+.avatar-preview img {
+  max-width: 150px;
+  max-height: 150px;
+  border-radius: 6px;
+  border: 2px solid var(--primary-color);
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.form-actions button {
+  flex: 1;
+  padding: 12px;
+  font-weight: 600;
+}
+
+.form-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Avatar Upload Styles */
+.avatar-upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.file-input {
+  padding: 10px;
+  background: var(--bg-tertiary);
+  border: 2px dashed var(--primary-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.file-input:hover {
+  background: var(--bg-secondary);
+  border-color: var(--primary-color);
+}
+
+.file-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.file-info {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.btn-horror-upload {
+  padding: 10px 16px;
+  background: var(--primary-color);
+  color: var(--card-bg);
+  border: 1px solid var(--primary-color);
+  border-radius: 6px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+}
+
+.btn-horror-upload:hover:not(:disabled) {
+  background: transparent;
+  color: var(--primary-color);
+}
+
+.btn-horror-upload:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+

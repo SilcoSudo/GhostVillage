@@ -146,18 +146,19 @@ export const logoutWeb = (req, res) => {
 
 export const getMeWeb = async (req, res) => {
   try {
-    const userId = req.user?.userId;
-    if (!userId) {
+    const user = req.user;
+    
+    if (!user) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized",
       });
     }
 
-    const user = await AuthService.getUserById(userId);
+    // Return user in toJSON format (same as login) for consistency
     return res.status(200).json({
       success: true,
-      user,
+      user: user.toJSON(),
     });
   } catch (error) {
     console.error("Get Me error:", error);
