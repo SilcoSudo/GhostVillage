@@ -9,10 +9,9 @@ namespace Game.Core.Lobby
     public class LobbyManager : MonoBehaviour
     {
         [Header("Setup")]
-        [SerializeField] private string _playerPrefabName = "PlayerCharacter"; // Tên Prefab trong thư mục Resources
-        [SerializeField] private Transform _spawnPoint; // Vị trí sinh ra trên Terrain
+        [SerializeField] private string _playerPrefabName = "PlayerCharacter";
+        [SerializeField] private Transform _spawnPoint;
 
-        // Inject GlobalUIManager để tắt loading
         [Inject] private GlobalUIManager _globalUI;
 
         // ✅ BEST PRACTICE: Dùng async void Start với UniTask
@@ -24,20 +23,31 @@ namespace Game.Core.Lobby
             await UniTask.Yield(PlayerLoopTiming.Update);
 
             // 2. Tắt Loading
-            if (_globalUI != null)
+            if (_globalUI != null) _globalUI.ShowLoading(false);
+
+            // 3. ĐỢI CHO ĐẾN KHI THỰC SỰ VÀO PHÒNG
+            // Đây là chìa khóa để sửa lỗi RaiseEvent(202)
+            await WaitForInRoom();
+
+            // 4. Sinh nhân vật
+            SpawnPlayer();
+        }
+
+        private async UniTask WaitForInRoom()
+        {
+            float timeout = 5f; // Giới hạn đợi 5 giây
+            float timer = 0;
+
+            while (!PhotonNetwork.InRoom && timer < timeout)
             {
-                Debug.Log("✅ [LobbyManager] Scene Ready. Tắt Loading.");
-                _globalUI.ShowLoading(false);
-            }
-            else
-            {
-                // Fallback: Tìm thủ công nếu quên tạo Scope
-                var manualUI = FindObjectOfType<GlobalUIManager>();
-                if (manualUI != null) manualUI.ShowLoading(false);
+                timer += Time.deltaTime;
+                await UniTask.Yield();
             }
 
-            // 3. Sinh nhân vật
-            SpawnPlayer();
+            if (!PhotonNetwork.InRoom)
+            {
+                Debug.LogError("❌ [LobbyManager] Quá thời gian chờ vào phòng. Kiểm tra kết nối!");
+            }
         }
 
         private void SpawnPlayer()
