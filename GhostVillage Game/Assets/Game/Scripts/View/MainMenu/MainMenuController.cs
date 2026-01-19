@@ -14,6 +14,26 @@ namespace Game.UI.MainMenu
         [SerializeField] private Button _lobbyListButton; // Nút vào xem danh sách
         [SerializeField] private Button _debugHostButton; // Nút test tạo nhanh phòng
         [SerializeField] private TextMeshProUGUI _statusText; // Hiện trạng thái kết nối
+        
+        [Header("Profile Text")]
+        [SerializeField] private TMP_Text txtPlayerName;
+        [SerializeField] private TMP_Text txtPlayerLevel;
+        [SerializeField] private TMP_Text txtCoin;
+
+        [Header("Profile Images")]
+        [SerializeField] private Image imgPlayerAvatar;
+        [SerializeField] private Image imgAvatarNotification;
+
+        [System.Serializable]
+        private class AvatarEntry
+        {
+            public string id;      // ví dụ: "avatar_default_02"
+            public Sprite sprite;  // sprite tương ứng
+        }
+
+        [Header("Avatar Presets")]
+        [SerializeField] private AvatarEntry[] avatarPresets;
+        [SerializeField] private Sprite defaultAvatar;
 
         // --- INJECTION ---
         [Inject] private INetworkService _network;
@@ -30,6 +50,9 @@ namespace Game.UI.MainMenu
             // 1. Lắng nghe sự kiện kết nối thành công
             _network.OnPhotonConnected += HandleConnected;
 
+            //Bind profile UI
+            BindProfilePanel();
+
             // 2. Lấy tên người chơi từ Login (đã lưu trong AccountService)
             string playerName = _account.GetDisplayName();
             Debug.Log($"[MainMenu] Hello {playerName}");
@@ -44,6 +67,43 @@ namespace Game.UI.MainMenu
                 // Nếu lỡ đã kết nối rồi (do quay lại từ scene khác) thì mở nút luôn
                 HandleConnected();
             }
+        }
+        
+        private void BindProfilePanel()
+        {
+            // Text
+            txtPlayerName.text  = _account.GetDisplayName();
+            txtPlayerLevel.text = _account.GetLevel().ToString();
+            txtCoin.text        = _account.GetCoin().ToString("N0");
+
+            // Avatar preset
+            if (imgPlayerAvatar != null)
+            {
+                var avatarId = _account.GetAvatarId();
+                imgPlayerAvatar.sprite = ResolveAvatarSprite(avatarId);
+                imgPlayerAvatar.enabled = true;
+            }
+
+            if (imgAvatarNotification != null)
+                imgAvatarNotification.enabled = false;
+        }
+
+        private Sprite ResolveAvatarSprite(string avatarId)
+        {
+            if (!string.IsNullOrEmpty(avatarId) && avatarPresets != null)
+            {
+                for (int i = 0; i < avatarPresets.Length; i++)
+                {
+                    if (avatarPresets[i] != null &&
+                        avatarPresets[i].id == avatarId &&
+                        avatarPresets[i].sprite != null)
+                    {
+                        return avatarPresets[i].sprite;
+                    }
+                }
+            }
+
+            return defaultAvatar != null ? defaultAvatar : imgPlayerAvatar.sprite;
         }
 
         private void OnDestroy()

@@ -23,8 +23,7 @@ namespace Game.Domain.Account.Service
             }
         }
 
-        // Helper để lấy nhanh thông tin hiển thị UI
-        // Helper: Hàm hỗ trợ lấy tên nhanh để hiển thị UI (nếu cần sau này)
+        // Helper: Hàm hỗ trợ lấy tên nhanh để hiển thị UI
         public string GetDisplayName()
         {
             return CurrentPlayerData?.player?.profile?.displayName ?? "Unknown";
@@ -32,6 +31,7 @@ namespace Game.Domain.Account.Service
 
         public int GetCoin() => CurrentPlayerData?.player?.profile?.coin ?? 0;
         public int GetLevel() => CurrentPlayerData?.player?.profile?.level ?? 1;
+        public string GetAvatarId() => CurrentPlayerData?.player?.profile?.avatar;
 
         public void Logout()
         {
