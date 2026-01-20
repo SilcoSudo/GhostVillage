@@ -1,88 +1,44 @@
-﻿import AuthService from "../authService.js";
-import User from "../../user/userModel.js"; // Import Model User của nhóm
-import Player from "../../player/playerModel.js"; // Import Model Player của nhóm
-
-/**
- * Game Auth Controller
- * Handles authentication for game clients (game players)
- *
- * Note: Game registration is handled through Web Auth
- * Only game-side login logic is implemented here
- */
-
-//export const loginGame = async (req, res) => {
-//  try {
-//    const { email, password, displayName } = req.body;
-
-//    if (!email || !password) {
-//      return res.status(400).json({
-//        success: false,
-//        message: 'Email and password are required'
-//      });
-//    }
-
-//    // Step 1: Authenticate with User credentials (web auth)
-//    const { token, user } = await AuthService.loginWeb(email, password);
-
-//    // Step 2: Get or create Player profile for this user
-//    const player = await AuthService.getOrCreatePlayerProfile(user._id, displayName);
-
-//    return res.status(200).json({
-//      success: true,
-//      message: 'Game login successful',
-//      token,
-//      user,
-//      player
-//    });
-//  } catch (error) {
-//    console.error('Game Login error:', error);
-//    return res.status(401).json({
-//      success: false,
-//      message: error.message || 'Login failed'
-//    });
-//  }
-//};
+﻿// Import Service dùng chung cho cả Web và Game
+import { AuthService } from "../authService.js";
 
 export const loginGame = async (req, res) => {
   try {
-    console.log("[Game Login] Body:", req.body);
+    console.log(
+      "[Game Login] Attempt for:",
+      req.body.email || req.body.username
+    );
 
+    // Hỗ trợ cả trường email hoặc username từ Unity gửi lên
     const email = req.body.email || req.body.username;
     const { password } = req.body;
 
     if (!email || !password) {
       return res
         .status(200)
-        .json({ success: false, error: "Missing credentials" });
+        .json({ success: false, error: "Missing email or password" });
     }
 
-    // 1. Gọi Service của nhóm (Tự check user, check pass hash)
-    const { user, token } = await AuthService.loginWeb(email, password);
+    // BƯỚC 1: Sử dụng logic Login chung (Kiểm tra User, Password, Verification)
+    const auth = await AuthService.loginWeb(email, password, false);
 
-    // 2. Tự động lấy/tạo Player Profile
-    const displayName = user.email.split("@")[0];
-    const player = await AuthService.getOrCreatePlayerProfile(
-      user._id,
-      displayName
+    // BƯỚC 2: Sử dụng logic Game-specific (Lấy hoặc tự tạo Player Profile)
+    const playerProfile = await AuthService.getOrCreatePlayerProfile(
+      auth.user._id,
+      auth.user.fullname
     );
 
-    console.log(`✅ Game Login Success: ${user.email}`);
-
-    // 3. Trả về cho Unity
+    // Trả về đúng format Unity cần: 1 cục data chứa cả Token, User và Player
     return res.status(200).json({
       success: true,
       data: {
-        token: token,
-        user: {
-          id: user._id,
-          email: user.email,
-        },
-        player: player,
+        token: auth.token,
+        user: auth.user,
+        player: playerProfile,
       },
     });
   } catch (error) {
-    console.error("Game Login Error:", error.message);
-    // Trả về lỗi đẹp cho Unity
+    console.error("[Game Login Error]:", error.message);
+    // Luôn trả về 200 kèm success: false để Unity Client dễ xử lý logic
     return res.status(200).json({
       success: false,
       error: error.message,
@@ -90,33 +46,23 @@ export const loginGame = async (req, res) => {
   }
 };
 
-export const logoutGame = (req, res) => {
-  return res.status(200).json({
-    success: true,
-    message: "Logout successful",
-  });
-};
-
 export const getMeGame = async (req, res) => {
   try {
-    const playerId = req.user?.userId;
-    if (!playerId) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized",
-      });
-    }
+    // req.user được middleware auth giải mã từ token và gán vào request
+    const userId = req.user.userId;
 
-    const player = await AuthService.getPlayerById(playerId);
+    // Lấy thông tin Player dựa trên User ID đã được xác thực
+    const player = await AuthService.getOrCreatePlayerProfile(userId);
+
     return res.status(200).json({
       success: true,
-      player,
+      data: player,
     });
   } catch (error) {
-    console.error("Get Me error:", error);
-    return res.status(401).json({
-      success: false,
-      message: error.message || "Unauthorized",
-    });
+    return res.status(401).json({ success: false, error: error.message });
   }
+};
+
+export const logoutGame = (req, res) => {
+  return res.status(200).json({ success: true, message: "Logout successful" });
 };

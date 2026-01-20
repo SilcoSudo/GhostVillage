@@ -1,52 +1,58 @@
 :root {
   /* =====================================
-     GHOST VILLAGE - Dark Blood Red + Muted Gold + Black Theme
+     GHOST VILLAGE - Found Footage / Industrial Palette
      ===================================== */
   
-  /* Primary Colors - Deep Dark Red */
-  --primary-color: #5C0000;      /* Very Dark Blood Red */
-  --primary-dark: #3D0000;       /* Almost Black Red */
-  --primary-light: #7A0000;      /* Dark Blood Red */
+  /* Primary Colors - Fresh Blood & Dried Blood */
+  --primary-color: #990000;      /* Blood Red */
+  --primary-dark: #520000;       /* Dark Blood Red */
+  --primary-light: #CC0000;      /* Bright Blood Red */
   
-  /* Accent Colors - Muted Gold */
-  --accent-color: #C4A000;       /* Muted Gold (Deep) */
-  --accent-dark: #9B7F00;        /* Dark Muted Gold */
-  --accent-light: #D4B000;       /* Light Muted Gold */
+  /* Accent Colors - Dried Blood */
+  --accent-color: #7A0000;       /* Blood Red Accent */
+  --accent-light: #990000;       
+  --horror-green: #3B3B24;       /* Dirty Olive */
+  --horror-maroon: #2F0000;      /* Darker Blood */
   
   /* Secondary Colors */
-  --secondary-color: #0d0d0d;    /* Pure Black */
-  --secondary-light: #1a1a1a;    /* Dark Gray */
+  --secondary-color: #121212;    
+  --secondary-light: #1E1E1E;    
   
-  /* Background Colors (Dark Theme) */
-  --bg-primary: #050505;         /* Very Dark Black */
-  --bg-secondary: #0d0d0d;       /* Ultra Dark Gray/Black */
-  --bg-tertiary: #1a1a1a;        /* Medium Dark */
-  --card-bg: #0d0d0d;            /* Card Background (Very Dark) */
+  /* Background Colors */
+  --bg-primary: #121212;         /* Matte Black */
+  --bg-secondary: #0D0D0D;       
+  --bg-tertiary: #1E1E1E;        /* Concrete Gray */
+  --card-bg: #1A1A1A;            
   
   /* Text Colors */
-  --text-primary: #C4A000;       /* Muted Gold Text (Primary) */
-  --text-secondary: #D4D4D4;     /* Off-White Text (Secondary) */
-  --text-tertiary: #808080;      /* Gray Text */
-  --text-dark: #0d0d0d;          /* Dark Text on light bg */
-  
-  /* Accent Text */
-  --text-blood: #A60000;         /* Deep Red for alerts */
+  --text-primary: #B5A642;       /* Old Brass / Muted Gold */
+  --text-secondary: #A68B6A;     /* Muted Leather */
+  --text-tertiary: #6B5D4D;      
+  --text-dark: #000000;          
   
   /* Border Colors */
-  --border-color: #5C0000;       /* Dark Blood Red Border */
-  --border-subtle: #262626;      /* Subtle Dark Border */
-  --card-border: #4A0000;        /* Card Border (Very Dark Red) */
+  --border-color: #520000;       /* Dark Dried Blood */
+  --border-subtle: #330000;      
+  --card-border: #7A0000;        /* Fresh Blood highlight */
   
-  /* Legacy colors for compatibility */
-  --success-color: #28a745;
-  --danger-color: #A60000;       /* Deep Red */
-  --warning-color: #C4A000;      /* Muted Gold */
-  --info-color: #D4D4D4;
-  --light-color: #C4A000;        /* Muted Gold */
-  
-  /* Shadow & Effects */
-  --shadow-glow: 0 0 20px rgba(196, 160, 0, 0.2);
-  --shadow-blood: 0 0 20px rgba(92, 0, 0, 0.3);
+  /* Effect Colors */
+  --shadow-blood: 0 0 15px rgba(122, 0, 0, 0.4);
+  --shadow-toxic: 0 0 20px rgba(0, 0, 0, 0.9);
+}
+
+/* Adjusting Global Base Styles for the new theme */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-secondary);
+  letter-spacing: 0.2px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--primary-color);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: 'Courier New', Courier, monospace; /* Typewritten/Analogue feel */
+  font-weight: bold;
 }
 
 body.light-theme {
@@ -61,4 +67,69 @@ body.dark-theme {
 
 .theme-transition {
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* =====================================
+   GLOBAL COMPONENT OVERRIDES
+   ===================================== */
+
+/* Bootstrap Button Overrides */
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%) !important;
+  border: 2px solid var(--text-primary) !important;
+  color: var(--text-primary) !important;
+  text-transform: uppercase !important;
+  font-weight: bold !important;
+  letter-spacing: 1px !important;
+  box-shadow: 0 4px 15px rgba(122, 0, 0, 0.4) !important;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%) !important;
+  color: #fff !important;
+  border-color: #fff !important;
+  box-shadow: 0 0 20px rgba(153, 0, 0, 0.6) !important;
+  transform: translateY(-3px) !important;
+}
+
+.btn-outline-primary {
+  border-color: var(--text-primary) !important;
+  color: var(--text-primary) !important;
+  text-transform: uppercase !important;
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--primary-color) !important;
+  color: #fff !important;
+  border-color: var(--primary-light) !important;
+}
+
+/* Card Overrides */
+.card {
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Form Overrides */
+.form-control {
+  background-color: var(--bg-tertiary) !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-secondary) !important;
+}
+
+.form-control:focus {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.25rem rgba(153, 0, 0, 0.25) !important;
+  color: #fff !important;
+}
+
+.form-label {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }

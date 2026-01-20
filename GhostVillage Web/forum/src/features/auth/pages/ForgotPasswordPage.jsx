@@ -96,7 +96,7 @@ const ForgotPasswordPage = () => {
 
               <div className="text-center mt-4">
                 <p>
-                  Remember your password? <Link to="/login">Sign in</Link>
+                  Remember your password? <Link to="/login">Login</Link>
                 </p>
               </div>
             </Card.Body>

@@ -6,7 +6,7 @@ namespace Game.ScriptableObjects.GameConfig // Đặt namespace cho chuyên nghi
     public class GameConfigSO : ScriptableObject
     {
         [Header("Server Settings")]
-        public string ServerUrl = "http://localhost:3000"; // Default cho local
+        public string ServerUrl = "http://localhost:5000"; // Default cho local
 
         [Header("Game Settings")]
         public string GameVersion = "1.0.0";

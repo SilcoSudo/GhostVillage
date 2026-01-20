@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema(
   {
@@ -8,41 +8,68 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
       trim: true,
-      lowercase: true
+      lowercase: true,
+    },
+    fullname: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
     },
     password: {
       type: String,
       required: true,
-      minlength: 6
+      minlength: 8,
+    },
+    dateOfBirth: {
+      type: Date,
+      required: true,
     },
     avatar: {
       type: String,
-      default: null
+      default: null,
     },
     bio: {
       type: String,
-      default: ''
+      default: "",
+    },
+    isMute: {
+      type: Boolean,
+      default: false,
     },
     role: {
       type: String,
-      enum: ['user', 'admin'],
-      default: 'user'
+      enum: ["user", "admin"],
+      default: "user",
     },
-    isActive: {
-      type: Boolean,
-      default: true
+    verificationTokenHash: {
+      type: String,
+      default: null,
     },
-    isBanned: {
+    verificationUsed: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationExpires: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
 
 // Hash password before saving
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+
+  // If password already looks like a bcrypt hash, skip re-hashing
+  if (typeof this.password === "string" && this.password.startsWith("$2")) {
+    return next();
+  }
 
   try {
     const salt = await bcrypt.genSalt(10);
@@ -65,10 +92,10 @@ userSchema.methods.toJSON = function () {
   return obj;
 };
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model("User", userSchema);
 
 // Drop old username index if it exists (migration from old schema)
-User.collection.dropIndex('username_1').catch(() => {
+User.collection.dropIndex("username_1").catch(() => {
   // Index doesn't exist, that's fine
 });
 

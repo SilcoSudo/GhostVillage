@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d53157017590c8c428fba79dd95c914b, type: 3}
   m_Name: GameConfig
   m_EditorClassIdentifier: Assembly-CSharp::Game.ScriptableObjects.GameConfig.GameConfigSO
-  ServerUrl: http://localhost:3000
+  ServerUrl: http://localhost:5000
   GameVersion: 1.0.0
   IsDebugMode: 1

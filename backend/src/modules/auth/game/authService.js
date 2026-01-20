@@ -1,70 +1,78 @@
-import jwt from "jsonwebtoken";
-// SỬA PATH: Lên 3 cấp mới ra được thư mục src/config
-import { config } from "../../../config/env.js";
-import User from "../../user/userModel.js";
-import Player from "../../player/playerModel.js";
+// import jwt from "jsonwebtoken";
+// // Import config env (Lên 3 cấp thư mục)
+// import { config } from "../../../config/env.js";
+// import User from "../../user/userModel.js";
+// import Player from "../../player/playerModel.js";
 
-const generateToken = (userId) => {
-  return jwt.sign({ userId }, config.jwt.secret, {
-    expiresIn: config.jwt.expiresIn,
-  });
-};
+// const generateToken = (userId) => {
+//   return jwt.sign({ userId }, config.jwt.secret, {
+//     expiresIn: config.jwt.expiresIn,
+//   });
+// };
 
-export const AuthService = {
-  // --- WEB LOGIC ---
-  registerWeb: async (email, password) => {
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) throw new Error("Email already exists");
+// export const GameAuthService = {
+//   /**
+//    * GAME LOGIN:
+//    * 1. Check User Credentials (Email/Pass)
+//    * 2. Auto Get/Create Player Profile
+//    * 3. Return Token + User + Player
+//    */
+//   loginGame: async (email, password) => {
+//     // 1. Tìm User (Dùng chung bảng User với Web)
+//     const user = await User.findOne({ email: email.toLowerCase() });
 
-    const user = await User.create({
-      email: email.toLowerCase(),
-      password,
-      role: "user",
-    });
+//     // Ném lỗi để Controller bắt
+//     if (!user) throw new Error("User not found");
 
-    const token = generateToken(user._id);
-    return { token, user: user.toJSON() };
-  },
+//     // 2. Check Password
+//     const isPasswordValid = await user.comparePassword(password);
+//     if (!isPasswordValid) throw new Error("Invalid password");
 
-  loginWeb: async (email, password) => {
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) throw new Error("User not found");
+//     // Check verification status
+//     if (!user.isVerified) throw new Error("ACCOUNT_NOT_VERIFIED");
 
-    const isPasswordValid = await user.comparePassword(password);
-    if (!isPasswordValid) throw new Error("Invalid password");
+//     // 3. Xử lý Player Profile (Logic riêng của Game)
+//     let player = await Player.findOne({ userId: user._id });
 
-    const token = generateToken(user._id);
-    return { token, user: user.toJSON() };
-  },
+//     // Nếu chưa có Player (User mới từ Web qua), tự động tạo
+//     if (!player) {
+//       const displayName = user.email.split("@")[0]; // Lấy tên từ email
+//       player = await Player.create({
+//         userId: user._id,
+//         profile: {
+//           displayName: displayName,
+//           avatar: "avatar_default_01",
+//           level: 1,
+//           exp: 0,
+//           coin: 1000,
+//         },
+//         inventory: {
+//           unlockedSkins: ["skin_default"],
+//           unlockedPerks: [],
+//         },
+//       });
+//     }
 
-  // --- SHARED LOGIC (Game dùng ké cái này) ---
-  getOrCreatePlayerProfile: async (userId, displayName) => {
-    let player = await Player.findOne({ userId });
+//     // 4. Tạo Token
+//     const token = generateToken(user._id);
 
-    if (!player) {
-      player = await Player.create({
-        userId,
-        profile: {
-          displayName: displayName || `Player_${userId.toString().slice(-6)}`,
-          avatar: "avatar_default_01",
-          level: 1,
-          exp: 0,
-          coin: 1000,
-        },
-        inventory: {
-          unlockedSkins: ["skin_default"],
-          unlockedPerks: [],
-        },
-      });
-    }
-    return player.toJSON();
-  },
+//     // Trả về dữ liệu đã populate đầy đủ
+//     return {
+//       token,
+//       user: user.toJSON(),
+//       player: player.toJSON(),
+//     };
+//   },
 
-  getUserById: async (userId) => {
-    const user = await User.findById(userId);
-    if (!user) throw new Error("User not found");
-    return user.toJSON();
-  },
-};
+//   /**
+//    * GET PLAYER INFO
+//    * Dùng cho API /me
+//    */
+//   getPlayerByUserId: async (userId) => {
+//     const player = await Player.findOne({ userId });
+//     if (!player) throw new Error("Player profile not found");
+//     return player.toJSON();
+//   },
+// };
 
-export default AuthService;
+// export default GameAuthService;

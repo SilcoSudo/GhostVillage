@@ -1,5 +1,10 @@
 import React, { useContext } from 'react';
 import { Download, Play, ArrowRight, Calendar, Users, Trophy } from 'lucide-react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination, Autoplay } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 import { AuthContext } from '../app/context/AuthContext';
 import langmaLogo from '../shared/assets/images/logo.png';
 import '../shared/assets/styles/HomePage.css';
@@ -38,42 +43,66 @@ const HomePage = () => {
       <section className="news-section">
         <div className="section-container">
           <h2 className="section-title">TIN TỨC NỔI BẬT</h2>
-          
-          <div className="news-grid">
-            <div className="news-card">
-              <div className="news-image">
-                <div className="news-placeholder">📰</div>
-              </div>
-              <div className="news-content">
-                <span className="news-category">CẬP NHẬT</span>
-                <h3 className="news-title">Phiên Bản Mới Ra Mắt</h3>
-                <p className="news-excerpt">Khám phá những tính năng mới và cải tiến trong bản cập nhật lớn nhất năm</p>
-              </div>
-            </div>
-
-            <div className="news-card">
-              <div className="news-image">
-                <div className="news-placeholder">🎮</div>
-              </div>
-              <div className="news-content">
-                <span className="news-category">SỰ KIỆN</span>
-                <h3 className="news-title">Phát hành lần đầu tiên</h3>
-                <p className="news-excerpt">Đăng ký tham gia ngay để nhận quà tặng bạn mới nào!</p>
-              </div>
-            </div>
-
-            <div className="news-card">
-              <div className="news-image">
-                <div className="news-placeholder">⚔️</div>
-              </div>
-              <div className="news-content">
-                <span className="news-category">HƯỚNG DẪN</span>
-                <h3 className="news-title">Chiến Thuật Sinh Tồn</h3>
-                <p className="news-excerpt">Học hỏi từ những game thủ hàng đầu để nâng cao kỹ năng</p>
-              </div>
-            </div>
-          </div>
         </div>
+          
+        <Swiper
+          modules={[Navigation, Pagination, Autoplay]}
+          spaceBetween={20}
+          slidesPerView={1}
+          breakpoints={{
+            768: {
+              slidesPerView: 2,
+              spaceBetween: 20,
+            },
+            1024: {
+              slidesPerView: 3,
+              spaceBetween: 30,
+            },
+          }}
+          navigation
+          pagination={{ clickable: true }}
+          autoplay={{ delay: 5000, disableOnInteraction: false }}
+          className="news-carousel"
+        >
+            <SwiperSlide>
+              <div className="news-card">
+                <div className="news-image">
+                  <div className="news-placeholder">📰</div>
+                </div>
+                <div className="news-content">
+                  <span className="news-category">CẬP NHẬT</span>
+                  <h3 className="news-title">Phiên Bản Mới Ra Mắt</h3>
+                  <p className="news-excerpt">Khám phá những tính năng mới và cải tiến trong bản cập nhật lớn nhất năm</p>
+                </div>
+              </div>
+            </SwiperSlide>
+
+            <SwiperSlide>
+              <div className="news-card">
+                <div className="news-image">
+                  <div className="news-placeholder">🎮</div>
+                </div>
+                <div className="news-content">
+                  <span className="news-category">SỰ KIỆN</span>
+                  <h3 className="news-title">Phát hành lần đầu tiên</h3>
+                  <p className="news-excerpt">Đăng ký tham gia ngay để nhận quà tặng bạn mới nào!</p>
+                </div>
+              </div>
+            </SwiperSlide>
+
+            <SwiperSlide>
+              <div className="news-card">
+                <div className="news-image">
+                  <div className="news-placeholder">⚔️</div>
+                </div>
+                <div className="news-content">
+                  <span className="news-category">HƯỚNG DẪN</span>
+                  <h3 className="news-title">Chiến Thuật Sinh Tồn</h3>
+                  <p className="news-excerpt">Học hỏi từ những game thủ hàng đầu để nâng cao kỹ năng</p>
+                </div>
+              </div>
+            </SwiperSlide>
+          </Swiper>
       </section>
 
       {/* Character Showcase Section */}

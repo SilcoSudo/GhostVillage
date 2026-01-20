@@ -114,7 +114,7 @@ const ChangePasswordPage = () => {
       setLoading(true);
       setMessage({ type: '', text: '' });
 
-      const response = await api.post('/auth/change-password', {
+      const response = await api.post('/web/auth/change-password', {
         currentPassword: formData.currentPassword,
         newPassword: formData.newPassword
       });
