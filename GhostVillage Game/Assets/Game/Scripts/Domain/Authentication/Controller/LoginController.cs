@@ -1,19 +1,28 @@
-using Cysharp.Threading.Tasks;
+using System;
+using Game.Core.ReactiveRepo;
 using Game.Core.Scene;
 using Game.Domain.Authentication;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Game.UI.Login
 {
     public class LoginController
     {
+        [SerializeField]
+        private string sceneToLoad = "MainMenu";
         private readonly AuthService _authService;
         private readonly ISceneLoaderService _sceneLoader;
+        private readonly PlayerDataSyncService _syncService;
 
-        public LoginController(AuthService authService, ISceneLoaderService sceneLoader)
+        public LoginController(
+            AuthService authService,
+            ISceneLoaderService sceneLoader,
+            PlayerDataSyncService syncService)
         {
             _authService = authService;
             _sceneLoader = sceneLoader;
+            _syncService = syncService;
         }
 
         public async void HandleLogin(string email, string password, LoginUI view)
@@ -22,21 +31,22 @@ namespace Game.UI.Login
             view.SetInteractable(false);
             view.SetStatus("Connecting to Server...");
 
-            // 2. Gọi API Login (Hàm bạn đã viết xong)
-            bool isSuccess = await _authService.LoginAsync(email, password);
+            var response = await _authService.LoginAsync(email, password);
 
-            if (isSuccess)
+            if (response != null)
             {
-                view.SetStatus("<color=green>Login Success!</color>");
-                await UniTask.Delay(500); // Đợi xíu cho đẹp
+                view.SetStatus("Syncing Player Data...");
 
-                // 3. Chuyển sang Main Menu (Tên Scene phải khớp Build Settings)
-                await _sceneLoader.LoadSceneAsync("MainMenu");
+                await _syncService.SyncAllDataAsync(response);
+
+                view.SetStatus("<color=green>Đăng nhập thành công!</color>");
+
+                await _sceneLoader.LoadSceneAsync(sceneToLoad);
             }
             else
             {
-                view.SetStatus("<color=red>Login Failed! Check Info.</color>");
-                view.SetInteractable(true); // Mở lại nút cho nhập lại
+                view.SetStatus("<color=red>Login Failed!</color>");
+                view.SetInteractable(true);
             }
         }
     }

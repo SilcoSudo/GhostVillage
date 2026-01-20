@@ -2,9 +2,10 @@ using UnityEngine;
 using VContainer;
 using Game.Core.Scene; // Namespace chứa ISceneLoaderService
 using Game.Core.Network;
-using Game.Domain.Account.Service;
 using UnityEngine.UI;
 using TMPro;
+using Game.Core.ReactiveRepo;
+using R3;
 
 namespace Game.UI.MainMenu
 {
@@ -14,7 +15,7 @@ namespace Game.UI.MainMenu
         [SerializeField] private Button _lobbyListButton; // Nút vào xem danh sách
         [SerializeField] private Button _debugHostButton; // Nút test tạo nhanh phòng
         [SerializeField] private TextMeshProUGUI _statusText; // Hiện trạng thái kết nối
-        
+
         [Header("Profile Text")]
         [SerializeField] private TMP_Text txtPlayerName;
         [SerializeField] private TMP_Text txtPlayerLevel;
@@ -37,55 +38,46 @@ namespace Game.UI.MainMenu
 
         // --- INJECTION ---
         [Inject] private INetworkService _network;
-        [Inject] private AccountService _account;
+        [Inject] private PlayerDataStore _store; // Inject Cục Data trung tâm
         [Inject] private ISceneLoaderService _sceneLoader;
+
+        // Quản lý các đăng ký để xóa khi tắt scene (tránh rò rỉ RAM)
+        private readonly CompositeDisposable _disposables = new();
 
         private void Start()
         {
-            // Mặc định khóa nút chờ kết nối
-            _lobbyListButton.interactable = false;
-            _debugHostButton.interactable = false;
-            _statusText.text = "Connecting to Server...";
+            // 1. KẾT NỐI UI VỚI DATA STORE (REACTIVE BINDING)
+            BindUI();
 
-            // 1. Lắng nghe sự kiện kết nối thành công
+            // 2. Logic kết nối mạng cũ giữ nguyên
             _network.OnPhotonConnected += HandleConnected;
+            string playerName = _store.DisplayName.Value; // Lấy giá trị hiện tại từ Store
 
-            //Bind profile UI
-            BindProfilePanel();
-
-            // 2. Lấy tên người chơi từ Login (đã lưu trong AccountService)
-            string playerName = _account.GetDisplayName();
-            Debug.Log($"[MainMenu] Hello {playerName}");
-
-            // 3. Gọi lệnh kết nối (Nếu chưa kết nối)
-            if (!_network.IsConnected)
-            {
-                _network.Connect(playerName);
-            }
-            else
-            {
-                // Nếu lỡ đã kết nối rồi (do quay lại từ scene khác) thì mở nút luôn
-                HandleConnected();
-            }
+            if (!_network.IsConnected) _network.Connect(playerName);
+            else HandleConnected();
         }
-        
-        private void BindProfilePanel()
+
+        private void BindUI()
         {
-            // Text
-            txtPlayerName.text  = _account.GetDisplayName();
-            txtPlayerLevel.text = _account.GetLevel().ToString();
-            txtCoin.text        = _account.GetCoin().ToString("N0");
+            // Mỗi khi Tên trong Store đổi -> Text tự đổi
+            _store.DisplayName
+                .Subscribe(val => txtPlayerName.text = val)
+                .AddTo(_disposables);
 
-            // Avatar preset
-            if (imgPlayerAvatar != null)
-            {
-                var avatarId = _account.GetAvatarId();
-                imgPlayerAvatar.sprite = ResolveAvatarSprite(avatarId);
-                imgPlayerAvatar.enabled = true;
-            }
+            // Mỗi khi Level đổi -> Text tự nhảy
+            _store.Level
+                .Subscribe(val => txtPlayerLevel.text = val.ToString())
+                .AddTo(_disposables);
 
-            if (imgAvatarNotification != null)
-                imgAvatarNotification.enabled = false;
+            // Mỗi khi Tiền đổi -> Text tự cập nhật định dạng số
+            _store.Coins
+                .Subscribe(val => txtCoin.text = val.ToString("N0"))
+                .AddTo(_disposables);
+
+            // Mỗi khi Avatar đổi -> Sprite tự load lại
+            _store.AvatarId
+                .Subscribe(id => imgPlayerAvatar.sprite = ResolveAvatarSprite(id))
+                .AddTo(_disposables);
         }
 
         private Sprite ResolveAvatarSprite(string avatarId)
@@ -108,17 +100,15 @@ namespace Game.UI.MainMenu
 
         private void OnDestroy()
         {
-            if (_network != null)
-            {
-                _network.OnPhotonConnected -= HandleConnected;
-            }
+            _disposables.Dispose(); // Hủy toàn bộ lắng nghe khi thoát scene
+            if (_network != null) _network.OnPhotonConnected -= HandleConnected;
         }
 
         // --- EVENT HANDLERS ---
 
         private void HandleConnected()
         {
-            _statusText.text = $"Online: {_account.GetDisplayName()}";
+            _statusText.text = $"Online: {_store.DisplayName.Value}";
             _statusText.color = Color.green;
 
             // Mở khóa các nút chức năng

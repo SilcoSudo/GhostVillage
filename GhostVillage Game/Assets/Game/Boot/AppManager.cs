@@ -5,8 +5,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks; // Khuyên dùng UniTask thay vì Coroutine
 using Game.Core.Scene;
 using Game.ScriptableObjects.GameConfig;
-using UnityEngine.SceneManagement;
-using Game.Domain.Account.Service;
+using Game.Core.ReactiveRepo;
 
 namespace Game.Boot
 {
@@ -15,19 +14,15 @@ namespace Game.Boot
     public class AppManager : IStartable
     {
         private readonly ISceneLoaderService _sceneLoader;
-        private readonly AccountService _account;
-        private readonly GameConfigSO _config;
+        private readonly PlayerDataStore _store;
 
-        public AppManager(ISceneLoaderService sceneLoader, AccountService account)
+        public AppManager(ISceneLoaderService sceneLoader, PlayerDataStore store)
         {
             _sceneLoader = sceneLoader;
-            _account = account;
+            _store = store;
         }
 
-        public void Start()
-        {
-            RunFlow().Forget();
-        }
+        public void Start() => RunFlow().Forget();
 
         private async UniTaskVoid RunFlow()
         {
@@ -35,9 +30,9 @@ namespace Game.Boot
             await UniTask.Delay(1000);
 
             // 2. Check xem đã đăng nhập chưa (Iteration sau sẽ check Token lưu ở LocalStorage)
-            if (_account.IsLoggedIn)
+            if (_store.IsLoggedIn)
             {
-                await _sceneLoader.LoadSceneAsync("GameScene");
+                await _sceneLoader.LoadSceneAsync("MainMenu");
             }
             else
             {

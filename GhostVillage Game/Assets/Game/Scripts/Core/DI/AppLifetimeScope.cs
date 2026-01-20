@@ -8,10 +8,8 @@ using Game.Domain.Maps;
 using Game.ScriptableObjects.GameConfig;
 using Game.Domain.Authentication;
 using Game.UI.Login;
-using Game.Domain.Account.Service;
 using Game.Script.UI;
-// using Game.Domain.Authentication; // Sau này sẽ dùng
-// Lmao
+using Game.Core.ReactiveRepo;
 
 namespace Game.Core.DI
 {
@@ -39,11 +37,15 @@ namespace Game.Core.DI
             builder.RegisterInstance(_gameConfig);
             builder.Register<APIClient>(Lifetime.Singleton);
             builder.Register<MapDataService>(Lifetime.Singleton).As<IMapDataService>();
-            builder.Register<AccountService>(Lifetime.Singleton);
 
             // 2. Core Services
             builder.Register<SceneLoaderService>(Lifetime.Singleton).As<ISceneLoaderService>();
             builder.Register<AuthService>(Lifetime.Singleton);
+            // Đăng ký PlayerDataStore là Singleton
+            builder.Register<PlayerDataStore>(Lifetime.Singleton);
+
+            // Đăng ký thêm PlayerDataSyncService (Sẽ tạo ở bước 3)
+            builder.Register<PlayerDataSyncService>(Lifetime.Singleton);
 
             // 3. NETWORK (Sửa lại: Bắt buộc phải có Prefab)
             if (_photonPrefab != null)
