@@ -14,7 +14,7 @@ namespace Game.Core.Lobby
     public class LobbyManager : MonoBehaviourPunCallbacks // Sửa thành MonoBehaviourPunCallbacks để dùng photonView
     {
         [Header("Networking Setup")]
-        [SerializeField] private string _playerPrefabName = "PlayerCharacter";
+        [SerializeField] private string _playerPrefabName = "Player";
         [SerializeField] private List<Transform> _spawnPoints;
         [SerializeField] private Camera _sceneCamera;
 
