@@ -70,6 +70,18 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    emailVisibility: {
+      type: Boolean,
+      default: true,
+    },
+    friends: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    }],
+    savedPosts: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Post"
+    }],
   },
   { timestamps: true },
 );

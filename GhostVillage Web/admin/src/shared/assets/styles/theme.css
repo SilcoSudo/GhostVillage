@@ -1,28 +1,152 @@
 :root {
-  /* Làng Ma 3 Palette */
-  --primary-color: #1B5E2F;      /* Dark Green */
-  --secondary-color: #D63031;    /* Vibrant Red */
-  --accent-color: #6B3E38;       /* Dark Reddish Brown */
-  --dark-color: #000000;         /* Black */
+  /* =====================================
+     GHOST VILLAGE - Found Footage / Industrial Palette
+     ===================================== */
   
-  /* Legacy colors for compatibility */
-  --success-color: #28a745;
-  --danger-color: #dc3545;
-  --warning-color: #ffc107;
-  --info-color: #17a2b8;
-  --light-color: #f8f9fa;
+  /* Primary Colors - Fresh Blood & Dried Blood */
+  --primary-color: #990000;      /* Blood Red */
+  --primary-dark: #520000;       /* Dark Blood Red */
+  --primary-light: #CC0000;      /* Bright Blood Red */
+  
+  /* Accent Colors - Dried Blood */
+  --accent-color: #7A0000;       /* Blood Red Accent */
+  --accent-light: #990000;       
+  --horror-green: #3B3B24;       /* Dirty Olive */
+  --horror-maroon: #2F0000;      /* Darker Blood */
+  
+  /* Secondary Colors */
+  --secondary-color: #121212;    
+  --secondary-light: #1E1E1E;    
+  
+  /* Background Colors */
+  --bg-primary: #121212;         /* Matte Black */
+  --bg-secondary: #0D0D0D;       
+  --bg-tertiary: #1E1E1E;        /* Concrete Gray */
+  --card-bg: #1A1A1A;            
+  
+  /* Text Colors */
+  --text-primary: #B5A642;       /* Old Brass / Muted Gold */
+  --text-secondary: #A68B6A;     /* Muted Leather */
+  --text-tertiary: #6B5D4D;      
+  --text-dark: #000000;          
+  
+  /* Border Colors */
+  --border-color: #520000;       /* Dark Dried Blood */
+  --border-subtle: #330000;      
+  --card-border: #7A0000;        /* Fresh Blood highlight */
+  
+  /* Effect Colors */
+  --shadow-blood: 0 0 15px rgba(122, 0, 0, 0.4);
+  --shadow-toxic: 0 0 20px rgba(0, 0, 0, 0.9);
 }
 
-body.light-theme {
-  background-color: #ffffff;
-  color: #333;
+/* Adjusting Global Base Styles for the new theme */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-secondary);
+  letter-spacing: 0.2px;
 }
 
-body.dark-theme {
-  background-color: #0d0d0d;
-  color: #e0e0e0;
+h1, h2, h3, h4, h5, h6 {
+  color: var(--primary-color);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: 'Courier New', Courier, monospace; /* Typewritten/Analogue feel */
+  font-weight: bold;
+}
+/* ============================================
+   APP LAYOUT STYLES - MOBILE FIRST
+   ============================================ */
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+  background-color: var(--bg-primary);
 }
 
-.theme-transition {
-  transition: background-color 0.3s ease, color 0.3s ease;
+.app-layout {
+  display: flex;
+  flex: 1;
+  margin-top: 60px;
+  width: 100%;
 }
+
+.main-content {
+  flex: 1;
+  padding: 16px;
+  margin-left: 0;
+  transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: var(--bg-primary);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.main-content.with-sidebar {
+  margin-left: 70px;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN - TABLET
+   ============================================ */
+
+@media (min-width: 480px) {
+  .app-layout {
+    margin-top: 65px;
+  }
+
+  .main-content {
+    padding: 18px;
+  }
+
+  .main-content.with-sidebar {
+    margin-left: 70px;
+  }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN - DESKTOP SMALL (Sidebar visible & expandable)
+   ============================================ */
+
+@media (min-width: 768px) {
+  .app-layout {
+    margin-top: 70px;
+  }
+
+  .main-content {
+    padding: 20px;
+  }
+
+  .main-content.with-sidebar {
+    margin-left: 300px;
+  }
+
+  /* When sidebar is collapsed on desktop */
+  .sidebar-nav.collapsed ~ .main-content.with-sidebar {
+    margin-left: 70px;
+  }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN - DESKTOP LARGE
+   ============================================ */
+
+@media (min-width: 1024px) {
+  .main-content {
+    padding: 24px;
+  }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN - DESKTOP XLARGE
+   ============================================ */
+
+@media (min-width: 1440px) {
+  .main-content {
+    padding: 28px;
+  }
+}
+

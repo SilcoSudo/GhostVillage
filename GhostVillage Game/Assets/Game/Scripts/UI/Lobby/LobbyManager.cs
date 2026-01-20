@@ -2,56 +2,144 @@ using UnityEngine;
 using Photon.Pun;
 using VContainer;
 using Game.Script.UI;
-using Cysharp.Threading.Tasks; // Để gọi GlobalUIManager
+using Cysharp.Threading.Tasks;
+using System.Collections.Generic;
+using UnityEngine.InputSystem;
 
 namespace Game.Core.Lobby
 {
-    public class LobbyManager : MonoBehaviour
+    /// <summary>
+    /// Điều phối luồng hoạt động chính và đồng bộ hóa mạng qua Photon RPC.
+    /// </summary>
+    public class LobbyManager : MonoBehaviourPunCallbacks // Sửa thành MonoBehaviourPunCallbacks để dùng photonView
     {
-        [Header("Setup")]
-        [SerializeField] private string _playerPrefabName = "PlayerCharacter"; // Tên Prefab trong thư mục Resources
-        [SerializeField] private Transform _spawnPoint; // Vị trí sinh ra trên Terrain
+        [Header("Networking Setup")]
+        [SerializeField] private string _playerPrefabName = "PlayerCharacter";
+        [SerializeField] private List<Transform> _spawnPoints;
+        [SerializeField] private Camera _sceneCamera;
 
-        // Inject GlobalUIManager để tắt loading
         [Inject] private GlobalUIManager _globalUI;
+        [Inject] private LobbyUIManager _uiManager;
 
-        // ✅ BEST PRACTICE: Dùng async void Start với UniTask
-        // Không cần [System.Obsolete] nữa
-        [System.Obsolete]
         private async void Start()
         {
-            // 1. Đợi 1 frame để Unity ổn định Scene và UI
-            await UniTask.Yield(PlayerLoopTiming.Update);
+            _globalUI.ShowLoading(true);
 
-            // 2. Tắt Loading
-            if (_globalUI != null)
+            try
             {
-                Debug.Log("✅ [LobbyManager] Scene Ready. Tắt Loading.");
-                _globalUI.ShowLoading(false);
+                await UniTask.WhenAll(
+                    WaitForInRoom(),
+                    FetchLobbyResources()
+                );
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[LobbyManager] Error: {e.Message}");
+            }
+
+            // --- Tại dòng 39 (Start) ---
+            if (_uiManager != null)
+            {
+                SetupRoomUI();
             }
             else
             {
-                // Fallback: Tìm thủ công nếu quên tạo Scope
-                var manualUI = FindObjectOfType<GlobalUIManager>();
-                if (manualUI != null) manualUI.ShowLoading(false);
+                Debug.LogError("❌ [LobbyManager] _uiManager is NULL. Check VContainer Registration!");
             }
 
-            // 3. Sinh nhân vật
+            _globalUI.ShowLoading(false);
             SpawnPlayer();
+        }
+
+        /// <summary>
+        /// Lắng nghe sự kiện phím Enter để thực hiện Focus hoặc gửi tin nhắn.
+        /// </summary>
+        private void Update()
+        {
+            // Kiểm tra phím Enter bằng Input System mới
+            if (Keyboard.current != null && Keyboard.current.enterKey.wasPressedThisFrame)
+            {
+                // --- Tại dòng 61 (HandleChatInput) ---
+                if (_uiManager == null) return;
+                string message = _uiManager.GetInputText();
+
+                HandleChatInput(message);
+            }
+        }
+
+        /// <summary>
+        /// Logic xử lý Chat: Nếu chưa focus thì focus, nếu đang focus và có nội dung thì gửi.
+        /// </summary>
+        private void HandleChatInput(string message)
+        {
+
+            if (string.IsNullOrEmpty(message))
+            {
+                _uiManager.FocusChat(); // Focus vào ô nhập nếu đang trống
+            }
+            else
+            {
+                // Gửi tin nhắn đến tất cả mọi người trong phòng qua RPC
+                photonView.RPC("RPC_ReceiveChatMessage", RpcTarget.All, PhotonNetwork.LocalPlayer.NickName, message);
+
+                _uiManager.ClearInput(); // Xóa chữ trong ô nhập sau khi gửi
+                _uiManager.FocusChat();  // Giữ focus để người dùng chat tiếp
+            }
+        }
+
+        /// <summary>
+        /// Hàm nhận tin nhắn từ mạng và đẩy lên UI.
+        /// </summary>
+        /// <param name="senderName">Tên người gửi.</param>
+        /// <param name="message">Nội dung tin nhắn.</param>
+        [PunRPC]
+        public void RPC_ReceiveChatMessage(string senderName, string message)
+        {
+            // Kiểm tra xem tin nhắn này có phải của chính mình gửi không
+            bool isMe = senderName == PhotonNetwork.LocalPlayer.NickName;
+
+            _uiManager.AddChatMessage(senderName, message, isMe);
+        }
+
+        private async UniTask WaitForInRoom()
+        {
+            while (!PhotonNetwork.InRoom) await UniTask.Yield();
+        }
+
+        private async UniTask FetchLobbyResources()
+        {
+            await UniTask.Delay(1000);
+            _uiManager.AddMission("Sống sót qua đêm đầu tiên", false);
+        }
+
+        private void SetupRoomUI()
+        {
+            var room = PhotonNetwork.CurrentRoom;
+            if (room == null) return;
+            string pass = room.CustomProperties.ContainsKey("pw") ? (string)room.CustomProperties["pw"] : "";
+            _uiManager.SetRoomInfo(room.Name, PhotonNetwork.MasterClient.NickName, pass);
+            _uiManager.RefreshPlayerList(PhotonNetwork.PlayerList);
         }
 
         private void SpawnPlayer()
         {
-            if (PhotonNetwork.IsConnected)
+            if (PhotonNetwork.InRoom)
             {
-                Vector3 randomPos = _spawnPoint.position + new Vector3(Random.Range(-2f, 2f), 0, Random.Range(-2f, 2f));
+                int spawnIndex = (PhotonNetwork.LocalPlayer.ActorNumber - 1) % _spawnPoints.Count;
 
-                Debug.Log($"👾 [LobbyManager] Spawning Player: {randomPos}");
-                PhotonNetwork.Instantiate(_playerPrefabName, randomPos, Quaternion.identity);
-            }
-            else
-            {
-                Debug.LogWarning("⚠️ [LobbyManager] Mất kết nối Photon! Không thể spawn.");
+                Transform selectedSpawn = _spawnPoints[spawnIndex];
+
+                Debug.Log($"👾 [Lobby] Spawning at Slot {spawnIndex} (Actor: {PhotonNetwork.LocalPlayer.ActorNumber})");
+
+                // 2. Instantiate tại đúng vị trí và hướng xoay (Rotation) của SpawnPoint đó
+                PhotonNetwork.Instantiate(_playerPrefabName, selectedSpawn.position, selectedSpawn.rotation);
+
+                // TẮT Scene Camera để nhường chỗ cho Camera của nhân vật
+                if (_sceneCamera != null)
+                {
+                    _sceneCamera.gameObject.SetActive(false);
+                    Debug.Log("📷 [Lobby] Disabled Scene Camera.");
+                }
             }
         }
     }

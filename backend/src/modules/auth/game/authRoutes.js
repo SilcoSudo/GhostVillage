@@ -1,18 +1,21 @@
 import express from "express";
-import { loginGame, logoutGame, getMeGame } from "./authController.js";
+import * as authController from "./authController.js";
 import { authMiddleware } from "../../../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
 /**
  * GAME AUTH ROUTES
- * Prefix: /api/auth (Do hack route bên src/routes.js)
+ * Các route này phục vụ riêng cho Client Unity
  */
 
-router.post("/login", loginGame);
-router.post("/logout", logoutGame);
+// Đăng nhập: Không cần middleware vì là route công khai
+router.post("/login", authController.loginGame);
 
-// Route lấy thông tin bản thân (cần Token)
-router.get("/me", authMiddleware, getMeGame);
+// Đăng xuất
+router.post("/logout", authController.logoutGame);
+
+// Lấy thông tin: Cần authMiddleware để bảo mật dựa trên JWT Token
+router.get("/me", authMiddleware, authController.getMeGame);
 
 export default router;
