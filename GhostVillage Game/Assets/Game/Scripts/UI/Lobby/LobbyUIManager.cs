@@ -2,6 +2,8 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using System;
+using Cysharp.Threading.Tasks;
 
 namespace Game.Core.Lobby
 {
@@ -108,21 +110,35 @@ namespace Game.Core.Lobby
         /// <param name="sender">Tên người gửi.</param>
         /// <param name="message">Nội dung tin nhắn.</param>
         /// <param name="isMe">Xác định tin nhắn là của bản thân hay người khác để chọn UI phù hợp.</param>
-        public void AddChatMessage(string sender, string message, bool isMe)
+        public async void AddChatMessage(string sender, string message, bool isMe)
         {
             GameObject prefab = isMe ? _chatMePrefab : _chatThemPrefab;
-            var chatItem = Instantiate(prefab, _chatContent);
+            var chatItem = Instantiate(prefab, _chatContent); //
 
             var texts = chatItem.GetComponentsInChildren<TextMeshProUGUI>();
             if (texts.Length >= 2)
             {
-                // texts[0] = Txt_SenderName, texts[1] = Txt_Content
                 texts[0].text = isMe ? "Tôi" : sender;
                 texts[1].text = message;
             }
 
-            Canvas.ForceUpdateCanvases();
-            _chatScrollRect.verticalNormalizedPosition = 0f;
+            // Đợi 1 frame để Vertical Layout Group và Content Size Fitter tính toán xong kích thước mới
+            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
+
+            // Kéo thanh cuộn xuống đáy (Vị trí 0 là đáy, 1 là đỉnh)
+            if (_chatScrollRect != null)
+            {
+                _chatScrollRect.verticalNormalizedPosition = 0f; //
+            }
+        }
+
+        public void BindSubmitEvent(Action<string> onSendMessage)
+        {
+            // Khi người dùng nhấn Enter trong InputField, TMP sẽ kích hoạt onSubmit
+            _inpChatMessage.onSubmit.AddListener((val) =>
+            {
+                onSendMessage?.Invoke(val);
+            });
         }
 
         /// <summary> Lấy nội dung văn bản đang nhập. </summary>
@@ -131,7 +147,25 @@ namespace Game.Core.Lobby
         /// <summary> Xóa trắng ô nhập liệu sau khi gửi. </summary>
         public void ClearInput() => _inpChatMessage.text = string.Empty;
 
-        /// <summary> Đưa con trỏ vào ô nhập liệu để bắt đầu gõ. </summary>
-        public void FocusChat() => _inpChatMessage.ActivateInputField();
+        /// <summary> Kiểm tra xem người chơi có đang tập trung vào ô nhập liệu chat không. </summary>
+        public bool IsChatFocused() => _inpChatMessage.isFocused;
+
+        // Thêm vào LobbyUIManager.cs
+        public void DeFocusChat()
+        {
+            _inpChatMessage.DeactivateInputField(); // Tắt con trỏ nhấp nháy trong TMP
+            if (UnityEngine.EventSystems.EventSystem.current != null)
+            {
+                // Bỏ chọn hoàn toàn trên UI để phím bấm quay về Game logic
+                UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(null);
+            }
+        }
+
+        /// <summary> Lựa chọn và kích hoạt ô chat (Cần thiết cho một số phiên bản TMP). </summary>
+        public void FocusChat()
+        {
+            _inpChatMessage.Select();
+            _inpChatMessage.ActivateInputField();
+        }
     }
 }
