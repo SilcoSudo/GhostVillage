@@ -1,0 +1,63 @@
+{
+  "auth": {
+    "loginTitle": "Admin Login",
+    "email": "Email",
+    "password": "Password",
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot password?",
+    "signIn": "Login",
+    "login": "Login"
+  },
+  "navbar": {
+    "dashboard": "Dashboard",
+    "users": "Users",
+    "posts": "Posts",
+    "reports": "Reports",
+    "settings": "Settings",
+    "administration": "Administration",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar",
+    "viewProfile": "View profile"
+  },
+  "common": {
+    "logout": "Logout"
+  },
+  "dashboard": {
+    "title": "Admin Dashboard",
+    "subtitle": "Manage all aspects of GhostVillage",
+    "profile": "Profile",
+    "userList": "User List",
+    "reportedPosts": "Reported Post List",
+    "reportedComments": "Reported Comment List",
+    "supportTickets": "Support Ticket List",
+    "announcements": "Announcement Management",
+    "wiki": "Wiki List",
+    "activityLog": "Admin Activity Log",
+    "gameVersion": "Game Version List",
+    "reportBug": "Report Bug",
+    "manageProfiles": "Manage user profiles",
+    "viewAllUsers": "View all users",
+    "reviewPosts": "Review reported posts",
+    "reviewComments": "Review reported comments",
+    "manageTickets": "Manage support tickets",
+    "createAnnouncements": "Create and manage announcements",
+    "manageWiki": "Manage wiki pages",
+    "viewActivities": "View admin activities",
+    "manageVersions": "Manage game versions",
+    "reportBugDesc": "Report bugs and issues"
+  },
+  "users": {
+    "searchPlaceholder": "Search users by name or email...",
+    "totalUsers": "Total: {{count}} users",
+    "active": "Active",
+    "banned": "Banned",
+    "joinDate": "Join Date",
+    "muted": "Muted",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "ban": "Ban",
+    "unban": "Unban",
+    "muteReason": "Mute Reason",
+    "noUsersFound": "No users found"
+  }
+}

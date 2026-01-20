@@ -1,24 +1,23 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../app/hooks/useAuth';
-import api from '../../services/axios';
 import {
   Home,
-  TrendingUp,
-  MessageSquare,
-  Bookmark,
-  Settings,
   Users,
-  Plus,
-  ChevronDown,
-  ChevronUp,
   FileText,
-  Edit,
-  Send,
+  AlertCircle,
+  MessageSquare,
+  Ticket,
+  Megaphone,
+  BookOpen,
+  Activity,
+  Package,
+  Bug,
   ChevronFirst,
   ChevronLast,
-  MoreVertical,
-  LogOut
+  LogOut,
+  LogIn,
 } from 'lucide-react';
 import "../../assets/styles/SidebarNav.css";
 
@@ -34,9 +33,10 @@ const useSidebarContext = () => {
 };
 
 const SidebarNav = () => {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const location = useLocation();
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
   const [expanded, setExpanded] = useState(() => {
     try {
       return window.innerWidth > 768;
@@ -55,49 +55,25 @@ const SidebarNav = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-  const [profile, setProfile] = useState(null);
-
-  // No-op: data fetching removed
-  const fetchNavigationData = () => setLoading(false);
-
-  useEffect(() => {
-    fetchNavigationData();
-    if (user) {
-      fetchUserProfile();
-    }
-  }, [user]);
-
-
-  const fetchUserProfile = async () => {
-    try {
-      if (!user?._id) return;
-      const res = await api.get(`/profile/${user._id}`);
-      if (res.data.success) {
-        setProfile(res.data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-    }
-  };
 
   const isActive = (path) => location.pathname === path;
 
-  const browseLinks = [
-    { icon: Home, label: t('navbar.home'), path: '/' },
-    { icon: FileText, label: t('navbar.allPosts'), path: '/posts' },
-    
+  const adminLinks = [
+    { icon: Users, label: t('dashboard.userList'), path: '/users', color: 'green' },
+    { icon: Ticket, label: t('dashboard.supportTickets'), path: '/support-tickets', color: 'purple' },
+    { icon: Megaphone, label: t('dashboard.announcements'), path: '/announcements', color: 'yellow' },
+    { icon: BookOpen, label: t('dashboard.wiki'), path: '/wiki', color: 'cyan' },
   ];
 
-  const myContentLinks = user ? [
-    { icon: FileText, label: t('navbar.myPosts'), path: '/my-posts' },
-    { icon: Bookmark, label: t('navbar.saved'), path: '/saved-posts' },
-    { icon: Send, label: t('navbar.createPost'), path: '/posts/create' },
-  ] : [];
+  const gameLinks = [ 
+    { icon: Activity, label: t('dashboard.activityLog'), path: '/activity-log', color: 'gray' },
+    { icon: Package, label: t('dashboard.gameVersion'), path: '/game-versions', color: 'indigo' },
+  ]
 
-  const userLinks = [
-    { icon: Users, label: 'Followers', path: '/followers' },
-    { icon: MessageSquare, label: 'Following', path: '/following' },
-    { icon: Settings, label: t('navbar.settings'), path: '/account/settings' },
+  const reportLinks = [
+    { icon: AlertCircle, label: t('dashboard.reportedPosts'), path: '/reports/posts', color: 'orange' },
+    { icon: MessageSquare, label: t('dashboard.reportedComments'), path: '/reports/comments', color: 'red' },
+    { icon: Bug, label: t('dashboard.reportBug'), path: '/report-bug', color: 'red' },
   ];
 
   return (
@@ -105,12 +81,32 @@ const SidebarNav = () => {
       <aside className={`sidebar-nav ${expanded ? 'expanded' : 'collapsed'}`}>
         {/* Header with Logo and Toggle */}
         <div className="sidebar-header-top">
-          <div className="sidebar-logo-spacer"></div>
+          {user ? (
+            <div 
+              className="sidebar-user-header"
+              onClick={() => navigate(`/profile/${user._id}`)}
+              title={t('navbar.viewProfile')}
+            >
+              <img
+                src={user.avatar || `https://ui-avatars.com/api/?name=${user.username || user.fullname}&background=990000&color=fff`}
+                alt={user.username || user.fullname}
+                className="sidebar-user-avatar-header"
+              />
+              {expanded && (
+                <div className="sidebar-user-info-header">
+                  <h4 className="sidebar-user-name-header">{user.username || user.fullname}</h4>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="sidebar-logo-spacer"></div>
+          )}
+          
           <button
             onClick={() => setExpanded(!expanded)}
             className="sidebar-toggle-btn"
-            title={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
-            aria-label={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
+            title={expanded ? t('navbar.collapse') : t('navbar.expand')}
+            aria-label={expanded ? t('navbar.collapse') : t('navbar.expand')}
           >
             {expanded ? <ChevronFirst size={20} /> : <ChevronLast size={20} />}
           </button>
@@ -118,70 +114,63 @@ const SidebarNav = () => {
 
         {/* Main Navigation Content */}
         <nav className="sidebar-content">
-          {/* Browse Section */}
+          {/* Admin Navigation Section */}
           <div className="sidebar-section">
             <h3 className="sidebar-section-title">
-              <span>{t('navbar.browse')}</span>
+              <span>{t('navbar.administration')}</span>
             </h3>
             <ul className="sidebar-items">
-              {browseLinks.map((link) => (
+              {adminLinks.map((link) => (
                 <SidebarItem
                   key={link.path}
                   icon={link.icon}
                   label={link.label}
                   path={link.path}
+                  color={link.color}
+                  active={isActive(link.path)}
+                />
+              ))}
+            </ul>
+
+            {/* Reports Section */}
+            <h3 className="sidebar-section-title">
+              <span>{t('navbar.reports')}</span>
+            </h3>
+            <ul className="sidebar-items">
+              {reportLinks.map((link) => (
+                <SidebarItem
+                  key={link.path}
+                  icon={link.icon}
+                  label={link.label}
+                  path={link.path}
+                  color={link.color}
+                  active={isActive(link.path)}
+                />
+              ))}
+            </ul>
+
+            {/* Game Section */}
+            <h3 className="sidebar-section-title">
+              <span>{t('navbar.game')}</span>
+            </h3>
+            <ul className="sidebar-items">
+              {gameLinks.map((link) => (
+                <SidebarItem
+                  key={link.path}
+                  icon={link.icon}
+                  label={link.label}
+                  path={link.path}
+                  color={link.color}
                   active={isActive(link.path)}
                 />
               ))}
             </ul>
           </div>
-
-          {/* My Content Section */}
-          {user && (
-            <div className="sidebar-section">
-              <h3 className="sidebar-section-title">
-                <span>{t('navbar.myContent')}</span>
-              </h3>
-              <ul className="sidebar-items">
-                {myContentLinks.map((link) => (
-                  <SidebarItem
-                    key={link.path}
-                    icon={link.icon}
-                    label={link.label}
-                    path={link.path}
-                    active={isActive(link.path)}
-                  />
-                ))}
-              </ul>
-            </div>
-          )}
         </nav>
 
         {/* User Profile Footer - Only when logged in */}
         {user && (
           <div className="sidebar-footer">
-            <div className="sidebar-user-profile">
-              <img
-                src={profile?.avatar || `https://ui-avatars.com/api/?name=${user.username}&background=f48024&color=fff`}
-                alt={user.username}
-                className="sidebar-user-avatar"
-              />
-              <div className="sidebar-user-info">
-                <h4 className="sidebar-user-name">{user.username}</h4>
-                <p className="sidebar-user-email">{user.email}</p>
-              </div>
-              {expanded && (
-                <button
-                  className="sidebar-user-menu"
-                  title="User menu"
-                  onClick={() => {
-                    // Toggle user menu - can be expanded later
-                  }}
-                >
-                  <MoreVertical size={18} />
-                </button>
-              )}
-            </div>
             <button
               className="sidebar-logout-btn"
               onClick={logout}
@@ -192,24 +181,40 @@ const SidebarNav = () => {
             </button>
           </div>
         )}
+
+        {/* Auth Buttons - Only when not logged in */}
+        {!user && (
+          <div className="sidebar-footer">
+            <div className="sidebar-auth-buttons">
+              <button
+                className="sidebar-login-btn"
+                onClick={() => navigate('/login')}
+                title={t('auth.login')}
+              >
+                <LogIn size={18} />
+                {expanded && <span>{t('auth.login')}</span>}
+              </button>
+            </div>
+          </div>
+        )}
       </aside>
     </SidebarContext.Provider>
   );
 };
 
 // SidebarItem Component with Tooltip
-const SidebarItem = ({ icon: Icon, label, path, active }) => {
+const SidebarItem = ({ icon: Icon, label, path, color, active }) => {
   const { expanded } = useSidebarContext();
 
   return (
     <li className="sidebar-item-wrapper">
       <Link
         to={path}
-        className={`sidebar-item ${active ? 'active' : ''}`}
+        className={`sidebar-item sidebar-item-${color} ${active ? 'active' : ''}`}
         title={label}
       >
-        <Icon size={20} />
-        <span>{label}</span>
+        <Icon size={20} className="sidebar-item-icon" />
+        <span className="sidebar-item-label">{label}</span>
         {!expanded && (
           <div className="sidebar-tooltip">
             {label}
@@ -220,5 +225,5 @@ const SidebarItem = ({ icon: Icon, label, path, active }) => {
   );
 };
 
-
 export default SidebarNav;
+
