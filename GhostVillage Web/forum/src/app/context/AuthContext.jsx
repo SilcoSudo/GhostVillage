@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useContext } from 'react';
 import authService from '../../features/auth/services/authService';
 
 export const AuthContext = createContext();
@@ -100,6 +100,9 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('rememberMeExpiry');
     sessionStorage.removeItem('token');
+    
+    // Redirect về home sau khi logout
+    window.location.href = '/';
   };
 
   const forgotPassword = async (email) => {
@@ -114,6 +117,20 @@ export const AuthProvider = ({ children }) => {
     return await authService.changePassword(oldPassword, newPassword);
   };
 
+  const refetchUser = async () => {
+    const currentToken = token || localStorage.getItem('token');
+    if (!currentToken) return;
+    
+    try {
+      const result = await authService.getCurrentUser(currentToken);
+      if (result.success) {
+        setUser(result.user);
+      }
+    } catch (error) {
+      console.error('Failed to refetch user:', error);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -125,9 +142,18 @@ export const AuthProvider = ({ children }) => {
       setSession,
       forgotPassword,
       resetPassword,
-      changePassword
+      changePassword,
+      refetchUser
     }}>
       {children}
     </AuthContext.Provider>
   );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+  return context;
 };

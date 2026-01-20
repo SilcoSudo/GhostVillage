@@ -119,26 +119,15 @@ export const config = {
     maxLimit: 100,
   },
 
-  // Email configuration
-  email: {
-    host: process.env.EMAIL_HOST || "smtp.gmail.com",
-    port: process.env.EMAIL_PORT || 587,
-    secure: process.env.EMAIL_SECURE === "true" || false, // true for 465, false for other ports
-    auth: {
-      user: process.env.EMAIL_USER || "your-email@gmail.com",
-      pass: process.env.EMAIL_PASS || "your-app-password",
-    },
-    from: process.env.EMAIL_FROM || "noreply@ghostvillage.com",
-  },
-
   // Google OAuth
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     redirectUri:
       process.env.GOOGLE_REDIRECT_URI ||
-      "http://localhost:5000/api/v1/auth/google/callback",
+      "http://localhost:5000/api/web/auth/google/callback",
   },
+
   // Email (nodemailer)
   email: (() => {
     const service = process.env.EMAIL_SERVICE;
@@ -151,14 +140,14 @@ export const config = {
     const port = process.env.EMAIL_PORT
       ? Number(process.env.EMAIL_PORT)
       : isGmail
-      ? 465
-      : 587;
+        ? 465
+        : 587;
 
     const secure = process.env.EMAIL_SECURE
       ? process.env.EMAIL_SECURE === "true"
       : isGmail
-      ? true
-      : false;
+        ? true
+        : false;
 
     return {
       service: service || undefined,

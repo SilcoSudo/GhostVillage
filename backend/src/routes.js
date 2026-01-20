@@ -3,7 +3,7 @@ import webAuthRoutes from "./modules/auth/web/authRoutes.js";
 import gameAuthRoutes from "./modules/auth/game/authRoutes.js";
 import userRoutes from "./modules/user/userRoutes.js";
 import achievementRoutes from "./modules/achievement/achievementRoutes.js";
-import postRoutes from "./modules/forum/postRoutes.js";
+import postRoutes from "./modules/forum/posts/postRoutes.js";
 import playerRoutes from "./modules/player/playerRoutes.js";
 import { loginGame } from "./modules/auth/game/authController.js";
 

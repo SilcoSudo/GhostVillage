@@ -108,7 +108,7 @@ export const loginWeb = async (req, res) => {
     const { token, user } = await AuthService.loginWeb(
       email,
       password,
-      rememberMe
+      rememberMe,
     );
 
     // Set cookie expiry based on rememberMe
@@ -146,7 +146,8 @@ export const logoutWeb = (req, res) => {
 
 export const getMeWeb = async (req, res) => {
   try {
-    const userId = req.user?.userId;
+    // authMiddleware gắn full user object vào req.user, nên lấy _id
+    const userId = req.user?._id;
     if (!userId) {
       return res.status(401).json({
         success: false,
