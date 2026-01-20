@@ -116,7 +116,27 @@ const SidebarNav = () => {
       <aside className={`sidebar-nav ${expanded ? 'expanded' : 'collapsed'}`}>
         {/* Header with Logo and Toggle */}
         <div className="sidebar-header-top">
-          <div className="sidebar-logo-spacer"></div>
+          {user ? (
+            <div 
+              className="sidebar-user-header"
+              onClick={() => navigate(`/profile/${user._id}`)}
+              title={t('navbar.viewProfile')}
+            >
+              <img
+                src={user.avatar || profile?.avatar || `https://ui-avatars.com/api/?name=${user.username || user.fullname}&background=f48024&color=fff`}
+                alt={user.username || user.fullname}
+                className="sidebar-user-avatar-header"
+              />
+              {expanded && (
+                <div className="sidebar-user-info-header">
+                  <h4 className="sidebar-user-name-header">{user.username || user.fullname}</h4>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="sidebar-logo-spacer"></div>
+          )}
+          
           <button
             onClick={() => setExpanded(!expanded)}
             className="sidebar-toggle-btn"
@@ -171,63 +191,6 @@ const SidebarNav = () => {
         {/* User Profile Footer - Only when logged in */}
         {user && (
           <div className="sidebar-footer">
-            <div 
-              className="sidebar-user-profile"
-              onClick={() => navigate(`/profile/${user._id}`)}
-              title={t('navbar.viewProfile')}
-              style={{ cursor: 'pointer' }}
-            >
-              <img
-                src={user.avatar || profile?.avatar || `https://ui-avatars.com/api/?name=${user.username || user.fullname}&background=f48024&color=fff`}
-                alt={user.username || user.fullname}
-                className="sidebar-user-avatar"
-              />
-              <div className="sidebar-user-info">
-                <h4 className="sidebar-user-name">{user.username || user.fullname}</h4>
-                <p className="sidebar-user-email">{user.email}</p>
-              </div>
-              {expanded && (
-                <div className="sidebar-user-menu-wrapper">
-                  <button
-                    className="sidebar-user-menu"
-                    title={t('navbar.userMenu')}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowUserMenu(!showUserMenu);
-                    }}
-                  >
-                    <MoreVertical size={18} />
-                  </button>
-                  
-                  {showUserMenu && (
-                    <div className="sidebar-user-menu-dropdown">
-                      <button
-                        className="sidebar-menu-item"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate('/account/settings');
-                          setShowUserMenu(false);
-                        }}
-                      >
-                        <Settings size={16} />
-                        <span>{t('navbar.settings')}</span>
-                      </button>
-                      <button
-                        className="sidebar-menu-item"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate('/account/change-password');
-                          setShowUserMenu(false);
-                        }}
-                      >
-                        <Edit size={16} />
-                        <span>{t('navbar.changePassword')}</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
             <button
               className="sidebar-logout-btn"
               onClick={logout}

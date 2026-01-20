@@ -1,14 +1,25 @@
 import express from 'express';
+import { getMyProfile, getUserIdProfile, updateMyProfile, updateName, toggleEmailVisibility, uploadAvatar } from './userController.js';
+import { authMiddleware } from '../../middlewares/auth.middleware.js';
+import { uploadAvatar as uploadAvatarMiddleware } from '../../middlewares/uploadMiddleware.js';
 
 const router = express.Router();
 
 /**
  * User Routes
- * Placeholder for future user management routes
+ * GET  /api/web/user/profile/me              - Get own profile (auth required)
+ * GET  /api/web/user/profile/:id             - Get public profile
+ * PUT  /api/web/user/profile/me              - Update profile (auth required)
+ * POST /api/web/user/avatar/upload           - Upload avatar (auth required)
+ * PUT  /api/web/user/profile/update-name     - Update name (auth required, legacy)
+ * PUT  /api/web/user/profile/toggle-email    - Toggle email visibility (auth required)
  */
 
-// TODO: Implement user routes
-// router.get('/profile', getUserProfile);
-// router.put('/profile', updateUserProfile);
+router.get('/profile/me', authMiddleware, getMyProfile);
+router.get('/profile/:id', getUserIdProfile);
+router.put('/profile/me', authMiddleware, updateMyProfile);
+router.post('/avatar/upload', authMiddleware, uploadAvatarMiddleware, uploadAvatar);
+router.put('/profile/update-name', authMiddleware, updateName);
+router.put('/profile/toggle-email-visibility', authMiddleware, toggleEmailVisibility);
 
 export default router;

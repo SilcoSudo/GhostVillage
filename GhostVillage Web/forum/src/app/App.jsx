@@ -10,6 +10,7 @@ import LoginPage from '../features/auth/pages/LoginPage';
 import RegisterPage from '../features/auth/pages/RegisterPage';
 import RegistrationSuccessPage from '../features/auth/pages/RegistrationSuccessPage';
 import VerifyEmailPage from '../features/auth/pages/VerifyEmailPage';
+import ProfilePage from '../features/profile/pages/ProfilePage';
 import HomePage from '../pages/HomePage';
 import '../shared/assets/styles/theme.css';
 
@@ -32,6 +33,7 @@ function AppContent() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/registration-success" element={<RegistrationSuccessPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/profile/:id" element={<ProfilePage />} />
             <Route 
               path="/" 
               element={<HomePage />}
