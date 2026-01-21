@@ -1,0 +1,63 @@
+{
+  "auth": {
+    "loginTitle": "Đăng nhập Admin",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "rememberMe": "Nhớ tôi",
+    "forgotPassword": "Quên mật khẩu?",
+    "signIn": "Đăng nhập",
+    "login": "Đăng nhập"
+  },
+  "navbar": {
+    "dashboard": "Bảng điều khiển",
+    "users": "Người dùng",
+    "posts": "Bài viết",
+    "reports": "Báo cáo",
+    "settings": "Cài đặt",
+    "administration": "Quản trị",
+    "collapse": "Thu gọn thanh bên",
+    "expand": "Mở rộng thanh bên",
+    "viewProfile": "Xem hồ sơ"
+  },
+  "common": {
+    "logout": "Đăng xuất"
+  },
+  "dashboard": {
+    "title": "Bảng Điều Khiển Admin",
+    "subtitle": "Quản lý tất cả các khía cạnh của GhostVillage",
+    "profile": "Hồ sơ",
+    "userList": "Danh sách người dùng",
+    "reportedPosts": "Danh sách bài viết bị báo cáo",
+    "reportedComments": "Danh sách bình luận bị báo cáo",
+    "supportTickets": "Danh sách yêu cầu hỗ trợ",
+    "announcements": "Quản lý thông báo",
+    "wiki": "Danh sách Wiki",
+    "activityLog": "Nhật ký hoạt động Admin",
+    "gameVersion": "Danh sách phiên bản game",
+    "reportBug": "Báo Cáo Lỗi",
+    "manageProfiles": "Quản lý hồ sơ người dùng",
+    "viewAllUsers": "Xem tất cả người dùng",
+    "reviewPosts": "Xem xét các bài viết được báo cáo",
+    "reviewComments": "Xem xét các bình luận được báo cáo",
+    "manageTickets": "Quản lý yêu cầu hỗ trợ",
+    "createAnnouncements": "Tạo và quản lý thông báo",
+    "manageWiki": "Quản lý các trang Wiki",
+    "viewActivities": "Xem các hoạt động của admin",
+    "manageVersions": "Quản lý phiên bản game",
+    "reportBugDesc": "Báo cáo lỗi và vấn đề"
+  },
+  "users": {
+    "searchPlaceholder": "Tìm kiếm người dùng theo tên hoặc email...",
+    "totalUsers": "Tổng: {{count}} người dùng",
+    "active": "Hoạt động",
+    "banned": "Bị khóa",
+    "joinDate": "Ngày tham gia",
+    "muted": "Bị tắt tiếng",
+    "mute": "Tắt tiếng",
+    "unmute": "Bật tiếng",
+    "ban": "Khóa",
+    "unban": "Mở khóa",
+    "muteReason": "Lý do tắt tiếng",
+    "noUsersFound": "Không tìm thấy người dùng nào"
+  }
+}

@@ -2,6 +2,7 @@ import express from 'express';
 import { getMyProfile, getUserIdProfile, updateMyProfile, updateName, toggleEmailVisibility, uploadAvatar } from './userController.js';
 import { authMiddleware } from '../../middlewares/auth.middleware.js';
 import { uploadAvatar as uploadAvatarMiddleware } from '../../middlewares/uploadMiddleware.js';
+import { getSavedPosts, completeProfile } from "./userController.js";
 
 const router = express.Router();
 
@@ -21,5 +22,11 @@ router.put('/profile/me', authMiddleware, updateMyProfile);
 router.post('/avatar/upload', authMiddleware, uploadAvatarMiddleware, uploadAvatar);
 router.put('/profile/update-name', authMiddleware, updateName);
 router.put('/profile/toggle-email-visibility', authMiddleware, toggleEmailVisibility);
+router.get("/saved-posts", authMiddleware, getSavedPosts);
+router.post("/complete-profile", authMiddleware, completeProfile);
+
+// TODO: Implement other user routes
+// router.get('/profile', getUserProfile);
+// router.put('/profile', updateUserProfile);
 
 export default router;

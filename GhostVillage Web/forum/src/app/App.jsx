@@ -11,7 +11,11 @@ import RegisterPage from '../features/auth/pages/RegisterPage';
 import RegistrationSuccessPage from '../features/auth/pages/RegistrationSuccessPage';
 import VerifyEmailPage from '../features/auth/pages/VerifyEmailPage';
 import ProfilePage from '../features/profile/pages/ProfilePage';
+import OAuthCallbackPage from '../features/auth/pages/OAuthCallbackPage';
+import CompleteProfilePage from '../features/auth/pages/CompleteProfilePage';
 import HomePage from '../pages/HomePage';
+import PostsPage from '../features/posts/pages/PostsPage';
+import SavedPostsPage from '../features/posts/pages/SavedPostsPage';
 import '../shared/assets/styles/theme.css';
 
 function AppContent() {
@@ -19,7 +23,7 @@ function AppContent() {
   const location = useLocation();
   
   // Các trang không hiển thị Header và Sidebar
-  const authPages = ['/login', '/register', '/registration-success', '/verify-email'];
+  const authPages = ['/login', '/register', '/registration-success', '/verify-email', '/auth/callback', '/complete-profile'];
   const showLayout = !authPages.includes(location.pathname);
 
   return (
@@ -34,10 +38,14 @@ function AppContent() {
             <Route path="/registration-success" element={<RegistrationSuccessPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
             <Route path="/profile/:id" element={<ProfilePage />} />
+            <Route path="/auth/callback" element={<OAuthCallbackPage />} />
+            <Route path="/complete-profile" element={<CompleteProfilePage />} />
             <Route 
               path="/" 
               element={<HomePage />}
             />
+            <Route path="/posts" element={<PostsPage />} />
+            <Route path="/saved-posts" element={<SavedPostsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

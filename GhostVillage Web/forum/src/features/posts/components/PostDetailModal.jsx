@@ -1,0 +1,397 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Modal, Button, Dropdown, Form, Spinner } from 'react-bootstrap';
+import { 
+  Heart, 
+  MessageCircle, 
+  Share2, 
+  Bookmark, 
+  MoreVertical,
+  User,
+  Send,
+  Edit2,
+  Trash2
+} from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { vi, enUS } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../../app/context/AuthContext';
+import CreatePostModal from './CreatePostModal';
+import ShareModal from './ShareModal';
+import DeleteConfirmModal from './DeleteConfirmModal';
+import Comment from './Comment';
+import { useComments, useCreateComment } from '../hooks/useComments';
+import { useDeletePost, useToggleLike, useToggleBookmark, usePost } from '../hooks/usePosts';
+import { linkifyHtmlContent } from '../../../shared/utils/linkify';
+import './PostDetailModal.css';
+
+const PostDetailModal = ({ show, onHide, postId, scrollToComments = false }) => {
+  const { t, i18n } = useTranslation();
+  const { user } = useAuth();
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const commentsSectionRef = useRef(null);
+
+  const locale = i18n.language === 'vi' ? vi : enUS;
+  
+  // Fetch post data
+  const { data: postData, isLoading: postLoading } = usePost(postId);
+  const post = postData?.data;
+  
+  // Check if current user has liked/bookmarked based on array
+  const userLiked = user && Array.isArray(post?.likes) 
+    ? post.likes.some(id => String(id) === String(user._id))
+    : false;
+  const userBookmarked = user && Array.isArray(post?.bookmarks)
+    ? post.bookmarks.some(id => String(id) === String(user._id))
+    : false;
+  
+  // Local state for optimistic updates
+  const [liked, setLiked] = useState(userLiked);
+  const [bookmarked, setBookmarked] = useState(userBookmarked);
+  const [likeCount, setLikeCount] = useState(Array.isArray(post?.likes) ? post.likes.length : 0);
+  
+  // Update local state when post data changes
+  useEffect(() => {
+    if (post && user) {
+      const isLiked = Array.isArray(post.likes) 
+        ? post.likes.some(id => String(id) === String(user._id))
+        : false;
+      const isBookmarked = Array.isArray(post.bookmarks)
+        ? post.bookmarks.some(id => String(id) === String(user._id))
+        : false;
+      
+      setLiked(isLiked);
+      setBookmarked(isBookmarked);
+      setLikeCount(Array.isArray(post.likes) ? post.likes.length : 0);
+    }
+  }, [post?._id, post?.likes, post?.bookmarks, user]);
+
+  // Scroll to comments section when scrollToComments is true
+  useEffect(() => {
+    if (scrollToComments && commentsSectionRef.current && show) {
+      setTimeout(() => {
+        commentsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 10);
+    }
+  }, [scrollToComments, show]);
+  
+  // Comment hooks
+  const { data: commentsData, isLoading: commentsLoading } = useComments(postId);
+  const createCommentMutation = useCreateComment(postId);
+  const deletePostMutation = useDeletePost();
+  const toggleLikeMutation = useToggleLike();
+  const toggleBookmarkMutation = useToggleBookmark();
+
+  const handleDelete = async () => {
+    try {
+      await deletePostMutation.mutateAsync(postId);
+      setShowDeleteModal(false);
+      onHide(); // Close detail modal after delete
+    } catch (error) {
+      console.error('Failed to delete post:', error);
+    }
+  };
+
+  // Ensure child modals are closed when this detail modal is closed
+  const handleClose = () => {
+    setShowEditModal(false);
+    setShowShareModal(false);
+    setShowDeleteModal(false);
+    onHide();
+  };
+
+  // When parent `show` changes to false, ensure child modals are reset
+  useEffect(() => {
+    if (!show) {
+      setShowEditModal(false);
+      setShowShareModal(false);
+      setShowDeleteModal(false);
+    }
+  }, [show]);
+
+  const handleLike = async () => {
+    try {
+      setLiked(!liked);
+      setLikeCount(prev => liked ? prev - 1 : prev + 1);
+      await toggleLikeMutation.mutateAsync(postId);
+    } catch (error) {
+      // Revert on error
+      setLiked(liked);
+      setLikeCount(prev => liked ? prev + 1 : prev - 1);
+    }
+  };
+
+  const handleBookmark = async () => {
+    try {
+      setBookmarked(!bookmarked);
+      await toggleBookmarkMutation.mutateAsync(postId);
+    } catch (error) {
+      // Revert on error
+      setBookmarked(!bookmarked);
+    }
+  };
+
+  const handleShare = () => {
+    setShowShareModal(true);
+  };
+
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    if (!commentText.trim()) return;
+    
+    try {
+      await createCommentMutation.mutateAsync({ content: commentText });
+      setCommentText('');
+    } catch (error) {
+      console.error('Failed to post comment:', error);
+    }
+  };
+
+  if (postLoading) {
+    return (
+      <Modal show={show} onHide={onHide} size="xl" centered className="post-detail-modal">
+        <Modal.Body className="text-center py-5">
+          <Spinner animation="border" />
+          <p className="mt-3">{t('posts.loading')}</p>
+        </Modal.Body>
+      </Modal>
+    );
+  }
+
+  if (!post) return null;
+
+  return (
+    <>
+      <Modal 
+        show={show} 
+        onHide={handleClose}
+        size="xl"
+        centered
+        className="post-detail-modal"
+      >
+        <Modal.Header closeButton>
+          {/* Author Info */}
+          <div className="post-modal-header">
+            <div className="post-author-info">
+              {post?.author?.avatar ? (
+                <img 
+                  src={post.author.avatar} 
+                  alt={post.author.username}
+                  className="post-avatar"
+                />
+              ) : (
+                <div className="post-avatar-placeholder">
+                  <User size={20} />
+                </div>
+              )}
+              <div className="post-author-details">
+                <div className="post-author-name">
+                  {post?.author?.username || t('posts.anonymous')}
+                </div>
+                <div className="post-meta">
+                  <span className="post-date">
+                    {formatDistanceToNow(new Date(post?.createdAt), { 
+                      addSuffix: true,
+                      locale 
+                    })}
+                  </span>
+                  {post?.temperature && (
+                    <>
+                      <span className="post-meta-divider">•</span>
+                      <span className="post-temperature">☀️ {post.temperature}°C</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </Modal.Header>
+
+        <Modal.Body>
+          {/* Post Content */}
+          <div className="post-content-section">
+            <div className="post-title-row">
+              <h3 className="post-title">{post?.title}</h3>
+              <Dropdown align="end">
+                <Dropdown.Toggle variant="link" className="post-menu-btn" bsPrefix="none">
+                  <MoreVertical size={20} />
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  {user && user._id === post?.author?._id ? (
+                    <>
+                      <Dropdown.Item onClick={() => setShowEditModal(true)}>
+                        <Edit2 size={16} />
+                        {t('posts.edit')}
+                      </Dropdown.Item>
+                      <Dropdown.Item className="text-danger" onClick={() => setShowDeleteModal(true)}>
+                        <Trash2 size={16} />
+                        {t('posts.delete')}
+                      </Dropdown.Item>
+                    </>
+                  ) : (
+                    <>
+                      <Dropdown.Item>{t('posts.report')}</Dropdown.Item>
+                      <Dropdown.Item>{t('posts.hide')}</Dropdown.Item>
+                    </>
+                  )}
+                </Dropdown.Menu>
+              </Dropdown>
+            </div>
+            {post?.body && (
+              <div 
+                className="post-body"
+                dangerouslySetInnerHTML={{ __html: linkifyHtmlContent(post.body) }}
+              />
+            )}
+
+            {/* Media */}
+            {post?.media && post.media.length > 0 && (
+              <div className="post-media">
+                <img 
+                  src={post.media[0].url} 
+                  alt={post.title}
+                  className="post-image"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="post-footer">
+            <Button
+              variant="link"
+              className={`post-action-btn ${liked ? 'active liked' : ''}`}
+              onClick={handleLike}
+            >
+              <Heart size={18} fill={liked ? 'var(--primary-color)' : 'none'} stroke="currentColor" />
+              <span> {likeCount}</span>
+            </Button>
+
+            <Button
+              variant="link"
+              className="post-action-btn"
+            >
+              <MessageCircle size={18} />
+              <span> {post?.commentCount || 0}</span>
+            </Button>
+
+            <Button
+              variant="link"
+              className="post-action-btn"
+              onClick={handleShare}
+            >
+              <Share2 size={18} />
+            </Button>
+
+            <Button
+              variant="link"
+              className={`post-action-btn ${bookmarked ? 'active bookmarked' : ''}`}
+              onClick={handleBookmark}
+            >
+              <Bookmark size={18} fill={bookmarked ? 'currentColor' : 'none'} />
+            </Button>
+          </div>
+
+          {/* Comments Section */}
+          <div className="comments-section" ref={commentsSectionRef}>
+            <div className="comments-header">
+              <h5>{t('posts.comments')}</h5>
+            </div>
+
+            {/* Comment Input */}
+            {user && (
+              <Form onSubmit={handleCommentSubmit} className="comment-form">
+                <div className="comment-input-wrapper">
+                  {user?.avatar ? (
+                    <img 
+                      src={user.avatar} 
+                      alt={user.username}
+                      className="comment-avatar"
+                    />
+                  ) : (
+                    <div className="comment-avatar-placeholder">
+                      <User size={16} />
+                    </div>
+                  )}
+                  <Form.Control
+                    type="text"
+                    placeholder={t('posts.writeComment')}
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    className="comment-input"
+                  />
+                  <Button 
+                    type="submit" 
+                    variant="link" 
+                    className="comment-send-btn"
+                    disabled={!commentText.trim()}
+                  >
+                    <Send size={20} />
+                  </Button>
+                </div>
+              </Form>
+            )}
+
+            {/* Comments List */}
+            <div className="comments-list">
+              {commentsLoading ? (
+                <div className="text-center py-3">
+                  <Spinner animation="border" size="sm" />
+                </div>
+              ) : commentsData?.data?.length > 0 ? (
+                commentsData.data.map(comment => (
+                  <Comment 
+                    key={comment._id} 
+                    comment={comment} 
+                    postId={post._id}
+                  />
+                ))
+              ) : (
+                <div className="no-comments">
+                  <MessageCircle size={48} className="text-muted" />
+                  <p>{t('posts.noComments')}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </Modal.Body>
+      </Modal>
+
+      
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <CreatePostModal
+          show={showEditModal}
+          onHide={() => setShowEditModal(false)}
+          post={post}
+          mode="edit"
+        />
+      )}
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <ShareModal
+          show={showShareModal}
+          onHide={() => setShowShareModal(false)}
+          post={post}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <DeleteConfirmModal
+          show={showDeleteModal}
+          onHide={() => setShowDeleteModal(false)}
+          onConfirm={handleDelete}
+          isDeleting={deletePostMutation.isLoading}
+          itemType="post"
+        />
+      )}
+    </>
+  );
+};
+
+export default PostDetailModal;

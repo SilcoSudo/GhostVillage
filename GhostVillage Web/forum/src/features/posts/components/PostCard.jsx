@@ -1,0 +1,374 @@
+import React, { useState, useMemo, useEffect } from 'react';
+import { Card, Button, Dropdown, Carousel } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
+import { 
+  Heart, 
+  MessageCircle, 
+  Share2, 
+  Bookmark, 
+  MoreVertical,
+  User,
+  Edit2,
+  Trash2
+} from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { vi, enUS } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../../app/context/AuthContext';
+import CreatePostModal from './CreatePostModal';
+import PostDetailModal from './PostDetailModal';
+import DeleteConfirmModal from './DeleteConfirmModal';
+import { useDeletePost, useToggleLike, useToggleBookmark } from '../hooks/usePosts';
+import { linkifyHtmlContent } from '../../../shared/utils/linkify';
+import { extractImagesFromHtml, extractVideosFromHtml, removeImagesAndVideosFromHtml } from '../../../shared/utils/imageExtractor';
+import ShareModal from './ShareModal';
+import './PostCard.css';
+
+const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
+  const { t, i18n } = useTranslation();
+  const { user, refetchUser } = useAuth();
+  
+  // Check if current user has liked/bookmarked based on array
+  const userLiked = user && Array.isArray(post?.likes) 
+    ? post.likes.some(id => String(id) === String(user._id))
+    : false;
+  // If on SavedPostsPage, always show as bookmarked
+  const userBookmarked = isSavedPostsPage 
+    ? true 
+    : (user?.bookmarks && Array.isArray(user.bookmarks)
+        ? user.bookmarks.some(id => String(id) === String(post._id))
+        : false);
+  
+  const [liked, setLiked] = useState(userLiked);
+  const [bookmarked, setBookmarked] = useState(userBookmarked);
+  const [likeCount, setLikeCount] = useState(Array.isArray(post?.likes) ? post.likes.length : 0);
+  
+  // Đồng bộ state với dữ liệu từ server khi post thay đổi
+  useEffect(() => {
+    if (post && user) {
+      const isLiked = Array.isArray(post.likes) 
+        ? post.likes.some(id => String(id) === String(user._id))
+        : false;
+      // If on SavedPostsPage, always show as bookmarked
+      const isBookmarked = isSavedPostsPage 
+        ? true 
+        : (Array.isArray(user.bookmarks)
+            ? user.bookmarks.some(id => String(id) === String(post._id))
+            : false);
+      
+      setLiked(isLiked);
+      setBookmarked(isBookmarked);
+      setLikeCount(Array.isArray(post.likes) ? post.likes.length : 0);
+    }
+  }, [post?._id, post?.likes, user?.bookmarks, user, isSavedPostsPage]);
+  
+  // Listen for refetch-user event after bookmark
+  useEffect(() => {
+    const handleRefetchUser = () => {
+      if (refetchUser) refetchUser();
+    };
+    window.addEventListener('refetch-user', handleRefetchUser);
+    return () => window.removeEventListener('refetch-user', handleRefetchUser);
+  }, [refetchUser]);
+  
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [scrollToComments, setScrollToComments] = useState(false);
+
+  const locale = i18n.language === 'vi' ? vi : enUS;
+  const deletePostMutation = useDeletePost();
+  const toggleLikeMutation = useToggleLike();
+  const toggleBookmarkMutation = useToggleBookmark();
+
+  // Extract images and videos from HTML body
+  const images = useMemo(() => extractImagesFromHtml(post?.body), [post?.body]);
+  const videos = useMemo(() => extractVideosFromHtml(post?.body), [post?.body]);
+  const bodyWithoutMedia = useMemo(() => removeImagesAndVideosFromHtml(post?.body), [post?.body]);
+
+  const handleDelete = async () => {
+    try {
+      await deletePostMutation.mutateAsync(post._id);
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error('Failed to delete post:', error);
+    }
+  };
+
+  const handleLike = async () => {
+    try {
+      setLiked(!liked);
+      setLikeCount(prev => liked ? prev - 1 : prev + 1);
+      await toggleLikeMutation.mutateAsync(post._id);
+    } catch (error) {
+      // Revert on error
+      setLiked(liked);
+      setLikeCount(prev => liked ? prev + 1 : prev - 1);
+    }
+  };
+
+  const handleBookmark = async () => {
+    try {
+      const wasBookmarked = bookmarked;
+      setBookmarked(!bookmarked);
+      await toggleBookmarkMutation.mutateAsync(post._id);
+      
+      // If unbookmarked and callback exists, notify parent (for SavedPostsPage)
+      if (wasBookmarked && onPostUpdate) {
+        onPostUpdate(post);
+      }
+    } catch (error) {
+      // Revert on error
+      setBookmarked(!bookmarked);
+    }
+  };
+
+  const handleShare = () => {
+    setShowShareModal(true);
+  };
+
+  return (
+    <Card className="post-card">
+      <Card.Body>
+        {/* Header */}
+        <div className="post-header">
+          <div className="post-author-info">
+            <Link to={`/profile/${post?.author?._id}`} className="post-avatar-link">
+              {post?.author?.avatar ? (
+                <img 
+                  src={post.author.avatar} 
+                  alt={post.author.username}
+                  className="post-avatar"
+                />
+              ) : (
+                <div className="post-avatar-placeholder">
+                  <User size={20} />
+                </div>
+              )}
+            </Link>
+            <div className="post-author-details">
+              <Link to={`/profile/${post?.author?._id}`} className="post-author-name">
+                {post?.author?.username || t('posts.anonymous')}
+              </Link>
+              <div className="post-meta">
+                <span className="post-date">
+                  {formatDistanceToNow(new Date(post?.createdAt), { 
+                    addSuffix: true,
+                    locale 
+                  })}
+                </span>
+                {post?.temperature && (
+                  <>
+                    <span className="post-meta-divider">•</span>
+                    <span className="post-temperature">☀️ {post.temperature}°C</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+          <Dropdown align="end" onClick={(e) => e.stopPropagation()}>
+            <Dropdown.Toggle variant="link" className="post-menu-btn" bsPrefix="none">
+              <MoreVertical size={20} />
+            </Dropdown.Toggle>
+            <Dropdown.Menu>
+              {user && user._id === post?.author?._id ? (
+                <>
+                  <Dropdown.Item onClick={() => setShowEditModal(true)}>
+                    <Edit2 size={16} />
+                    {t('posts.edit')}
+                  </Dropdown.Item>
+                  <Dropdown.Item className="text-danger" onClick={() => setShowDeleteModal(true)}>
+                    <Trash2 size={16} />
+                    {t('posts.delete')}
+                  </Dropdown.Item>
+                </>
+              ) : (
+                <>
+                  <Dropdown.Item>{t('posts.report')}</Dropdown.Item>
+                  <Dropdown.Item>{t('posts.hide')}</Dropdown.Item>
+                </>
+              )}
+            </Dropdown.Menu>
+          </Dropdown>
+        </div>
+
+        {/* Content */}
+        <div className="post-content-wrapper">
+          <div className="post-content">
+            <div className="post-content-link" onClick={() => { setScrollToComments(false); setShowDetailModal(true); }} style={{ cursor: 'pointer' }}>
+              <h3 className="post-title">{post?.title}</h3>
+            </div>
+            <div className="post-content-link" onClick={() => { setScrollToComments(false); setShowDetailModal(true); }} style={{ cursor: 'pointer' }}>
+              {bodyWithoutMedia && bodyWithoutMedia.trim().replace(/<[^>]*>/g, '').trim() && (
+                (() => {
+                  // Parse HTML and get up to 3 blocks (p, div, li, br, etc.)
+                  const parser = new DOMParser();
+                  const doc = parser.parseFromString(linkifyHtmlContent(bodyWithoutMedia), 'text/html');
+                  const blockTags = ['P', 'DIV', 'LI', 'UL', 'OL', 'BR'];
+                  let blocks = [];
+                  for (let child of doc.body.childNodes) {
+                    // Lọc node trống hoặc chỉ chứa khoảng trắng
+                    const content = child.outerHTML || child.textContent;
+                    if ((blockTags.includes(child.nodeName) || child.nodeType === 3) && content && content.trim()) {
+                      blocks.push(content);
+                      if (blocks.length === 3) break;
+                    }
+                  }
+                  if (blocks.length < 3) {
+                    for (let child of doc.body.childNodes) {
+                      const content = child.textContent;
+                      if (!blockTags.includes(child.nodeName) && child.nodeType === 3 && content && content.trim()) {
+                        blocks.push(content);
+                        if (blocks.length === 3) break;
+                      }
+                    }
+                  }
+                  // Đếm số block thực sự có nội dung
+                  const realBlocks = Array.from(doc.body.childNodes).filter(child => {
+                    const content = child.outerHTML || child.textContent;
+                    return (blockTags.includes(child.nodeName) || child.nodeType === 3) && content && content.trim();
+                  });
+                  const hasMore = realBlocks.length > blocks.length;
+                  return (
+                    <>
+                      <div className="post-body post-body-preview">
+                        {blocks.map((block, idx) => (
+                          <div key={idx} dangerouslySetInnerHTML={{ __html: block }} />
+                        ))}
+                      </div>
+                      {hasMore && (
+                        <div className="post-preview-ellipsis" style={{ marginTop: 0, display: 'block', width: '100%' }}>...</div>
+                      )}
+                    </>
+                  );
+                })()
+              )}
+            </div>
+          </div>          {/* Image Carousel */}
+          {images && images.length > 0 && (
+            <div className="post-image-carousel">
+              <Carousel 
+                indicators={images.length > 1} 
+                controls={images.length > 1}
+                interval={null}
+              >
+                {images.map((src, index) => (
+                  <Carousel.Item key={index} style={{ backgroundImage: `url(${src})` }}>
+                    <img
+                      className="carousel-image"
+                      src={src}
+                      alt={`Slide ${index + 1}`}
+                      onClick={() => setShowDetailModal(true)}
+                    />
+                    {images.length > 1 && (
+                      <div className="image-counter">
+                        {index + 1}/{images.length}
+                      </div>
+                    )}
+                  </Carousel.Item>
+                ))}
+              </Carousel>
+            </div>
+          )}
+
+          {/* Video Embeds */}
+          {videos && videos.length > 0 && (
+            <div className="post-videos">
+              {videos.map((src, index) => (
+                <div key={index} className="video-wrapper">
+                  <iframe
+                    src={src}
+                    title={`Video ${index + 1}`}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer Actions */}
+        <div className="post-footer">
+          <Button
+            variant="link"
+            className={`post-action-btn ${liked ? 'active liked' : ''}`}
+            onClick={handleLike}
+          >
+            <Heart size={18} fill={liked ? 'var(--primary-color)' : 'none'} stroke="currentColor" />
+            <span> {likeCount}</span>
+          </Button>
+
+          <Button
+            variant="link"
+            className="post-action-btn"
+            onClick={() => { setScrollToComments(true); setShowDetailModal(true); }}
+          >
+            <MessageCircle size={18} />
+            <span> {post?.commentCount || 0}</span>
+          </Button>
+
+          <Button
+            variant="link"
+            className="post-action-btn"
+            onClick={handleShare}
+          >
+            <Share2 size={18} />
+          </Button>
+
+          <Button
+            variant="link"
+            className={`post-action-btn ${bookmarked ? 'active bookmarked' : ''}`}
+            onClick={handleBookmark}
+          >
+            <Bookmark size={18} fill={bookmarked ? 'currentColor' : 'none'} />
+          </Button>
+        </div>
+      </Card.Body>
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <CreatePostModal
+          show={showEditModal}
+          onHide={() => setShowEditModal(false)}
+          post={post}
+          mode="edit"
+        />
+      )}
+
+      {/* Detail Modal */}
+      {showDetailModal && (
+        <PostDetailModal
+          show={showDetailModal}
+          onHide={() => { setShowDetailModal(false); setScrollToComments(false); }}
+          postId={post._id}
+          scrollToComments={scrollToComments}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <DeleteConfirmModal
+          show={showDeleteModal}
+          onHide={() => setShowDeleteModal(false)}
+          onConfirm={handleDelete}
+          isDeleting={deletePostMutation.isLoading}
+          itemType="post"
+        />
+      )}
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <ShareModal
+          show={showShareModal}
+          onHide={() => setShowShareModal(false)}
+          post={post}
+        />
+      )}
+    </Card>
+  );
+};
+
+export default PostCard;

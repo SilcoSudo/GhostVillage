@@ -1,0 +1,116 @@
+import Post from "./postModel.js";
+
+export const listPosts = async ({ page = 1, limit = 10, category }) => {
+  const p = Math.max(parseInt(page) || 1, 1);
+  const l = Math.min(Math.max(parseInt(limit) || 10, 1), 100);
+  const skip = (p - 1) * l;
+
+  // Build query filter
+  const filter = {};
+  if (category && category !== "all") {
+    filter.category = category;
+  }
+
+  const [items, total] = await Promise.all([
+    Post.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(l)
+      .populate("author", "fullname avatar"),
+    Post.countDocuments(filter),
+  ]);
+
+  const hasMore = skip + items.length < total;
+  return { items, pagination: { page: p, limit: l, total, hasMore } };
+};
+
+export const getPostById = async (id) => {
+  return await Post.findById(id).populate("author", "fullname avatar");
+};
+
+export const createPost = async ({ title, body, author, category, media }) => {
+  const post = await Post.create({
+    title,
+    body,
+    author,
+    category,
+    media: media || [],
+  });
+  return await post.populate("author", "fullname avatar");
+};
+
+export const updatePost = async (id, { title, body, category, media }) => {
+  return await Post.findByIdAndUpdate(
+    id,
+    {
+      title,
+      body,
+      category,
+      media,
+      isEdited: true,
+      editedAt: new Date(),
+      updatedAt: new Date(),
+    },
+    { new: true },
+  ).populate("author", "fullname avatar");
+};
+
+export const deletePost = async (id) => {
+  return await Post.findByIdAndDelete(id);
+};
+
+export const toggleLike = async (id, userId) => {
+  const post = await Post.findById(id);
+  if (!post) return null;
+  const idx = post.likes.findIndex((x) => String(x) === String(userId));
+  if (idx >= 0) post.likes.splice(idx, 1);
+  else post.likes.push(userId);
+  await post.save();
+  return post;
+};
+
+export const toggleBookmark = async (id, userId) => {
+  const User = (await import("../../user/userModel.js")).default;
+  const post = await Post.findById(id);
+  if (!post) return null;
+
+  // Only update User.bookmarks
+  const user = await User.findById(userId);
+  if (user) {
+    const userBookmarkIdx = user.bookmarks.findIndex(
+      (x) => String(x) === String(id),
+    );
+    if (userBookmarkIdx >= 0) {
+      user.bookmarks.splice(userBookmarkIdx, 1);
+    } else {
+      user.bookmarks.push(id);
+    }
+    await user.save();
+  }
+
+  return post;
+};
+
+export const incrementCommentCount = async (id) => {
+  return await Post.findByIdAndUpdate(
+    id,
+    { $inc: { commentCount: 1 } },
+    { new: true },
+  );
+};
+
+export const decrementCommentCount = async (id) => {
+  return await Post.findByIdAndUpdate(
+    id,
+    { $inc: { commentCount: -1 } },
+    { new: true },
+  );
+};
+
+export const toggleLockPost = async (id) => {
+  const post = await Post.findById(id);
+  if (!post) return null;
+  post.isLocked = !post.isLocked;
+  await post.save();
+  return post;
+};

@@ -31,7 +31,7 @@ export const AuthService = {
     const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
     if (!pwdRegex.test(password)) {
       throw new Error(
-        "Password must be at least 8 characters and include uppercase, lowercase and a special character"
+        "Password must be at least 8 characters and include uppercase, lowercase and a special character",
       );
     }
 
@@ -82,7 +82,7 @@ export const AuthService = {
     // Send verification email with opaque token
     const verificationLink = `${config.frontendUrl.replace(
       /\/+$/,
-      ""
+      "",
     )}/verify-email?token=${rawToken}`;
     await MailService.sendVerificationEmail(email, verificationLink);
 
@@ -158,7 +158,7 @@ export const AuthService = {
       // Send verification email with new token
       const verificationLink = `${config.frontendUrl.replace(
         /\/+$/,
-        ""
+        "",
       )}/verify-email?token=${rawToken}&email=${encodeURIComponent(email)}`;
       await MailService.sendVerificationEmail(email, verificationLink);
 
@@ -301,7 +301,7 @@ export const AuthService = {
 
     const resetLink = `${config.frontendUrl.replace(
       /\/+$/,
-      ""
+      "",
     )}/reset-password?token=${rawToken}`;
     await MailService.sendResetPasswordEmail(email, resetLink);
 
@@ -329,6 +329,42 @@ export const AuthService = {
     await user.save();
 
     return { success: true };
+  },
+
+  /**
+   * GOOGLE OAUTH: Find or create user from Google profile
+   */
+  findOrCreateGoogleUser: async ({ googleId, email, fullname, avatar }) => {
+    let user = await userModel.findOne({
+      $or: [{ googleId }, { email: email.toLowerCase() }],
+    });
+
+    if (user) {
+      // Update Google ID if not set
+      if (!user.googleId) {
+        user.googleId = googleId;
+      }
+      // Only set avatar from Google if user doesn't have one yet
+      if (avatar && (!user.avatar || user.avatar === "")) {
+        user.avatar = avatar;
+      }
+      // Mark as verified (Google verified the email)
+      user.isVerified = true;
+      await user.save();
+    } else {
+      // Create new user
+      user = await userModel.create({
+        googleId,
+        email: email.toLowerCase(),
+        fullname,
+        avatar,
+        isVerified: true, // Google OAuth users are auto-verified
+        password: null, // No password for OAuth users
+      });
+    }
+
+    const token = generateToken(user._id, true); // Remember me = true for OAuth
+    return { token, user: user.toJSON() };
   },
 };
 

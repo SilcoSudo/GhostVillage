@@ -108,7 +108,7 @@ export const loginWeb = async (req, res) => {
     const { token, user } = await AuthService.loginWeb(
       email,
       password,
-      rememberMe
+      rememberMe,
     );
 
     // Set cookie expiry based on rememberMe

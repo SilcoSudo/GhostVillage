@@ -13,17 +13,23 @@ const userSchema = new mongoose.Schema(
     fullname: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
     },
     password: {
       type: String,
-      required: true,
+      required: false, // Not required for OAuth users
       minlength: 8,
+      default: null,
+    },
+    googleId: {
+      type: String,
+      default: null,
+      sparse: true, // Allow multiple null values but unique non-null values
     },
     dateOfBirth: {
       type: Date,
-      required: true,
+      required: false, // Not required for OAuth users
+      default: null,
     },
     avatar: {
       type: String,
@@ -42,6 +48,12 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    bookmarks: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Post",
+      },
+    ],
     verificationTokenHash: {
       type: String,
       default: null,
@@ -71,12 +83,13 @@ const userSchema = new mongoose.Schema(
       ref: "Post"
     }],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Hash password before saving
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+  // Skip hashing if password is null (OAuth users)
+  if (!this.password || !this.isModified("password")) return next();
 
   // If password already looks like a bcrypt hash, skip re-hashing
   if (typeof this.password === "string" && this.password.startsWith("$2")) {
@@ -94,6 +107,7 @@ userSchema.pre("save", async function (next) {
 
 // Method to compare password
 userSchema.methods.comparePassword = async function (password) {
+  if (!this.password) return false; // OAuth users have no password
   return await bcrypt.compare(password, this.password);
 };
 
