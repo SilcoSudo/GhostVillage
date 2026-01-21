@@ -22,7 +22,8 @@ import {
   LogOut,
   LogIn,
   UserPlus,
-  BookOpen
+  BookOpen,
+  Megaphone
 } from 'lucide-react';
 import "../../assets/styles/SidebarNav.css";
 
@@ -98,6 +99,7 @@ const SidebarNav = () => {
     { icon: Home, label: t('navbar.home'), path: '/' },
     { icon: FileText, label: t('navbar.allPosts'), path: '/posts' },
     { icon: BookOpen, label: 'Wiki', path: '/wiki' },
+    { icon: Megaphone, label: 'Announcements', path: '/announcements' },
   ];
 
   const myContentLinks = user ? [

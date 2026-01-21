@@ -1,19 +1,17 @@
 import * as wikiService from "./wikiService.js";
 
 const serializeWiki = (doc) => {
-    const wiki = doc ? .toObject ? doc.toObject() : doc;
+    const wiki = doc ?.toObject ? doc.toObject() : doc;
     if (!wiki) return wiki;
 
     return {
         ...wiki,
         likes: Array.isArray(wiki.likes) ? wiki.likes.length : 0,
-        author: wiki.author ?
-            {
-                _id: wiki.author._id,
-                fullname: wiki.author.fullname || "Anonymous",
-                avatar: wiki.author.avatar || null,
-            } :
-            null,
+        author: wiki.author ? {
+            _id: wiki.author._id,
+            fullname: wiki.author.fullname || "Anonymous",
+            avatar: wiki.author.avatar || null,
+        } : null,
     };
 };
 
@@ -115,7 +113,7 @@ export const createWiki = async(req, res, next) => {
             });
         }
 
-        const effectiveAuthor = req.user ? ._id || req.body.author;
+        const effectiveAuthor = req.user ?._id || req.body.author;
         if (!effectiveAuthor) {
             return res.status(401).json({
                 success: false,
@@ -169,7 +167,7 @@ export const createWiki = async(req, res, next) => {
  */
 export const updateWiki = async(req, res, next) => {
     try {
-        const userId = req.user ? ._id;
+        const userId = req.user ?._id;
         if (!userId) {
             return res.status(401).json({
                 success: false,
@@ -264,7 +262,7 @@ export const deleteWiki = async(req, res, next) => {
  */
 export const likeWiki = async(req, res, next) => {
     try {
-        const userId = req.user ? ._id || req.body.userId;
+        const userId = req.user ?._id || req.body.userId;
         if (!userId) {
             return res.status(401).json({
                 success: false,
