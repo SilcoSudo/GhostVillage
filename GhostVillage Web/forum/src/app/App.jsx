@@ -16,6 +16,8 @@ import CompleteProfilePage from '../features/auth/pages/CompleteProfilePage';
 import HomePage from '../pages/HomePage';
 import PostsPage from '../features/posts/pages/PostsPage';
 import SavedPostsPage from '../features/posts/pages/SavedPostsPage';
+import WikiListPage from '../features/wiki/pages/WikiListPage';
+import WikiDetailPage from '../features/wiki/pages/WikiDetailPage';
 import '../shared/assets/styles/theme.css';
 
 function AppContent() {
@@ -46,6 +48,8 @@ function AppContent() {
             />
             <Route path="/posts" element={<PostsPage />} />
             <Route path="/saved-posts" element={<SavedPostsPage />} />
+            <Route path="/wiki" element={<WikiListPage />} />
+            <Route path="/wiki/:slug" element={<WikiDetailPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
