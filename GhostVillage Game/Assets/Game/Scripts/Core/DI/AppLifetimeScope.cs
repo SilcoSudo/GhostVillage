@@ -41,10 +41,7 @@ namespace Game.Core.DI
             // 2. Core Services
             builder.Register<SceneLoaderService>(Lifetime.Singleton).As<ISceneLoaderService>();
             builder.Register<AuthService>(Lifetime.Singleton);
-            // Đăng ký PlayerDataStore là Singleton
             builder.Register<PlayerDataStore>(Lifetime.Singleton);
-
-            // Đăng ký thêm PlayerDataSyncService (Sẽ tạo ở bước 3)
             builder.Register<PlayerDataSyncService>(Lifetime.Singleton);
 
             // 3. NETWORK (Sửa lại: Bắt buộc phải có Prefab)

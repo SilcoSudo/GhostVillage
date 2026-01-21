@@ -1,14 +1,30 @@
 // File: src/Game/UI/Core/GlobalUIManager.cs
 using UnityEngine;
 using Cysharp.Threading.Tasks;
-using System.Threading; // Thêm namespace này
+using System.Threading;
+using TMPro; // Thêm namespace này
 
 namespace Game.Script.UI
 {
     public class GlobalUIManager : MonoBehaviour
     {
+        [Header("Popup References")]
+        [SerializeField] private GameObject _popupPanel;
+        [SerializeField] private TMP_Text _txtTitle;
+        [SerializeField] private TMP_Text _txtMessage;
+
         [SerializeField] private GameObject _loadingPanel;
         private const float LOADING_TIMEOUT = 30f;
+
+        private void Awake()
+        {
+            // 1. Đảm bảo Popup và Loading luôn ẩn khi mới vào Game
+            if (_popupPanel != null) _popupPanel.SetActive(false);
+            if (_loadingPanel != null) _loadingPanel.SetActive(false);
+
+            // Giữ cho Object này tồn tại xuyên suốt các Scene (nếu chưa làm ở AppLifetimeScope)
+            // DontDestroyOnLoad(gameObject); 
+        }
 
         // Hàm ShowLoading chuẩn chỉnh
         public void ShowLoading(bool show)
@@ -46,5 +62,15 @@ namespace Game.Script.UI
                 Debug.Log("Task loading đã được hủy an toàn.");
             }
         }
+
+        public void ShowError(string title, string message)
+        {
+            if (_popupPanel == null) return;
+            _txtTitle.text = title;
+            _txtMessage.text = message;
+            _popupPanel.SetActive(true);
+        }
+
+        public void ClosePopup() => _popupPanel.SetActive(false);
     }
 }
