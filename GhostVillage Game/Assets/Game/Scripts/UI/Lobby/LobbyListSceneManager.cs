@@ -24,6 +24,7 @@ namespace Game.UI.Lobby
         [Header("Password Modal UI")]
         [SerializeField] private GameObject _passwordModal;
         [SerializeField] private TMP_InputField _inputJoinPassword;
+        [SerializeField] private TextMeshProUGUI _txtPasswordError;
         private LobbyData _pendingLobby;
 
         [Inject] private INetworkService _network;
@@ -42,6 +43,7 @@ namespace Game.UI.Lobby
             _network.OnJoinLobbySuccess += OnReadyToInteract;
             _network.OnJoinLobbyFailed += HandleJoinFailed;
 
+            if (_txtPasswordError != null) _txtPasswordError.text = "";
             if (_createLobbyPopup != null) _createLobbyPopup.SetActive(false);
             if (_passwordModal != null) _passwordModal.SetActive(false);
 
@@ -83,11 +85,21 @@ namespace Game.UI.Lobby
         {
             _globalUI.ShowLoading(false); // Tắt xoay xoay
 
+
             // Dùng Global UI để báo lỗi cho "xịn"
             if (errorReason == "Wrong Password!")
             {
-                _globalUI.ShowError("Lỗi truy cập", "Mật khẩu bạn nhập không chính xác. Vui lòng thử lại!");
-                // Không cần mở lại Modal Pass ở đây, để user tự ấn lại vào phòng nếu muốn
+                _passwordModal.SetActive(true);
+                if (_txtPasswordError != null)
+                {
+                    _txtPasswordError.text = "Mật khẩu không đúng, vui lòng thử lại!";
+                    _txtPasswordError.color = Color.red;
+                }
+
+                if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "LobbyListScene")
+                {
+                    _sceneLoader.LoadSceneAsync("LobbyListScene");
+                }
             }
             else
             {
@@ -200,7 +212,8 @@ namespace Game.UI.Lobby
         {
             _passwordModal.SetActive(true);
             _inputJoinPassword.text = "";
-            _inputJoinPassword.ActivateInputField(); // Tự focus vào ô nhập cho tiện
+            if (_txtPasswordError != null) _txtPasswordError.text = ""; // Reset thông báo lỗi cũ
+            _inputJoinPassword.ActivateInputField();
         }
 
         public void OnConfirmJoinWithPassword()

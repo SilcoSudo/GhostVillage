@@ -185,7 +185,8 @@ namespace Game.Core.Network
                 options.CustomRoomPropertiesForLobby = new string[] { "pw" };
             }
 
-            Debug.Log($"[Photon] Sending create room command: {lobbyName} with pass: {password}"); bool sent = PhotonNetwork.CreateRoom(lobbyName, options);
+            Debug.Log($"[Photon] Sending create room command: {lobbyName} with pass: {password}");
+            bool sent = PhotonNetwork.CreateRoom(lobbyName, options);
             if (!sent)
             {
                 Debug.LogError("[Photon] CreateRoom command failed to send.");
@@ -201,6 +202,8 @@ namespace Game.Core.Network
         {
             _tempInputPass = password; // Lưu lại để tí nữa so sánh khi đã vào phòng
             if (PhotonNetwork.InRoom) PhotonNetwork.LeaveRoom();
+
+            PhotonNetwork.AutomaticallySyncScene = false;
 
             Debug.Log($"[Photon] Đang thử Join vào {lobbyName} với pass: '{password}'");
             PhotonNetwork.JoinRoom(lobbyName);
@@ -241,17 +244,22 @@ namespace Game.Core.Network
             var room = PhotonNetwork.CurrentRoom;
             string correctPass = room.CustomProperties.ContainsKey("pw") ? (string)room.CustomProperties["pw"] : "";
 
-            // THỰC HIỆN CHECK PASS NGAY KHI VỪA JOIN TRÊN SERVER
-            if (!string.IsNullOrEmpty(correctPass) && _tempInputPass != correctPass)
+            // 1. KIỂM TRA MẬT KHẨU
+            if (!PhotonNetwork.IsMasterClient && !string.IsNullOrEmpty(correctPass))
             {
-                Debug.LogError("[Photon] SAI MẬT KHẨU! Đang thực hiện Kick (LeaveRoom)...");
-                PhotonNetwork.LeaveRoom(); // Thoát ngay lập tức
-                OnJoinLobbyFailed?.Invoke("Wrong Password!");
-                return;
+                if (_tempInputPass != correctPass)
+                {
+                    Debug.LogError("[Photon] SAI PASS! Đang rút lui...");
+                    // Vẫn giữ AutomaticallySyncScene = false để đứng yên tại Scene cũ
+                    PhotonNetwork.LeaveRoom();
+                    OnJoinLobbyFailed?.Invoke("Wrong Password!");
+                    return;
+                }
             }
 
-            // NẾU ĐÚNG PASS HOẶC PHÒNG KHÔNG CÓ PASS
-            Debug.Log($"✅ [Photon] Join thành công phòng: {room.Name}");
+            // Nếu đúng pass, bật lại tính năng sync scene
+            PhotonNetwork.AutomaticallySyncScene = true;
+            Debug.Log($"✅ [Photon] Join thành công: {room.Name}");
             OnJoinLobbySuccess?.Invoke();
 
             if (PhotonNetwork.IsMasterClient)
