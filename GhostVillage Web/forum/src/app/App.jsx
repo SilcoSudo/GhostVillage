@@ -16,6 +16,11 @@ import CompleteProfilePage from '../features/auth/pages/CompleteProfilePage';
 import HomePage from '../pages/HomePage';
 import PostsPage from '../features/posts/pages/PostsPage';
 import SavedPostsPage from '../features/posts/pages/SavedPostsPage';
+import WikiListPage from '../features/wiki/pages/WikiListPage';
+import WikiDetailPage from '../features/wiki/pages/WikiDetailPage';
+import AnnouncementListPage from '../features/announcement/pages/AnnouncementListPage';
+import AnnouncementDetailPage from '../features/announcement/pages/AnnouncementDetailPage';
+import SearchPage from '../features/search/pages/SearchPage';
 import '../shared/assets/styles/theme.css';
 
 function AppContent() {
@@ -46,6 +51,11 @@ function AppContent() {
             />
             <Route path="/posts" element={<PostsPage />} />
             <Route path="/saved-posts" element={<SavedPostsPage />} />
+            <Route path="/wiki" element={<WikiListPage />} />
+            <Route path="/wiki/:slug" element={<WikiDetailPage />} />
+            <Route path="/announcements" element={<AnnouncementListPage />} />
+            <Route path="/announcements/:slug" element={<AnnouncementDetailPage />} />
+            <Route path="/search" element={<SearchPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

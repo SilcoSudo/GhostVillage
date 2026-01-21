@@ -379,6 +379,12 @@ export const completeProfile = async (req, res) => {
   }
 };
 
+const UserService = {
+  getUserIdProfile,
+  updateName,
+  toggleEmailVisibility,
+};
+
 export const getSavedPosts = async (req, res) => {
   try {
     const userId = req.user?._id;
