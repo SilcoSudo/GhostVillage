@@ -17,7 +17,10 @@ namespace Game.Core.Network
         public event Action<List<LobbyData>> OnLobbyListUpdated;
         public event Action OnJoinLobbySuccess;
         public event Action OnCreateLobbyFailed;
+        public event Action<string> OnJoinLobbyFailed;
 
+
+        private string _tempInputPass = "";
         public bool IsConnected => PhotonNetwork.IsConnected;
 
         /// <summary>
@@ -166,6 +169,8 @@ namespace Game.Core.Network
                 return;
             }
 
+            _tempInputPass = password;
+
             RoomOptions options = new RoomOptions
             {
                 MaxPlayers = (byte)maxPlayers,
@@ -180,9 +185,7 @@ namespace Game.Core.Network
                 options.CustomRoomPropertiesForLobby = new string[] { "pw" };
             }
 
-            Debug.Log($"[Photon] Sending create room command: {lobbyName}");
-            bool sent = PhotonNetwork.CreateRoom(lobbyName, options);
-
+            Debug.Log($"[Photon] Sending create room command: {lobbyName} with pass: {password}"); bool sent = PhotonNetwork.CreateRoom(lobbyName, options);
             if (!sent)
             {
                 Debug.LogError("[Photon] CreateRoom command failed to send.");
@@ -194,10 +197,12 @@ namespace Game.Core.Network
         /// Gui yeu cau tham gia vao mot phong cu the.
         /// Tham so: lobbyName - Ten phong muon vao.
         /// </summary>
-        public void JoinLobbySession(string lobbyName)
+        public void JoinLobbySession(string lobbyName, string password = "")
         {
+            _tempInputPass = password; // Lưu lại để tí nữa so sánh khi đã vào phòng
             if (PhotonNetwork.InRoom) PhotonNetwork.LeaveRoom();
-            Debug.Log($"[Photon] Joining room: {lobbyName}");
+
+            Debug.Log($"[Photon] Đang thử Join vào {lobbyName} với pass: '{password}'");
             PhotonNetwork.JoinRoom(lobbyName);
         }
 
@@ -215,8 +220,8 @@ namespace Game.Core.Network
         /// </summary>
         public override void OnJoinRoomFailed(short returnCode, string message)
         {
-            Debug.LogError($"[Photon] Join room failed: {message}");
-            OnCreateLobbyFailed?.Invoke();
+            Debug.LogError($"[Photon] Join thất bại: {message}");
+            OnJoinLobbyFailed?.Invoke(message);
         }
 
         /// <summary>
@@ -233,12 +238,24 @@ namespace Game.Core.Network
         /// </summary>
         public override void OnJoinedRoom()
         {
-            Debug.Log($"[Photon] Joined room: {PhotonNetwork.CurrentRoom.Name}");
+            var room = PhotonNetwork.CurrentRoom;
+            string correctPass = room.CustomProperties.ContainsKey("pw") ? (string)room.CustomProperties["pw"] : "";
+
+            // THỰC HIỆN CHECK PASS NGAY KHI VỪA JOIN TRÊN SERVER
+            if (!string.IsNullOrEmpty(correctPass) && _tempInputPass != correctPass)
+            {
+                Debug.LogError("[Photon] SAI MẬT KHẨU! Đang thực hiện Kick (LeaveRoom)...");
+                PhotonNetwork.LeaveRoom(); // Thoát ngay lập tức
+                OnJoinLobbyFailed?.Invoke("Wrong Password!");
+                return;
+            }
+
+            // NẾU ĐÚNG PASS HOẶC PHÒNG KHÔNG CÓ PASS
+            Debug.Log($"✅ [Photon] Join thành công phòng: {room.Name}");
             OnJoinLobbySuccess?.Invoke();
 
             if (PhotonNetwork.IsMasterClient)
             {
-                Debug.Log("[Photon] Master Client loading scene: LobbyGameScene");
                 PhotonNetwork.LoadLevel("LobbyGameScene");
             }
         }

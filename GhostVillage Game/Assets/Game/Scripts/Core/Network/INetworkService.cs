@@ -15,6 +15,7 @@ namespace Game.Core.Network
         event Action<List<LobbyData>> OnLobbyListUpdated; // Danh sách phòng
         event Action OnJoinLobbySuccess;          // Vào phòng chơi thành công
         event Action OnCreateLobbyFailed;         // Tạo phòng thất bại (Thêm cái này để UI Manager lắng nghe)
+        event Action<string> OnJoinLobbyFailed; // Thêm event báo lỗi kèm nội dung
 
         // --- METHODS ---
         void Connect(string nickName);
@@ -26,6 +27,6 @@ namespace Game.Core.Network
         void CreateLobby(string lobbyName, string password, int maxPlayers);
 
         // Vào Phòng Chơi (Overload: Khác tên hoặc khác tham số để phân biệt)
-        void JoinLobbySession(string lobbyName);
+        void JoinLobbySession(string lobbyName, string password = ""); // Thêm tham số password
     }
 }

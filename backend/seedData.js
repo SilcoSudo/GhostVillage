@@ -98,7 +98,7 @@ const seedData = async () => {
 
     console.log("✅ KHỞI TẠO DỮ LIỆU THÀNH CÔNG!");
     console.log(
-      "👤 User 1: hung@ghostvillage.com | 👤 User 2: lan.support@gmail.com"
+      "👤 User 1: hung@ghostvillage.com | 👤 User 2: lan.support@gmail.com",
     );
     console.log("🎮 Player 1: Hùng Đẹp Trai | 🎮 Player 2: Lan Support");
 

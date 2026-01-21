@@ -21,6 +21,11 @@ namespace Game.UI.Lobby
         [SerializeField] private TMP_InputField _inputLobbyName;
         [SerializeField] private TMP_InputField _inputPassword;
 
+        [Header("Password Modal UI")]
+        [SerializeField] private GameObject _passwordModal;
+        [SerializeField] private TMP_InputField _inputJoinPassword;
+        private LobbyData _pendingLobby;
+
         [Inject] private INetworkService _network;
         [Inject] private ISceneLoaderService _sceneLoader;
         [Inject] private GlobalUIManager _globalUI;
@@ -34,8 +39,11 @@ namespace Game.UI.Lobby
             _network.OnLobbyListUpdated += UpdateUI;
             _network.OnCreateLobbyFailed += OnCreateFailed;
             _network.OnHallwayJoined += OnReadyToInteract;
+            _network.OnJoinLobbySuccess += OnReadyToInteract;
+            _network.OnJoinLobbyFailed += HandleJoinFailed;
 
             if (_createLobbyPopup != null) _createLobbyPopup.SetActive(false);
+            if (_passwordModal != null) _passwordModal.SetActive(false);
 
             if (_network.IsConnected)
             {
@@ -44,7 +52,6 @@ namespace Game.UI.Lobby
             }
             else
             {
-                Debug.LogWarning("[UI] Connection lost. Redirecting to MainMenu.");
                 _sceneLoader.LoadSceneAsync("MainMenu");
             }
         }
@@ -59,25 +66,39 @@ namespace Game.UI.Lobby
                 _network.OnLobbyListUpdated -= UpdateUI;
                 _network.OnCreateLobbyFailed -= OnCreateFailed;
                 _network.OnHallwayJoined -= OnReadyToInteract;
+                _network.OnJoinLobbySuccess -= OnReadyToInteract;
+                _network.OnJoinLobbyFailed -= HandleJoinFailed;
             }
         }
 
         /// <summary>
         /// Callback khi da vao Hallway/Lobby thanh cong va san sang tuong tac.
         /// </summary>
-        private void OnReadyToInteract()
+        private void OnReadyToInteract() => _globalUI.ShowLoading(false);
+
+        /// <summary>
+        /// Xử lý khi Join thất bại (do sai pass hoặc lỗi mạng).
+        /// </summary>
+        private void HandleJoinFailed(string errorReason)
         {
-            Debug.Log("[UI] Lobby system ready for interaction.");
-            _globalUI.ShowLoading(false);
+            _globalUI.ShowLoading(false); // Tắt xoay xoay
+
+            // Dùng Global UI để báo lỗi cho "xịn"
+            if (errorReason == "Wrong Password!")
+            {
+                _globalUI.ShowError("Lỗi truy cập", "Mật khẩu bạn nhập không chính xác. Vui lòng thử lại!");
+                // Không cần mở lại Modal Pass ở đây, để user tự ấn lại vào phòng nếu muốn
+            }
+            else
+            {
+                _globalUI.ShowError("Lỗi hệ thống", $"Không thể vào phòng: {errorReason}");
+            }
         }
 
         /// <summary>
         /// Quay lai man hinh chinh.
         /// </summary>
-        public void OnBackClick()
-        {
-            _sceneLoader.LoadSceneAsync("MainMenu");
-        }
+        public void OnBackClick() => _sceneLoader.LoadSceneAsync("MainMenu");
 
         /// <summary>
         /// Cap nhat danh sach phong hien thi tren UI.
@@ -163,9 +184,49 @@ namespace Game.UI.Lobby
         /// </summary>
         private void OnLobbyItemClicked(LobbyData lobbyData)
         {
-            _globalUI.ShowLoading(true);
-            Debug.Log($"[UI] Attempting to join room: {lobbyData.Name}");
-            _network.JoinLobbySession(lobbyData.Name);
+            if (lobbyData.IsLocked)
+            {
+                _pendingLobby = lobbyData;
+                OpenPasswordModal();
+            }
+            else
+            {
+                _globalUI.ShowLoading(true);
+                _network.JoinLobbySession(lobbyData.Name);
+            }
         }
+
+        public void OpenPasswordModal()
+        {
+            _passwordModal.SetActive(true);
+            _inputJoinPassword.text = "";
+            _inputJoinPassword.ActivateInputField(); // Tự focus vào ô nhập cho tiện
+        }
+
+        public void OnConfirmJoinWithPassword()
+        {
+            if (_pendingLobby == null)
+            {
+                Debug.LogError("[UI] Pending lobby is null. Cannot join.");
+                _globalUI.ShowLoading(false);
+                return;
+            }
+
+            string enteredPass = _inputJoinPassword.text;
+            if (string.IsNullOrEmpty(enteredPass))
+            {
+                Debug.LogWarning("[UI] Password cannot be empty.");
+                _globalUI.ShowLoading(false);
+                return;
+            }
+
+            _globalUI.ShowLoading(true);
+            _passwordModal.SetActive(false);
+
+            _network.JoinLobbySession(_pendingLobby.Name, enteredPass);
+        }
+
+        public void OnClosePasswordModal() => _passwordModal.SetActive(false);
+
     }
 }

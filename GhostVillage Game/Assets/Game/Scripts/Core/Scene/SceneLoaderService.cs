@@ -1,6 +1,7 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine.SceneManagement;
-using UnityEngine; // Để dùng Debug
+using UnityEngine;
+using Game.Script.UI; // Để dùng Debug
 
 namespace Game.Core.Scene
 {
@@ -11,18 +12,30 @@ namespace Game.Core.Scene
 
     public class SceneLoaderService : ISceneLoaderService
     {
+
+        private readonly GlobalUIManager _globalUI;
+
+        public SceneLoaderService(GlobalUIManager globalUI)
+        {
+            _globalUI = globalUI;
+        }
         public async UniTask LoadSceneAsync(string sceneName)
         {
-            Debug.Log($"⏳ [SceneLoader] Bắt đầu load scene: {sceneName}");
+            Debug.Log($"⏳ [SceneLoader] Khởi động màn hình chắn: {sceneName}");
 
-            // --- LỖI CŨ CỦA BẠN CÓ THỂ LÀ: ---
-            // await SceneManager.LoadSceneAsync(sceneName); 
+            // 1. Bật Loading Overlay
+            _globalUI.ShowLoading(true);
 
-            // --- CÁCH SỬA ĐÚNG: ---
-            // Thêm .ToUniTask() vào cuối để chuyển đổi sang UniTask
+            // 2. Tải Scene ngầm
             await SceneManager.LoadSceneAsync(sceneName).ToUniTask();
 
-            Debug.Log($"✅ [SceneLoader] Load xong scene: {sceneName}");
+            // 3. (Tư duy kỹ) Chờ thêm 1 chút để các Script ở Scene mới chạy xong Awake/Start
+            await UniTask.Yield();
+
+            Debug.Log($"✅ [SceneLoader] Hoàn tất chuyển cảnh: {sceneName}");
+
+            // 4. Tắt Loading Overlay
+            _globalUI.ShowLoading(false);
         }
     }
 }
