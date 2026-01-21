@@ -14,7 +14,7 @@ namespace Game.Core.Lobby
     public class LobbyManager : MonoBehaviourPunCallbacks // Sửa thành MonoBehaviourPunCallbacks để dùng photonView
     {
         [Header("Networking Setup")]
-        [SerializeField] private string _playerPrefabName = "PlayerCharacter";
+        [SerializeField] private string _playerPrefabName = "Player";
         [SerializeField] private List<Transform> _spawnPoints;
         [SerializeField] private Camera _sceneCamera;
 
@@ -37,9 +37,10 @@ namespace Game.Core.Lobby
                 Debug.LogError($"[LobbyManager] Error: {e.Message}");
             }
 
-            // --- Tại dòng 39 (Start) ---
+            // ĐĂNG KÝ: Bảo UI rằng khi nhấn Enter gửi tin thì gọi hàm này
             if (_uiManager != null)
             {
+                _uiManager.BindSubmitEvent(HandleChatInput);
                 SetupRoomUI();
             }
             else
@@ -56,14 +57,22 @@ namespace Game.Core.Lobby
         /// </summary>
         private void Update()
         {
-            // Kiểm tra phím Enter bằng Input System mới
             if (Keyboard.current != null && Keyboard.current.enterKey.wasPressedThisFrame)
             {
-                // --- Tại dòng 61 (HandleChatInput) ---
                 if (_uiManager == null) return;
-                string message = _uiManager.GetInputText();
 
-                HandleChatInput(message);
+                // TRƯỜNG HỢP 1: Ô chat đang ĐÓNG -> Mở lên để gõ
+                if (!_uiManager.IsChatFocused())
+                {
+                    Debug.Log("🔍 [Lobby] Mở ô Chat.");
+                    _uiManager.FocusChat();
+                }
+                // TRƯỜNG HỢP 2: Ô chat đang MỞ -> Lấy nội dung và xử lý (Gửi hoặc Hủy)
+                else
+                {
+                    string message = _uiManager.GetInputText();
+                    HandleChatInput(message);
+                }
             }
         }
 
@@ -72,19 +81,19 @@ namespace Game.Core.Lobby
         /// </summary>
         private void HandleChatInput(string message)
         {
-
-            if (string.IsNullOrEmpty(message))
+            if (!string.IsNullOrWhiteSpace(message))
             {
-                _uiManager.FocusChat(); // Focus vào ô nhập nếu đang trống
+                Debug.Log($"📡 [Lobby] Gửi RPC Chat: {message}");
+                photonView.RPC("RPC_ReceiveChatMessage", RpcTarget.All, PhotonNetwork.LocalPlayer.NickName, message);
             }
             else
             {
-                // Gửi tin nhắn đến tất cả mọi người trong phòng qua RPC
-                photonView.RPC("RPC_ReceiveChatMessage", RpcTarget.All, PhotonNetwork.LocalPlayer.NickName, message);
-
-                _uiManager.ClearInput(); // Xóa chữ trong ô nhập sau khi gửi
-                _uiManager.FocusChat();  // Giữ focus để người dùng chat tiếp
+                Debug.Log("⚠️ [Lobby] Tin nhắn trống -> Đóng ô chat.");
             }
+
+            // BẮT BUỘC: Xóa chữ và THOÁT FOCUS để di chuyển được WASD
+            _uiManager.ClearInput();
+            _uiManager.DeFocusChat();
         }
 
         /// <summary>

@@ -436,7 +436,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 7717251931116871541}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e13bb0dd4d3c33f4b94d23aebba63efb, type: 3}
+  m_Script: {fileID: 11500000, guid: ccd2f6ffa2d168340bdd5e3d9983cf98, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.UI.Lobby.LobbyItemUI
   _nameText: {fileID: 3031722746180157910}
