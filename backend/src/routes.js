@@ -3,12 +3,15 @@ import webAuthRoutes from "./modules/auth/web/authRoutes.js";
 import gameAuthRoutes from "./modules/auth/game/authRoutes.js";
 import userRoutes from "./modules/user/userRoutes.js";
 import achievementRoutes from "./modules/achievement/achievementRoutes.js";
-import postRoutes from "./modules/forum/posts/postRoutes.js";
+import postRoutes from "./modules/forum/postRoutes.js";
 import playerRoutes from "./modules/player/playerRoutes.js";
+import profileRoutes from "./modules/profile/ProfileRoutes.js";
 import { loginGame } from "./modules/auth/game/authController.js";
 
 const router = express.Router();
 
+// --- Profile routes (MUST be top-level /api/profile) ---
+router.use("/profile", profileRoutes);
 /**
  * Central Route Loader
  * Mounts all feature routes
