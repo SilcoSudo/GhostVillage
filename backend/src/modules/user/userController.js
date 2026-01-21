@@ -377,10 +377,6 @@ export const completeProfile = async (req, res) => {
       message: error.message || "Failed to complete profile",
     });
   }
-const UserService = {
-  getUserIdProfile,
-  updateName,
-  toggleEmailVisibility,
 };
 
 export const getSavedPosts = async (req, res) => {

@@ -19,9 +19,6 @@
     "expand": "Expand sidebar",
     "viewProfile": "View profile"
   },
-  "common": {
-    "logout": "Logout"
-  },
   "dashboard": {
     "title": "Admin Dashboard",
     "subtitle": "Manage all aspects of GhostVillage",
@@ -59,5 +56,35 @@
     "unban": "Unban",
     "muteReason": "Mute Reason",
     "noUsersFound": "No users found"
+  },
+  "common": {
+    "logout": "Logout",
+    "actions": "Actions",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete",
+    "create": "Create",
+    "cancel": "Cancel",
+    "save": "Save",
+    "confirm": "Confirm",
+    "noData": "No data found",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  },
+  "wiki": {
+    "title": "Game Wiki",
+    "subtitle": "Manage game monsters, items, and maps",
+    "search": "Search wiki entries...",
+    "monsters": "Monsters",
+    "items": "Items",
+    "maps": "Maps",
+    "name": "Name",
+    "description": "Description",
+    "create": "Create",
+    "view": "View Details",
+    "edit": "Edit",
+    "delete": "Delete",
+    "noData": "No wiki entries found"
   }
 }

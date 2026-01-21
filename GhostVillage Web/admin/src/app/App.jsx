@@ -7,6 +7,11 @@ import SidebarNav from '../shared/components/layout/SidebarNav';
 import LoginPage from '../features/auth/pages/LoginPage';
 import DashboardPage from '../pages/DashboardPage';
 import UserManagementPage from '../pages/UserManagementPage';
+import ReportedPostPage from '../pages/ReportedPostPage';
+import ReportedCommentPage from '../pages/ReportedCommentPage';
+import SupportTicketPage from '../pages/SupportTicketPage';
+import AnnouncementPage from '../pages/AnnouncementPage';
+import WikiPage from '../pages/WikiPage';
 import ProtectedRoute from './router/ProtectedRoute';
 import '../shared/assets/styles/theme.css';
 
@@ -35,7 +40,11 @@ function AppContent() {
               }
             />
             <Route path="/users" element={<ProtectedRoute><UserManagementPage /></ProtectedRoute>} />
-            <Route path="/posts" element={<ProtectedRoute><div style={{ padding: '20px' }}><h1>Posts Management</h1></div></ProtectedRoute>} />
+            <Route path="/support-tickets" element={<ProtectedRoute><SupportTicketPage /></ProtectedRoute>} />
+            <Route path="/announcements" element={<ProtectedRoute><AnnouncementPage /></ProtectedRoute>} />
+            <Route path="/wiki" element={<ProtectedRoute><WikiPage /></ProtectedRoute>} />
+            <Route path="/reports/posts" element={<ProtectedRoute><ReportedPostPage /></ProtectedRoute>} />
+            <Route path="/reports/comments" element={<ProtectedRoute><ReportedCommentPage /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><div style={{ padding: '20px' }}><h1>Reports</h1></div></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><div style={{ padding: '20px' }}><h1>Settings</h1></div></ProtectedRoute>} />
             <Route path="/report-bug" element={<ProtectedRoute><div style={{ padding: '20px' }}><h1>Report Bug</h1></div></ProtectedRoute>} />

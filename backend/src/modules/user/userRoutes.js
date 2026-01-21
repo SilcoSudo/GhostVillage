@@ -3,7 +3,6 @@ import { getMyProfile, getUserIdProfile, updateMyProfile, updateName, toggleEmai
 import { authMiddleware } from '../../middlewares/auth.middleware.js';
 import { uploadAvatar as uploadAvatarMiddleware } from '../../middlewares/uploadMiddleware.js';
 import { getSavedPosts, completeProfile } from "./userController.js";
-import { authMiddleware } from "../../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
