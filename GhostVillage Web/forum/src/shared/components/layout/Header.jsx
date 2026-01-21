@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Search, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import i18nConfig from '../../../i18n';
@@ -33,7 +33,9 @@ const Header = () => {
       <div className="header-container">
         {/* Logo/Brand */}
         <div className="header-brand">
-          <h1 className="brand-name">GhostVillage</h1>
+          <Link to="/" className="brand-name-link">
+            <h1 className="brand-name">GhostVillage</h1>
+          </Link>
         </div>
 
         {/* Search Bar */}

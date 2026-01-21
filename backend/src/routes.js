@@ -6,6 +6,7 @@ import achievementRoutes from "./modules/achievement/achievementRoutes.js";
 import postRoutes from "./modules/forum/posts/postRoutes.js";
 import wikiRoutes from "./modules/forum/wiki/wikiRoutes.js";
 import announcementRoutes from "./modules/forum/announcement/announcementRoutes.js";
+import searchRoutes from "./modules/forum/search/searchRoutes.js";
 import playerRoutes from "./modules/player/playerRoutes.js";
 import { loginGame } from "./modules/auth/game/authController.js";
 
@@ -24,6 +25,7 @@ webRoutes.use("/achievement", achievementRoutes);
 webRoutes.use("/forum", postRoutes);
 webRoutes.use("/wiki", wikiRoutes);
 webRoutes.use("/announcement", announcementRoutes);
+webRoutes.use("/search", searchRoutes);
 router.use("/web", webRoutes);
 
 // --- HUNG'S GAME LOGIN LOGIC START ---

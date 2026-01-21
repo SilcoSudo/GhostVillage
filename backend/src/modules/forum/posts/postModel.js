@@ -82,6 +82,7 @@ const PostSchema = new mongoose.Schema({
 PostSchema.index({ createdAt: -1 });
 PostSchema.index({ category: 1 });
 PostSchema.index({ author: 1 });
+PostSchema.index({ title: 'text', body: 'text' }); // Text index for search
 
 const Post = mongoose.model("Post", PostSchema);
 

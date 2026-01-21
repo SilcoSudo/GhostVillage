@@ -30,6 +30,11 @@
   min-width: 200px;
 }
 
+.brand-name-link {
+  text-decoration: none;
+  display: inline-block;
+}
+
 .brand-name {
   font-family: 'Courier New', Courier, monospace;
   font-size: 26px;
@@ -42,7 +47,7 @@
   letter-spacing: 1px;
 }
 
-.brand-name:hover {
+.brand-name-link:hover .brand-name {
   color: var(--primary-light);
   text-shadow: 0 0 10px rgba(122, 0, 0, 0.5);
 }
