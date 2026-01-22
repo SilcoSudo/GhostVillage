@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../app/context/AuthContext';
+import LangmaText from '../../../shared/assets/images/logo.png';
+import FogEffect from '../components/FogEffect';
+import './Auth.css';
 
 const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
@@ -43,13 +45,12 @@ const ResetPasswordPage = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    // Password validation
+    // Password validation - must match backend regex
+    const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = 'Password must contain at least one uppercase letter, one lowercase letter, and one number';
+    } else if (!pwdRegex.test(formData.password)) {
+      newErrors.password = 'Password must be at least 8 characters and include uppercase, lowercase and a special character';
     }
 
     // Confirm password validation
@@ -82,72 +83,73 @@ const ResetPasswordPage = () => {
   };
 
   return (
-    <Container>
-      <Row className="justify-content-center">
-        <Col md={6} lg={4}>
-          <Card>
-            <Card.Body>
-              <h2 className="text-center mb-4">Set New Password</h2>
-              <p className="text-center text-muted mb-4">
-                Enter your new password below.
-              </p>
-              
-              <Form onSubmit={handleSubmit}>
-                <Form.Group className="mb-3">
-                  <Form.Label>New Password</Form.Label>
-                  <Form.Control
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    isInvalid={!!errors.password}
-                    placeholder="Enter new password"
-                  />
-                  <Form.Control.Feedback type="invalid">
-                    {errors.password}
-                  </Form.Control.Feedback>
-                  <Form.Text className="text-muted">
-                    At least 6 characters with uppercase, lowercase, and number
-                  </Form.Text>
-                </Form.Group>
+    <div className="login-page">
+      <div className="login-form-section">
+        <div className="login-form-wrapper">
+          <h2>Set New Password</h2>
+          <p className="form-subtitle">
+            Enter your new password below.
+          </p>
+          
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>New Password</label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Enter new password"
+                className={errors.password ? 'error' : ''}
+              />
+              {errors.password && (
+                <span className="error-message">{errors.password}</span>
+              )}
+              <span className="form-hint">
+                At least 8 characters with uppercase, lowercase, and special character
+              </span>
+            </div>
 
-                <Form.Group className="mb-4">
-                  <Form.Label>Confirm New Password</Form.Label>
-                  <Form.Control
-                    type="password"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    isInvalid={!!errors.confirmPassword}
-                    placeholder="Confirm new password"
-                  />
-                  <Form.Control.Feedback type="invalid">
-                    {errors.confirmPassword}
-                  </Form.Control.Feedback>
-                </Form.Group>
+            <div className="form-group">
+              <label>Confirm New Password</label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="Confirm new password"
+                className={errors.confirmPassword ? 'error' : ''}
+              />
+              {errors.confirmPassword && (
+                <span className="error-message">{errors.confirmPassword}</span>
+              )}
+            </div>
 
-                <div className="d-grid">
-                  <Button 
-                    variant="primary" 
-                    type="submit" 
-                    disabled={loading}
-                    size="lg"
-                  >
-                    {loading ? 'Updating Password...' : 'Update Password'}
-                  </Button>
-                </div>
-              </Form>
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="btn-signin"
+            >
+              {loading ? 'Updating Password...' : 'Update Password'}
+            </button>
+          </form>
 
-              <div className="text-center mt-4">
-                <p>
-                  Remember your password? <Link to="/login">Login</Link>
-                </p>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+          <div className="signup-link">
+            <p>
+              Remember your password?{' '}
+              <Link to="/login">
+                Login
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="login-image-section">
+        <FogEffect />
+        <img src={LangmaText} alt="Langma" className="langma-image" />
+      </div>
+    </div>
   );
 };
 
