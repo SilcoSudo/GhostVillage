@@ -1,7 +1,7 @@
 using VContainer;
 using VContainer.Unity;
 using UnityEngine;
-using Game.Core.Lobby;
+using Game.Scripts.UI.Lobby;
 
 namespace Game.Core.DI
 {
@@ -16,6 +16,8 @@ namespace Game.Core.DI
             // Đăng ký trực tiếp tham chiếu đã kéo từ Inspector
             if (_uiManager != null) builder.RegisterComponent(_uiManager);
             if (_lobbyManager != null) builder.RegisterComponent(_lobbyManager);
+
+            builder.RegisterComponentInHierarchy<FriendBoardInteract>();
         }
     }
 }

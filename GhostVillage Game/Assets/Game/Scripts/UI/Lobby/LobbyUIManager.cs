@@ -4,14 +4,16 @@ using UnityEngine.UI;
 using System.Collections.Generic;
 using System;
 using Cysharp.Threading.Tasks;
+using Photon.Pun;
+using Photon.Realtime; // BẮT BUỘC có dòng này để dùng kiểu Player
 
-namespace Game.Core.Lobby
+namespace Game.Scripts.UI.Lobby
 {
     /// <summary>
-    /// Quản lý toàn bộ giao diện người dùng (UI) bên trong sảnh chờ.
-    /// Chịu trách nhiệm cập nhật dữ liệu từ Logic lên các thành phần hiển thị.
+    /// Quản lý tập trung toàn bộ giao diện (UI) trong Scene Lobby.
+    /// Kế thừa MonoBehaviourPunCallbacks để nhận các sự kiện mạng (Người vào/ra).
     /// </summary>
-    public class LobbyUIManager : MonoBehaviour
+    public class LobbyUIManager : MonoBehaviourPunCallbacks
     {
         [Header("Top Bar")]
         [SerializeField] private TextMeshProUGUI _txtRoomInfo;
@@ -21,7 +23,7 @@ namespace Game.Core.Lobby
         [SerializeField] private Image _imgMapIcon;
         [SerializeField] private TextMeshProUGUI _txtMapName;
 
-        [Header("Player List")]
+        [Header("Side Player List")]
         [SerializeField] private Transform _playerListContent;
         [SerializeField] private GameObject _playerItemPrefab;
 
@@ -36,36 +38,56 @@ namespace Game.Core.Lobby
         [SerializeField] private GameObject _chatMePrefab;
         [SerializeField] private GameObject _chatThemPrefab;
 
-        // --- ROOM INFO ---
+        [Header("Interaction UI")]
+        [SerializeField] private GameObject _interactPromptGo;
+        [SerializeField] private TextMeshProUGUI _txtInteractPrompt;
 
-        /// <summary>
-        /// Cập nhật thông tin cơ bản của phòng chơi lên thanh tiêu đề.
-        /// </summary>
-        /// <param name="roomName">Tên phòng hiện tại.</param>
-        /// <param name="hostName">Tên của chủ phòng (Master Client).</param>
-        /// <param name="password">Mật khẩu phòng (nếu có).</param>
+        [Header("Board Management Modal")]
+        [SerializeField] private GameObject _imgDimBG;
+        [SerializeField] private GameObject _managementModal;
+        [SerializeField] private FriendBoardItem[] _playerSlots;
+
+        #region Photon Callbacks (Dành cho bản Build)
+
+        // Các hàm này tự động chạy khi có biến động người chơi trong phòng
+        [Obsolete]
+        public override void OnPlayerEnteredRoom(Player newPlayer) => RefreshManagementList();
+        [Obsolete]
+        public override void OnPlayerLeftRoom(Player otherPlayer) => RefreshManagementList();
+        [Obsolete]
+        public override void OnMasterClientSwitched(Player newMasterClient) => RefreshManagementList();
+
+        #endregion
+
+        #region Room & Map Info
+
+        public bool IsAnyUIOpen => (_managementModal != null && _managementModal.activeSelf) || IsChatFocused();
+
+        [Obsolete]
+        private void Awake()
+        {
+            SetInteractPrompt("", false);
+            ShowManagementModal(false);
+            if (_imgDimBG != null) _imgDimBG.SetActive(false);
+        }
+
         public void SetRoomInfo(string roomName, string hostName, string password)
         {
             _txtRoomInfo.text = $"Room: {roomName} - Host: {hostName}";
             _txtRoomPassword.text = string.IsNullOrEmpty(password) ? "Public Room" : $"Pass: {password}";
         }
 
-        /// <summary>
-        /// Cập nhật hình ảnh và tên bản đồ đã chọn.
-        /// </summary>
         public void UpdateMapDisplay(Sprite icon, string mapName)
         {
             _imgMapIcon.sprite = icon;
             _txtMapName.text = mapName;
         }
 
-        // --- PLAYER LIST ---
+        #endregion
 
-        /// <summary>
-        /// Làm mới danh sách hiển thị người chơi trong sảnh.
-        /// </summary>
-        /// <param name="players">Danh sách người chơi lấy từ Photon Network.</param>
-        public void RefreshPlayerList(IEnumerable<Photon.Realtime.Player> players)
+        #region Side Lists (Players & Missions)
+
+        public void RefreshPlayerList(IEnumerable<Player> players)
         {
             foreach (Transform child in _playerListContent) Destroy(child.gameObject);
 
@@ -76,20 +98,13 @@ namespace Game.Core.Lobby
 
                 if (texts.Length >= 2)
                 {
-                    texts[0].text = player.NickName; // Txt_Name
-
-                    // Kiểm tra trạng thái Ready từ CustomProperties của Photon
+                    texts[0].text = player.NickName;
                     bool isReady = player.CustomProperties.ContainsKey("isReady") && (bool)player.CustomProperties["isReady"];
-                    texts[1].text = isReady ? "<color=green>READY</color>" : "<color=red>WAITING...</color>"; // Txt_Status
+                    texts[1].text = isReady ? "<color=green>READY</color>" : "<color=red>WAITING...</color>";
                 }
             }
         }
 
-        // --- MISSION LIST ---
-
-        /// <summary>
-        /// Thêm một dòng nhiệm vụ hằng ngày vào danh sách hiển thị.
-        /// </summary>
         public void AddMission(string description, bool isDone)
         {
             var item = Instantiate(_missionItemPrefab, _missionListContent);
@@ -97,23 +112,19 @@ namespace Game.Core.Lobby
 
             if (texts.Length >= 2)
             {
-                texts[0].text = description; // Txt_MissionDesc
-                texts[1].text = isDone ? "<color=green>Done</color>" : "In Progress"; // Txt_MissionProg
+                texts[0].text = description;
+                texts[1].text = isDone ? "<color=green>Done</color>" : "In Progress";
             }
         }
 
-        // --- CHAT SYSTEM ---
+        #endregion
 
-        /// <summary>
-        /// Thêm một dòng tin nhắn mới vào khung chat.
-        /// </summary>
-        /// <param name="sender">Tên người gửi.</param>
-        /// <param name="message">Nội dung tin nhắn.</param>
-        /// <param name="isMe">Xác định tin nhắn là của bản thân hay người khác để chọn UI phù hợp.</param>
+        #region Chat System
+
         public async void AddChatMessage(string sender, string message, bool isMe)
         {
             GameObject prefab = isMe ? _chatMePrefab : _chatThemPrefab;
-            var chatItem = Instantiate(prefab, _chatContent); //
+            var chatItem = Instantiate(prefab, _chatContent);
 
             var texts = chatItem.GetComponentsInChildren<TextMeshProUGUI>();
             if (texts.Length >= 2)
@@ -122,50 +133,85 @@ namespace Game.Core.Lobby
                 texts[1].text = message;
             }
 
-            // Đợi 1 frame để Vertical Layout Group và Content Size Fitter tính toán xong kích thước mới
             await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
-
-            // Kéo thanh cuộn xuống đáy (Vị trí 0 là đáy, 1 là đỉnh)
-            if (_chatScrollRect != null)
-            {
-                _chatScrollRect.verticalNormalizedPosition = 0f; //
-            }
+            if (_chatScrollRect != null) _chatScrollRect.verticalNormalizedPosition = 0f;
         }
 
         public void BindSubmitEvent(Action<string> onSendMessage)
         {
-            // Khi người dùng nhấn Enter trong InputField, TMP sẽ kích hoạt onSubmit
-            _inpChatMessage.onSubmit.AddListener((val) =>
-            {
-                onSendMessage?.Invoke(val);
-            });
+            _inpChatMessage.onSubmit.AddListener((val) => onSendMessage?.Invoke(val));
         }
 
-        /// <summary> Lấy nội dung văn bản đang nhập. </summary>
         public string GetInputText() => _inpChatMessage.text;
-
-        /// <summary> Xóa trắng ô nhập liệu sau khi gửi. </summary>
         public void ClearInput() => _inpChatMessage.text = string.Empty;
-
-        /// <summary> Kiểm tra xem người chơi có đang tập trung vào ô nhập liệu chat không. </summary>
         public bool IsChatFocused() => _inpChatMessage.isFocused;
 
-        // Thêm vào LobbyUIManager.cs
         public void DeFocusChat()
         {
-            _inpChatMessage.DeactivateInputField(); // Tắt con trỏ nhấp nháy trong TMP
+            _inpChatMessage.DeactivateInputField();
             if (UnityEngine.EventSystems.EventSystem.current != null)
-            {
-                // Bỏ chọn hoàn toàn trên UI để phím bấm quay về Game logic
                 UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(null);
-            }
         }
 
-        /// <summary> Lựa chọn và kích hoạt ô chat (Cần thiết cho một số phiên bản TMP). </summary>
         public void FocusChat()
         {
             _inpChatMessage.Select();
             _inpChatMessage.ActivateInputField();
         }
+
+        #endregion
+
+        #region Interaction & Management Board
+
+        public void SetInteractPrompt(string message, bool visible)
+        {
+            if (_interactPromptGo != null)
+            {
+                _txtInteractPrompt.text = message;
+                _interactPromptGo.SetActive(visible);
+            }
+        }
+
+        [Obsolete]
+        public void ShowManagementModal(bool show)
+        {
+            Debug.Log($"<color=orange>[UI Manager]</color> Gọi lệnh hiện Modal: {show}");
+
+            if (_managementModal == null) return;
+
+            _managementModal.SetActive(show);
+            if (_imgDimBG != null) _imgDimBG.SetActive(show);
+
+            if (show)
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+                RefreshManagementList();
+            }
+            else
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
+        }
+
+        [Obsolete]
+        private void RefreshManagementList()
+        {
+            if (_playerSlots == null || _playerSlots.Length == 0) return;
+
+            // Trong bản Build, danh sách này cần được nạp lại mỗi khi có callback
+            var players = PhotonNetwork.PlayerList;
+
+            for (int i = 0; i < _playerSlots.Length; i++)
+            {
+                if (i < players.Length)
+                    _playerSlots[i].Setup(players[i]);
+                else
+                    _playerSlots[i].SetEmpty();
+            }
+        }
+
+        #endregion
     }
 }

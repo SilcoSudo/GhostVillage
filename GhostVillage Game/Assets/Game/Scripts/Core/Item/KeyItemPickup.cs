@@ -1,3 +1,5 @@
+using Game.Core.Player.RayCast;
+using Photon.Pun;
 using UnityEngine;
 
 public class KeyItemPickup : MonoBehaviour, IInteractable
@@ -7,42 +9,45 @@ public class KeyItemPickup : MonoBehaviour, IInteractable
 
     [Header("Prompt Settings")]
     public string promptText = "Nhặt vật phẩm";
-    public KeyCode interactKey = KeyCode.F;
 
-    public void Interact(PlayerInteract player)
+
+    public void Interact()
     {
-        TryPickup(player);
+        var players = Object.FindObjectsByType<PlayerInteract>(FindObjectsSortMode.None);
+
+        foreach (var p in players)
+        {
+            var pv = p.GetComponent<PhotonView>();
+            if (pv != null && pv.IsMine)
+            {
+                TryPickup(p);
+                break;
+            }
+        }
     }
 
     private void TryPickup(PlayerInteract player)
     {
+        // Giả sử Hùng có Component InventoryManager trên cùng GameObject với PlayerInteract
         var inventory = player.GetComponent<InventoryManager>();
-        if (inventory == null)
-        {
-            Debug.LogWarning("Player không có InventoryManager component!");
-            return;
-        }
+        if (inventory == null) return;
 
         if (inventory.AddItem(data))
         {
-            // Nếu có prefab để cầm trên tay, spawn vào tay player
             if (data.heldPrefab != null)
             {
+                // SỬA: Fix lỗi chính tả từ 'AttachaHeldItem' thành 'AttachHeldItem'
                 player.AttachHeldItem(data.heldPrefab);
             }
 
-            // Xóa vật phẩm khỏi thế giới
+            // Xóa vật phẩm trên môi trường sau khi nhặt thành công
             Destroy(gameObject);
         }
     }
 
-    // === IInteractable interface ===
     public string GetPromptMessage()
     {
-        // Hiển thị như: "Nhấn F để nhặt Chìa khóa"
         string itemName = data != null ? data.itemName : "vật phẩm";
-        return $"{promptText}";
+        return $"{promptText} ({itemName})"; // Tự động thêm tên vật phẩm vào prompt
     }
-
-    public KeyCode InteractKey => interactKey;
 }
