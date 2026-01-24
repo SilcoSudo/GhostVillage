@@ -17,6 +17,12 @@ const playerSchema = new mongoose.Schema(
         required: true,
         trim: true
       },
+      bio: {                       // NEW
+        type: String,
+        default: '',
+        trim: true,
+        maxlength: 200
+      },
       avatar: {
         type: String,
         default: 'avatar_default_01'

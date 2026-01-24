@@ -8,10 +8,13 @@ import wikiRoutes from "./modules/forum/wiki/wikiRoutes.js";
 import announcementRoutes from "./modules/forum/announcement/announcementRoutes.js";
 import searchRoutes from "./modules/forum/search/searchRoutes.js";
 import playerRoutes from "./modules/player/playerRoutes.js";
+import profileRoutes from "./modules/profile/ProfileRoutes.js";
 import { loginGame } from "./modules/auth/game/authController.js";
 
 const router = express.Router();
 
+// --- Profile routes (MUST be top-level /api/profile) ---
+router.use("/profile", profileRoutes);
 /**
  * Central Route Loader
  * Mounts all feature routes
