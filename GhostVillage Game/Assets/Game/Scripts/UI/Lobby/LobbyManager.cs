@@ -6,7 +6,7 @@ using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
 using UnityEngine.InputSystem;
 
-namespace Game.Core.Lobby
+namespace Game.Scripts.UI.Lobby
 {
     /// <summary>
     /// Điều phối luồng hoạt động chính và đồng bộ hóa mạng qua Photon RPC.

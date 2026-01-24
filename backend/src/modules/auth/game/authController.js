@@ -5,7 +5,7 @@ export const loginGame = async (req, res) => {
   try {
     console.log(
       "[Game Login] Attempt for:",
-      req.body.email || req.body.username
+      req.body.email || req.body.username,
     );
 
     // Hỗ trợ cả trường email hoặc username từ Unity gửi lên
@@ -24,7 +24,7 @@ export const loginGame = async (req, res) => {
     // BƯỚC 2: Sử dụng logic Game-specific (Lấy hoặc tự tạo Player Profile)
     const playerProfile = await AuthService.getOrCreatePlayerProfile(
       auth.user._id,
-      auth.user.fullname
+      auth.user.fullname,
     );
 
     // Trả về đúng format Unity cần: 1 cục data chứa cả Token, User và Player
