@@ -116,7 +116,15 @@ namespace Game.Domain.Authentication
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[LocalCallbackServer] Process error: {ex.Message}");
+                // Ignore errors from destroyed UI objects - OAuth already succeeded
+                if (ex.Message.Contains("destroyed"))
+                {
+                    Debug.Log("[LocalCallbackServer] UI destroyed (normal cleanup after OAuth)");
+                }
+                else
+                {
+                    Debug.LogError($"[LocalCallbackServer] Process error: {ex.Message}");
+                }
             }
         }
 
