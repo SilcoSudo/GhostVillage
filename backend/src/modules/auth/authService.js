@@ -366,6 +366,23 @@ export const AuthService = {
     const token = generateToken(user._id, true); // Remember me = true for OAuth
     return { token, user: user.toJSON() };
   },
+
+  /**
+   * Update user date of birth (for profile completion after OAuth)
+   */
+  updateUserDateOfBirth: async (userId, dateOfBirth) => {
+    const user = await userModel.findByIdAndUpdate(
+      userId,
+      { dateOfBirth },
+      { new: true }
+    );
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    return user;
+  },
 };
 
 export default AuthService;
