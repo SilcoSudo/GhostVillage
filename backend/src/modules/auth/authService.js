@@ -27,6 +27,17 @@ export const AuthService = {
    */
   // Register new user (do NOT save to DB yet) - send verification email
   register: async (email, fullname, password, dateOfBirth) => {
+    // Age validation - must be at least 13 years old
+    const birthDate = new Date(dateOfBirth);
+    let age = new Date().getFullYear() - birthDate.getFullYear();
+    const month = new Date().getMonth() - birthDate.getMonth();
+    if (month < 0 || (month === 0 && new Date().getDate() < birthDate.getDate())) {
+      age--;
+    }
+    if (age < 13) {
+      throw new Error("User must be at least 13 years old");
+    }
+
     // password strength validation
     const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
     if (!pwdRegex.test(password)) {
@@ -279,26 +290,36 @@ export const AuthService = {
 
   /**
    * WEB: Forgot Password - Send reset link
+   * Uses separate token fields to avoid conflicts with email verification
    */
   forgotPassword: async (email) => {
     const user = await userModel.findOne({ email: email.toLowerCase() });
 
     if (!user) {
-      // Don't leak user existence? Actually for a forum it's fine.
-      // But for security, we usually say "If an account exists, an email was sent"
+      // Security: Don't leak user existence
+      // Return success regardless
       return { success: true };
     }
 
+    // Check if user is verified
+    if (!user.isVerified) {
+      throw new Error("Please verify your email first");
+    }
+
+    // Generate opaque token
     const rawToken = crypto.randomBytes(32).toString("hex");
     const tokenHash = crypto
       .createHash("sha256")
       .update(rawToken)
       .digest("hex");
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-    user.resetPasswordToken = tokenHash;
-    user.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    // Store token for password reset (using separate fields)
+    user.resetPasswordTokenHash = tokenHash;
+    user.resetPasswordExpires = expiresAt;
     await user.save();
 
+    // Send reset password email with token
     const resetLink = `${config.frontendUrl.replace(
       /\/+$/,
       "",
@@ -309,23 +330,38 @@ export const AuthService = {
   },
 
   /**
-   * WEB: Reset Password - Use token to set new password
+   * WEB: Reset Password - Validate token and change password
+   * Uses separate reset password token fields
    */
   resetPassword: async (token, newPassword) => {
+    // Validate password strength
+    const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
+    if (!pwdRegex.test(newPassword)) {
+      throw new Error(
+        "Password must be at least 8 characters and include uppercase, lowercase and a special character",
+      );
+    }
+
+    // Hash the opaque token
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
+    // Find user by reset password token, not expired
+    const now = new Date();
     const user = await userModel.findOne({
-      resetPasswordToken: tokenHash,
-      resetPasswordExpires: { $gt: Date.now() },
+      resetPasswordTokenHash: tokenHash,
+      resetPasswordExpires: { $gt: now },
     });
 
     if (!user) {
       throw new Error("Invalid or expired reset token");
     }
 
+    // Update password
     user.password = newPassword;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
+    
+    // Clean up reset token
+    user.resetPasswordTokenHash = null;
+    user.resetPasswordExpires = null;
     await user.save();
 
     return { success: true };
@@ -365,6 +401,23 @@ export const AuthService = {
 
     const token = generateToken(user._id, true); // Remember me = true for OAuth
     return { token, user: user.toJSON() };
+  },
+
+  /**
+   * Update user date of birth (for profile completion after OAuth)
+   */
+  updateUserDateOfBirth: async (userId, dateOfBirth) => {
+    const user = await userModel.findByIdAndUpdate(
+      userId,
+      { dateOfBirth },
+      { new: true }
+    );
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    return user;
   },
 };
 

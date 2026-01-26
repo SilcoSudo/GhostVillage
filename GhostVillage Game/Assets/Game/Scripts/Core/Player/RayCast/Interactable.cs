@@ -2,33 +2,18 @@ using UnityEngine;
 
 public interface IInteractable
 {
-    void Interact(PlayerInteract player);
+    void Interact();
     string GetPromptMessage();
-    KeyCode InteractKey { get; }
 }
 
 public abstract class Interactable : MonoBehaviour, IInteractable
 {
-    [Header("Common Settings")]
-    public string objectName = "Vật thể"; // Tên item
-    public string promptText = "Tương tác"; // Dòng prompt riêng cho item
-    public KeyCode interactKey = KeyCode.F; // Phím dùng để tương tác
-    public KeyCode InteractKey => interactKey;
+    [Header("Interaction Settings")]
+    [SerializeField] protected string promptText = "Tương tác";
 
-    /// <summary>
-    /// Hàm bắt buộc khi player tương tác
-    /// </summary>
-    public abstract void Interact(PlayerInteract player);
+    public abstract void Interact();
 
-    /// <summary>
-    /// Hàm trả về prompt hiển thị
-    /// </summary>
-    public virtual string GetPromptMessage()
-    {
-        // Tự động tạo câu: "Nhấn F để Rung Chuông"
-        return $"{promptText}({interactKey})";
-    }
-
-
+    // Trả về dòng chữ hiển thị, vd: "Quản lý người chơi (F)"
+    public virtual string GetPromptMessage() => $"{promptText} (F)";
 
 }

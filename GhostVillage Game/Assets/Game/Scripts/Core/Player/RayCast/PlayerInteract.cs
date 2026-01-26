@@ -1,101 +1,113 @@
-using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using VContainer;
+using VContainer.Unity; // Cần thêm cái này để truy cập Container
+using Photon.Pun;
+using Game.Scripts.UI.Lobby;
+using Game.Core.DI; // Namespace chứa LobbySceneScope của bạn
 
-public class PlayerInteract : MonoBehaviour
+namespace Game.Core.Player.RayCast
 {
-    [Header("Raycast Settings")]
-    public Camera playerCamera;       // Camera để bắn ray
-    public float interactRange = 3f;  // Khoảng cách tối đa
-    public LayerMask interactLayer;   // Chỉ quét layer nào (vd: Interactable)
-
-    [Header("UI Prompt")]
-    public GameObject interactUIPrompt;
-    public TextMeshProUGUI promptTextUI;
-
-
-    [Header("Held Item Settings")]
-    public Transform heldItemParent;  // Vị trí spawn item trên tay hoặc trước camera
-    private GameObject currentHeldItem;
-
-    void Update()
+    public class PlayerInteract : MonoBehaviour
     {
-        // Bắn tia từ camera
-        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+        [Header("Raycast Settings")]
+        [SerializeField] private Camera playerCamera;
+        [SerializeField] private float interactRange = 3f;
+        [SerializeField] private LayerMask interactLayer;
 
-        // Nếu tia trúng vật thể
-        if (Physics.Raycast(ray, out RaycastHit hit, interactRange, interactLayer))
+        [Header("Held Item Settings")]
+        [SerializeField] private Transform heldItemParent;
+        private GameObject _currentHeldItem;
+
+        [Inject] private LobbyUIManager _uiManager;
+
+        private PhotonView _pv;
+        private IInteractable _currentInteractable;
+
+        private void Awake() => _pv = GetComponent<PhotonView>();
+
+        private void Start()
         {
-            // Lấy component implement IInteractable
-            IInteractable interactable = hit.collider.GetComponent<IInteractable>();
+            if (!_pv.IsMine) return;
 
-            if (interactable != null)
+            // TỰ ĐỘNG FIX NULL: Nếu Inject tự động thất bại (do Photon sinh ra), ta chủ động yêu cầu Scope inject
+            if (_uiManager == null)
             {
-                // Bật UI prompt
-                interactUIPrompt.SetActive(true);
-                promptTextUI.text = interactable.GetPromptMessage();
-
-                // Nhấn phím tương tác
-                if (Input.GetKeyDown(interactable.InteractKey))
+                var scope = Object.FindFirstObjectByType<LobbySceneScope>();
+                if (scope != null && scope.Container != null)
                 {
-                    interactable.Interact(this);
+                    scope.Container.Inject(this);
+                    Debug.Log("<color=green>[VContainer]</color> Đã Inject thủ công thành công cho PlayerInteract.");
                 }
-
-                return; // Không tắt UI nếu đang hover 1 vật thể
+                else
+                {
+                    Debug.LogError("<color=red>[VContainer]</color> Không tìm thấy LobbySceneScope để Inject!");
+                }
             }
         }
 
-        // Nếu không trúng gì
-        interactUIPrompt.SetActive(false);
-    }
-
-
-    /// <summary>
-    /// Gắn prefab vật phẩm vào tay người chơi.
-    /// Nếu đã có vật đang cầm, nó sẽ bị hủy.
-    /// </summary>
-    public void AttachHeldItem(GameObject heldPrefab)
-    {
-        if (heldPrefab == null) return;
-
-        // Hủy item cũ nếu có
-        if (currentHeldItem != null)
+        void Update()
         {
-            Destroy(currentHeldItem);
+            if (!_pv.IsMine) return;
+
+            CheckInteractable();
+
+            if (Keyboard.current.fKey.wasPressedThisFrame && _currentInteractable != null)
+            {
+                Debug.Log($"<color=cyan>[PlayerInteract]</color> Đang tương tác với: {_currentInteractable.GetPromptMessage()}");
+                _currentInteractable.Interact();
+            }
         }
 
-        // Spawn vật mới vào vị trí cầm
-        currentHeldItem = Instantiate(heldPrefab, heldItemParent);
-        currentHeldItem.transform.localPosition = Vector3.zero;
-        currentHeldItem.transform.localRotation = Quaternion.identity;
+        // --- HÀM CẦM NẮM VẬT PHẨM (GIỮ NGUYÊN) ---
 
-        // (Tùy chọn) scale lại nhỏ hơn nếu model to
-        currentHeldItem.transform.localScale *= 0.5f;
-    }
-
-    /// <summary>
-    /// Bỏ vật phẩm đang cầm.
-    /// </summary>
-    public void DetachHeldItem()
-    {
-        if (currentHeldItem != null)
+        public void AttachHeldItem(GameObject heldPrefab)
         {
-            Destroy(currentHeldItem);
-            currentHeldItem = null;
+            if (heldPrefab == null || heldItemParent == null) return;
+            DetachHeldItem();
+            _currentHeldItem = Instantiate(heldPrefab, heldItemParent);
+            _currentHeldItem.transform.localPosition = Vector3.zero;
+            _currentHeldItem.transform.localRotation = Quaternion.identity;
         }
-    }
 
-    // ===== Debug gizmos =====
-    private void OnDrawGizmos()
-    {
-        if (playerCamera == null) return;
+        public void DetachHeldItem()
+        {
+            if (_currentHeldItem != null)
+            {
+                Destroy(_currentHeldItem);
+                _currentHeldItem = null;
+            }
+        }
 
-        Gizmos.color = Color.yellow;
-        Vector3 start = playerCamera.transform.position;
-        Vector3 end = start + playerCamera.transform.forward * interactRange;
+        // --- HÀM KIỂM TRA TƯƠNG TÁC ---
 
-        // Vẽ đường ray
-        Gizmos.DrawLine(start, end);
-        // Vẽ điểm cuối
-        Gizmos.DrawWireSphere(end, 0.1f);
+        private void CheckInteractable()
+        {
+            if (playerCamera == null || _uiManager == null) return;
+
+            Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+            Debug.DrawRay(ray.origin, ray.direction * interactRange, Color.red);
+
+            if (Physics.Raycast(ray, out RaycastHit hit, interactRange, interactLayer))
+            {
+                var interactable = hit.collider.GetComponent<IInteractable>();
+
+                if (interactable != null)
+                {
+                    if (_currentInteractable != interactable)
+                    {
+                        _currentInteractable = interactable;
+                        _uiManager.SetInteractPrompt(interactable.GetPromptMessage(), true);
+                    }
+                    return;
+                }
+            }
+
+            if (_currentInteractable != null)
+            {
+                _currentInteractable = null;
+                _uiManager.SetInteractPrompt("", false);
+            }
+        }
     }
 }
