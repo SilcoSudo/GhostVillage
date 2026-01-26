@@ -1,0 +1,198 @@
+import User from "./userModel.js";
+import { uploadToCloudinary, deleteFromCloudinary, extractPublicIdFromUrl } from "../../services/uploadService.js";
+
+/**
+ * Service layer - Business logic & Database operations
+ */
+
+/**
+ * Find user by ID
+ */
+export const findUserById = async (userId) => {
+  return await User.findById(userId);
+};
+
+/**
+ * Update user profile with given data
+ */
+export const updateUserProfile = async (userId, updateData) => {
+  return await User.findByIdAndUpdate(
+    userId,
+    updateData,
+    { new: true, runValidators: true }
+  );
+};
+
+/**
+ * Update user name
+ */
+export const updateUserName = async (userId, fullname) => {
+  return await User.findByIdAndUpdate(
+    userId,
+    { fullname: fullname.trim() },
+    { new: true }
+  );
+};
+
+/**
+ * Toggle email visibility for a user
+ */
+export const toggleUserEmailVisibility = async (userId) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+  
+  user.emailVisibility = !user.emailVisibility;
+  await user.save();
+  
+  return { emailVisibility: user.emailVisibility };
+};
+
+/**
+ * Upload user avatar to Cloudinary and update profile
+ */
+export const uploadUserAvatar = async (userId, fileBuffer, mimeType) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Delete old avatar from Cloudinary if it exists
+  if (user.avatar) {
+    const oldPublicId = extractPublicIdFromUrl(user.avatar);
+    if (oldPublicId) {
+      try {
+        await deleteFromCloudinary(oldPublicId);
+      } catch (deleteError) {
+        console.warn("Failed to delete old avatar:", deleteError.message);
+        // Don't fail the upload if old image deletion fails
+      }
+    }
+  }
+
+  // Upload new avatar to Cloudinary
+  const uploadResult = await uploadToCloudinary(fileBuffer, {
+    folder: `ghostvillage/avatars/${userId}`,
+    public_id: `avatar_${Date.now()}`,
+    resource_type: 'image',
+    mimeType: mimeType,
+    quality: 'auto',
+    fetch_format: 'auto',
+    width: 300,
+    height: 300,
+    crop: 'fill',
+    gravity: 'auto',
+  });
+
+  user.avatar = uploadResult.secure_url;
+  await user.save();
+
+  return user;
+};
+
+/**
+ * Complete user profile (for OAuth users)
+ */
+export const completeUserProfile = async (userId, dateOfBirth, password) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  user.dateOfBirth = new Date(dateOfBirth);
+  user.password = password; // Will be hashed by pre-save hook
+  
+  await user.save();
+  
+  return user;
+};
+
+/**
+ * Get user's saved posts with populated data
+ */
+export const getUserSavedPosts = async (userId) => {
+  const user = await User.findById(userId).populate({
+    path: "bookmarks",
+    populate: {
+      path: "author",
+      select: "fullname avatar",
+    },
+    options: { sort: { createdAt: -1 } },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  return user.bookmarks || [];
+};
+
+/**
+ * Get user's posts
+ */
+export const getUserPosts = async (userId, { page = 1, limit = 10 } = {}) => {
+  const Post = (await import("../forum/posts/postModel.js")).default;
+  
+  const p = Math.max(parseInt(page) || 1, 1);
+  const l = Math.min(Math.max(parseInt(limit) || 10, 1), 50);
+  const skip = (p - 1) * l;
+
+  const [posts, total] = await Promise.all([
+    Post.find({ author: userId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(l)
+      .populate("author", "fullname avatar")
+      .lean(),
+    Post.countDocuments({ author: userId }),
+  ]);
+
+  return {
+    posts,
+    pagination: {
+      page: p,
+      limit: l,
+      total,
+      hasMore: skip + posts.length < total,
+    },
+  };
+};
+
+/**
+ * Format user profile data (for authenticated user viewing own profile)
+ */
+export const formatUserProfile = (user) => {
+  return {
+    id: user._id,
+    _id: user._id,
+    email: user.email,
+    fullname: user.fullname,
+    avatar: user.avatar,
+    bio: user.bio,
+    postCount: user.postCount || 0,
+    role: user.role,
+    isVerified: user.isVerified,
+    emailVisibility: user.emailVisibility,
+    createdAt: user.createdAt,
+  };
+};
+
+/**
+ * Format public profile data (respecting email visibility settings)
+ */
+export const formatPublicProfile = (user) => {
+  return {
+    id: user._id,
+    _id: user._id,
+    email: user.emailVisibility ? user.email : null,
+    fullname: user.fullname,
+    avatar: user.avatar,
+    bio: user.bio,
+    postCount: user.postCount || 0,
+    role: user.role,
+    isVerified: user.isVerified,
+    emailVisibility: user.emailVisibility,
+    createdAt: user.createdAt,
+  };
+};
