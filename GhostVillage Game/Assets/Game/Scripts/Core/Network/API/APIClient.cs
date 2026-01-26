@@ -55,12 +55,17 @@ namespace Game.Core.Network.API
                 }
 
                 string jsonResponse = request.downloadHandler.text;
-                // Debug.Log($"[API] Response: {jsonResponse}");
+                Debug.Log($"[API] Raw Response: {jsonResponse}");
 
                 try
                 {
                     // 4. Parse lớp vỏ bên ngoài trước
                     var wrapper = JsonUtility.FromJson<ResponseWrapper<T>>(jsonResponse);
+
+                    if (wrapper != null)
+                    {
+                        Debug.Log($"[API] Wrapper parsed - success: {wrapper.success}");
+                    }
 
                     if (wrapper != null && wrapper.success)
                     {
@@ -109,6 +114,56 @@ namespace Game.Core.Network.API
                 try
                 {
                     // Tái sử dụng logic parse wrapper giống hàm GET
+                    var wrapper = JsonUtility.FromJson<ResponseWrapper<T>>(jsonResponse);
+
+                    if (wrapper != null && wrapper.success)
+                    {
+                        return wrapper.data;
+                    }
+                    else
+                    {
+                        Debug.LogError($"[API] Server Logic Error: {wrapper?.error}");
+                        return default;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[API] Parse JSON Error: {e.Message}");
+                    return default;
+                }
+            }
+        }
+
+        /// <summary>
+        /// POST request with Authorization header (for authenticated endpoints)
+        /// </summary>
+        public async UniTask<T> PostAsyncWithAuth<T>(string endpoint, string jsonBody, string token)
+        {
+            string url = $"{_baseUrl.TrimEnd('/')}/{endpoint.TrimStart('/')}";
+
+            if (_config.IsDebugMode)
+                Debug.Log($"[API] POST (Auth) Request: {url} | Token: {token?.Substring(0, 10)}...");
+
+            using (var request = new UnityWebRequest(url, "POST"))
+            {
+                byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonBody);
+                request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+                request.downloadHandler = new DownloadHandlerBuffer();
+                request.SetRequestHeader("Content-Type", "application/json");
+                request.SetRequestHeader("Authorization", $"Bearer {token}");
+
+                await request.SendWebRequest();
+
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogError($"[API] Error: {request.error} | Response: {request.downloadHandler.text}");
+                    return default;
+                }
+
+                string jsonResponse = request.downloadHandler.text;
+
+                try
+                {
                     var wrapper = JsonUtility.FromJson<ResponseWrapper<T>>(jsonResponse);
 
                     if (wrapper != null && wrapper.success)

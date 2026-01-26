@@ -10,6 +10,8 @@ import LoginPage from '../features/auth/pages/LoginPage';
 import RegisterPage from '../features/auth/pages/RegisterPage';
 import RegistrationSuccessPage from '../features/auth/pages/RegistrationSuccessPage';
 import VerifyEmailPage from '../features/auth/pages/VerifyEmailPage';
+import ForgotPasswordPage from '../features/auth/pages/ForgotPasswordPage';
+import ResetPasswordPage from '../features/auth/pages/ResetPasswordPage';
 import ProfilePage from '../features/profile/pages/ProfilePage';
 import OAuthCallbackPage from '../features/auth/pages/OAuthCallbackPage';
 import CompleteProfilePage from '../features/auth/pages/CompleteProfilePage';
@@ -28,7 +30,7 @@ function AppContent() {
   const location = useLocation();
   
   // Các trang không hiển thị Header và Sidebar
-  const authPages = ['/login', '/register', '/registration-success', '/verify-email', '/auth/callback', '/complete-profile'];
+  const authPages = ['/login', '/register', '/registration-success', '/verify-email', '/forgot-password', '/reset-password', '/auth/callback', '/complete-profile'];
   const showLayout = !authPages.includes(location.pathname);
 
   return (
@@ -42,6 +44,8 @@ function AppContent() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/registration-success" element={<RegistrationSuccessPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/profile/:id" element={<ProfilePage />} />
             <Route path="/auth/callback" element={<OAuthCallbackPage />} />
             <Route path="/complete-profile" element={<CompleteProfilePage />} />
