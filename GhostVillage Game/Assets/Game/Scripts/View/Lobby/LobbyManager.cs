@@ -1,18 +1,23 @@
 using UnityEngine;
 using Photon.Pun;
+using Photon.Realtime;
 using VContainer;
 using Game.Script.UI;
 using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
 using UnityEngine.InputSystem;
+using Game.Domain.Map.Services;
+using Game.Domain.Map.DTOs;
+using System.Linq;
+using Hashtable = ExitGames.Client.Photon.Hashtable;
+using Game.Scripts.View.Lobby.Session;
 
 namespace Game.Scripts.UI.Lobby
 {
-    /// <summary>
-    /// Điều phối luồng hoạt động chính và đồng bộ hóa mạng qua Photon RPC.
-    /// </summary>
-    public class LobbyManager : MonoBehaviourPunCallbacks // Sửa thành MonoBehaviourPunCallbacks để dùng photonView
+    public class LobbyManager : MonoBehaviourPunCallbacks
     {
+        #region Dependencies & Fields
+
         [Header("Networking Setup")]
         [SerializeField] private string _playerPrefabName = "Player";
         [SerializeField] private List<Transform> _spawnPoints;
@@ -20,24 +25,33 @@ namespace Game.Scripts.UI.Lobby
 
         [Inject] private GlobalUIManager _globalUI;
         [Inject] private LobbyUIManager _uiManager;
+        [Inject] private IMapDataService _mapService;
+
+        private List<MapConfigDTO> _cachedMaps = new List<MapConfigDTO>();
+        private int _currentMapIndex = 0;
+        private const string MAP_KEY = "mapId";
+        private const string READY_KEY = "isReady";
+
+        #endregion
+
+        #region Unity Lifecycle
 
         private async void Start()
         {
             _globalUI.ShowLoading(true);
+            BindUIEvents();
 
             try
             {
-                await UniTask.WhenAll(
-                    WaitForInRoom(),
-                    FetchLobbyResources()
-                );
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"[LobbyManager] Error: {e.Message}");
-            }
+                // Wait for room connection and map data fetch
+                await UniTask.WhenAll(WaitForInRoom(), FetchLobbyResources());
 
-            // ĐĂNG KÝ: Bảo UI rằng khi nhấn Enter gửi tin thì gọi hàm này
+                // Sync initial state for late joiners
+                UpdateMapUIFromNetwork();
+                RefreshStartPrompt();
+            }
+            catch (System.Exception e) { Debug.LogError($"[LobbyManager] Error: {e.Message}"); }
+
             if (_uiManager != null)
             {
                 _uiManager.BindSubmitEvent(HandleChatInput);
@@ -45,79 +59,247 @@ namespace Game.Scripts.UI.Lobby
             }
             else
             {
-                Debug.LogError("❌ [LobbyManager] _uiManager is NULL. Check VContainer Registration!");
+                Debug.LogError("[LobbyManager] UI Manager is NULL!");
             }
 
             _globalUI.ShowLoading(false);
             SpawnPlayer();
         }
 
-        /// <summary>
-        /// Lắng nghe sự kiện phím Enter để thực hiện Focus hoặc gửi tin nhắn.
-        /// </summary>
         private void Update()
         {
+            // Chat Toggle Logic
             if (Keyboard.current != null && Keyboard.current.enterKey.wasPressedThisFrame)
             {
                 if (_uiManager == null) return;
 
-                // TRƯỜNG HỢP 1: Ô chat đang ĐÓNG -> Mở lên để gõ
-                if (!_uiManager.IsChatFocused())
+                if (!_uiManager.IsChatFocused()) _uiManager.FocusChat();
+                else HandleChatInput(_uiManager.GetInputText());
+            }
+
+            // R Key Logic (Ready / Start Game)
+            if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
+            {
+                if (_uiManager.IsChatFocused()) return;
+
+                if (PhotonNetwork.IsMasterClient)
                 {
-                    Debug.Log("🔍 [Lobby] Mở ô Chat.");
-                    _uiManager.FocusChat();
+                    // Host Logic: Start Game if conditions met
+                    if (IsEveryoneElseReady() && HasMapSelected())
+                        StartGameWithSecurityCheck();
+                    else
+                        Debug.Log("Host cannot start: Waiting for map or players.");
                 }
-                // TRƯỜNG HỢP 2: Ô chat đang MỞ -> Lấy nội dung và xử lý (Gửi hoặc Hủy)
                 else
                 {
-                    string message = _uiManager.GetInputText();
-                    HandleChatInput(message);
+                    // Client Logic: Toggle Ready status
+                    ToggleReady();
                 }
             }
         }
 
-        /// <summary>
-        /// Logic xử lý Chat: Nếu chưa focus thì focus, nếu đang focus và có nội dung thì gửi.
-        /// </summary>
-        private void HandleChatInput(string message)
+        #endregion
+
+        #region Map Logic (Selection & Sync)
+
+        private void BindUIEvents()
         {
-            if (!string.IsNullOrWhiteSpace(message))
+            if (_uiManager == null) return;
+
+            _uiManager.OnNextMapClicked += () => ChangeMapSelection(1);
+            _uiManager.OnPrevMapClicked += () => ChangeMapSelection(-1);
+            _uiManager.OnClosePickerClicked += () => _uiManager.ShowMapPicker(false);
+
+            _uiManager.OnSelectMapClicked += () =>
             {
-                Debug.Log($"📡 [Lobby] Gửi RPC Chat: {message}");
-                photonView.RPC("RPC_ReceiveChatMessage", RpcTarget.All, PhotonNetwork.LocalPlayer.NickName, message);
-            }
-            else
+                if (_cachedMaps.Count == 0 || !PhotonNetwork.IsMasterClient) return;
+
+                var selectedMap = _cachedMaps[_currentMapIndex];
+
+                // Sync selected map ID to Room Properties
+                Hashtable props = new Hashtable { { MAP_KEY, selectedMap.identityConfig.mapId } };
+                PhotonNetwork.CurrentRoom.SetCustomProperties(props);
+
+                Debug.Log($"Selected Map: {selectedMap.identityConfig.displayName}");
+                _uiManager.ShowMapPicker(false);
+            };
+        }
+
+        private void ChangeMapSelection(int direction)
+        {
+            if (_cachedMaps.Count == 0) return;
+
+            _currentMapIndex += direction;
+            if (_currentMapIndex >= _cachedMaps.Count) _currentMapIndex = 0;
+            if (_currentMapIndex < 0) _currentMapIndex = _cachedMaps.Count - 1;
+
+            UpdatePickerUI();
+        }
+
+        private void UpdatePickerUI()
+        {
+            var map = _cachedMaps[_currentMapIndex];
+            var info = map.identityConfig;
+            Sprite icon = _uiManager.LoadSprite(info.thumbnailUrl);
+            _uiManager.UpdateMapPickerUI(info.displayName, info.shortDescription, icon);
+        }
+
+        public void OpenMapPicker()
+        {
+            if (_cachedMaps.Count == 0) return;
+            UpdatePickerUI();
+            _uiManager.ShowMapPicker(true);
+        }
+
+        #endregion
+
+        #region Photon Callbacks & Sync Logic
+
+        public override void OnRoomPropertiesUpdate(Hashtable propertiesThatChanged)
+        {
+            if (propertiesThatChanged.ContainsKey(MAP_KEY))
             {
-                Debug.Log("⚠️ [Lobby] Tin nhắn trống -> Đóng ô chat.");
+                UpdateMapUIFromNetwork();
+                RefreshStartPrompt(); // Re-check start conditions on map change
+            }
+        }
+
+        public override void OnPlayerPropertiesUpdate(Player targetPlayer, Hashtable changedProps)
+        {
+            if (changedProps.ContainsKey(READY_KEY))
+            {
+                RefreshStartPrompt(); // Re-check start conditions on player ready change
+            }
+        }
+
+        public override void OnPlayerEnteredRoom(Player newPlayer)
+        {
+            Debug.Log($"[Lobby] Player joined: {newPlayer.NickName}");
+            RefreshStartPrompt(); // Re-check because new player is not ready
+        }
+
+        public override void OnPlayerLeftRoom(Player otherPlayer)
+        {
+            Debug.Log($"[Lobby] Player left: {otherPlayer.NickName}");
+            RefreshStartPrompt();
+        }
+
+        private void UpdateMapUIFromNetwork()
+        {
+            if (PhotonNetwork.CurrentRoom == null) return;
+
+            if (PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue(MAP_KEY, out object id))
+            {
+                string mapId = (string)id;
+                if (string.IsNullOrEmpty(mapId))
+                {
+                    _uiManager.ClearLobbyMapInfo();
+                    return;
+                }
+
+                var config = _cachedMaps.FirstOrDefault(m => m.identityConfig.mapId == mapId);
+
+                if (config != null)
+                {
+                    Sprite icon = _uiManager.LoadSprite(config.identityConfig.thumbnailUrl);
+                    _uiManager.UpdateLobbyMapInfo(config.identityConfig.displayName, icon);
+
+                    // --- LOGIC MỚI: LƯU VÀO HỘP CHỨA ---
+                    // Lưu Config vào Singleton để mang sang Scene Game
+                    if (GameDataTransfer.Instance != null)
+                    {
+                        GameDataTransfer.Instance.SetMapConfig(config);
+                    }
+                    else
+                    {
+                        Debug.LogError("Chưa tạo GameDataTransfer trong Scene!");
+                    }
+                    // -------------------------------------
+                }
+            }
+        }
+
+        #endregion
+
+        #region Game Flow Logic (Ready & Start)
+
+        private void RefreshStartPrompt()
+        {
+            bool canStart = IsEveryoneElseReady() && HasMapSelected();
+
+            if (_uiManager != null)
+            {
+                _uiManager.RefreshPlayerList(PhotonNetwork.PlayerList, canStart);
+
+                if (PhotonNetwork.IsMasterClient)
+                    _uiManager.ShowStartGamePrompt(canStart);
+                else
+                    _uiManager.ShowStartGamePrompt(false);
+            }
+        }
+
+        private bool IsEveryoneElseReady()
+        {
+            // Check all players except Host
+            return PhotonNetwork.PlayerList
+                .Where(p => !p.IsMasterClient)
+                .All(p => p.CustomProperties.ContainsKey(READY_KEY) && (bool)p.CustomProperties[READY_KEY]);
+        }
+
+        private bool HasMapSelected()
+        {
+            return PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey(MAP_KEY);
+        }
+
+        private void ToggleReady()
+        {
+            bool currentReady = false;
+            if (PhotonNetwork.LocalPlayer.CustomProperties.TryGetValue(READY_KEY, out object r))
+                currentReady = (bool)r;
+
+            Hashtable props = new Hashtable { { READY_KEY, !currentReady } };
+            PhotonNetwork.LocalPlayer.SetCustomProperties(props);
+        }
+
+        private void StartGameWithSecurityCheck()
+        {
+            // Final Security Check before loading level
+            foreach (var p in PhotonNetwork.PlayerList)
+            {
+                bool ready = p.CustomProperties.ContainsKey(READY_KEY) && (bool)p.CustomProperties[READY_KEY];
+
+                // Kick players who unreadied at the last second (except Host)
+                if (!p.IsMasterClient && !ready)
+                {
+                    Debug.Log($"[Security] Kicking {p.NickName} for not being ready.");
+                    PhotonNetwork.CloseConnection(p);
+                    return;
+                }
             }
 
-            // BẮT BUỘC: Xóa chữ và THOÁT FOCUS để di chuyển được WASD
-            _uiManager.ClearInput();
-            _uiManager.DeFocusChat();
+            // Lock Room and Load Scene
+            PhotonNetwork.CurrentRoom.IsOpen = false;
+            PhotonNetwork.CurrentRoom.IsVisible = false;
+
+            string mapId = (string)PhotonNetwork.CurrentRoom.CustomProperties[MAP_KEY];
+            var config = _cachedMaps.First(m => m.identityConfig.mapId == mapId);
+
+            Debug.Log($"Loading Scene: {config.identityConfig.sceneName}");
+            PhotonNetwork.LoadLevel(config.identityConfig.sceneName);
         }
 
-        /// <summary>
-        /// Hàm nhận tin nhắn từ mạng và đẩy lên UI.
-        /// </summary>
-        /// <param name="senderName">Tên người gửi.</param>
-        /// <param name="message">Nội dung tin nhắn.</param>
-        [PunRPC]
-        public void RPC_ReceiveChatMessage(string senderName, string message)
-        {
-            // Kiểm tra xem tin nhắn này có phải của chính mình gửi không
-            bool isMe = senderName == PhotonNetwork.LocalPlayer.NickName;
+        #endregion
 
-            _uiManager.AddChatMessage(senderName, message, isMe);
-        }
-
-        private async UniTask WaitForInRoom()
-        {
-            while (!PhotonNetwork.InRoom) await UniTask.Yield();
-        }
+        #region Helper Methods (Chat, Setup, Spawn)
 
         private async UniTask FetchLobbyResources()
         {
-            await UniTask.Delay(1000);
+            var maps = await _mapService.FetchAllMaps();
+            if (maps != null && maps.Count > 0)
+            {
+                _cachedMaps = maps;
+                Debug.Log($"Loaded {_cachedMaps.Count} maps.");
+            }
             _uiManager.AddMission("Sống sót qua đêm đầu tiên", false);
         }
 
@@ -127,7 +309,29 @@ namespace Game.Scripts.UI.Lobby
             if (room == null) return;
             string pass = room.CustomProperties.ContainsKey("pw") ? (string)room.CustomProperties["pw"] : "";
             _uiManager.SetRoomInfo(room.Name, PhotonNetwork.MasterClient.NickName, pass);
-            _uiManager.RefreshPlayerList(PhotonNetwork.PlayerList);
+
+            RefreshStartPrompt();
+        }
+
+        private void HandleChatInput(string message)
+        {
+            if (!string.IsNullOrWhiteSpace(message))
+                photonView.RPC("RPC_ReceiveChatMessage", RpcTarget.All, PhotonNetwork.LocalPlayer.NickName, message);
+
+            _uiManager.ClearInput();
+            _uiManager.DeFocusChat();
+        }
+
+        [PunRPC]
+        public void RPC_ReceiveChatMessage(string senderName, string message)
+        {
+            bool isMe = senderName == PhotonNetwork.LocalPlayer.NickName;
+            _uiManager.AddChatMessage(senderName, message, isMe);
+        }
+
+        private async UniTask WaitForInRoom()
+        {
+            while (!PhotonNetwork.InRoom) await UniTask.Yield();
         }
 
         private void SpawnPlayer()
@@ -135,21 +339,13 @@ namespace Game.Scripts.UI.Lobby
             if (PhotonNetwork.InRoom)
             {
                 int spawnIndex = (PhotonNetwork.LocalPlayer.ActorNumber - 1) % _spawnPoints.Count;
+                Transform spawn = _spawnPoints[spawnIndex];
 
-                Transform selectedSpawn = _spawnPoints[spawnIndex];
-
-                Debug.Log($"👾 [Lobby] Spawning at Slot {spawnIndex} (Actor: {PhotonNetwork.LocalPlayer.ActorNumber})");
-
-                // 2. Instantiate tại đúng vị trí và hướng xoay (Rotation) của SpawnPoint đó
-                PhotonNetwork.Instantiate(_playerPrefabName, selectedSpawn.position, selectedSpawn.rotation);
-
-                // TẮT Scene Camera để nhường chỗ cho Camera của nhân vật
-                if (_sceneCamera != null)
-                {
-                    _sceneCamera.gameObject.SetActive(false);
-                    Debug.Log("📷 [Lobby] Disabled Scene Camera.");
-                }
+                PhotonNetwork.Instantiate(_playerPrefabName, spawn.position, spawn.rotation);
+                if (_sceneCamera) _sceneCamera.gameObject.SetActive(false);
             }
         }
+
+        #endregion
     }
 }
