@@ -2213,7 +2213,7 @@ GameObject:
   - component: {fileID: 875229195}
   - component: {fileID: 875229196}
   m_Layer: 0
-  m_Name: LoginContext
+  m_Name: LoginUIManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

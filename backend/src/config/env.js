@@ -127,8 +127,7 @@ export const config = {
       process.env.GOOGLE_REDIRECT_URI ||
       "http://localhost:5000/api/web/auth/google/callback",
     gameRedirectUri:
-      process.env.GOOGLE_REDIRECT_URI_GAME ||
-      "http://localhost:8888/",
+      process.env.GOOGLE_REDIRECT_URI_GAME || "http://localhost:8888/",
   },
 
   // Email (nodemailer)
