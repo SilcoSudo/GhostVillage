@@ -7,46 +7,34 @@ public class InventoryManager : MonoBehaviour
     public int maxSlots = 3;
     public List<KeyItemData> items = new();
 
-    public event Action OnInventoryChanged;
-    public event Action<KeyItemData, InventoryManager> OnItemAdded;
+    // Event tĩnh (Static) để ObjectiveManager có thể nghe mà không cần tìm reference tới từng Player
+    // Param 1: Item vừa nhặt, Param 2: Ai nhặt (Inventory nào)
+    public static event Action<KeyItemData, InventoryManager> OnGlobalItemAdded;
 
+    public event Action OnInventoryChanged; // Dùng cho UI cục bộ
+
+    public bool AddItem(KeyItemData newItem)
+    {
+        if (items.Contains(newItem) || SlotsUsed() + newItem.slotSize > maxSlots) return false;
+
+        items.Add(newItem);
+
+        // Bắn pháo hiệu: "Alo, có thằng vừa nhặt đồ nè!"
+        // Ai quan tâm (UI, Objective, Sound) thì tự nghe, tao không quan tâm.
+        OnGlobalItemAdded?.Invoke(newItem, this);
+        OnInventoryChanged?.Invoke();
+
+        return true;
+    }
 
     public int SlotsUsed()
     {
         int total = 0;
         foreach (var item in items)
-            total += item.slotSize;
+        {
+            if (item != null) total += item.slotSize;
+        }
         return total;
-    }
-
-    public bool AddItem(KeyItemData newItem)
-    {
-        Debug.Log($"[INVENTORY] This is {gameObject.name} inventory");
-
-        if (items.Contains(newItem))
-        {
-            Debug.Log($"{newItem.itemName} đã có trong túi!");
-            return false;
-        }
-
-        if (SlotsUsed() + newItem.slotSize > maxSlots)
-        {
-            Debug.Log("Túi đầy rồi!");
-            return false;
-        }
-
-        items.Add(newItem);
-        Debug.Log($"[INVENTORY] Đã nhặt: {newItem.itemName}");
-        OnInventoryChanged?.Invoke();
-        OnItemAdded?.Invoke(newItem, this);
-
-        GameManager.Instance?.NotifyItemPickup(newItem, this);
-
-
-
-        Debug.Log("LMAOOOOO");
-
-        return true;
     }
 
     public bool RemoveItem(KeyItemData item)

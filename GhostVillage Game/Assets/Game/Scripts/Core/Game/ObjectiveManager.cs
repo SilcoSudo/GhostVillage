@@ -3,36 +3,29 @@ using UnityEngine;
 
 public abstract class ObjectiveManager : MonoBehaviour
 {
-    [Header("Common Objective Settings")]
-    public List<KeyItemData> requiredItems = new();
-    public GameObject portalPrefab;
-    public Transform[] portalSpawnPoints;
-
-    protected bool portalSpawned = false;
     public abstract void Initialize();
-    public abstract void OnItemCollected(KeyItemData item, InventoryManager playerInventory);
-    public abstract void OnTriggerActivated(string triggerId);
-    public abstract bool IsObjectiveComplete();
+    protected abstract void CheckProgress(KeyItemData item);
 
-    protected void SpawnPortal()
+    private void OnEnable()
     {
-        if (portalSpawned)
-        {
-            Debug.Log("[Objective] Portal đã spawn rồi, bỏ qua!");
-            return;
-        }
+        // Đăng ký nghe: Cứ ai nhặt đồ là tao check
+        InventoryManager.OnGlobalItemAdded += HandleItemPickup;
+    }
 
-        if (portalPrefab == null || portalSpawnPoints.Length == 0)
-        {
-            Debug.LogWarning("[Objective] Thiếu portalPrefab hoặc spawnPoints!");
-            return;
-        }
+    private void OnDisable()
+    {
+        InventoryManager.OnGlobalItemAdded -= HandleItemPickup;
+    }
 
-        var spawn = portalSpawnPoints[Random.Range(0, portalSpawnPoints.Length)];
-        Instantiate(portalPrefab, spawn.position, spawn.rotation);
-        portalSpawned = true;
-        Debug.Log($"[Objective] Portal spawned tại {spawn.position}");
+    private void HandleItemPickup(KeyItemData item, InventoryManager inv)
+    {
+        // Ở đây có thể check xem inv có phải là LocalPlayer không nếu cần
+        CheckProgress(item);
+    }
 
-        GameManager.Instance.SetState(GameState.Triggered);
+    protected void NotifyObjectiveComplete()
+    {
+        // Chỉ khi nào HOÀN THÀNH thì mới báo sếp GameManager
+        GameManager.Instance.OnObjectiveCompleted();
     }
 }

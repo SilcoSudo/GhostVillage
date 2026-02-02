@@ -3,46 +3,37 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
-    public GameState currentState { get; private set; }
-
-    private ObjectiveManager currentObjective;
+    public GameState CurrentState { get; private set; }
 
     private void Awake()
     {
-        Instance = this;
+        if (Instance == null) Instance = this;
     }
 
     private void Start()
     {
-        currentObjective = FindAnyObjectByType<ObjectiveManager>();
-        currentObjective?.Initialize();
+        // 1. Set trạng thái Playing luôn
+        SetState(GameState.Playing);
 
-        SetState(GameState.None);
+        // 2. HÚ SPAWNER: "Thả người đi em ơi!"
+        if (PlayerSpawner.Instance != null)
+        {
+            PlayerSpawner.Instance.SpawnLocalPlayer();
+        }
+        else
+        {
+            Debug.LogError("[GameManager] Không tìm thấy PlayerSpawner!");
+        }
     }
 
     public void SetState(GameState newState)
     {
-        currentState = newState;
-        Debug.Log($"[GameManager] State changed to {newState}");
+        CurrentState = newState;
+        Debug.Log($"[GameManager] State changed to: {newState}");
     }
 
-    public void NotifyTrigger(string triggerId)
+    public void OnObjectiveCompleted()
     {
-        currentObjective?.OnTriggerActivated(triggerId);
-    }
-
-    public void NotifyItemPickup(KeyItemData item, InventoryManager inv)
-    {
-        currentObjective?.OnItemCollected(item, inv);
-    }
-
-    public void CheckObjectiveProgress()
-    {
-        if (currentObjective != null && currentObjective.IsObjectiveComplete())
-        {
-            Debug.Log("[GameManager] Objective complete! Moving to next phase.");
-            SetState(GameState.Result);
-        }
+        SetState(GameState.Triggered);
     }
 }
-
