@@ -37,7 +37,7 @@ namespace Game.Boot
             else
             {
                 // Theo Flow: Boot -> Login
-                await _sceneLoader.LoadSceneAsync("LoginScene");
+                await _sceneLoader.LoadSceneAsync("LoginScense");
             }
         }
     }
