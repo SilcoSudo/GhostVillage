@@ -5,6 +5,14 @@ TagManager:
   serializedVersion: 3
   tags:
   - Wall
+  - SpawnPoint
+  - SP_Minion
+  - SP_Boss
+  - SP_Puzzle
+  - SP_Item_Rand
+  - SP_Item_Equip
+  - SP_Item_Fix
+  - SP_Player
   layers:
   - Default
   - TransparentFX

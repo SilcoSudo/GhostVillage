@@ -9,18 +9,21 @@ namespace Game.Scripts.View.Lobby
         // Kéo GameObject chứa script LobbyManager vào đây
         [SerializeField] private LobbyManager _lobbyManager;
 
-        public override void Interact()
+        // XÓA [System.Obsolete] ĐI LÀ HẾT LỖI
+        public override void Interact(GameObject actor)
         {
             Debug.Log("[Interact] Yêu cầu mở bảng chọn Map...");
 
             if (_lobbyManager == null)
             {
-                Debug.LogError("<color=red>[Critical]</color> Hùng ơi, kéo LobbyManager vào script MapBoardInteract chưa??");
-                return;
+                // Thay FindObjectOfType (cũ) bằng FindFirstObjectByType (mới)
+                _lobbyManager = Object.FindFirstObjectByType<LobbyManager>();
             }
 
-            // Gọi vào Manager: Manager sẽ tự check data -> update UI -> hiện Modal
-            _lobbyManager.OpenMapPicker();
+            if (_lobbyManager != null)
+            {
+                _lobbyManager.OpenMapPicker();
+            }
         }
     }
 }

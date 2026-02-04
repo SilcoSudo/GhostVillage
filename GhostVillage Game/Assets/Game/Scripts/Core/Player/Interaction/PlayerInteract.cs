@@ -1,12 +1,9 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using VContainer;
-using VContainer.Unity; // Cần thêm cái này để truy cập Container
 using Photon.Pun;
-using Game.Scripts.UI.Lobby;
-using Game.Core.DI; // Namespace chứa LobbySceneScope của bạn
+// Đã xóa: VContainer, Game.Scripts.UI.Lobby, Game.Core.DI -> Không cần nữa
 
-namespace Game.Core.Player.RayCast
+namespace Game.Core.Player.RayCast // namespace cũ của bạn là RayCast hay Interaction? Check lại nhé
 {
     public class PlayerInteract : MonoBehaviour
     {
@@ -19,31 +16,17 @@ namespace Game.Core.Player.RayCast
         [SerializeField] private Transform heldItemParent;
         private GameObject _currentHeldItem;
 
-        [Inject] private LobbyUIManager _uiManager;
+        // Đã xóa: _uiManager (Vì chúng ta dùng Event, không cần reference trực tiếp)
 
         private PhotonView _pv;
         private IInteractable _currentInteractable;
 
         private void Awake() => _pv = GetComponent<PhotonView>();
 
+        // Start không cần Inject gì nữa cả
         private void Start()
         {
-            if (!_pv.IsMine) return;
-
-            // TỰ ĐỘNG FIX NULL: Nếu Inject tự động thất bại (do Photon sinh ra), ta chủ động yêu cầu Scope inject
-            if (_uiManager == null)
-            {
-                var scope = Object.FindFirstObjectByType<LobbySceneScope>();
-                if (scope != null && scope.Container != null)
-                {
-                    scope.Container.Inject(this);
-                    Debug.Log("<color=green>[VContainer]</color> Đã Inject thủ công thành công cho PlayerInteract.");
-                }
-                else
-                {
-                    Debug.LogError("<color=red>[VContainer]</color> Không tìm thấy LobbySceneScope để Inject!");
-                }
-            }
+            // Để trống hoặc xử lý logic khác nếu cần
         }
 
         void Update()
@@ -55,12 +38,13 @@ namespace Game.Core.Player.RayCast
             if (Keyboard.current.fKey.wasPressedThisFrame && _currentInteractable != null)
             {
                 Debug.Log($"<color=cyan>[PlayerInteract]</color> Đang tương tác với: {_currentInteractable.GetPromptMessage()}");
-                _currentInteractable.Interact();
+
+                // Truyền chính mình (this.gameObject) vào để vật phẩm biết ai nhặt
+                _currentInteractable.Interact(this.gameObject);
             }
         }
 
-        // --- HÀM CẦM NẮM VẬT PHẨM (GIỮ NGUYÊN) ---
-
+        // --- HÀM CẦM NẮM VẬT PHẨM ---
         public void AttachHeldItem(GameObject heldPrefab)
         {
             if (heldPrefab == null || heldItemParent == null) return;
@@ -80,13 +64,13 @@ namespace Game.Core.Player.RayCast
         }
 
         // --- HÀM KIỂM TRA TƯƠNG TÁC ---
-
         private void CheckInteractable()
         {
-            if (playerCamera == null || _uiManager == null) return;
+            if (playerCamera == null) return; // Bỏ check _uiManager
 
             Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-            Debug.DrawRay(ray.origin, ray.direction * interactRange, Color.red);
+
+            // Debug.DrawRay(ray.origin, ray.direction * interactRange, Color.red);
 
             if (Physics.Raycast(ray, out RaycastHit hit, interactRange, interactLayer))
             {
@@ -97,16 +81,19 @@ namespace Game.Core.Player.RayCast
                     if (_currentInteractable != interactable)
                     {
                         _currentInteractable = interactable;
-                        _uiManager.SetInteractPrompt(interactable.GetPromptMessage(), true);
+                        // GỬI SỰ KIỆN TOÀN CỤ: "Tao thấy cái này nè!"
+                        InteractionEvents.TriggerHover(interactable.GetPromptMessage(), true);
                     }
                     return;
                 }
             }
 
+            // Nếu không nhìn thấy gì hoặc nhìn ra chỗ khác
             if (_currentInteractable != null)
             {
                 _currentInteractable = null;
-                _uiManager.SetInteractPrompt("", false);
+                // GỬI SỰ KIỆN TOÀN CỤ: "Hết thấy rồi, tắt dùm cái UI"
+                InteractionEvents.TriggerHover("", false);
             }
         }
     }

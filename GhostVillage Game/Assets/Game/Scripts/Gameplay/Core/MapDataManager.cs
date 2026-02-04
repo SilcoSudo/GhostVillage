@@ -1,34 +1,43 @@
 using UnityEngine;
+using System.Collections.Generic;
 using Game.Domain.Map.DTOs;
-using Game.Scripts.View.Lobby.Session; // Namespace chứa GameDataTransfer
 
 public class MapDataManager : MonoBehaviour
 {
-    public static MapDataManager Instance;
-    public MapConfigDTO CurrentMapConfig { get; private set; } // DTO clean
+    // XÓA: public static MapDataManager Instance; -> Không cần nữa
+    public MapConfigDTO CurrentMapConfig { get; private set; }
+    private Dictionary<string, List<Transform>> _tagGroups = new Dictionary<string, List<Transform>>();
 
-    private void Awake()
-    {
-        Instance = this;
-    }
+    private readonly string[] _targetTags = {
+        "SP_Player", "SP_Item_Fix", "SP_Item_Equip",
+        "SP_Item_Rand", "SP_Puzzle", "SP_Boss", "SP_Minion"
+    };
+
 
     public void InitializeMap()
     {
-        // 1. Lấy DTO thô từ Lobby chuyển sang
-        var rawConfig = GameDataTransfer.Instance?.SelectedMapConfig;
+        _tagGroups.Clear();
 
-        if (rawConfig == null)
+        foreach (string tag in _targetTags)
         {
-            Debug.LogError("[MapData] CRITICAL: Không có Config map!");
-            return;
+            // Tìm tất cả GameObject có gắn Tag tương ứng
+            GameObject[] objects = GameObject.FindGameObjectsWithTag(tag);
+            List<Transform> transforms = new List<Transform>();
+
+            foreach (var obj in objects) transforms.Add(obj.transform);
+
+            _tagGroups.Add(tag, transforms);
+            Debug.Log($"[MapData] Index thành công {transforms.Count} điểm cho Tag: {tag}");
         }
+    }
 
-        // 2. Lưu lại để dùng
-        // Lưu ý: MapConfigDTO của bạn cấu trúc đang tốt, có thể dùng trực tiếp
-        Debug.Log($"[MapData] Initializing Map: {rawConfig.identityConfig.displayName}");
+    // Hàm để các Spawner xin danh sách vị trí theo Tag
+    public List<Transform> GetSpawnPoints(string tag)
+    {
+        if (_tagGroups.TryGetValue(tag, out List<Transform> points))
+            return points;
 
-        // 3. Gọi các Spawner làm việc (Giai đoạn 2)
-        // ItemSpawner.Instance.SpawnItems(rawConfig.consumableConfig);
-        // MonsterSpawner.Instance.SpawnMonsters(rawConfig.monsterSystemConfig);
+        Debug.LogWarning($"[MapData] Tag '{tag}' không tồn tại hoặc không có điểm spawn nào!");
+        return new List<Transform>();
     }
 }

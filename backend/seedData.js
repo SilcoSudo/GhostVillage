@@ -244,7 +244,7 @@ const seedData = async () => {
       {
         identityConfig: {
           mapId: "MAP_01_ONG_KE",
-          sceneName: "Scene_Game_OngKe", // Updated Name
+          sceneName: "Scene_Game_OngKe",
           displayName: "Làng Cổ - Ông Kẹ",
           thumbnailUrl: "sprite_map_ongke",
           shortDescription:
@@ -258,9 +258,9 @@ const seedData = async () => {
               eventId: "EVENT_MOON_FULL",
               weight: 30,
               uiIcon: "icon_moon_full",
-            }, // Sáng hơn, dễ bị lộ
-            { eventId: "EVENT_MOON_NEW", weight: 40, uiIcon: "icon_moon_new" }, // Tối om, Ông Kẹ mạnh hơn
-            { eventId: "EVENT_MOON_RED", weight: 10, uiIcon: "icon_moon_red" }, // Ông Kẹ cuồng nộ
+            },
+            { eventId: "EVENT_MOON_NEW", weight: 40, uiIcon: "icon_moon_new" },
+            { eventId: "EVENT_MOON_RED", weight: 10, uiIcon: "icon_moon_red" },
           ],
         },
         consumableConfig: {
@@ -275,7 +275,7 @@ const seedData = async () => {
             "SP_Item_Basement",
           ],
           mandatoryItems: [
-            { itemId: "ITEM_FLASHLIGHT_BATTERY", minCount: 5, maxCount: 8 }, // Cần pin đèn pin
+            { itemId: "ITEM_FLASHLIGHT_BATTERY", minCount: 5, maxCount: 8 },
           ],
           randomPoolConfig: {
             minCount: 3,
@@ -287,9 +287,27 @@ const seedData = async () => {
             ],
           },
         },
+        equipmentConfig: {
+          spawnPointIds: [
+            "SP_Equip_Table_Main",
+            "SP_Equip_Shelf_OldHouse",
+            "SP_Equip_Box_Gate",
+          ],
+          mandatoryEquipment: [
+            { itemId: "ITEM_FLASHLIGHT_PRO", minCount: 1, maxCount: 1 },
+          ],
+          randomPoolConfig: {
+            minCount: 0,
+            maxCount: 1,
+            pool: [
+              { itemId: "ITEM_GHOST_DETECTOR", weight: 40 },
+              { itemId: "ITEM_COMPASS", weight: 60 },
+            ],
+          },
+        },
         monsterSystemConfig: {
           bossConfig: {
-            monsterId: "BOSS_ONG_KE", // Boss bao tải, bắt cóc
+            monsterId: "BOSS_ONG_KE",
             spawnPointIds: [
               "SP_Boss_Center",
               "SP_Boss_OldHouse",
@@ -318,7 +336,7 @@ const seedData = async () => {
       {
         identityConfig: {
           mapId: "MAP_02_MA_DA",
-          sceneName: "Scene_Game_MaDa", // Updated Name
+          sceneName: "Scene_Game_MaDa",
           displayName: "Bến Sông - Ma Da",
           thumbnailUrl: "sprite_map_mada",
           shortDescription:
@@ -332,8 +350,8 @@ const seedData = async () => {
               eventId: "EVENT_TIDE_HIGH",
               weight: 40,
               uiIcon: "icon_tide_high",
-            }, // Nước dâng, khó đi
-            { eventId: "EVENT_FOG_HEAVY", weight: 30, uiIcon: "icon_fog" }, // Sương mù dày đặc
+            },
+            { eventId: "EVENT_FOG_HEAVY", weight: 30, uiIcon: "icon_fog" },
           ],
         },
         consumableConfig: {
@@ -344,7 +362,7 @@ const seedData = async () => {
             "SP_Item_Reed",
           ],
           mandatoryItems: [
-            { itemId: "ITEM_STAMINA_DRINK", minCount: 6, maxCount: 10 }, // Map này tốn stamina bơi/chạy
+            { itemId: "ITEM_STAMINA_DRINK", minCount: 6, maxCount: 10 },
           ],
           randomPoolConfig: {
             minCount: 3,
@@ -355,9 +373,23 @@ const seedData = async () => {
             ],
           },
         },
+        equipmentConfig: {
+          spawnPointIds: ["SP_Equip_Boat_Storage", "SP_Equip_Pier_Box"],
+          mandatoryEquipment: [
+            { itemId: "ITEM_DIVING_GEAR", minCount: 1, maxCount: 1 },
+          ],
+          randomPoolConfig: {
+            minCount: 0,
+            maxCount: 1,
+            pool: [
+              { itemId: "ITEM_WATER_RADAR", weight: 50 },
+              { itemId: "ITEM_FLARE_GUN", weight: 50 },
+            ],
+          },
+        },
         monsterSystemConfig: {
           bossConfig: {
-            monsterId: "BOSS_MA_DA", // Kéo chân, tàng hình dưới nước
+            monsterId: "BOSS_MA_DA",
             spawnPointIds: ["SP_Boss_River_Deep", "SP_Boss_Under_Bridge"],
           },
           minionConfig: {
@@ -378,7 +410,7 @@ const seedData = async () => {
       {
         identityConfig: {
           mapId: "MAP_03_CHANG_TINH",
-          sceneName: "Scene_Game_ChangTinh", // Updated Name
+          sceneName: "Scene_Game_ChangTinh",
           displayName: "Rừng Già - Chằng Tinh",
           thumbnailUrl: "sprite_map_changtinh",
           shortDescription:
@@ -388,7 +420,7 @@ const seedData = async () => {
         environmentConfig: {
           baseLightingId: "LIGHT_PROFILE_JUNGLE",
           moonEventPool: [
-            { eventId: "EVENT_JUNGLE_ROAR", weight: 50, uiIcon: "icon_roar" }, // Tiếng gầm gây choáng
+            { eventId: "EVENT_JUNGLE_ROAR", weight: 50, uiIcon: "icon_roar" },
           ],
         },
         consumableConfig: {
@@ -398,20 +430,34 @@ const seedData = async () => {
             "SP_Item_Tree_Hollow",
           ],
           mandatoryItems: [
-            { itemId: "ITEM_TRAP_TOOL", minCount: 3, maxCount: 5 }, // Cần bẫy để giữ chân Boss
+            { itemId: "ITEM_TRAP_TOOL", minCount: 3, maxCount: 5 },
           ],
           randomPoolConfig: {
             minCount: 4,
             maxCount: 7,
             pool: [
-              { itemId: "ITEM_HP_POTION_L", weight: 40 }, // Boss đánh đau, cần máu to
+              { itemId: "ITEM_HP_POTION_L", weight: 40 },
               { itemId: "ITEM_SPEED_BUFF", weight: 60 },
+            ],
+          },
+        },
+        equipmentConfig: {
+          spawnPointIds: ["SP_Equip_Tent", "SP_Equip_Ruin_Altar"],
+          mandatoryEquipment: [
+            { itemId: "ITEM_NIGHT_VISION_GOGGLES", minCount: 1, maxCount: 1 },
+          ],
+          randomPoolConfig: {
+            minCount: 0,
+            maxCount: 1,
+            pool: [
+              { itemId: "ITEM_MACHETE", weight: 30 },
+              { itemId: "ITEM_THERMAL_CAM", weight: 70 },
             ],
           },
         },
         monsterSystemConfig: {
           bossConfig: {
-            monsterId: "BOSS_CHANG_TINH", // To xác, trâu bò, ném đá
+            monsterId: "BOSS_CHANG_TINH",
             spawnPointIds: ["SP_Boss_Cave_Throne", "SP_Boss_Clearing"],
           },
           minionConfig: {
@@ -432,7 +478,7 @@ const seedData = async () => {
       {
         identityConfig: {
           mapId: "MAP_04_MA_LAI",
-          sceneName: "Scene_Game_MaLai", // Updated Name
+          sceneName: "Scene_Game_MaLai",
           displayName: "Nhà Hoang - Ma Lai",
           thumbnailUrl: "sprite_map_malai",
           shortDescription:
@@ -446,7 +492,7 @@ const seedData = async () => {
               eventId: "EVENT_BLOOD_MOON",
               weight: 100,
               uiIcon: "icon_moon_blood",
-            }, // Map này luôn đỏ lòm
+            },
           ],
         },
         consumableConfig: {
@@ -457,20 +503,34 @@ const seedData = async () => {
             "SP_Item_Attic",
           ],
           mandatoryItems: [
-            { itemId: "ITEM_SALT_BAG", minCount: 5, maxCount: 8 }, // Muối khắc chế Ma Lai
+            { itemId: "ITEM_SALT_BAG", minCount: 5, maxCount: 8 },
           ],
           randomPoolConfig: {
             minCount: 3,
             maxCount: 5,
             pool: [
-              { itemId: "ITEM_BANDAGE", weight: 70 }, // Map này gây chảy máu (Bleed)
+              { itemId: "ITEM_BANDAGE", weight: 70 },
               { itemId: "ITEM_AMMO_BOX", weight: 30 },
+            ],
+          },
+        },
+        equipmentConfig: {
+          spawnPointIds: ["SP_Equip_MasterBedroom", "SP_Equip_Basement_Shelf"],
+          mandatoryEquipment: [
+            { itemId: "ITEM_EMF_READER", minCount: 1, maxCount: 1 },
+          ],
+          randomPoolConfig: {
+            minCount: 0,
+            maxCount: 1,
+            pool: [
+              { itemId: "ITEM_SPIRIT_BOX", weight: 50 },
+              { itemId: "ITEM_HOLY_CROSS", weight: 50 },
             ],
           },
         },
         monsterSystemConfig: {
           bossConfig: {
-            monsterId: "BOSS_MA_LAI", // Bay, xuyên tường, gây chảy máu
+            monsterId: "BOSS_MA_LAI",
             spawnPointIds: ["SP_Boss_LivingRoom", "SP_Boss_Bedroom"],
           },
           minionConfig: {
@@ -494,7 +554,7 @@ const seedData = async () => {
       {
         identityConfig: {
           mapId: "MAP_05_QUY_CAU",
-          sceneName: "Scene_Game_QuyCau", // Updated Name
+          sceneName: "Scene_Game_QuyCau",
           displayName: "Nghĩa Địa - Quỷ Cẩu",
           thumbnailUrl: "sprite_map_quycau",
           shortDescription:
@@ -504,8 +564,8 @@ const seedData = async () => {
         environmentConfig: {
           baseLightingId: "LIGHT_PROFILE_GRAVEYARD",
           moonEventPool: [
-            { eventId: "EVENT_WIND_HOWL", weight: 50, uiIcon: "icon_wind" }, // Gió át tiếng bước chân
-            { eventId: "EVENT_THUNDER", weight: 20, uiIcon: "icon_thunder" }, // Sét đánh lộ vị trí
+            { eventId: "EVENT_WIND_HOWL", weight: 50, uiIcon: "icon_wind" },
+            { eventId: "EVENT_THUNDER", weight: 20, uiIcon: "icon_thunder" },
           ],
         },
         consumableConfig: {
@@ -516,20 +576,34 @@ const seedData = async () => {
             "SP_Item_Statue",
           ],
           mandatoryItems: [
-            { itemId: "ITEM_SCENT_REMOVER", minCount: 4, maxCount: 6 }, // Xóa mùi để trốn chó
+            { itemId: "ITEM_SCENT_REMOVER", minCount: 4, maxCount: 6 },
           ],
           randomPoolConfig: {
             minCount: 4,
             maxCount: 6,
             pool: [
-              { itemId: "ITEM_STAMINA_DRINK", weight: 70 }, // Cần chạy nhiều
-              { itemId: "ITEM_MEAT_BAIT", weight: 30 }, // Thịt để dụ chó
+              { itemId: "ITEM_STAMINA_DRINK", weight: 70 },
+              { itemId: "ITEM_MEAT_BAIT", weight: 30 },
+            ],
+          },
+        },
+        equipmentConfig: {
+          spawnPointIds: ["SP_Equip_Caretaker_Shed", "SP_Equip_Old_Bench"],
+          mandatoryEquipment: [
+            { itemId: "ITEM_SILENT_BOOTS", minCount: 1, maxCount: 1 },
+          ],
+          randomPoolConfig: {
+            minCount: 0,
+            maxCount: 1,
+            pool: [
+              { itemId: "ITEM_OFFERING_BELL", weight: 40 },
+              { itemId: "ITEM_DOG_WHISTLE", weight: 60 },
             ],
           },
         },
         monsterSystemConfig: {
           bossConfig: {
-            monsterId: "BOSS_QUY_CAU", // Chạy siêu nhanh, đánh hơi
+            monsterId: "BOSS_QUY_CAU",
             spawnPointIds: ["SP_Boss_Gate_Main", "SP_Boss_Hill"],
           },
           minionConfig: {

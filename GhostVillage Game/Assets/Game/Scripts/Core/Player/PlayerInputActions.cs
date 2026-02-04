@@ -145,6 +145,42 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""DropItem"",
+                    ""type"": ""Button"",
+                    ""id"": ""fc8b6ef5-3404-47c4-b887-43aa2b9309ee"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Item_Slot1"",
+                    ""type"": ""Button"",
+                    ""id"": ""c8ff279f-8040-4a99-9e7c-682366c53f39"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Item_Slot2"",
+                    ""type"": ""Button"",
+                    ""id"": ""db15af23-67fd-440b-8e93-d7e2db613be9"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Item_Slot3"",
+                    ""type"": ""Button"",
+                    ""id"": ""bd7b9c36-2b11-4528-8a52-2ef8f524b18b"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -257,6 +293,50 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""action"": ""UseItem"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""99f41adf-6d16-477f-a7ed-d5718e018137"",
+                    ""path"": ""<Keyboard>/q"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""DropItem"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""be26f5d9-e137-40c5-ad4f-fe6e0475ca33"",
+                    ""path"": ""<Keyboard>/1"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Item_Slot1"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""0c2e1960-4f82-4c60-a83d-6bbb53facdd4"",
+                    ""path"": ""<Keyboard>/2"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Item_Slot2"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""41b7188c-ee12-42ed-a113-2ef40c92532f"",
+                    ""path"": ""<Keyboard>/3"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Item_Slot3"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -271,6 +351,10 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         m_Player_Chat = m_Player.FindAction("Chat", throwIfNotFound: true);
         m_Player_ReadyUp = m_Player.FindAction("ReadyUp", throwIfNotFound: true);
         m_Player_UseItem = m_Player.FindAction("UseItem", throwIfNotFound: true);
+        m_Player_DropItem = m_Player.FindAction("DropItem", throwIfNotFound: true);
+        m_Player_Item_Slot1 = m_Player.FindAction("Item_Slot1", throwIfNotFound: true);
+        m_Player_Item_Slot2 = m_Player.FindAction("Item_Slot2", throwIfNotFound: true);
+        m_Player_Item_Slot3 = m_Player.FindAction("Item_Slot3", throwIfNotFound: true);
     }
 
     ~@PlayerInputActions()
@@ -357,6 +441,10 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Chat;
     private readonly InputAction m_Player_ReadyUp;
     private readonly InputAction m_Player_UseItem;
+    private readonly InputAction m_Player_DropItem;
+    private readonly InputAction m_Player_Item_Slot1;
+    private readonly InputAction m_Player_Item_Slot2;
+    private readonly InputAction m_Player_Item_Slot3;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -392,6 +480,22 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Player/UseItem".
         /// </summary>
         public InputAction @UseItem => m_Wrapper.m_Player_UseItem;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/DropItem".
+        /// </summary>
+        public InputAction @DropItem => m_Wrapper.m_Player_DropItem;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/Item_Slot1".
+        /// </summary>
+        public InputAction @Item_Slot1 => m_Wrapper.m_Player_Item_Slot1;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/Item_Slot2".
+        /// </summary>
+        public InputAction @Item_Slot2 => m_Wrapper.m_Player_Item_Slot2;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/Item_Slot3".
+        /// </summary>
+        public InputAction @Item_Slot3 => m_Wrapper.m_Player_Item_Slot3;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -436,6 +540,18 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @UseItem.started += instance.OnUseItem;
             @UseItem.performed += instance.OnUseItem;
             @UseItem.canceled += instance.OnUseItem;
+            @DropItem.started += instance.OnDropItem;
+            @DropItem.performed += instance.OnDropItem;
+            @DropItem.canceled += instance.OnDropItem;
+            @Item_Slot1.started += instance.OnItem_Slot1;
+            @Item_Slot1.performed += instance.OnItem_Slot1;
+            @Item_Slot1.canceled += instance.OnItem_Slot1;
+            @Item_Slot2.started += instance.OnItem_Slot2;
+            @Item_Slot2.performed += instance.OnItem_Slot2;
+            @Item_Slot2.canceled += instance.OnItem_Slot2;
+            @Item_Slot3.started += instance.OnItem_Slot3;
+            @Item_Slot3.performed += instance.OnItem_Slot3;
+            @Item_Slot3.canceled += instance.OnItem_Slot3;
         }
 
         /// <summary>
@@ -465,6 +581,18 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @UseItem.started -= instance.OnUseItem;
             @UseItem.performed -= instance.OnUseItem;
             @UseItem.canceled -= instance.OnUseItem;
+            @DropItem.started -= instance.OnDropItem;
+            @DropItem.performed -= instance.OnDropItem;
+            @DropItem.canceled -= instance.OnDropItem;
+            @Item_Slot1.started -= instance.OnItem_Slot1;
+            @Item_Slot1.performed -= instance.OnItem_Slot1;
+            @Item_Slot1.canceled -= instance.OnItem_Slot1;
+            @Item_Slot2.started -= instance.OnItem_Slot2;
+            @Item_Slot2.performed -= instance.OnItem_Slot2;
+            @Item_Slot2.canceled -= instance.OnItem_Slot2;
+            @Item_Slot3.started -= instance.OnItem_Slot3;
+            @Item_Slot3.performed -= instance.OnItem_Slot3;
+            @Item_Slot3.canceled -= instance.OnItem_Slot3;
         }
 
         /// <summary>
@@ -547,5 +675,33 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnUseItem(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "DropItem" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnDropItem(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Item_Slot1" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnItem_Slot1(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Item_Slot2" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnItem_Slot2(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Item_Slot3" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnItem_Slot3(InputAction.CallbackContext context);
     }
 }

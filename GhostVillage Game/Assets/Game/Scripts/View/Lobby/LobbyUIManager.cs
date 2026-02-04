@@ -146,6 +146,7 @@ namespace Game.Scripts.UI.Lobby
             }
         }
 
+        [Obsolete]
         private void RefreshManagementList()
         {
             if (_playerSlots == null || _playerSlots.Length == 0) return;
@@ -313,5 +314,26 @@ namespace Game.Scripts.UI.Lobby
         }
 
         #endregion
+
+        // Trong LobbyUIManager.cs
+
+        public override void OnEnable()
+        {
+            base.OnEnable(); // Nếu có
+            InteractionEvents.OnInteractHover += HandleInteractHover;
+        }
+
+        public override void OnDisable()
+        {
+            base.OnDisable();
+            InteractionEvents.OnInteractHover -= HandleInteractHover;
+        }
+
+        // Hàm xử lý khi nhận sự kiện
+        private void HandleInteractHover(string msg, bool isVisible)
+        {
+            SetInteractPrompt(msg, isVisible);
+        }
+
     }
 }

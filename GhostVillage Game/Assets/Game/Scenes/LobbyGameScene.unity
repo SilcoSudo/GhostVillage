@@ -958,7 +958,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 916739890}
   m_Direction: 2
   m_Value: 0
-  m_Size: 1
+  m_Size: 0.99939936
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -1835,7 +1835,6 @@ RectTransform:
   m_Children:
   - {fileID: 2146768936}
   - {fileID: 2108053491}
-  - {fileID: 1734318958}
   - {fileID: 373914106}
   - {fileID: 1660717609}
   - {fileID: 1901459568}
@@ -3783,6 +3782,7 @@ RectTransform:
   - {fileID: 878334770}
   - {fileID: 1292944123}
   - {fileID: 1649343034}
+  - {fileID: 1734318958}
   - {fileID: 681126275}
   - {fileID: 1244301238}
   m_Father: {fileID: 2074743308}
@@ -5048,7 +5048,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1453917058}
   - component: {fileID: 1453917057}
-  - component: {fileID: 1453917056}
   - component: {fileID: 1453917059}
   m_Layer: 0
   m_Name: Main Camera
@@ -5057,14 +5056,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!81 &1453917056
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1453917055}
-  m_Enabled: 1
 --- !u!20 &1453917057
 Camera:
   m_ObjectHideFlags: 0
@@ -5595,7 +5586,7 @@ MonoBehaviour:
   OwnershipTransfer: 0
   observableSearch: 2
   ObservedComponents: []
-  sceneViewId: 1
+  sceneViewId: 9
   InstantiationId: 0
   isRuntimeInstantiated: 0
 --- !u!1 &1516212224
@@ -6393,11 +6384,11 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 979652019}
-  m_Father: {fileID: 681126275}
+  m_Father: {fileID: 1043731823}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 0, y: 0.5}
-  m_AnchoredPosition: {x: -335, y: 130}
+  m_AnchoredPosition: {x: 175, y: 130}
   m_SizeDelta: {x: 350, y: 400}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1734318959
@@ -6768,7 +6759,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1084713589503281821, guid: 0cd48a38c23648044aedc1ceb6771bec, type: 3}
       propertyPath: sceneViewId
-      value: 2
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 1088712730807237503, guid: 0cd48a38c23648044aedc1ceb6771bec, type: 3}
       propertyPath: m_AnchorMax.y
@@ -7137,7 +7128,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00010410407}
+  m_AnchoredPosition: {x: 0, y: 0.000018505212}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1807634685
