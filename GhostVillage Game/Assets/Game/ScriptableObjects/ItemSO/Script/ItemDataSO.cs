@@ -5,7 +5,8 @@ public enum ItemType
 {
     KeyItem,        // Chỉ nhặt, không dùng được (Mở cửa)
     Consumable,     // Dùng 1 lần mất luôn (Máu, Nước)
-    Equipment       // Cầm trên tay, bật tắt được (Đèn, Máy dò)
+    Equipment,
+    EscapeTool       // Cầm trên tay, bật tắt được (Đèn, Máy dò)
 }
 
 // Bỏ dòng CreateAssetMenu đi vì ta sẽ tạo từ class con

@@ -1,34 +1,39 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
+using Photon.Pun;
+using Game.Scripts.Gameplay.Core;
 
-public abstract class ObjectiveManager : MonoBehaviour
+public abstract class ObjectiveManager : MonoBehaviourPunCallbacks
 {
     public static event Action OnAnyObjectiveCompleted;
+
     public abstract void Initialize();
+
     protected abstract void CheckProgress(ItemDataSO item);
 
-    private void OnEnable()
+    public override void OnEnable()
     {
+        base.OnEnable();
         InventoryManager.OnGlobalItemAdded += HandleItemPickup;
     }
 
-    private void OnDisable()
+    public override void OnDisable()
     {
+        base.OnDisable();
         InventoryManager.OnGlobalItemAdded -= HandleItemPickup;
     }
 
-    // SỬA: Thay đổi chữ ký hàm cho khớp với Event bên InventoryManager
     private void HandleItemPickup(ItemDataSO item, InventoryManager inv)
     {
-        // Có thể thêm check inv.GetComponent<PhotonView>().IsMine nếu cần
         CheckProgress(item);
     }
 
-    protected void NotifyObjectiveComplete()
+    // Helper: Bắn sự kiện cập nhật tiến độ (VD: 1/5)
+    protected void NotifyProgress(int current, int total)
     {
-        Debug.Log("Objective Complete!");
-        // Bắn pháo hiệu
-        OnAnyObjectiveCompleted?.Invoke();
+        // GameplayEvents.OnObjectiveProgress?.Invoke(current, total); // Tạm khóa vì không có trong list
+        Debug.Log($"[UI Update] Progress: {current}/{total}");
     }
+
+
 }

@@ -4,7 +4,6 @@ using Game.Domain.Map.DTOs;
 
 public class MapDataManager : MonoBehaviour
 {
-    // XÓA: public static MapDataManager Instance; -> Không cần nữa
     public MapConfigDTO CurrentMapConfig { get; private set; }
     private Dictionary<string, List<Transform>> _tagGroups = new Dictionary<string, List<Transform>>();
 
@@ -14,8 +13,18 @@ public class MapDataManager : MonoBehaviour
     };
 
 
-    public void InitializeMap()
+    public void InitializeMap(MapConfigDTO config)
     {
+
+        if (config == null)
+        {
+            Debug.LogError("❌ [MapData] Config truyền vào bị NULL! Không thể khởi tạo map.");
+            return;
+        }
+
+        CurrentMapConfig = config;
+        Debug.Log($"[MapData] Đã nhận Config: {CurrentMapConfig.identityConfig.displayName}");
+
         _tagGroups.Clear();
 
         foreach (string tag in _targetTags)

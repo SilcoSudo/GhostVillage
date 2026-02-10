@@ -60,6 +60,11 @@ namespace Game.Scripts.UI.Lobby
         [Header("Game Control")]
         [SerializeField] private TextMeshProUGUI _txtStartGamePrompt;
 
+        [Header("ESC Menu")]
+        [SerializeField] private GameObject _escMenuModal; // Kéo Grp_EscTab vào đây
+        [SerializeField] private Button _btnExitLobby;     // Kéo Btn_ExitToLobbyList vào đây
+        [SerializeField] private Button _btnCloseEscMenu;  // Kéo Btn_CloseModal vào đây
+
         #endregion
 
         #region Events
@@ -68,6 +73,7 @@ namespace Game.Scripts.UI.Lobby
         public Action OnPrevMapClicked;
         public Action OnSelectMapClicked;
         public Action OnClosePickerClicked;
+        public Action OnExitLobbyRequest;
 
         #endregion
 
@@ -83,12 +89,15 @@ namespace Game.Scripts.UI.Lobby
             if (_mapPickerModal) _mapPickerModal.SetActive(false);
             if (_grpMapInfo) _grpMapInfo.SetActive(false);
             if (_txtStartGamePrompt) _txtStartGamePrompt.gameObject.SetActive(false);
+            if (_escMenuModal) _escMenuModal.SetActive(false);
 
             // Bind Button Events
             if (_btnNextMap) _btnNextMap.onClick.AddListener(() => OnNextMapClicked?.Invoke());
             if (_btnPrevMap) _btnPrevMap.onClick.AddListener(() => OnPrevMapClicked?.Invoke());
             if (_btnSelectMap) _btnSelectMap.onClick.AddListener(() => OnSelectMapClicked?.Invoke());
             if (_btnClosePicker) _btnClosePicker.onClick.AddListener(() => OnClosePickerClicked?.Invoke());
+            if (_btnExitLobby) _btnExitLobby.onClick.AddListener(() => OnExitLobbyRequest?.Invoke());
+            if (_btnCloseEscMenu) _btnCloseEscMenu.onClick.AddListener(() => ShowEscMenu(false));
         }
 
         #endregion
@@ -333,6 +342,21 @@ namespace Game.Scripts.UI.Lobby
         private void HandleInteractHover(string msg, bool isVisible)
         {
             SetInteractPrompt(msg, isVisible);
+        }
+
+        public void ToggleEscMenu()
+        {
+            if (_escMenuModal == null) return;
+            ShowEscMenu(!_escMenuModal.activeSelf);
+        }
+
+        public void ShowEscMenu(bool show)
+        {
+            if (_escMenuModal) _escMenuModal.SetActive(show);
+
+            // Xử lý trỏ chuột
+            Cursor.lockState = show ? CursorLockMode.None : CursorLockMode.Locked;
+            Cursor.visible = show;
         }
 
     }

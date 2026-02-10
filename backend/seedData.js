@@ -265,25 +265,27 @@ const seedData = async () => {
         },
         consumableConfig: {
           spawnPointIds: [
-            "SP_Item_Kitchen",
-            "SP_Item_Well",
-            "SP_Item_Bed",
-            "SP_Item_Altar",
-            "SP_Item_Gate",
-            "SP_Item_Tree",
-            "SP_Item_Roof",
-            "SP_Item_Basement",
+            "SP_Item_Crocodilo",
+            "SP_Item_Skibidi",
+            "SP_Item_Bombadilo",
+            "SP_Item_Bruh",
+            "SP_Item_Lmao",
           ],
           mandatoryItems: [
-            { itemId: "ITEM_FLASHLIGHT_BATTERY", minCount: 5, maxCount: 8 },
+            {
+              itemId: "ITEM_FLASHLIGHT",
+              minCount: 1,
+              maxCount: 1,
+            },
           ],
           randomPoolConfig: {
-            minCount: 3,
-            maxCount: 5,
+            minCount: 2,
+            maxCount: 3,
             pool: [
-              { itemId: "ITEM_HP_POTION_S", weight: 50 },
-              { itemId: "ITEM_STAMINA_DRINK", weight: 30 },
-              { itemId: "ITEM_HOLY_WATER", weight: 20 },
+              {
+                itemId: "ITEM_POTION",
+                weight: 100,
+              },
             ],
           },
         },

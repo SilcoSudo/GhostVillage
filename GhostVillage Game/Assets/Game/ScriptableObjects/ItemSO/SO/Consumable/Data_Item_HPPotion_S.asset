@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aa3f7f3d6c06dd543a7ade538b47be83, type: 3}
   m_Name: Data_Item_HPPotion_S
   m_EditorClassIdentifier: Assembly-CSharp::ConsumableItemSO
-  itemId: ITEM_HP_POTION_S
+  itemId: ITEM_POTION
   itemName: "B\xECnh M\xE1u Nh\u1ECF"
   description: "H\u1ED3i m\xE1u \xE1"
   itemType: 1

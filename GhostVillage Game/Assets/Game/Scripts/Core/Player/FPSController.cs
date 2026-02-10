@@ -16,6 +16,7 @@ public class FPSController : MonoBehaviourPun
     private InventoryManager _inventoryManager;
 
     [Inject] private LobbyUIManager _uiManager;
+    private GameplayUIManager _gameplayUI;
 
     private PlayerInputActions _inputActions;
     private float _verticalRotation = 0f;
@@ -60,6 +61,7 @@ public class FPSController : MonoBehaviourPun
         _inputActions.Player.UseItem.performed -= OnUseItem;
     }
 
+    [System.Obsolete]
     private void Start()
     {
         if (photonView.IsMine)
@@ -76,6 +78,7 @@ public class FPSController : MonoBehaviourPun
         Cursor.visible = false;
 
         BindInventoryUI();
+        _gameplayUI = FindObjectOfType<GameplayUIManager>(); // Cách đơn giản để tìm UI
     }
 
     private void Update()
@@ -89,6 +92,14 @@ public class FPSController : MonoBehaviourPun
         HandleMovement();
         HandleRotation();
         HandleInteraction();
+
+        if (UnityEngine.InputSystem.Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            if (_gameplayUI != null)
+            {
+                _gameplayUI.ToggleEscMenu();
+            }
+        }
     }
 
     #endregion

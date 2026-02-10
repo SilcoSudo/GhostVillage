@@ -181,6 +181,15 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Esc_Tab"",
+                    ""type"": ""Button"",
+                    ""id"": ""7015cc07-5a71-4851-a6e0-6c9f55f38029"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -337,6 +346,17 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""action"": ""Item_Slot3"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""5d3a79cb-528a-44b2-94ab-b9d1d6ce2bca"",
+                    ""path"": ""<Keyboard>/escape"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Esc_Tab"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -355,6 +375,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         m_Player_Item_Slot1 = m_Player.FindAction("Item_Slot1", throwIfNotFound: true);
         m_Player_Item_Slot2 = m_Player.FindAction("Item_Slot2", throwIfNotFound: true);
         m_Player_Item_Slot3 = m_Player.FindAction("Item_Slot3", throwIfNotFound: true);
+        m_Player_Esc_Tab = m_Player.FindAction("Esc_Tab", throwIfNotFound: true);
     }
 
     ~@PlayerInputActions()
@@ -445,6 +466,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Item_Slot1;
     private readonly InputAction m_Player_Item_Slot2;
     private readonly InputAction m_Player_Item_Slot3;
+    private readonly InputAction m_Player_Esc_Tab;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -496,6 +518,10 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Player/Item_Slot3".
         /// </summary>
         public InputAction @Item_Slot3 => m_Wrapper.m_Player_Item_Slot3;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/Esc_Tab".
+        /// </summary>
+        public InputAction @Esc_Tab => m_Wrapper.m_Player_Esc_Tab;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -552,6 +578,9 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @Item_Slot3.started += instance.OnItem_Slot3;
             @Item_Slot3.performed += instance.OnItem_Slot3;
             @Item_Slot3.canceled += instance.OnItem_Slot3;
+            @Esc_Tab.started += instance.OnEsc_Tab;
+            @Esc_Tab.performed += instance.OnEsc_Tab;
+            @Esc_Tab.canceled += instance.OnEsc_Tab;
         }
 
         /// <summary>
@@ -593,6 +622,9 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @Item_Slot3.started -= instance.OnItem_Slot3;
             @Item_Slot3.performed -= instance.OnItem_Slot3;
             @Item_Slot3.canceled -= instance.OnItem_Slot3;
+            @Esc_Tab.started -= instance.OnEsc_Tab;
+            @Esc_Tab.performed -= instance.OnEsc_Tab;
+            @Esc_Tab.canceled -= instance.OnEsc_Tab;
         }
 
         /// <summary>
@@ -703,5 +735,12 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnItem_Slot3(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Esc_Tab" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnEsc_Tab(InputAction.CallbackContext context);
     }
 }

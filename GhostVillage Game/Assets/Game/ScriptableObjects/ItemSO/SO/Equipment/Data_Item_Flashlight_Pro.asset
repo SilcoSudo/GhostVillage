@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e85ed012c9a4de47820e11107806a98, type: 3}
   m_Name: Data_Item_Flashlight_Pro
   m_EditorClassIdentifier: Assembly-CSharp::EquipmentItemSO
-  itemId: ITEM_FLASHLIGHT_PRO
+  itemId: ITEM_FLASHLIGHT
   itemName: "\u0110\xE8n Pin Qu\xE2n D\u1EE5ng"
   description: 
   itemType: 2

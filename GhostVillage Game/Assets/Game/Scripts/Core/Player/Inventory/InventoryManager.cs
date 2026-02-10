@@ -3,27 +3,48 @@ using System.Collections.Generic;
 using UnityEngine;
 using Game.Core.Player.RayCast;
 using Photon.Pun;
+using ExitGames.Client.Photon;
 
-// Xóa: using UnityEngine.InputSystem; (Không cần nữa vì không xử lý input ở đây)
-
+/// <summary>
+/// Quản lý túi đồ của người chơi, bao gồm logic nhặt, dùng, vứt item và đồng bộ mạng.
+/// </summary>
 public class InventoryManager : MonoBehaviourPun
 {
+    #region Settings & Data
     [Header("Settings")]
     public int maxSlots = 3;
-    public Transform dropPosition; // Kéo vị trí Drop (trước mặt Camera) vào đây
+    public Transform dropPosition;
     public float dropForce = 3f;
 
     [Header("Data")]
     public List<ItemDataSO> items = new List<ItemDataSO>();
     public int currentSlotIndex = 0;
 
-    // Events
-    public static event Action<ItemDataSO, InventoryManager> OnGlobalItemAdded;
-    public event Action OnInventoryChanged;
-    public event Action<int> OnSlotChanged;
-
+    // Biến nội bộ trạng thái
+    private bool _isInventoryLocked = false;
     private PlayerInteract _playerInteract;
 
+    public static InventoryManager LocalInstance { get; private set; }
+    #endregion
+
+    #region Events
+    /// <summary>
+    /// Bắn ra khi bất kỳ ai nhặt được đồ (Dùng cho Objective check)
+    /// </summary>
+    public static event Action<ItemDataSO, InventoryManager> OnGlobalItemAdded;
+
+    /// <summary>
+    /// Bắn ra khi túi đồ thay đổi (Thêm/Xóa) -> UI cập nhật
+    /// </summary>
+    public event Action OnInventoryChanged;
+
+    /// <summary>
+    /// Bắn ra khi chuyển slot cầm tay
+    /// </summary>
+    public event Action<int> OnSlotChanged;
+    #endregion
+
+    #region Unity Lifecycle
     private void Awake()
     {
         _playerInteract = GetComponent<PlayerInteract>();
@@ -33,11 +54,152 @@ public class InventoryManager : MonoBehaviourPun
     {
         if (photonView.IsMine)
         {
+            LocalInstance = this;
             SelectSlot(0);
         }
     }
 
-    // --- CÁC HÀM PUBLIC (Được gọi từ FPSController) ---
+    private void OnDestroy()
+    {
+        // Hủy đăng ký khi object bị hủy
+        if (photonView.IsMine && LocalInstance == this)
+        {
+            LocalInstance = null;
+        }
+    }
+    #endregion
+
+    #region Public Inventory API
+
+    /// <summary>
+    /// Thêm vật phẩm vào túi. Trả về true nếu thành công.
+    /// </summary>
+    public bool AddItem(ItemDataSO newItem)
+    {
+        // Chặn nhặt đồ nếu túi bị khóa (trừ EscapeTool)
+        if (_isInventoryLocked && newItem.itemType != ItemType.EscapeTool)
+        {
+            Debug.LogWarning("[Inventory] Túi đã bị khóa! Chỉ được nhặt Escape Tool.");
+            return false;
+        }
+
+        if (items.Count >= maxSlots) return false;
+
+        items.Add(newItem);
+        Debug.Log($"[Inventory] Đã nhặt: {newItem.itemName}");
+
+        OnGlobalItemAdded?.Invoke(newItem, this);
+        OnInventoryChanged?.Invoke();
+
+        // Tự động cầm món đồ mới nếu đang ở slot đó hoặc túi mới có 1 món
+        if (items.Count - 1 == currentSlotIndex || items.Count == 1)
+        {
+            currentSlotIndex = items.Count - 1;
+            EquipCurrentItem();
+        }
+
+        // Sync nếu là KeyItem
+        if (newItem.itemType == ItemType.KeyItem)
+        {
+            SyncKeyCountToNetwork();
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Xóa vật phẩm khỏi túi. Trả về true nếu thành công.
+    /// </summary>
+    public bool RemoveItem(ItemDataSO item)
+    {
+        // Không cho phép vứt Escape Tool
+        if (item.itemType == ItemType.EscapeTool)
+        {
+            Debug.LogWarning("Không thể vứt vật phẩm thoát hiểm!");
+            return false;
+        }
+
+        if (!items.Contains(item)) return false;
+
+        items.Remove(item);
+        OnInventoryChanged?.Invoke();
+        EquipCurrentItem();
+
+        // Sync lại nếu vừa mất KeyItem
+        if (item.itemType == ItemType.KeyItem)
+        {
+            SyncKeyCountToNetwork();
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Sử dụng item tại slot chỉ định.
+    /// </summary>
+    public void UseItem(int slotIndex)
+    {
+        if (slotIndex < 0 || slotIndex >= items.Count) return;
+
+        ItemDataSO itemToUse = items[slotIndex];
+        bool consumed = itemToUse.OnUse(this.gameObject);
+
+        if (consumed)
+        {
+            RemoveItem(itemToUse);
+        }
+    }
+
+    /// <summary>
+    /// Sử dụng item đang cầm trên tay.
+    /// </summary>
+    public void UseCurrentItem()
+    {
+        UseItem(currentSlotIndex);
+    }
+
+    /// <summary>
+    /// Vứt item đang cầm ra đất (Spawn Prefab).
+    /// </summary>
+    public void DropCurrentItem()
+    {
+        if (currentSlotIndex >= items.Count) return;
+
+        ItemDataSO itemToDrop = items[currentSlotIndex];
+
+        if (itemToDrop.itemType == ItemType.EscapeTool)
+        {
+            Debug.LogWarning("Không thể vứt vật phẩm thoát hiểm!");
+            return;
+        }
+
+        if (itemToDrop.itemWorldPrefab != null)
+        {
+            string prefabName = itemToDrop.itemWorldPrefab.name;
+            var resourceCheck = Resources.Load(prefabName);
+
+            if (resourceCheck == null)
+            {
+                Debug.LogError($"❌ LỖI: Không tìm thấy Prefab '{prefabName}' trong Resources!");
+                return;
+            }
+
+            GameObject droppedItem = PhotonNetwork.Instantiate(
+                prefabName,
+                dropPosition.position,
+                dropPosition.rotation
+            );
+
+            Rigidbody rb = droppedItem.GetComponent<Rigidbody>();
+            if (rb != null) rb.AddForce(dropPosition.forward * dropForce, ForceMode.Impulse);
+
+            RemoveItem(itemToDrop);
+        }
+    }
+
+    #endregion
+
+    #region Slot Control
 
     public void SelectSlot(int index)
     {
@@ -57,46 +219,62 @@ public class InventoryManager : MonoBehaviourPun
             SelectSlot((currentSlotIndex - 1 + maxSlots) % maxSlots);
     }
 
-    public void DropCurrentItem()
+    #endregion
+
+    #region Helper & Queries
+
+    /// <summary>
+    /// Đếm số lượng item cụ thể trong túi theo ID.
+    /// </summary>
+    public int CountItem(string targetItemId)
     {
-        if (currentSlotIndex >= items.Count) return;
-
-        ItemDataSO itemToDrop = items[currentSlotIndex];
-
-        if (itemToDrop.itemWorldPrefab != null)
+        int count = 0;
+        foreach (var item in items)
         {
-            // Kiểm tra xem có load được không trước khi spawn
-            string prefabName = itemToDrop.itemWorldPrefab.name;
-            var resourceCheck = Resources.Load(prefabName);
-
-            if (resourceCheck == null)
+            if (item != null && item.itemId == targetItemId)
             {
-                Debug.LogError($"❌ LỖI: Không tìm thấy Prefab '{prefabName}' trong thư mục Resources! Hãy di chuyển nó vào đó.");
-                return; // Dừng lại, không xóa item
+                count++;
             }
-
-            GameObject droppedItem = PhotonNetwork.Instantiate(
-                prefabName,
-                dropPosition.position,
-                dropPosition.rotation
-            );
-
-            // ... (Logic add force giữ nguyên)
-            Rigidbody rb = droppedItem.GetComponent<Rigidbody>();
-            if (rb != null) rb.AddForce(dropPosition.forward * dropForce, ForceMode.Impulse);
-
-            // Chỉ xóa item khi spawn thành công
-            RemoveItem(itemToDrop);
         }
+        return count;
     }
 
-    public void UseCurrentItem()
+    public bool HasItem(ItemDataSO item) => items.Contains(item);
+
+    #endregion
+
+    #region Escape Logic (Endgame)
+
+    /// <summary>
+    /// Xóa sạch túi đồ và khóa không cho nhặt thêm (trừ EscapeTool).
+    /// </summary>
+    public void ClearInventoryAndLock()
     {
-        UseItem(currentSlotIndex);
+        items.Clear();
+        _isInventoryLocked = true;
+
+        if (_playerInteract != null) _playerInteract.DetachHeldItem();
+
+        OnInventoryChanged?.Invoke();
+        Debug.Log("[Inventory] Đã xóa sạch túi đồ!");
+
+        // Reset key count về 0
+        SyncKeyCountToNetwork();
     }
 
-    // --- LOGIC NỘI BỘ (Private Helpers) ---
+    public void LockInventory(bool isLocked)
+    {
+        _isInventoryLocked = isLocked;
+        Debug.Log($"[Inventory] Trạng thái khóa túi: {isLocked}");
+    }
 
+    #endregion
+
+    #region Private Helpers
+
+    /// <summary>
+    /// Gắn/Tháo model item trên tay nhân vật (Visual).
+    /// </summary>
     private void EquipCurrentItem()
     {
         if (_playerInteract == null) return;
@@ -115,44 +293,25 @@ public class InventoryManager : MonoBehaviourPun
         }
     }
 
-    public bool AddItem(ItemDataSO newItem)
+    /// <summary>
+    /// Đồng bộ số lượng KeyItem hiện có lên Photon Custom Properties.
+    /// </summary>
+    private void SyncKeyCountToNetwork()
     {
-        if (items.Count >= maxSlots) return false;
+        if (!photonView.IsMine) return;
 
-        items.Add(newItem);
-        Debug.Log($"[Inventory] Đã nhặt: {newItem.itemName}");
-
-        OnGlobalItemAdded?.Invoke(newItem, this);
-        OnInventoryChanged?.Invoke();
-
-        if (items.Count - 1 == currentSlotIndex) EquipCurrentItem();
-
-        return true;
-    }
-
-    public bool RemoveItem(ItemDataSO item)
-    {
-        if (!items.Contains(item)) return false;
-
-        items.Remove(item);
-        OnInventoryChanged?.Invoke();
-        EquipCurrentItem();
-
-        return true;
-    }
-
-    public bool HasItem(ItemDataSO item) => items.Contains(item);
-
-    public void UseItem(int slotIndex)
-    {
-        if (slotIndex < 0 || slotIndex >= items.Count) return;
-
-        ItemDataSO itemToUse = items[slotIndex];
-        bool consumed = itemToUse.OnUse(this.gameObject);
-
-        if (consumed)
+        int count = 0;
+        foreach (var i in items)
         {
-            RemoveItem(itemToUse);
+            if (i.itemType == ItemType.KeyItem) count++;
         }
+
+        Hashtable props = new Hashtable();
+        props["KeyCount"] = count;
+        PhotonNetwork.LocalPlayer.SetCustomProperties(props);
+
+        Debug.Log($"[Inventory] Đã báo cáo lên Server: Tôi đang giữ {count} KeyItem.");
     }
+
+    #endregion
 }

@@ -23,15 +23,13 @@ namespace Game.Scripts.Gameplay.Core
             }
             else Debug.LogError("❌ Chưa kéo UI HUD Prefab!");
 
-            // 2. LOGIC MANAGERS (Tìm trên Hierarchy của chính Prefab này)
-            // Lệnh này tìm script đang gắn trên GameLifetimeScope hoặc con của nó
-            // VContainer sẽ tự Inject vào các biến trong script đó luôn.
-
+            // 2. LOGIC MANAGERS (Tìm trên Hierarchy của chính Prefab này)     
             builder.RegisterComponent(GetComponentInChildren<MapDataManager>());
             builder.RegisterComponent(GetComponentInChildren<ItemSpawnerManager>());
             builder.RegisterComponent(GetComponentInChildren<MonsterSpawnerManager>());
             builder.RegisterComponent(GetComponentInChildren<PuzzleSpawnerManager>());
             builder.RegisterComponent(GetComponentInChildren<PlayerSpawner>());
+            builder.RegisterComponent(GetComponentInChildren<ObjectiveManager>());
 
             // 3. GAME MANAGER (Nhạc trưởng)
             builder.RegisterComponent(GetComponentInChildren<GameManager>());
