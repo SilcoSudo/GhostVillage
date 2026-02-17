@@ -1,110 +1,93 @@
 using UnityEngine;
 using TMPro;
-using UnityEngine.UI; // Để dùng Button
-using Photon.Pun;     // Để dùng PhotonNetwork
-using VContainer;     // Để Inject SceneLoader
+using UnityEngine.UI;
+using Photon.Pun;
+using VContainer;
+using Game.Domain.Match.DTO;
+using Cysharp.Threading.Tasks;
 
 public class GameplayUIManager : MonoBehaviourPunCallbacks
 {
+    // Kéo GameResultUI (con của prefab này) vào đây
+    [Header("Sub-Systems")]
+    [SerializeField] private GameResultUI _resultUI;
+
     [Header("Interaction UI")]
     [SerializeField] private GameObject interactPanel;
     [SerializeField] private TextMeshProUGUI interactText;
 
     [Header("ESC Menu")]
-    [SerializeField] private GameObject _escMenuModal; // Kéo Modal vào đây
-    [SerializeField] private Button _btnExitMatch;     // Kéo nút Exit vào đây
-    [SerializeField] private Button _btnCloseEscMenu;  // Kéo nút Close vào đây
+    [SerializeField] private GameObject _escMenuModal;
+    [SerializeField] private Button _btnExitMatch;
+    [SerializeField] private Button _btnCloseEscMenu;
 
-    // Inject SceneLoader để chuyển cảnh mượt mà
+    // Inject service vào đây (nếu cần dùng cho logic thoát)
     [Inject] private Game.Core.Scene.ISceneLoaderService _sceneLoader;
 
     private void Awake()
     {
-        // Ẩn UI lúc đầu
+        // Ẩn UI phụ
         if (_escMenuModal) _escMenuModal.SetActive(false);
         if (interactPanel) interactPanel.SetActive(false);
+        if (_resultUI) _resultUI.gameObject.SetActive(false);
 
-        // Gán sự kiện cho nút
+        // Setup Events
         if (_btnExitMatch) _btnExitMatch.onClick.AddListener(OnExitMatchClicked);
         if (_btnCloseEscMenu) _btnCloseEscMenu.onClick.AddListener(() => ShowEscMenu(false));
     }
 
-    private void OnEnable()
+    // --- EXTERNAL CALLS (GameManager gọi cái này) ---
+    public void ShowGameResult(SaveMatchRequestDTO matchData)
     {
-        InteractionEvents.OnInteractHover += UpdateInteractUI;
-        // Đăng ký event mở menu từ FPSController (nếu có) hoặc dùng Input System trực tiếp
-    }
+        // 1. Tắt hết HUD
+        if (interactPanel) interactPanel.SetActive(false);
+        if (_escMenuModal) _escMenuModal.SetActive(false);
 
-    private void OnDisable()
-    {
-        InteractionEvents.OnInteractHover -= UpdateInteractUI;
-    }
 
-    // --- LOGIC UI TƯƠNG TÁC ---
-    private void UpdateInteractUI(string msg, bool show)
-    {
-        if (interactPanel)
+        // 2. Gọi hiển thị kết quả
+        if (_resultUI != null)
         {
-            interactText.text = msg;
-            interactPanel.SetActive(show);
-        }
-    }
-
-    // --- LOGIC ESC MENU ---
-
-    public void ToggleEscMenu()
-    {
-        if (_escMenuModal == null) return;
-        ShowEscMenu(!_escMenuModal.activeSelf);
-    }
-
-    public void ShowEscMenu(bool show)
-    {
-        if (_escMenuModal) _escMenuModal.SetActive(show);
-
-        // MỞ/KHÓA CHUỘT: Khi mở menu phải hiện chuột để bấm nút
-        if (show)
-        {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            // TODO: Lấy ID thật từ Photon Player Properties
+            string myUserId = "MY_ID";
+            _resultUI.Show(matchData, myUserId);
         }
         else
         {
-            // Tắt menu -> Khóa chuột lại để chơi game tiếp
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            Debug.LogError("❌ Chưa kéo GameResultUI vào GameplayUIManager!");
         }
+    }
+
+    // --- ESC MENU LOGIC ---
+    public void ToggleEscMenu()
+    {
+        // Không cho bật ESC khi đang hiện bảng kết quả
+        if (_resultUI != null && _resultUI.gameObject.activeSelf) return;
+
+        if (_escMenuModal) ShowEscMenu(!_escMenuModal.activeSelf);
+    }
+
+    private void ShowEscMenu(bool show)
+    {
+        _escMenuModal.SetActive(show);
+        Cursor.lockState = show ? CursorLockMode.None : CursorLockMode.Locked;
+        Cursor.visible = show;
     }
 
     private void OnExitMatchClicked()
     {
-        Debug.Log("[GameplayUI] Người chơi chọn THOÁT TRẬN.");
-
-        // 1. Tắt menu
         ShowEscMenu(false);
-
-        // 2. Rời phòng Photon (Sẽ trigger OnLeftRoom)
         PhotonNetwork.LeaveRoom();
     }
 
-    // Callback của Photon khi rời phòng thành công
     public override void OnLeftRoom()
     {
-        Debug.Log("[GameplayUI] Đã rời phòng. Chuyển về Lobby List.");
-
-        // 3. Reset trỏ chuột (để về menu bấm được)
+        // Khi thoát phòng (do bấm Exit hoặc do GameResultUI gọi)
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        // 4. Chuyển cảnh về Lobby List
         if (_sceneLoader != null)
-        {
-            _sceneLoader.LoadSceneAsync("LobbyListScene");
-        }
+            _sceneLoader.LoadSceneAsync("LobbyListScene").Forget();
         else
-        {
-            // Fallback nếu chưa inject
             UnityEngine.SceneManagement.SceneManager.LoadScene("LobbyListScene");
-        }
     }
 }

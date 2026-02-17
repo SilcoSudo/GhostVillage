@@ -11,6 +11,7 @@ import playerRoutes from "./modules/player/playerRoutes.js";
 import profileRoutes from "./modules/profile/ProfileRoutes.js";
 import { loginGame } from "./modules/auth/game/authController.js";
 import mapRoute from "./modules/map/mapRoute.js";
+import matchRoutes from "./modules/match/matchRoutes.js";
 
 const router = express.Router();
 
@@ -24,6 +25,8 @@ router.use("/profile", profileRoutes);
 // Map Routes (mounted at /api/maps)
 router.use("/maps", mapRoute);
 // End of Map Routes
+
+router.use("/matches", matchRoutes);
 
 // Web Routes (mounted at /api/web)
 const webRoutes = express.Router();

@@ -6,6 +6,7 @@ import { config } from "./src/config/env.js";
 import UserMatchHistory from "./src/modules/profile/playerMatchHistoryModel.js";
 import UserAchievement from "./src/modules/profile/playerAchievementModel.js";
 import MapConfig from "./src/modules/map/mapConfigModel.js";
+import MatchResult from "./src/modules/match/matchModel.js";
 
 dotenv.config();
 
@@ -624,6 +625,100 @@ const seedData = async () => {
     await MapConfig.insertMany(mapConfigs);
     // ---------------------------------------------------------
     // KẾT THÚC PHẦN MAP CONFIG MỚI
+    // ---------------------------------------------------------
+
+    // ---------------------------------------------------------
+    // BẮT ĐẦU PHẦN MATCH RESULTS (LỊCH SỬ ĐẤU TOÀN CỤC)
+    // ---------------------------------------------------------
+
+    // 1. Dọn dẹp dữ liệu cũ của collection matches
+    await MatchResult.deleteMany({});
+    console.log("🗑️  Đã xóa dữ liệu cũ (MatchResult).");
+
+    console.log("⏳ Creating Global Match Results...");
+
+    const matchResults = [
+      // --- TRẬN 1: Hùng & Raccoon thắng ở Map Ông Kẹ ---
+      {
+        mapId: "MAP_01_ONG_KE",
+        sessionId: "Room_Dev_Test_01",
+        startTime: new Date(Date.now() - 86400000), // Hôm qua
+        endTime: new Date(Date.now() - 86400000 + 900000), // +15 phút
+        durationSec: 900,
+        playerResults: [
+          {
+            userId: user1_Id, // Hùng
+            nickname: "Hùng Đẹp Trai",
+            isWin: true,
+            outcome: "ESCAPED",
+            rewards: { exp: 1500, coin: 300 },
+            titles: ["GrimReaper", "WalkingHospital"],
+          },
+          {
+            userId: user3_Id, // Raccoon
+            nickname: "Raccoon",
+            isWin: true,
+            outcome: "ESCAPED",
+            rewards: { exp: 1200, coin: 250 },
+            titles: ["Survivor"],
+          },
+        ],
+      },
+
+      // --- TRẬN 2: Lan & Raccoon thua ở Map Ma Da ---
+      {
+        mapId: "MAP_02_MA_DA",
+        sessionId: "Room_Dev_Test_02",
+        startTime: new Date(Date.now() - 43200000), // 12 tiếng trước
+        endTime: new Date(Date.now() - 43200000 + 600000), // +10 phút
+        durationSec: 600,
+        playerResults: [
+          {
+            userId: user2_Id, // Bé Lan
+            nickname: "Bé Lan Support",
+            isWin: false,
+            outcome: "CAUGHT", // Bị bắt
+            rewards: { exp: 50, coin: 10 },
+            titles: ["PunchingBag"],
+          },
+          {
+            userId: user3_Id, // Raccoon
+            nickname: "Raccoon",
+            isWin: false,
+            outcome: "CAUGHT",
+            rewards: { exp: 80, coin: 15 },
+            titles: ["HumanSiren"],
+          },
+        ],
+      },
+
+      // --- TRẬN 3: Hùng Solo thắng ở Map Quỷ Cẩu ---
+      {
+        mapId: "MAP_05_QUY_CAU",
+        sessionId: "Room_Solo_Hunt",
+        startTime: new Date(Date.now() - 3600000), // 1 tiếng trước
+        endTime: new Date(Date.now() - 3600000 + 1200000), // +20 phút
+        durationSec: 1200,
+        playerResults: [
+          {
+            userId: user1_Id, // Hùng
+            nickname: "Hùng Đẹp Trai",
+            isWin: true,
+            outcome: "ESCAPED",
+            rewards: { exp: 2000, coin: 500 },
+            titles: ["GrimReaper", "Survivor", "WalkingHospital"],
+          },
+        ],
+      },
+    ];
+
+    await MatchResult.insertMany(matchResults);
+    console.log(
+      `✅ Đã tạo ${matchResults.length} trận đấu mẫu vào MatchResult.`,
+    );
+
+    // ---------------------------------------------------------
+    // KẾT THÚC PHẦN MATCH RESULTS
     // ---------------------------------------------------------
 
     console.log("✅ KHỞI TẠO DỮ LIỆU THÀNH CÔNG!");
