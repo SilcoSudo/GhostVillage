@@ -12,6 +12,8 @@ import ReportedCommentPage from '../pages/ReportedCommentPage';
 import SupportTicketPage from '../pages/SupportTicketPage';
 import AnnouncementPage from '../pages/AnnouncementPage';
 import WikiPage from '../pages/WikiPage';
+import MonsterManagementPage from '../pages/MonsterManagementPage';
+import MapManagementPage from '../pages/MapManagementPage';
 import ProtectedRoute from './router/ProtectedRoute';
 import '../shared/assets/styles/theme.css';
 
@@ -43,6 +45,8 @@ function AppContent() {
             <Route path="/support-tickets" element={<ProtectedRoute><SupportTicketPage /></ProtectedRoute>} />
             <Route path="/announcements" element={<ProtectedRoute><AnnouncementPage /></ProtectedRoute>} />
             <Route path="/wiki" element={<ProtectedRoute><WikiPage /></ProtectedRoute>} />
+            <Route path="/monsters" element={<ProtectedRoute><MonsterManagementPage /></ProtectedRoute>} />
+            <Route path="/maps" element={<ProtectedRoute><MapManagementPage /></ProtectedRoute>} />
             <Route path="/reports/posts" element={<ProtectedRoute><ReportedPostPage /></ProtectedRoute>} />
             <Route path="/reports/comments" element={<ProtectedRoute><ReportedCommentPage /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><div style={{ padding: '20px' }}><h1>Reports</h1></div></ProtectedRoute>} />
