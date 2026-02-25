@@ -7,14 +7,11 @@ import postRoutes from "./modules/forum/posts/postRoutes.js";
 import wikiRoutes from "./modules/forum/wiki/wikiRoutes.js";
 import announcementRoutes from "./modules/forum/announcement/announcementRoutes.js";
 import searchRoutes from "./modules/forum/search/searchRoutes.js";
-import playerRoutes from "./modules/player/playerRoutes.js";
-import profileRoutes from "./modules/profile/ProfileRoutes.js";
+import profileRoutes from "./modules/profile/profileRoutes.js";
 import { loginGame } from "./modules/auth/game/authController.js";
 
 const router = express.Router();
 
-// --- Profile routes (MUST be top-level /api/profile) ---
-router.use("/profile", profileRoutes);
 /**
  * Central Route Loader
  * Mounts all feature routes
@@ -43,8 +40,7 @@ router.use("/auth", legacyAuthRouter);
 // Game Routes (mounted at /api/game)
 const gameRoutes = express.Router();
 gameRoutes.use("/auth", gameAuthRoutes);
-gameRoutes.use("/player", playerRoutes);
-
+gameRoutes.use("/player", profileRoutes);
 router.use("/game", gameRoutes);
 
 export default router;
