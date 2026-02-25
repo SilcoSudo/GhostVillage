@@ -40,6 +40,7 @@ namespace Game.UI.Login
 
             if (response != null)
             {
+                // đang xài tạm, mốt xóa, không load vào data store nữa
                 view.SetStatus("Syncing Player Data...");
                 await _syncService.SyncAllDataAsync(response);
 
@@ -131,7 +132,7 @@ namespace Game.UI.Login
                         view.SetStatus("⚠️ Please complete your profile (Add date of birth)");
                         view.SetInteractable(true);
                     }
-                    
+
                     // Show profile completion UI (birthday picker for age verification)
                     HandleProfileIncomplete(response.token, view);
                     return;
@@ -200,7 +201,7 @@ namespace Game.UI.Login
             }
 
             var profileCompletionPanel = birthdayPanel.GetComponent<ProfileCompletionUI>();
-            
+
             if (profileCompletionPanel != null)
             {
                 // Create and initialize controller
@@ -208,10 +209,10 @@ namespace Game.UI.Login
                     _authService,
                     _sceneLoader,
                     _syncService);
-                
+
                 profileController.Initialize(token);
                 profileCompletionPanel.Initialize(profileController, view);
-                
+
                 // Show profile completion UI (hide login UI panel, not the manager)
                 view.ShowPanel(birthdayPanel);
             }
