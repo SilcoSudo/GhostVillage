@@ -15,6 +15,9 @@ using Game.Scripts.Gameplay.Result;
 // Lưu ý: Đảm bảo bạn đã có các Enum và file GameplayEvents.cs như đã bàn trước đó
 public class GameManager : MonoBehaviourPunCallbacks
 {
+    [Header("Databases")]
+    [SerializeField] private Game.Core.Database.GameResourceDatabaseSO _resourceDB;
+
     // --- STATE MACHINE ---
     public GameState CurrentState { get; private set; } = GameState.Initializing;
     private const string KEY_GAME_STATE = "G_State";
@@ -117,12 +120,13 @@ public class GameManager : MonoBehaviourPunCallbacks
             var config = _mapData.CurrentMapConfig;
             if (config != null)
             {
-                Debug.Log("[GameManager] Config found. Spawning systems..."); // Thêm dòng này
-                if (_itemSpawner != null) _itemSpawner.SpawnItems(config.consumableConfig, _mapData);
-                else Debug.LogError("[GameManager] ItemSpawner is NULL!");
+                Debug.Log("[GameManager] Config found. Spawning systems...");
 
-                _monsterSpawner.SpawnMonsters(config.monsterSystemConfig, _mapData);
-                _puzzleSpawner.SpawnPuzzles(config.puzzleConfig, _mapData);
+                // --- TRUYỀN DB VÀO CÁC HÀM SPAWN ---
+                if (_itemSpawner != null) _itemSpawner.SpawnItems(config, _mapData, _resourceDB);
+                _monsterSpawner.SpawnMonsters(config.monsterSystemConfig, _mapData, _resourceDB);
+                _puzzleSpawner.SpawnPuzzles(config.puzzleConfig, _mapData, _resourceDB);
+
                 _objectiveManager.Initialize();
             }
             else Debug.LogError("[GameManager] Config is NULL!");

@@ -44,6 +44,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a3929f20c7d2894bb98c37b58ec6441, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MonsterSpawnerManager
+  maxActiveMinions: 5
+  checkInterval: 10
 --- !u!1 &2494651405868838323
 GameObject:
   m_ObjectHideFlags: 0
@@ -268,6 +270,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 746a378fb4814174b8c58d6072b375a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
+  _resourceDB: {fileID: 11400000, guid: 8b84e3bfc1eae4046a5c3532691ac50d, type: 2}
 --- !u!114 &5413213109640193470
 MonoBehaviour:
   m_ObjectHideFlags: 0
