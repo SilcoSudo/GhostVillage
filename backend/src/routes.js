@@ -13,6 +13,8 @@ import profileRoutes from "./modules/profile/ProfileRoutes.js";
 import { loginGame } from "./modules/auth/game/authController.js";
 import mapRoute from "./modules/map/mapRoute.js";
 import monsterRoutes from "./modules/monster/monsterRoutes.js";
+import moonEventRoutes from "./modules/moonEvent/moonEventRoutes.js";
+import moonEventGameRoutes from "./modules/moonEvent/gameRoutes.js";
 
 const router = express.Router();
 
@@ -40,6 +42,7 @@ webRoutes.use("/forum", postRoutes);
 webRoutes.use("/wiki", wikiRoutes);
 webRoutes.use("/announcement", webAnnouncementRoutes);
 webRoutes.use("/search", searchRoutes);
+webRoutes.use("/moon-events", moonEventRoutes);
 router.use("/web", webRoutes);
 
 // Admin Routes (mounted at /api/admin)
@@ -59,6 +62,7 @@ router.use("/auth", legacyAuthRouter);
 // Game Routes (mounted at /api/game)
 const gameRoutes = express.Router();
 gameRoutes.use("/auth", gameAuthRoutes);
+gameRoutes.use("/moon-events", moonEventGameRoutes);
 gameRoutes.use("/player", playerRoutes);
 
 router.use("/game", gameRoutes);

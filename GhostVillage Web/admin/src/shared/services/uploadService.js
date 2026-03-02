@@ -96,3 +96,11 @@ export const revokeImagePreview = (url) => {
     URL.revokeObjectURL(url);
   }
 };
+
+export default {
+  uploadImage,
+  uploadMultipleImages,
+  validateImageFile,
+  createImagePreview,
+  revokeImagePreview,
+};
