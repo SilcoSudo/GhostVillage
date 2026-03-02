@@ -1,20 +1,24 @@
-import React, { useState } from 'react';
-import { X, AlertTriangle, Trash2 } from 'lucide-react';
+import React from 'react';
+import { X, AlertTriangle, Trash2, Loader2 } from 'lucide-react';
+import { useDeleteAnnouncement } from '../../shared/hooks/useAnnouncements';
 import '../assets/styles/AnnouncementModal.css';
 
 const AnnouncementDeleteModal = ({ isOpen, announcement, onClose, onConfirm }) => {
-  const [isLoading, setIsLoading] = useState(false);
+  const deleteMutation = useDeleteAnnouncement();
 
   const handleConfirm = async () => {
-    setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 300));
-    onConfirm();
-    setIsLoading(false);
-    onClose();
+    try {
+      await deleteMutation.mutateAsync(announcement._id);
+      onConfirm?.(); // Call parent callback if provided
+      onClose();
+    } catch (error) {
+      // Error handled by mutation hook
+    }
   };
 
   if (!isOpen || !announcement) return null;
+
+  const isLoading = deleteMutation.isLoading;
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -25,7 +29,7 @@ const AnnouncementDeleteModal = ({ isOpen, announcement, onClose, onConfirm }) =
             <AlertTriangle size={20} className="header-icon alert-icon" />
             <h2>Delete Announcement</h2>
           </div>
-          <button className="close-btn" onClick={onClose}>
+          <button className="close-btn" onClick={onClose} disabled={isLoading}>
             <X size={20} />
           </button>
         </div>
@@ -47,23 +51,27 @@ const AnnouncementDeleteModal = ({ isOpen, announcement, onClose, onConfirm }) =
             </div>
             <div className="info-row">
               <span className="info-label">Author:</span>
-              <span className="info-value">{announcement.author}</span>
+              <span className="info-value">{announcement.author?.fullname || 'Anonymous'}</span>
             </div>
             <div className="info-row">
               <span className="info-label">Status:</span>
               <span className="info-value status-badge" style={{
-                background: announcement.status === 'active' ? '#4CAF50' : '#9E9E9E',
-                color: announcement.status === 'active' ? '#A5D6A7' : '#C8C8C8',
+                background: announcement.isActive ? '#4CAF50' : '#9E9E9E',
+                color: announcement.isActive ? '#A5D6A7' : '#C8C8C8',
                 padding: '4px 8px',
                 borderRadius: '4px',
                 display: 'inline-block'
               }}>
-                {announcement.status.toUpperCase()}
+                {announcement.isActive ? 'ACTIVE' : 'INACTIVE'}
               </span>
             </div>
             <div className="info-row">
               <span className="info-label">Created:</span>
               <span className="info-value">{new Date(announcement.createdAt).toLocaleDateString()}</span>
+            </div>
+            <div className="info-row">
+              <span className="info-label">Views:</span>
+              <span className="info-value">{announcement.views?.toLocaleString() || 0}</span>
             </div>
           </div>
 
@@ -87,7 +95,14 @@ const AnnouncementDeleteModal = ({ isOpen, announcement, onClose, onConfirm }) =
             onClick={handleConfirm}
             disabled={isLoading}
           >
-            {isLoading ? 'Deleting...' : 'Delete Announcement'}
+            {isLoading ? (
+              <>
+                <Loader2 size={16} className="spinner" style={{ marginRight: '8px' }} />
+                Deleting...
+              </>
+            ) : (
+              'Delete Announcement'
+            )}
           </button>
         </div>
       </div>

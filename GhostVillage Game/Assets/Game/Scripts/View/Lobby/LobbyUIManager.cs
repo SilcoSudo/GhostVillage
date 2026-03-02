@@ -5,25 +5,24 @@ using System.Collections.Generic;
 using System;
 using Cysharp.Threading.Tasks;
 using Photon.Pun;
-using Photon.Realtime; // BẮT BUỘC có dòng này để dùng kiểu Player
+using Photon.Realtime;
 
 namespace Game.Scripts.UI.Lobby
 {
-    /// <summary>
-    /// Quản lý tập trung toàn bộ giao diện (UI) trong Scene Lobby.
-    /// Kế thừa MonoBehaviourPunCallbacks để nhận các sự kiện mạng (Người vào/ra).
-    /// </summary>
     public class LobbyUIManager : MonoBehaviourPunCallbacks
     {
+        #region UI References
+
         [Header("Top Bar")]
         [SerializeField] private TextMeshProUGUI _txtRoomInfo;
         [SerializeField] private TextMeshProUGUI _txtRoomPassword;
 
-        [Header("Map Config")]
+        [Header("Map Config (Main Lobby)")]
+        [SerializeField] private GameObject _grpMapInfo;
         [SerializeField] private Image _imgMapIcon;
         [SerializeField] private TextMeshProUGUI _txtMapName;
 
-        [Header("Side Player List")]
+        [Header("Player List")]
         [SerializeField] private Transform _playerListContent;
         [SerializeField] private GameObject _playerItemPrefab;
 
@@ -38,38 +37,73 @@ namespace Game.Scripts.UI.Lobby
         [SerializeField] private GameObject _chatMePrefab;
         [SerializeField] private GameObject _chatThemPrefab;
 
-        [Header("Interaction UI")]
+        [Header("Interaction")]
         [SerializeField] private GameObject _interactPromptGo;
         [SerializeField] private TextMeshProUGUI _txtInteractPrompt;
 
-        [Header("Board Management Modal")]
+        [Header("Management Modal")]
         [SerializeField] private GameObject _imgDimBG;
         [SerializeField] private GameObject _managementModal;
         [SerializeField] private FriendBoardItem[] _playerSlots;
 
-        #region Photon Callbacks (Dành cho bản Build)
+        [Header("Map Picker Modal")]
+        [SerializeField] private GameObject _mapPickerModal;
+        [SerializeField] private Image _imgMapPreview;
+        [SerializeField] private TextMeshProUGUI _txtMapTitle;
+        [SerializeField] private TextMeshProUGUI _txtMapDesc;
+        [SerializeField] private Button _btnNextMap;
+        [SerializeField] private Button _btnPrevMap;
+        [SerializeField] private Button _btnSelectMap;
+        [SerializeField] private TextMeshProUGUI _txtSelectBtn;
+        [SerializeField] private Button _btnClosePicker;
 
-        // Các hàm này tự động chạy khi có biến động người chơi trong phòng
-        [Obsolete]
+        [Header("Game Control")]
+        [SerializeField] private TextMeshProUGUI _txtStartGamePrompt;
+
+        #endregion
+
+        #region Events
+
+        public Action OnNextMapClicked;
+        public Action OnPrevMapClicked;
+        public Action OnSelectMapClicked;
+        public Action OnClosePickerClicked;
+
+        #endregion
+
+        #region Unity Lifecycle & Init
+
+        private void Awake()
+        {
+            // Reset UI states
+            SetInteractPrompt("", false);
+            ShowManagementModal(false);
+
+            if (_imgDimBG) _imgDimBG.SetActive(false);
+            if (_mapPickerModal) _mapPickerModal.SetActive(false);
+            if (_grpMapInfo) _grpMapInfo.SetActive(false);
+            if (_txtStartGamePrompt) _txtStartGamePrompt.gameObject.SetActive(false);
+
+            // Bind Button Events
+            if (_btnNextMap) _btnNextMap.onClick.AddListener(() => OnNextMapClicked?.Invoke());
+            if (_btnPrevMap) _btnPrevMap.onClick.AddListener(() => OnPrevMapClicked?.Invoke());
+            if (_btnSelectMap) _btnSelectMap.onClick.AddListener(() => OnSelectMapClicked?.Invoke());
+            if (_btnClosePicker) _btnClosePicker.onClick.AddListener(() => OnClosePickerClicked?.Invoke());
+        }
+
+        #endregion
+
+        #region Photon Callbacks (View Updates)
+
         public override void OnPlayerEnteredRoom(Player newPlayer) => RefreshManagementList();
-        [Obsolete]
         public override void OnPlayerLeftRoom(Player otherPlayer) => RefreshManagementList();
-        [Obsolete]
         public override void OnMasterClientSwitched(Player newMasterClient) => RefreshManagementList();
 
         #endregion
 
-        #region Room & Map Info
+        #region General Room UI
 
         public bool IsAnyUIOpen => (_managementModal != null && _managementModal.activeSelf) || IsChatFocused();
-
-        [Obsolete]
-        private void Awake()
-        {
-            SetInteractPrompt("", false);
-            ShowManagementModal(false);
-            if (_imgDimBG != null) _imgDimBG.SetActive(false);
-        }
 
         public void SetRoomInfo(string roomName, string hostName, string password)
         {
@@ -77,17 +111,14 @@ namespace Game.Scripts.UI.Lobby
             _txtRoomPassword.text = string.IsNullOrEmpty(password) ? "Public Room" : $"Pass: {password}";
         }
 
-        public void UpdateMapDisplay(Sprite icon, string mapName)
-        {
-            _imgMapIcon.sprite = icon;
-            _txtMapName.text = mapName;
-        }
-
         #endregion
 
-        #region Side Lists (Players & Missions)
+        #region Player List Logic
 
-        public void RefreshPlayerList(IEnumerable<Player> players)
+        /// <summary>
+        /// Updates the side player list. Handles different status text for Host (START) vs Players (READY).
+        /// </summary>
+        public void RefreshPlayerList(IEnumerable<Player> players, bool canHostStart)
         {
             foreach (Transform child in _playerListContent) Destroy(child.gameObject);
 
@@ -98,22 +129,102 @@ namespace Game.Scripts.UI.Lobby
 
                 if (texts.Length >= 2)
                 {
-                    texts[0].text = player.NickName;
-                    bool isReady = player.CustomProperties.ContainsKey("isReady") && (bool)player.CustomProperties["isReady"];
-                    texts[1].text = isReady ? "<color=green>READY</color>" : "<color=red>WAITING...</color>";
+                    texts[0].text = player.IsMasterClient ? $"[HOST] {player.NickName}" : player.NickName;
+
+                    if (player.IsMasterClient)
+                    {
+                        // Host shows START status (Green if all ready, Grey if not)
+                        texts[1].text = canHostStart ? "<color=green>START</color>" : "<color=#808080>START</color>";
+                    }
+                    else
+                    {
+                        // Players show READY status
+                        bool isReady = player.CustomProperties.ContainsKey("isReady") && (bool)player.CustomProperties["isReady"];
+                        texts[1].text = isReady ? "<color=green>READY</color>" : "<color=red>NOT READY</color>";
+                    }
                 }
             }
         }
 
-        public void AddMission(string description, bool isDone)
+        private void RefreshManagementList()
         {
-            var item = Instantiate(_missionItemPrefab, _missionListContent);
-            var texts = item.GetComponentsInChildren<TextMeshProUGUI>();
+            if (_playerSlots == null || _playerSlots.Length == 0) return;
 
-            if (texts.Length >= 2)
+            var players = PhotonNetwork.PlayerList;
+            for (int i = 0; i < _playerSlots.Length; i++)
             {
-                texts[0].text = description;
-                texts[1].text = isDone ? "<color=green>Done</color>" : "In Progress";
+                if (i < players.Length) _playerSlots[i].Setup(players[i]);
+                else _playerSlots[i].SetEmpty();
+            }
+        }
+
+        #endregion
+
+        #region Map UI Logic
+
+        // --- Main Lobby Display ---
+
+        public void UpdateLobbyMapInfo(string mapName, Sprite icon)
+        {
+            if (_grpMapInfo) _grpMapInfo.SetActive(true);
+            if (_txtMapName) _txtMapName.text = mapName;
+
+            if (_imgMapIcon)
+            {
+                _imgMapIcon.sprite = icon;
+                _imgMapIcon.gameObject.SetActive(icon != null);
+                if (icon == null) Debug.LogWarning($"[UI] Map {mapName} icon is missing.");
+            }
+        }
+
+        public void ClearLobbyMapInfo()
+        {
+            if (_grpMapInfo) _grpMapInfo.SetActive(false);
+        }
+
+        // --- Map Picker Modal ---
+
+        public void ShowMapPicker(bool show)
+        {
+            if (_mapPickerModal)
+            {
+                _mapPickerModal.SetActive(show);
+                Cursor.lockState = show ? CursorLockMode.None : CursorLockMode.Locked;
+                Cursor.visible = show;
+            }
+        }
+
+        public void UpdateMapPickerUI(string title, string desc, Sprite icon)
+        {
+            if (_txtMapTitle) _txtMapTitle.text = title;
+            if (_txtMapDesc) _txtMapDesc.text = desc;
+
+            if (_imgMapPreview)
+            {
+                _imgMapPreview.sprite = icon;
+                _imgMapPreview.gameObject.SetActive(icon != null);
+            }
+        }
+
+        public void SetSelectButtonState(bool isSelected)
+        {
+            if (_txtSelectBtn)
+            {
+                _txtSelectBtn.text = isSelected ? "CANCEL" : "SELECT";
+                _txtSelectBtn.color = isSelected ? Color.red : Color.green;
+            }
+        }
+
+        #endregion
+
+        #region Game Control UI
+
+        public void ShowStartGamePrompt(bool show)
+        {
+            if (_txtStartGamePrompt)
+            {
+                _txtStartGamePrompt.gameObject.SetActive(show);
+                if (show) _txtStartGamePrompt.text = "PRESS <color=yellow>[R]</color> TO START GAME";
             }
         }
 
@@ -125,16 +236,16 @@ namespace Game.Scripts.UI.Lobby
         {
             GameObject prefab = isMe ? _chatMePrefab : _chatThemPrefab;
             var chatItem = Instantiate(prefab, _chatContent);
-
             var texts = chatItem.GetComponentsInChildren<TextMeshProUGUI>();
+
             if (texts.Length >= 2)
             {
-                texts[0].text = isMe ? "Tôi" : sender;
+                texts[0].text = isMe ? "Toi" : sender;
                 texts[1].text = message;
             }
 
             await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
-            if (_chatScrollRect != null) _chatScrollRect.verticalNormalizedPosition = 0f;
+            if (_chatScrollRect) _chatScrollRect.verticalNormalizedPosition = 0f;
         }
 
         public void BindSubmitEvent(Action<string> onSendMessage)
@@ -149,7 +260,7 @@ namespace Game.Scripts.UI.Lobby
         public void DeFocusChat()
         {
             _inpChatMessage.DeactivateInputField();
-            if (UnityEngine.EventSystems.EventSystem.current != null)
+            if (UnityEngine.EventSystems.EventSystem.current)
                 UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(null);
         }
 
@@ -161,55 +272,44 @@ namespace Game.Scripts.UI.Lobby
 
         #endregion
 
-        #region Interaction & Management Board
+        #region Interaction & Utils
 
         public void SetInteractPrompt(string message, bool visible)
         {
-            if (_interactPromptGo != null)
+            if (_interactPromptGo)
             {
                 _txtInteractPrompt.text = message;
                 _interactPromptGo.SetActive(visible);
             }
         }
 
-        [Obsolete]
         public void ShowManagementModal(bool show)
         {
-            Debug.Log($"<color=orange>[UI Manager]</color> Gọi lệnh hiện Modal: {show}");
-
             if (_managementModal == null) return;
 
             _managementModal.SetActive(show);
-            if (_imgDimBG != null) _imgDimBG.SetActive(show);
+            if (_imgDimBG) _imgDimBG.SetActive(show);
 
-            if (show)
+            Cursor.lockState = show ? CursorLockMode.None : CursorLockMode.Locked;
+            Cursor.visible = show;
+
+            if (show) RefreshManagementList();
+        }
+
+        public void AddMission(string description, bool isDone)
+        {
+            var item = Instantiate(_missionItemPrefab, _missionListContent);
+            var texts = item.GetComponentsInChildren<TextMeshProUGUI>();
+            if (texts.Length >= 2)
             {
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-                RefreshManagementList();
-            }
-            else
-            {
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
+                texts[0].text = description;
+                texts[1].text = isDone ? "<color=green>Done</color>" : "In Progress";
             }
         }
 
-        [Obsolete]
-        private void RefreshManagementList()
+        public Sprite LoadSprite(string spriteName)
         {
-            if (_playerSlots == null || _playerSlots.Length == 0) return;
-
-            // Trong bản Build, danh sách này cần được nạp lại mỗi khi có callback
-            var players = PhotonNetwork.PlayerList;
-
-            for (int i = 0; i < _playerSlots.Length; i++)
-            {
-                if (i < players.Length)
-                    _playerSlots[i].Setup(players[i]);
-                else
-                    _playerSlots[i].SetEmpty();
-            }
+            return Resources.Load<Sprite>($"MapIcons/{spriteName}");
         }
 
         #endregion

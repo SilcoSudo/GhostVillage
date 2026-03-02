@@ -1,36 +1,39 @@
 using Cysharp.Threading.Tasks;
 using Game.Core.Network.API;
+using Game.Domain.Map.DTOs;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
-namespace Game.Domain.Maps
+namespace Game.Domain.Map.Services
 {
     public interface IMapDataService
     {
-        UniTask<MapConfigDTO> GetMapConfig(string mapId);
+        UniTask<List<MapConfigDTO>> FetchAllMaps();
     }
 
     public class MapDataService : IMapDataService
     {
         private readonly APIClient _apiClient;
 
-        // VContainer tự động tiêm APIClient vào đây
         public MapDataService(APIClient apiClient)
         {
             _apiClient = apiClient;
         }
 
-        public async UniTask<MapConfigDTO> GetMapConfig(string mapId)
+        public async UniTask<List<MapConfigDTO>> FetchAllMaps()
         {
-            // Gọi API Node.js: GET /api/maps/map_01_jungle/config
-            var response = await _apiClient.GetAsync<MapConfigDTO>($"/api/maps/{mapId}/config");
+            // Endpoint GET /api/maps trả về { success: true, data: [MapConfigDTO] }
+            // APIClient của bạn đã có ResponseWrapper xử lý List<T>
+            var response = await _apiClient.GetAsync<List<MapConfigDTO>>("/api/maps");
 
-            if (response != null)
+            if (response != null && response.Count > 0)
             {
-                Debug.Log($"✅ Load Config Map [{response.name}] thành công!");
+                Debug.Log($"✅ Đã tải thành công {response.Count} Maps Config!");
                 return response;
             }
 
-            Debug.LogError("❌ Load Map Config thất bại!");
+            Debug.LogError("❌ Không thể lấy dữ liệu Maps từ Server!");
             return null;
         }
     }

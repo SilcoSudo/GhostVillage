@@ -5,6 +5,7 @@ import Player from "./src/modules/player/playerModel.js";
 import { config } from "./src/config/env.js";
 import UserMatchHistory from "./src/modules/profile/playerMatchHistoryModel.js";
 import UserAchievement from "./src/modules/profile/playerAchievementModel.js";
+import MapConfig from "./src/modules/map/mapConfigModel.js";
 
 dotenv.config();
 
@@ -20,7 +21,11 @@ const seedData = async () => {
     console.log("🗑️  Đã xóa dữ liệu cũ (Users & Players).");
     await UserMatchHistory.deleteMany({});
     await UserAchievement.deleteMany({});
-    console.log("🗑️  Đã xóa dữ liệu cũ (PlayerMatchHistory, PlayerAchievement).");
+    console.log(
+      "🗑️  Đã xóa dữ liệu cũ (PlayerMatchHistory, PlayerAchievement).",
+    );
+    await MapConfig.deleteMany({});
+    console.log("🗑️  Đã xóa dữ liệu cũ (MapConfig).");
 
     // 3. CHUẨN BỊ ID (Để link giữa các bảng)
     const user1_Id = new mongoose.Types.ObjectId("659d4b1e9d3e2a1b3c4d5e6f");
@@ -227,11 +232,331 @@ const seedData = async () => {
       },
     ]);
 
+    // ---------------------------------------------------------
+    // BẮT ĐẦU PHẦN MAP CONFIG MỚI (5 MAPS)
+    // ---------------------------------------------------------
+    console.log("⏳ Creating MapConfigs (5 Maps)...");
+
+    const mapConfigs = [
+      // =========================================================================
+      // MAP 1: ÔNG KẸ (THE BOOGEYMAN) - Bối cảnh: Làng Cổ (Tối tăm, lẩn trốn)
+      // =========================================================================
+      {
+        identityConfig: {
+          mapId: "MAP_01_ONG_KE",
+          sceneName: "Scene_Game_OngKe", // Updated Name
+          displayName: "Làng Cổ - Ông Kẹ",
+          thumbnailUrl: "sprite_map_ongke",
+          shortDescription:
+            "Ngôi làng chìm trong bóng tối. 'Hư là bị ông kẹ bắt' - Đừng để hắn thấy bạn.",
+          isActive: true,
+        },
+        environmentConfig: {
+          baseLightingId: "LIGHT_PROFILE_DARK_FOG",
+          moonEventPool: [
+            {
+              eventId: "EVENT_MOON_FULL",
+              weight: 30,
+              uiIcon: "icon_moon_full",
+            }, // Sáng hơn, dễ bị lộ
+            { eventId: "EVENT_MOON_NEW", weight: 40, uiIcon: "icon_moon_new" }, // Tối om, Ông Kẹ mạnh hơn
+            { eventId: "EVENT_MOON_RED", weight: 10, uiIcon: "icon_moon_red" }, // Ông Kẹ cuồng nộ
+          ],
+        },
+        consumableConfig: {
+          spawnPointIds: [
+            "SP_Item_Kitchen",
+            "SP_Item_Well",
+            "SP_Item_Bed",
+            "SP_Item_Altar",
+            "SP_Item_Gate",
+            "SP_Item_Tree",
+            "SP_Item_Roof",
+            "SP_Item_Basement",
+          ],
+          mandatoryItems: [
+            { itemId: "ITEM_FLASHLIGHT_BATTERY", minCount: 5, maxCount: 8 }, // Cần pin đèn pin
+          ],
+          randomPoolConfig: {
+            minCount: 3,
+            maxCount: 5,
+            pool: [
+              { itemId: "ITEM_HP_POTION_S", weight: 50 },
+              { itemId: "ITEM_STAMINA_DRINK", weight: 30 },
+              { itemId: "ITEM_HOLY_WATER", weight: 20 },
+            ],
+          },
+        },
+        monsterSystemConfig: {
+          bossConfig: {
+            monsterId: "BOSS_ONG_KE", // Boss bao tải, bắt cóc
+            spawnPointIds: [
+              "SP_Boss_Center",
+              "SP_Boss_OldHouse",
+              "SP_Boss_Playground",
+            ],
+          },
+          minionConfig: {
+            allowedMonsterIds: ["MINION_SHADOW_HAND", "MINION_CURSED_RAT"],
+            spawnPointIds: [
+              "SP_Minion_Alley_1",
+              "SP_Minion_Alley_2",
+              "SP_Minion_Corner",
+            ],
+          },
+        },
+        puzzleConfig: {
+          spawnPointIds: ["SP_Puzzle_Main_Altar", "SP_Puzzle_Old_Clock"],
+          puzzlePoolIds: ["PUZZLE_FIND_DOLL", "PUZZLE_FIX_LIGHT"],
+        },
+        rewardConfig: { baseExp: 500, baseCoin: 300, eventMultipliers: [] },
+      },
+
+      // =========================================================================
+      // MAP 2: MA DA (THE WATER GHOST) - Bối cảnh: Bến Sông (Nước, stamina)
+      // =========================================================================
+      {
+        identityConfig: {
+          mapId: "MAP_02_MA_DA",
+          sceneName: "Scene_Game_MaDa", // Updated Name
+          displayName: "Bến Sông - Ma Da",
+          thumbnailUrl: "sprite_map_mada",
+          shortDescription:
+            "Vùng nước chết chóc. Đừng đứng quá gần mép nước, Ma Da sẽ kéo chân bạn.",
+          isActive: true,
+        },
+        environmentConfig: {
+          baseLightingId: "LIGHT_PROFILE_WET_COLD",
+          moonEventPool: [
+            {
+              eventId: "EVENT_TIDE_HIGH",
+              weight: 40,
+              uiIcon: "icon_tide_high",
+            }, // Nước dâng, khó đi
+            { eventId: "EVENT_FOG_HEAVY", weight: 30, uiIcon: "icon_fog" }, // Sương mù dày đặc
+          ],
+        },
+        consumableConfig: {
+          spawnPointIds: [
+            "SP_Item_Boat",
+            "SP_Item_Pier",
+            "SP_Item_Hut",
+            "SP_Item_Reed",
+          ],
+          mandatoryItems: [
+            { itemId: "ITEM_STAMINA_DRINK", minCount: 6, maxCount: 10 }, // Map này tốn stamina bơi/chạy
+          ],
+          randomPoolConfig: {
+            minCount: 3,
+            maxCount: 5,
+            pool: [
+              { itemId: "ITEM_HP_POTION_S", weight: 60 },
+              { itemId: "ITEM_OXYGEN_TANK", weight: 40 },
+            ],
+          },
+        },
+        monsterSystemConfig: {
+          bossConfig: {
+            monsterId: "BOSS_MA_DA", // Kéo chân, tàng hình dưới nước
+            spawnPointIds: ["SP_Boss_River_Deep", "SP_Boss_Under_Bridge"],
+          },
+          minionConfig: {
+            allowedMonsterIds: ["MINION_DROWNED_CORPSE", "MINION_WATER_LEECH"],
+            spawnPointIds: ["SP_Minion_Shore", "SP_Minion_Puddle"],
+          },
+        },
+        puzzleConfig: {
+          spawnPointIds: ["SP_Puzzle_Boat_Engine", "SP_Puzzle_Fishing_Net"],
+          puzzlePoolIds: ["PUZZLE_REPAIR_BOAT", "PUZZLE_OFFERING_RIVER"],
+        },
+        rewardConfig: { baseExp: 600, baseCoin: 400, eventMultipliers: [] },
+      },
+
+      // =========================================================================
+      // MAP 3: CHẰNG TINH (THE OGRE) - Bối cảnh: Rừng Già / Hang Động
+      // =========================================================================
+      {
+        identityConfig: {
+          mapId: "MAP_03_CHANG_TINH",
+          sceneName: "Scene_Game_ChangTinh", // Updated Name
+          displayName: "Rừng Già - Chằng Tinh",
+          thumbnailUrl: "sprite_map_changtinh",
+          shortDescription:
+            "Khu rừng của loài yêu quái cổ xưa. Sức mạnh của nó có thể nghiền nát đá.",
+          isActive: true,
+        },
+        environmentConfig: {
+          baseLightingId: "LIGHT_PROFILE_JUNGLE",
+          moonEventPool: [
+            { eventId: "EVENT_JUNGLE_ROAR", weight: 50, uiIcon: "icon_roar" }, // Tiếng gầm gây choáng
+          ],
+        },
+        consumableConfig: {
+          spawnPointIds: [
+            "SP_Item_Cave_Ent",
+            "SP_Item_Rock",
+            "SP_Item_Tree_Hollow",
+          ],
+          mandatoryItems: [
+            { itemId: "ITEM_TRAP_TOOL", minCount: 3, maxCount: 5 }, // Cần bẫy để giữ chân Boss
+          ],
+          randomPoolConfig: {
+            minCount: 4,
+            maxCount: 7,
+            pool: [
+              { itemId: "ITEM_HP_POTION_L", weight: 40 }, // Boss đánh đau, cần máu to
+              { itemId: "ITEM_SPEED_BUFF", weight: 60 },
+            ],
+          },
+        },
+        monsterSystemConfig: {
+          bossConfig: {
+            monsterId: "BOSS_CHANG_TINH", // To xác, trâu bò, ném đá
+            spawnPointIds: ["SP_Boss_Cave_Throne", "SP_Boss_Clearing"],
+          },
+          minionConfig: {
+            allowedMonsterIds: ["MINION_WILD_SNAKE", "MINION_FOREST_IMP"],
+            spawnPointIds: ["SP_Minion_Tree_Top", "SP_Minion_Bush"],
+          },
+        },
+        puzzleConfig: {
+          spawnPointIds: ["SP_Puzzle_Stone_Gate", "SP_Puzzle_Ancient_Rune"],
+          puzzlePoolIds: ["PUZZLE_MOVE_ROCK", "PUZZLE_TRIBAL_DRUM"],
+        },
+        rewardConfig: { baseExp: 800, baseCoin: 500, eventMultipliers: [] },
+      },
+
+      // =========================================================================
+      // MAP 4: MA LAI (THE FLYING HEAD) - Bối cảnh: Nhà Hoang (Chật hẹp, Kinh dị)
+      // =========================================================================
+      {
+        identityConfig: {
+          mapId: "MAP_04_MA_LAI",
+          sceneName: "Scene_Game_MaLai", // Updated Name
+          displayName: "Nhà Hoang - Ma Lai",
+          thumbnailUrl: "sprite_map_malai",
+          shortDescription:
+            "Đầu người lơ lửng kéo theo bộ ruột. Cẩn thận cửa sổ và trần nhà.",
+          isActive: true,
+        },
+        environmentConfig: {
+          baseLightingId: "LIGHT_PROFILE_INDOOR_RED",
+          moonEventPool: [
+            {
+              eventId: "EVENT_BLOOD_MOON",
+              weight: 100,
+              uiIcon: "icon_moon_blood",
+            }, // Map này luôn đỏ lòm
+          ],
+        },
+        consumableConfig: {
+          spawnPointIds: [
+            "SP_Item_Cabinet",
+            "SP_Item_Table",
+            "SP_Item_Toilet",
+            "SP_Item_Attic",
+          ],
+          mandatoryItems: [
+            { itemId: "ITEM_SALT_BAG", minCount: 5, maxCount: 8 }, // Muối khắc chế Ma Lai
+          ],
+          randomPoolConfig: {
+            minCount: 3,
+            maxCount: 5,
+            pool: [
+              { itemId: "ITEM_BANDAGE", weight: 70 }, // Map này gây chảy máu (Bleed)
+              { itemId: "ITEM_AMMO_BOX", weight: 30 },
+            ],
+          },
+        },
+        monsterSystemConfig: {
+          bossConfig: {
+            monsterId: "BOSS_MA_LAI", // Bay, xuyên tường, gây chảy máu
+            spawnPointIds: ["SP_Boss_LivingRoom", "SP_Boss_Bedroom"],
+          },
+          minionConfig: {
+            allowedMonsterIds: [
+              "MINION_FLOATING_SKULL",
+              "MINION_CURSED_INSECT",
+            ],
+            spawnPointIds: ["SP_Minion_Window", "SP_Minion_Vent"],
+          },
+        },
+        puzzleConfig: {
+          spawnPointIds: ["SP_Puzzle_Safe", "SP_Puzzle_Mirror"],
+          puzzlePoolIds: ["PUZZLE_FIND_KEY_BODY", "PUZZLE_CLOSE_WINDOW"],
+        },
+        rewardConfig: { baseExp: 700, baseCoin: 450, eventMultipliers: [] },
+      },
+
+      // =========================================================================
+      // MAP 5: QUỶ CẨU (DEMON DOG) - Bối cảnh: Nghĩa Địa (Rộng, Rượt đuổi)
+      // =========================================================================
+      {
+        identityConfig: {
+          mapId: "MAP_05_QUY_CAU",
+          sceneName: "Scene_Game_QuyCau", // Updated Name
+          displayName: "Nghĩa Địa - Quỷ Cẩu",
+          thumbnailUrl: "sprite_map_quycau",
+          shortDescription:
+            "Tiếng chó sủa trong đêm. Chạy ngay đi trước khi nó đánh hơi thấy bạn.",
+          isActive: true,
+        },
+        environmentConfig: {
+          baseLightingId: "LIGHT_PROFILE_GRAVEYARD",
+          moonEventPool: [
+            { eventId: "EVENT_WIND_HOWL", weight: 50, uiIcon: "icon_wind" }, // Gió át tiếng bước chân
+            { eventId: "EVENT_THUNDER", weight: 20, uiIcon: "icon_thunder" }, // Sét đánh lộ vị trí
+          ],
+        },
+        consumableConfig: {
+          spawnPointIds: [
+            "SP_Item_Tomb",
+            "SP_Item_Crypt",
+            "SP_Item_DeadTree",
+            "SP_Item_Statue",
+          ],
+          mandatoryItems: [
+            { itemId: "ITEM_SCENT_REMOVER", minCount: 4, maxCount: 6 }, // Xóa mùi để trốn chó
+          ],
+          randomPoolConfig: {
+            minCount: 4,
+            maxCount: 6,
+            pool: [
+              { itemId: "ITEM_STAMINA_DRINK", weight: 70 }, // Cần chạy nhiều
+              { itemId: "ITEM_MEAT_BAIT", weight: 30 }, // Thịt để dụ chó
+            ],
+          },
+        },
+        monsterSystemConfig: {
+          bossConfig: {
+            monsterId: "BOSS_QUY_CAU", // Chạy siêu nhanh, đánh hơi
+            spawnPointIds: ["SP_Boss_Gate_Main", "SP_Boss_Hill"],
+          },
+          minionConfig: {
+            allowedMonsterIds: ["MINION_MAD_DOG", "MINION_SKELETON"],
+            spawnPointIds: ["SP_Minion_Grave_1", "SP_Minion_Grave_2"],
+          },
+        },
+        puzzleConfig: {
+          spawnPointIds: ["SP_Puzzle_Grave_Dig", "SP_Puzzle_Statue_Eyes"],
+          puzzlePoolIds: ["PUZZLE_ARRANGE_TOMB", "PUZZLE_SILENCE_BELL"],
+        },
+        rewardConfig: { baseExp: 900, baseCoin: 600, eventMultipliers: [] },
+      },
+    ];
+
+    await MapConfig.insertMany(mapConfigs);
+    // ---------------------------------------------------------
+    // KẾT THÚC PHẦN MAP CONFIG MỚI
+    // ---------------------------------------------------------
+
     console.log("✅ KHỞI TẠO DỮ LIỆU THÀNH CÔNG!");
     console.log(
-      "👤 User 1: hung@ghostvillage.com | 👤 User 2: lan.support@gmail.com | 👤 User 3: raccoon@ghostvillage.com"
+      "👤 User 1: hung@ghostvillage.com | 👤 User 2: lan.support@gmail.com | 👤 User 3: raccoon@ghostvillage.com",
     );
-    console.log("🎮 Player 1: Hùng Đẹp Trai | 🎮 Player 2: Lan Support | 🎮 Player 3: Raccoon");
+    console.log(
+      "🎮 Player 1: Hùng Đẹp Trai | 🎮 Player 2: Lan Support | 🎮 Player 3: Raccoon",
+    );
 
     // 5. Ngắt kết nối
     process.exit();

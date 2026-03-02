@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import PostDetailModal from '../../posts/components/PostDetailModal';
 import PostCard from '../../posts/components/PostCard';
+import ChangePasswordModal from '../../../shared/components/modals/ChangePasswordModal';
 import './ProfilePage.css';
 
 const ProfilePage = () => {
@@ -31,6 +32,7 @@ const ProfilePage = () => {
   const [uploading, setUploading] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [showPostModal, setShowPostModal] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
   const isOwnProfile = currentUser && (id ? currentUser._id === id : true);
 
@@ -543,7 +545,7 @@ const ProfilePage = () => {
                   
                   <div className="settings-group">
                     <label><Lock size={16} /> SECURITY</label>
-                    <button className="btn-horror-outline" onClick={() => navigate('/account/change-password')}>
+                    <button className="btn-horror-outline" onClick={() => setShowChangePasswordModal(true)}>
                       CHANGE PASSWORD
                     </button>
                     <button className="btn-horror-outline" onClick={() => navigate('/forgot-password')}>
@@ -573,6 +575,16 @@ const ProfilePage = () => {
         onHide={handleClosePostModal}
         postId={selectedPostId}
       />
+
+      {/* Change Password Modal */}
+      {showChangePasswordModal && (
+        <ChangePasswordModal
+          onClose={() => setShowChangePasswordModal(false)}
+          onSuccess={() => {
+            console.log('Password changed successfully');
+          }}
+        />
+      )}
     </div>
   );
 };
