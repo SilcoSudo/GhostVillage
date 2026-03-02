@@ -1,58 +1,55 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import { useAuth } from '../../../app/context/AuthContext';
-import { Spinner } from 'react-bootstrap';
-import LangmaText from '../../../shared/assets/images/logo.png';
-import FogEffect from '../components/FogEffect';
-import './Auth.css';
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { useAuth } from "../../../app/context/AuthContext";
+import authService from "../services/authService";
+import { Spinner } from "react-bootstrap";
+import LangmaText from "../../../shared/assets/images/logo.png";
+import FogEffect from "../components/FogEffect";
+import "./Auth.css";
 
 const CompleteProfilePage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { setSession, user: currentUser } = useAuth();
-  
+
   const [dateOfBirth, setDateOfBirth] = useState(null);
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [errors, setErrors] = useState({});
   const [fetchingUser, setFetchingUser] = useState(true);
 
   useEffect(() => {
     const initializeProfile = async () => {
-      const token = searchParams.get('token');
-      
+      const token = searchParams.get("token");
+
+      // Check token exists
       if (!token) {
-        navigate('/login?error=no_token');
+        navigate("/login?error=no_token");
         return;
       }
 
       try {
-        // Save token and fetch user info
-        const response = await fetch('http://localhost:5000/api/web/auth/me', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+        // Validate token by fetching user info
+        const data = await authService.getCurrentUser(token);
 
-        if (response.ok) {
-          const data = await response.json();
-          setSession(token, data.user);
-          
-          // If user already has dateOfBirth, redirect to home
-          if (data.user.dateOfBirth) {
-            navigate('/');
-            return;
-          }
-        } else {
-          throw new Error('Failed to fetch user info');
+        if (!data.success) {
+          // Token invalid or expired
+          console.error("Token validation failed:", data.message);
+          navigate("/login?error=invalid_token");
+          return;
         }
+
+        // Save session
+        setSession(token, data.user);
+
+        // User needs to complete profile - proceed
       } catch (error) {
-        console.error('Initialize profile error:', error);
-        setError('Failed to load profile. Please try again.');
+        console.error("Initialize profile error:", error);
+        navigate("/login?error=server_error");
       } finally {
         setFetchingUser(false);
       }
@@ -64,19 +61,20 @@ const CompleteProfilePage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
     setErrors({});
 
     const newErrors = {};
 
     // Date of birth validation
     if (!dateOfBirth) {
-      newErrors.dateOfBirth = 'Date of birth is required';
+      newErrors.dateOfBirth = "Date of birth is required";
     } else {
-      const dob = dateOfBirth instanceof Date ? dateOfBirth : new Date(dateOfBirth);
+      const dob =
+        dateOfBirth instanceof Date ? dateOfBirth : new Date(dateOfBirth);
       const now = new Date();
       if (isNaN(dob.getTime()) || dob > now) {
-        newErrors.dateOfBirth = 'Please enter a valid date of birth';
+        newErrors.dateOfBirth = "Please enter a valid date of birth";
       } else {
         // Calculate age in years reliably
         let age = now.getFullYear() - dob.getFullYear();
@@ -84,22 +82,24 @@ const CompleteProfilePage = () => {
         if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) {
           age--;
         }
-        if (age < 13) newErrors.dateOfBirth = 'You must be at least 13 years old';
+        if (age < 13)
+          newErrors.dateOfBirth = "You must be at least 13 years old";
       }
     }
 
     // Password validation (match register)
     const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = "Password is required";
     } else if (!pwdRegex.test(password)) {
-      newErrors.password = 'Password must be at least 8 characters and include uppercase, lowercase, and a special character';
+      newErrors.password =
+        "Password must be at least 8 characters and include uppercase, lowercase, and a special character";
     }
 
     if (!confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
+      newErrors.confirmPassword = "Please confirm your password";
     } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = "Passwords do not match";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -109,41 +109,26 @@ const CompleteProfilePage = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
       const payload = {
-        dateOfBirth: dateOfBirth ? dateOfBirth.toISOString().split('T')[0] : '',
-        password
+        dateOfBirth: dateOfBirth ? dateOfBirth.toISOString().split("T")[0] : "",
+        password,
       };
-      
-      console.log('Sending complete profile payload:', payload);
-      
-      const response = await fetch('http://localhost:5000/api/web/user/complete-profile', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
 
-      const data = await response.json();
+      const data = await authService.completeProfile(
+        payload.dateOfBirth,
+        payload.password,
+      );
 
-      if (data.success) {
+      if (data.success && data.user) {
         // Update user in context (token already set)
-        setSession(localStorage.getItem('token'), data.user);
-        
-        // Set remember me (30 days for OAuth users)
-        const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + 30);
-        localStorage.setItem('rememberMeExpiry', expiryDate.toISOString());
-        
-        navigate('/');
+        setSession(localStorage.getItem("token"), data.user);
+        navigate("/");
       } else {
-        setError(data.message || 'Failed to complete profile');
+        setError(data.message || "Failed to complete profile");
       }
     } catch (error) {
-      console.error('Complete profile error:', error);
-      setError('An error occurred. Please try again.');
+      console.error("Complete profile error:", error);
+      setError("An error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -154,7 +139,11 @@ const CompleteProfilePage = () => {
       <div className="login-page">
         <div className="login-form-section">
           <div className="text-center py-5">
-            <Spinner animation="border" variant="light" style={{ width: '3rem', height: '3rem' }} />
+            <Spinner
+              animation="border"
+              variant="light"
+              style={{ width: "3rem", height: "3rem" }}
+            />
             <p className="mt-3 text-light">Loading...</p>
           </div>
         </div>
@@ -171,10 +160,12 @@ const CompleteProfilePage = () => {
       <div className="login-form-section">
         <div className="login-form-wrapper">
           <h2>Complete Your Profile</h2>
-          <p className="form-subtitle">We need a bit more information to get you started</p>
-          
+          <p className="form-subtitle">
+            We need a bit more information to get you started
+          </p>
+
           {error && <div className="alert-message alert-danger">{error}</div>}
-          
+
           <form onSubmit={handleSubmit} noValidate>
             <div className="form-group date-input-wrapper">
               <label>Date of Birth</label>
@@ -188,7 +179,9 @@ const CompleteProfilePage = () => {
                 showMonthDropdown
                 dropdownMode="select"
               />
-              {errors.dateOfBirth && <div className="text-danger">{errors.dateOfBirth}</div>}
+              {errors.dateOfBirth && (
+                <div className="text-danger">{errors.dateOfBirth}</div>
+              )}
             </div>
 
             <div className="form-group">
@@ -200,7 +193,9 @@ const CompleteProfilePage = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              {errors.password && <div className="text-danger">{errors.password}</div>}
+              {errors.password && (
+                <div className="text-danger">{errors.password}</div>
+              )}
             </div>
 
             <div className="form-group">
@@ -212,11 +207,13 @@ const CompleteProfilePage = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
               />
-              {errors.confirmPassword && <div className="text-danger">{errors.confirmPassword}</div>}
+              {errors.confirmPassword && (
+                <div className="text-danger">{errors.confirmPassword}</div>
+              )}
             </div>
 
             <button type="submit" className="btn-signin" disabled={loading}>
-              {loading ? 'Saving...' : 'Complete Profile'}
+              {loading ? "Saving..." : "Complete Profile"}
             </button>
           </form>
         </div>

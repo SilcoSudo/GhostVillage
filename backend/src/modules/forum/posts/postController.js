@@ -1,4 +1,9 @@
 import * as postService from "./postService.js";
+import NotificationService from "../notifications/notificationService.js";
+import {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+} from "../../../services/uploadService.js";
 
 const serializePost = (doc) => {
   const p = doc?.toObject ? doc.toObject() : doc;
@@ -142,6 +147,30 @@ export const likePost = async (req, res, next) => {
         .status(404)
         .json({ success: false, message: "Post not found" });
     }
+
+    // Check if user just added a like (not removed)
+    const isLiked =
+      post.likes.findIndex((x) => String(x) === String(effectiveUserId)) >= 0;
+
+    // Send notification if user just liked and they're not the post owner
+    if (isLiked && String(post.author) !== String(effectiveUserId)) {
+      try {
+        const User = (await import("../../user/userModel.js")).default;
+        const currentUser = await User.findById(effectiveUserId);
+        const io = req.app.get("io");
+
+        await NotificationService.createPostLikedNotification(
+          currentUser,
+          post.author,
+          post._id,
+          io,
+        );
+      } catch (notifError) {
+        console.error("Error sending like notification:", notifError);
+        // Don't fail the request if notification fails
+      }
+    }
+
     return res.status(200).json({
       success: true,
       data: { likes: Array.isArray(post.likes) ? post.likes.length : 0 },
@@ -192,6 +221,85 @@ export const lockPost = async (req, res, next) => {
       data: { isLocked: post.isLocked },
     });
   } catch (err) {
+    next(err);
+  }
+};
+
+export const uploadPostImage = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No media file provided",
+      });
+    }
+
+    const mimeType = req.file.mimetype || "";
+    const isVideo = mimeType.startsWith("video/");
+
+    const uploadOptions = {
+      folder: "ghostvillage/posts",
+      resource_type: isVideo ? "video" : "image",
+      transformation: [
+        { width: 1280, height: 720, crop: "limit" },
+        { quality: "auto:good" },
+        { fetch_format: "auto" },
+      ],
+      ...(isVideo
+        ? {
+            video_codec: "auto",
+          }
+        : {
+            flags: "progressive",
+          }),
+    };
+
+    // Upload to Cloudinary with optimizations
+    const uploadResult = await uploadToCloudinary(
+      req.file.buffer,
+      uploadOptions,
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        url: uploadResult.secure_url,
+        publicId: uploadResult.public_id,
+      },
+    });
+  } catch (err) {
+    console.error("Upload post image error:", err);
+    const message = err?.message || "Upload failed";
+    if (message.includes("status 429") || message.includes("429")) {
+      return res.status(429).json({
+        success: false,
+        message:
+          "Cloudinary is rate limiting uploads right now. Please wait a moment and try again.",
+      });
+    }
+    next(err);
+  }
+};
+
+export const deletePostMedia = async (req, res, next) => {
+  try {
+    const { publicId } = req.body;
+
+    if (!publicId) {
+      return res.status(400).json({
+        success: false,
+        message: "publicId is required",
+      });
+    }
+
+    const result = await deleteFromCloudinary(publicId);
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (err) {
+    console.error("Delete post media error:", err);
     next(err);
   }
 };

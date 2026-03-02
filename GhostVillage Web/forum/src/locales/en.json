@@ -33,6 +33,44 @@
     "following": "Following"
   },
   "common": {
-    "logout": "Logout"
+    "logout": "Logout",
+    "loading": "Loading...",
+    "error": "Error",
+    "retry": "Retry",
+    "loadMore": "Load More",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit"
+  },
+  "posts": {
+    "title": "Posts",
+    "createPost": "Create Post",
+    "noPosts": "No posts yet. Be the first to create one!",
+    "noPostsRecorded": "NO POSTS RECORDED",
+    "loadingPosts": "Loading posts...",
+    "categories": {
+      "general": "General",
+      "discussion": "Discussion",
+      "trading": "Trading",
+      "teamUp": "Team Up",
+      "bugReport": "Bug Report"
+    }
+  },
+  "post": {
+    "create": {
+      "title": "Create New Post",
+      "titlePlaceholder": "Enter post title...",
+      "category": "Category",
+      "contentPlaceholder": "Write your post content here...",
+      "contentCounter": "characters",
+      "creatingButton": "Creating...",
+      "addButton": "Add"
+    },
+    "edit": {
+      "title": "Edit Post",
+      "savingButton": "Saving...",
+      "saveButton": "Save"
+    }
   }
 }

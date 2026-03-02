@@ -1,5 +1,10 @@
 import User from "./userModel.js";
-import { uploadToCloudinary, deleteFromCloudinary, extractPublicIdFromUrl } from "../../services/uploadService.js";
+import Friend from "../friend/web/friendModel.js";
+import {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+  extractPublicIdFromUrl,
+} from "../../services/uploadService.js";
 
 /**
  * GET /web/user/profile/me
@@ -8,7 +13,7 @@ import { uploadToCloudinary, deleteFromCloudinary, extractPublicIdFromUrl } from
 export const getMyProfile = async (req, res) => {
   try {
     const user = req.user; // Từ authMiddleware
-    
+
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -50,23 +55,46 @@ export const getMyProfile = async (req, res) => {
 export const getUserIdProfile = async (req, res) => {
   try {
     const { id } = req.params;
+    const currentUserId = req.user?._id; // Get current logged-in user
     console.log(`Searching for profile with ID: ${id}`);
-    
-    // Validate ID format
-    if (!id.match(/^[0-9a-fA-F]{24}$/i)) {
-       return res.status(400).json({ success: false, message: "Invalid ID format" });
-    }
 
     const user = await User.findById(id);
-    
+
     if (!user) {
       console.log(`User not found for ID: ${id}`);
-      return res.status(404).json({ success: false, message: `Subject ${id} not found in database` });
+      return res.status(404).json({
+        success: false,
+        message: `Subject ${id} not found in database`,
+      });
     }
 
-    // Return standardized profile data
-    res.status(200).json({ 
-      success: true, 
+    // Fetch friendship status if current user is viewing someone else's profile
+    let friendshipStatus = null;
+    if (currentUserId && currentUserId.toString() !== id.toString()) {
+      const friendship = await Friend.findOne({
+        $or: [
+          { userId: currentUserId, friendId: id },
+          { userId: id, friendId: currentUserId },
+        ],
+      });
+
+      if (friendship) {
+        friendshipStatus = {
+          _id: friendship._id,
+          status: friendship.status,
+          requestedBy:
+            friendship.userId.toString() === currentUserId.toString()
+              ? "self"
+              : "other",
+          requestedAt: friendship.requestedAt,
+          acceptedAt: friendship.acceptedAt,
+        };
+      }
+    }
+
+    // Return standardized profile data with friendship status
+    res.status(200).json({
+      success: true,
       data: {
         id: user._id,
         _id: user._id,
@@ -79,7 +107,8 @@ export const getUserIdProfile = async (req, res) => {
         isVerified: user.isVerified,
         emailVisibility: user.emailVisibility,
         createdAt: user.createdAt,
-      }
+        friendshipStatus: friendshipStatus, // Include friendship status
+      },
     });
   } catch (error) {
     console.error(`Error in getUserIdProfile: ${error.message}`);
@@ -103,53 +132,16 @@ export const updateMyProfile = async (req, res) => {
       });
     }
 
-    // Validation
-    const errors = {};
-
-    if (fullname !== undefined) {
-      if (typeof fullname !== "string") {
-        errors.fullname = "Name must be a string";
-      } else if (fullname.trim().length === 0) {
-        errors.fullname = "Name cannot be empty";
-      } else if (fullname.length > 100) {
-        errors.fullname = "Name must be less than 100 characters";
-      }
-    }
-
-    if (avatar !== undefined) {
-      if (avatar !== null && typeof avatar !== "string") {
-        errors.avatar = "Avatar must be a URL string or null";
-      }
-    }
-
-    if (bio !== undefined) {
-      if (typeof bio !== "string") {
-        errors.bio = "Bio must be a string";
-      } else if (bio.length > 500) {
-        errors.bio = "Bio must be less than 500 characters";
-      }
-    }
-
-    // Check validation errors
-    if (Object.keys(errors).length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors,
-      });
-    }
-
     // Create update object (only allowed fields)
     const updateData = {};
     if (fullname !== undefined) updateData.fullname = fullname.trim();
     if (avatar !== undefined) updateData.avatar = avatar;
     if (bio !== undefined) updateData.bio = bio.trim();
 
-    const updatedUser = await User.findByIdAndUpdate(
-      user._id,
-      updateData,
-      { new: true, runValidators: true }
-    );
+    const updatedUser = await User.findByIdAndUpdate(user._id, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!updatedUser) {
       return res.status(404).json({
@@ -198,7 +190,11 @@ export const updateName = async (req, res) => {
       });
     }
 
-    const user = await User.findByIdAndUpdate(userId, { fullname: fullname.trim() }, { new: true });
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { fullname: fullname.trim() },
+      { new: true },
+    );
     res.status(200).json({ success: true, data: user });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -217,7 +213,9 @@ export const toggleEmailVisibility = async (req, res) => {
     }
     user.emailVisibility = !user.emailVisibility;
     await user.save();
-    res.status(200).json({ success: true, data: { emailVisibility: user.emailVisibility } });
+    res
+      .status(200)
+      .json({ success: true, data: { emailVisibility: user.emailVisibility } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -230,7 +228,7 @@ export const toggleEmailVisibility = async (req, res) => {
 export const uploadAvatar = async (req, res) => {
   try {
     const userId = req.user._id;
-    
+
     if (!req.file) {
       return res.status(400).json({
         success: false,
@@ -264,14 +262,14 @@ export const uploadAvatar = async (req, res) => {
     const uploadResult = await uploadToCloudinary(req.file.buffer, {
       folder: `ghostvillage/avatars/${userId}`,
       public_id: `avatar_${Date.now()}`,
-      resource_type: 'image',
+      resource_type: "image",
       mimeType: req.file.mimetype,
-      quality: 'auto',
-      fetch_format: 'auto',
+      quality: "auto",
+      fetch_format: "auto",
       width: 300,
       height: 300,
-      crop: 'fill',
-      gravity: 'auto',
+      crop: "fill",
+      gravity: "auto",
     });
 
     // Update user avatar URL
@@ -301,80 +299,6 @@ export const uploadAvatar = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message || "Failed to upload avatar",
-    });
-  }
-};
-
-export const completeProfile = async (req, res) => {
-  try {
-    const userId = req.user?._id;
-    const { dateOfBirth, password } = req.body;
-
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized",
-      });
-    }
-
-    if (!dateOfBirth) {
-      return res.status(400).json({
-        success: false,
-        message: "Date of birth is required",
-      });
-    }
-
-    if (!password) {
-      return res.status(400).json({
-        success: false,
-        message: "Password is required",
-      });
-    }
-
-    // Password strength validation (same as register)
-    const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
-    if (!pwdRegex.test(password)) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Password must be at least 8 characters and include uppercase, lowercase, and a special character",
-      });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    console.log("Before update - password:", user.password);
-    console.log("New password from request:", password);
-
-    user.dateOfBirth = new Date(dateOfBirth);
-    user.password = password; // Will be hashed by pre-save hook
-
-    console.log(
-      "After setting - isModified('password'):",
-      user.isModified("password"),
-    );
-    console.log("After setting - password value:", user.password);
-
-    await user.save();
-
-    console.log("After save - password (should be hashed):", user.password);
-
-    return res.status(200).json({
-      success: true,
-      message: "Profile completed successfully",
-      user: user.toJSON(),
-    });
-  } catch (error) {
-    console.error("Complete Profile error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to complete profile",
     });
   }
 };

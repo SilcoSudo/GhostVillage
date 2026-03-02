@@ -1,13 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../../app/hooks/useAuth';
-import api from '../../../shared/services/axios';
-import { 
-  User, Mail, Calendar, Edit2, MapPin, Link as LinkIcon, 
-  MessageSquare, Trophy, Clock, Settings as SettingsIcon, 
-  Eye, EyeOff, Lock, UserCheck, Shield, BookOpen, Bookmark, History, Users
-} from 'lucide-react';
-import './ProfilePage.css';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../../../app/hooks/useAuth";
+import api from "../../../shared/services/axios";
+import FriendActions from "../../friend/FriendActions";
+import {
+  User,
+  Mail,
+  Calendar,
+  Edit2,
+  MapPin,
+  Link as LinkIcon,
+  MessageSquare,
+  Trophy,
+  Clock,
+  Settings as SettingsIcon,
+  Eye,
+  EyeOff,
+  Lock,
+  UserCheck,
+  Shield,
+  BookOpen,
+  Bookmark,
+  History,
+  Users,
+} from "lucide-react";
+import "./ProfilePage.css";
 
 const ProfilePage = () => {
   const { id } = useParams();
@@ -16,16 +33,16 @@ const ProfilePage = () => {
   const [profileUser, setProfileUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('activity');
+  const [activeTab, setActiveTab] = useState("activity");
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [isEditingAvatar, setIsEditingAvatar] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newBio, setNewBio] = useState('');
-  const [newAvatar, setNewAvatar] = useState('');
+  const [newName, setNewName] = useState("");
+  const [newBio, setNewBio] = useState("");
+  const [newAvatar, setNewAvatar] = useState("");
   const [updating, setUpdating] = useState(false);
   const [avatarFile, setAvatarFile] = useState(null);
-  const [avatarPreview, setAvatarPreview] = useState('');
+  const [avatarPreview, setAvatarPreview] = useState("");
   const [uploading, setUploading] = useState(false);
 
   const isOwnProfile = currentUser && (id ? currentUser._id === id : true);
@@ -42,20 +59,24 @@ const ProfilePage = () => {
         }
 
         // Use own profile endpoint if it's current user, else use public profile
-        const endpoint = isOwnProfile ? '/web/user/profile/me' : `/web/user/profile/${targetId}`;
+        const endpoint = isOwnProfile
+          ? "/web/user/profile/me"
+          : `/web/user/profile/${targetId}`;
         const response = await api.get(endpoint);
-        
+
         if (response.data.success) {
           setProfileUser(response.data.data);
           setNewName(response.data.data.fullname);
-          setNewBio(response.data.data.bio || '');
-          setNewAvatar(response.data.data.avatar || '');
+          setNewBio(response.data.data.bio || "");
+          setNewAvatar(response.data.data.avatar || "");
         } else {
-          setError(response.data.message || 'Subject not found');
+          setError(response.data.message || "Subject not found");
         }
       } catch (err) {
-        console.error('Error fetching profile:', err);
-        setError(err.response?.data?.message || 'Connection to database failed');
+        console.error("Error fetching profile:", err);
+        setError(
+          err.response?.data?.message || "Connection to database failed",
+        );
       } finally {
         setLoading(false);
       }
@@ -66,39 +87,41 @@ const ProfilePage = () => {
 
   const handleUpdateName = async () => {
     try {
-      const response = await api.put('/web/user/profile/update-name', { fullname: newName });
+      const response = await api.put("/web/user/profile/update-name", {
+        fullname: newName,
+      });
       if (response.data.success) {
         setProfileUser({ ...profileUser, fullname: newName });
         setIsEditingName(false);
         refreshUser();
       }
     } catch (err) {
-      alert('Failed to update name');
+      alert("Failed to update name");
     }
   };
 
   const handleUpdateProfile = async () => {
     if (!newName.trim()) {
-      alert('Name cannot be empty');
+      alert("Name cannot be empty");
       return;
     }
     if (newName.length > 100) {
-      alert('Name cannot exceed 100 characters');
+      alert("Name cannot exceed 100 characters");
       return;
     }
     if (newBio.length > 500) {
-      alert('Bio cannot exceed 500 characters');
+      alert("Bio cannot exceed 500 characters");
       return;
     }
 
     setUpdating(true);
     try {
-      const response = await api.put('/web/user/profile/me', {
+      const response = await api.put("/web/user/profile/me", {
         fullname: newName,
         avatar: newAvatar || undefined,
-        bio: newBio || undefined
+        bio: newBio || undefined,
       });
-      
+
       if (response.data.success) {
         const updatedData = response.data.data;
         setProfileUser(updatedData);
@@ -106,11 +129,11 @@ const ProfilePage = () => {
         setIsEditingBio(false);
         setIsEditingAvatar(false);
         refreshUser();
-        alert('Profile updated successfully!');
+        alert("Profile updated successfully!");
       }
     } catch (err) {
-      console.error('Update error:', err);
-      alert(err.response?.data?.message || 'Failed to update profile');
+      console.error("Update error:", err);
+      alert(err.response?.data?.message || "Failed to update profile");
     } finally {
       setUpdating(false);
     }
@@ -121,14 +144,14 @@ const ProfilePage = () => {
     if (!file) return;
 
     // Validate file type
-    if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
-      alert('Only JPEG, PNG, and GIF images are allowed');
+    if (!["image/jpeg", "image/png", "image/gif"].includes(file.type)) {
+      alert("Only JPEG, PNG, and GIF images are allowed");
       return;
     }
 
     // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size cannot exceed 5MB');
+      alert("File size cannot exceed 5MB");
       return;
     }
 
@@ -144,18 +167,18 @@ const ProfilePage = () => {
 
   const handleUploadAvatar = async () => {
     if (!avatarFile) {
-      alert('Please select an image first');
+      alert("Please select an image first");
       return;
     }
 
     setUploading(true);
     try {
       const formData = new FormData();
-      formData.append('avatar', avatarFile);
+      formData.append("avatar", avatarFile);
 
-      const response = await api.post('/web/user/avatar/upload', formData, {
+      const response = await api.post("/web/user/avatar/upload", formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
       });
 
@@ -163,13 +186,13 @@ const ProfilePage = () => {
         const updatedData = response.data.data;
         setProfileUser(updatedData);
         setAvatarFile(null);
-        setAvatarPreview('');
+        setAvatarPreview("");
         refreshUser();
-        alert('Avatar uploaded successfully!');
+        alert("Avatar uploaded successfully!");
       }
     } catch (err) {
-      console.error('Upload error:', err);
-      alert(err.response?.data?.message || 'Failed to upload avatar');
+      console.error("Upload error:", err);
+      alert(err.response?.data?.message || "Failed to upload avatar");
     } finally {
       setUploading(false);
     }
@@ -177,12 +200,17 @@ const ProfilePage = () => {
 
   const toggleEmailVisibility = async () => {
     try {
-      const response = await api.put('/web/user/profile/toggle-email-visibility');
+      const response = await api.put(
+        "/web/user/profile/toggle-email-visibility",
+      );
       if (response.data.success) {
-        setProfileUser({ ...profileUser, emailVisibility: !profileUser.emailVisibility });
+        setProfileUser({
+          ...profileUser,
+          emailVisibility: !profileUser.emailVisibility,
+        });
       }
     } catch (err) {
-      alert('Failed to update visibility');
+      alert("Failed to update visibility");
     }
   };
 
@@ -199,8 +227,13 @@ const ProfilePage = () => {
     return (
       <div className="profile-error">
         <h2>404 - SUBJECT NOT FOUND</h2>
-        <p>{error || 'The requested profile does not exist in the village records.'}</p>
-        <button onClick={() => navigate('/')} className="btn-horror">RETURN TO SAFETY</button>
+        <p>
+          {error ||
+            "The requested profile does not exist in the village records."}
+        </p>
+        <button onClick={() => navigate("/")} className="btn-horror">
+          RETURN TO SAFETY
+        </button>
       </div>
     );
   }
@@ -212,9 +245,12 @@ const ProfilePage = () => {
         <div className="profile-cover"></div>
         <div className="profile-header-content">
           <div className="profile-avatar-wrapper">
-            <img 
-              src={profileUser.avatar || `https://ui-avatars.com/api/?name=${profileUser.fullname}&background=990000&color=B5A642`} 
-              alt={profileUser.fullname} 
+            <img
+              src={
+                profileUser.avatar ||
+                `https://ui-avatars.com/api/?name=${profileUser.fullname}&background=990000&color=B5A642`
+              }
+              alt={profileUser.fullname}
               className="profile-avatar"
             />
             {isOwnProfile && (
@@ -223,39 +259,56 @@ const ProfilePage = () => {
               </button>
             )}
           </div>
-          
+
           <div className="profile-main-info">
             {isEditingName ? (
               <div className="edit-name-group">
-                <input 
-                  value={newName} 
-                  onChange={(e) => setNewName(e.target.value)} 
+                <input
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
                   className="horror-input-small"
                 />
-                <button onClick={handleUpdateName} className="btn-horror-save">SAVE</button>
-                <button onClick={() => setIsEditingName(false)} className="btn-horror-cancel">X</button>
+                <button onClick={handleUpdateName} className="btn-horror-save">
+                  SAVE
+                </button>
+                <button
+                  onClick={() => setIsEditingName(false)}
+                  className="btn-horror-cancel"
+                >
+                  X
+                </button>
               </div>
             ) : (
               <div className="name-display-group">
                 <h1 className="profile-name">
-                  {profileUser.fullname || 'Anonymous Subject'}
-                  {isOwnProfile && <Edit2 size={16} className="edit-inline-icon" onClick={() => setIsEditingName(true)} />}
+                  {profileUser.fullname || "Anonymous Subject"}
+                  {isOwnProfile && (
+                    <Edit2
+                      size={16}
+                      className="edit-inline-icon"
+                      onClick={() => setIsEditingName(true)}
+                    />
+                  )}
                 </h1>
               </div>
             )}
-            <p className="profile-username">@{profileUser.fullname?.toLowerCase().replace(/\s/g, '')}</p>
+            <p className="profile-username">
+              @{profileUser.fullname?.toLowerCase().replace(/\s/g, "")}
+            </p>
             <div className="profile-badges">
-              {profileUser.role === 'admin' && <span className="badge admin-badge">WARDEN</span>}
+              {profileUser.role === "admin" && (
+                <span className="badge admin-badge">WARDEN</span>
+              )}
               <span className="badge rank-badge">EXPLORER</span>
             </div>
           </div>
 
           <div className="profile-actions">
-            {!isOwnProfile && (
-              <button className="btn-horror">
-                <MessageSquare size={18} />
-                SEND MESSAGE
-              </button>
+            {!isOwnProfile && profileUser && (
+              <FriendActions
+                targetUserId={id}
+                preloadedStatus={profileUser.friendshipStatus}
+              />
             )}
           </div>
         </div>
@@ -270,19 +323,37 @@ const ProfilePage = () => {
               <li>
                 <Mail size={16} />
                 <span>
-                  {profileUser.emailVisibility || isOwnProfile ? profileUser.email : '••••••••@••••.com'}
+                  {profileUser.emailVisibility || isOwnProfile
+                    ? profileUser.email
+                    : "••••••••@••••.com"}
                 </span>
                 {isOwnProfile && (
-                  <button className="icon-btn-inline" onClick={toggleEmailVisibility} title="Toggle Visibility">
-                    {profileUser.emailVisibility ? <Eye size={14} /> : <EyeOff size={14} />}
+                  <button
+                    className="icon-btn-inline"
+                    onClick={toggleEmailVisibility}
+                    title="Toggle Visibility"
+                  >
+                    {profileUser.emailVisibility ? (
+                      <Eye size={14} />
+                    ) : (
+                      <EyeOff size={14} />
+                    )}
                   </button>
                 )}
               </li>
               <li>
                 <Calendar size={16} />
-                <span>Joined {new Date(profileUser.createdAt || Date.now()).toLocaleDateString()}</span>
+                <span>
+                  Joined{" "}
+                  {new Date(
+                    profileUser.createdAt || Date.now(),
+                  ).toLocaleDateString()}
+                </span>
               </li>
-              <li className="clickable-row" onClick={() => setActiveTab('friends')}>
+              <li
+                className="clickable-row"
+                onClick={() => setActiveTab("friends")}
+              >
                 <Users size={16} />
                 <span>Friends: {profileUser.friends?.length || 0}</span>
                 <span className="view-link">VIEW</span>
@@ -313,40 +384,40 @@ const ProfilePage = () => {
         {/* Main Content Area */}
         <div className="profile-main-content">
           <div className="profile-tabs">
-            <button 
-              className={`tab-btn ${activeTab === 'activity' ? 'active' : ''}`}
-              onClick={() => setActiveTab('activity')}
+            <button
+              className={`tab-btn ${activeTab === "activity" ? "active" : ""}`}
+              onClick={() => setActiveTab("activity")}
             >
               <History size={16} />
               ACTIVITY
             </button>
-            <button 
-              className={`tab-btn ${activeTab === 'posts' ? 'active' : ''}`}
-              onClick={() => setActiveTab('posts')}
+            <button
+              className={`tab-btn ${activeTab === "posts" ? "active" : ""}`}
+              onClick={() => setActiveTab("posts")}
             >
               <BookOpen size={16} />
               POSTS
             </button>
             {isOwnProfile && (
-              <button 
-                className={`tab-btn ${activeTab === 'saved' ? 'active' : ''}`}
-                onClick={() => setActiveTab('saved')}
+              <button
+                className={`tab-btn ${activeTab === "saved" ? "active" : ""}`}
+                onClick={() => setActiveTab("saved")}
               >
                 <Bookmark size={16} />
                 SAVED
               </button>
             )}
-            <button 
-              className={`tab-btn ${activeTab === 'friends' ? 'active' : ''}`}
-              onClick={() => setActiveTab('friends')}
+            <button
+              className={`tab-btn ${activeTab === "friends" ? "active" : ""}`}
+              onClick={() => setActiveTab("friends")}
             >
               <Users size={16} />
               FRIENDS
             </button>
             {isOwnProfile && (
-              <button 
-                className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
-                onClick={() => setActiveTab('settings')}
+              <button
+                className={`tab-btn ${activeTab === "settings" ? "active" : ""}`}
+                onClick={() => setActiveTab("settings")}
               >
                 <SettingsIcon size={16} />
                 SETTINGS
@@ -355,18 +426,20 @@ const ProfilePage = () => {
           </div>
 
           <div className="profile-feed-container">
-            {activeTab === 'activity' && (
+            {activeTab === "activity" && (
               <div className="activity-history">
                 <h4 className="feed-title">GAME MATCH HISTORY</h4>
                 <div className="empty-feed">
                   <History size={48} />
                   <p>NO MATCH DATA FOUND</p>
-                  <span>The subject has not participated in any recorded matches.</span>
+                  <span>
+                    The subject has not participated in any recorded matches.
+                  </span>
                 </div>
               </div>
             )}
 
-            {activeTab === 'posts' && (
+            {activeTab === "posts" && (
               <div className="posts-list">
                 <h4 className="feed-title">PUBLISHED POSTS</h4>
                 <div className="empty-feed">
@@ -377,7 +450,7 @@ const ProfilePage = () => {
               </div>
             )}
 
-            {activeTab === 'saved' && (
+            {activeTab === "saved" && (
               <div className="saved-posts">
                 <h4 className="feed-title">ARCHIVED / SAVED</h4>
                 <div className="empty-feed">
@@ -388,7 +461,7 @@ const ProfilePage = () => {
               </div>
             )}
 
-            {activeTab === 'friends' && (
+            {activeTab === "friends" && (
               <div className="friends-list">
                 <h4 className="feed-title">ACCOMPLICES / FRIENDS</h4>
                 <div className="empty-feed">
@@ -399,19 +472,23 @@ const ProfilePage = () => {
               </div>
             )}
 
-            {activeTab === 'settings' && isOwnProfile && (
+            {activeTab === "settings" && isOwnProfile && (
               <div className="profile-settings-section">
                 <h4 className="feed-title">ACCOUNT PREFERENCES</h4>
                 <div className="settings-grid">
                   <div className="settings-group">
-                    <label><UserCheck size={16} /> PROFILE DETAILS</label>
+                    <label>
+                      <UserCheck size={16} /> PROFILE DETAILS
+                    </label>
                     <div className="profile-edit-form">
                       <div className="form-group">
                         <label>Display Name</label>
-                        <input 
+                        <input
                           type="text"
                           value={newName}
-                          onChange={(e) => setNewName(e.target.value.slice(0, 100))}
+                          onChange={(e) =>
+                            setNewName(e.target.value.slice(0, 100))
+                          }
                           className="horror-input"
                           placeholder="Enter display name"
                           maxLength={100}
@@ -421,9 +498,11 @@ const ProfilePage = () => {
 
                       <div className="form-group">
                         <label>Bio</label>
-                        <textarea 
+                        <textarea
                           value={newBio}
-                          onChange={(e) => setNewBio(e.target.value.slice(0, 500))}
+                          onChange={(e) =>
+                            setNewBio(e.target.value.slice(0, 500))
+                          }
                           className="horror-input"
                           placeholder="Enter bio (optional)"
                           maxLength={500}
@@ -435,15 +514,17 @@ const ProfilePage = () => {
                       <div className="form-group">
                         <label>Avatar Upload</label>
                         <div className="avatar-upload-section">
-                          <input 
+                          <input
                             type="file"
                             accept="image/*"
                             onChange={handleAvatarFileChange}
                             className="file-input"
                             disabled={uploading}
                           />
-                          <span className="file-info">Supported: JPEG, PNG, GIF (Max 5MB)</span>
-                          
+                          <span className="file-info">
+                            Supported: JPEG, PNG, GIF (Max 5MB)
+                          </span>
+
                           {avatarPreview && (
                             <div className="avatar-preview">
                               <img src={avatarPreview} alt="Avatar preview" />
@@ -456,7 +537,7 @@ const ProfilePage = () => {
                               onClick={handleUploadAvatar}
                               disabled={uploading}
                             >
-                              {uploading ? 'UPLOADING...' : 'UPLOAD AVATAR'}
+                              {uploading ? "UPLOADING..." : "UPLOAD AVATAR"}
                             </button>
                           )}
                         </div>
@@ -464,7 +545,7 @@ const ProfilePage = () => {
 
                       <div className="form-group">
                         <label>Avatar URL (Alternative)</label>
-                        <input 
+                        <input
                           type="text"
                           value={newAvatar}
                           onChange={(e) => setNewAvatar(e.target.value)}
@@ -473,25 +554,29 @@ const ProfilePage = () => {
                         />
                         {newAvatar && !avatarFile && (
                           <div className="avatar-preview">
-                            <img src={newAvatar} alt="Avatar preview" onError={(e) => e.target.style.display = 'none'} />
+                            <img
+                              src={newAvatar}
+                              alt="Avatar preview"
+                              onError={(e) => (e.target.style.display = "none")}
+                            />
                           </div>
                         )}
                       </div>
 
                       <div className="form-actions">
-                        <button 
+                        <button
                           className="btn-horror"
                           onClick={handleUpdateProfile}
                           disabled={updating}
                         >
-                          {updating ? 'SAVING...' : 'SAVE CHANGES'}
+                          {updating ? "SAVING..." : "SAVE CHANGES"}
                         </button>
-                        <button 
+                        <button
                           className="btn-horror-outline"
                           onClick={() => {
                             setNewName(profileUser.fullname);
-                            setNewBio(profileUser.bio || '');
-                            setNewAvatar(profileUser.avatar || '');
+                            setNewBio(profileUser.bio || "");
+                            setNewAvatar(profileUser.avatar || "");
                           }}
                           disabled={updating}
                         >
@@ -500,23 +585,36 @@ const ProfilePage = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="settings-group">
-                    <label><Lock size={16} /> SECURITY</label>
-                    <button className="btn-horror-outline" onClick={() => navigate('/account/change-password')}>
+                    <label>
+                      <Lock size={16} /> SECURITY
+                    </label>
+                    <button
+                      className="btn-horror-outline"
+                      onClick={() => navigate("/account/change-password")}
+                    >
                       CHANGE PASSWORD
                     </button>
-                    <button className="btn-horror-outline" onClick={() => navigate('/forgot-password')}>
+                    <button
+                      className="btn-horror-outline"
+                      onClick={() => navigate("/forgot-password")}
+                    >
                       FORGOT PASSWORD?
                     </button>
                   </div>
-                  
+
                   <div className="settings-group">
-                    <label><Shield size={16} /> PRIVACY</label>
+                    <label>
+                      <Shield size={16} /> PRIVACY
+                    </label>
                     <div className="setting-toggle">
                       <span>Show email to others</span>
-                      <button className={`toggle-btn ${profileUser.emailVisibility ? 'on' : 'off'}`} onClick={toggleEmailVisibility}>
-                        {profileUser.emailVisibility ? 'ENABLED' : 'DISABLED'}
+                      <button
+                        className={`toggle-btn ${profileUser.emailVisibility ? "on" : "off"}`}
+                        onClick={toggleEmailVisibility}
+                      >
+                        {profileUser.emailVisibility ? "ENABLED" : "DISABLED"}
                       </button>
                     </div>
                   </div>

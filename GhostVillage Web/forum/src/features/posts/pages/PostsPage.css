@@ -31,7 +31,7 @@
 .floating-create-btn {
   position: fixed;
   bottom: 32px;
-  right: calc((100vw - 680px) / 2 - 240px);
+  right: 32px;
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -85,35 +85,57 @@
 .category-tabs {
   width: 100%;
   margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.category-tabs .d-flex {
+  gap: 0;
 }
 
 .category-tab-btn {
-  padding: 8px 14px;
-  font-weight: 500;
-  border-radius: 6px;
-  transition: all 0.15s;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  padding: 12px 15px;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  text-transform: uppercase;
+  font-size: 12px;
+  transition: all 0.2s ease;
   white-space: nowrap;
-  font-size: 13px;
-  min-width: 0;
+}
+
+.category-tab-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .category-tab-btn.btn-primary {
-  background: var(--accent-color);
-  border-color: var(--accent-color);
-  color: #000000;
+  color: var(--text-primary);
+  background: none;
+}
+
+.category-tab-btn.btn-primary::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--text-primary);
+  box-shadow: 0 0 10px var(--text-primary);
 }
 
 .category-tab-btn.btn-outline-secondary {
-  background: var(--card-bg);
-  border-color: var(--border-color);
+  background: none;
+  border: none;
   color: var(--text-secondary);
 }
 
 .category-tab-btn.btn-outline-secondary:hover {
-  background: var(--hover-bg);
-  border-color: var(--border-hover);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text-primary);
-  transform: translateY(-1px);
 }
 
 .no-posts {
@@ -121,6 +143,33 @@
   border-radius: 12px;
   padding: 60px 20px;
   border: 1px solid var(--border-color);
+}
+
+.empty-feed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  color: var(--text-secondary);
+}
+
+.empty-feed svg {
+  color: var(--text-tertiary);
+  opacity: 0.5;
+}
+
+.empty-feed p {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.empty-feed span {
+  font-size: 14px;
+  color: var(--text-secondary);
 }
 
 .no-posts-text {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Spinner, Alert, Button } from 'react-bootstrap';
-import { Plus } from 'lucide-react';
+import { Plus, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { usePosts } from '../hooks/usePosts';
@@ -46,7 +46,13 @@ const PostsPage = () => {
   const posts = data?.data?.posts || [];
   const hasMore = data?.data?.pagination?.hasMore || false;
   
-  const categories = ['General', 'Discussion', 'Trading', 'Team Up', 'Bug Report'];
+  const categories = [
+    { key: 'General', label: t('posts.categories.general') },
+    { key: 'Discussion', label: t('posts.categories.discussion') },
+    { key: 'Trading', label: t('posts.categories.trading') },
+    { key: 'Team Up', label: t('posts.categories.teamUp') },
+    { key: 'Bug Report', label: t('posts.categories.bugReport') }
+  ];
 
   if (isLoading && page === 1) {
     return (
@@ -89,15 +95,15 @@ const PostsPage = () => {
               <div className="d-flex gap-2 flex-wrap justify-content-between">
                 {categories.map((category) => (
                   <Button
-                    key={category}
-                    variant={selectedCategory === category ? 'primary' : 'outline-secondary'}
+                    key={category.key}
+                    variant={selectedCategory === category.key ? 'primary' : 'outline-secondary'}
                     className="category-tab-btn flex-fill"
                     onClick={() => {
-                      setSelectedCategory(category);
+                      setSelectedCategory(category.key);
                       setPage(1);
                     }}
                   >
-                    {category}
+                    {category.label}
                   </Button>
                 ))}
               </div>
@@ -106,7 +112,11 @@ const PostsPage = () => {
             {/* Posts List */}
             {posts.length === 0 ? (
               <div className="no-posts text-center py-5">
-                <p className="no-posts-text mb-4">No posts yet. Be the first to create one!</p>
+                <div className="empty-feed">
+                  <FileText size={48} />
+                  <p>{t('posts.noPostsRecorded')}</p>
+                  <span>{t('posts.noPosts')}</span>
+                </div>
               </div>
             ) : (
               <>
@@ -128,10 +138,10 @@ const PostsPage = () => {
                           <div className="mini-blood-spinner">
                             <div className="mini-ring"></div>
                           </div>
-                          <span className="ms-2">Loading...</span>
+                          <span className="ms-2">{t('common.loading')}</span>
                         </>
                       ) : (
-                        'Load More'
+                        t('common.loadMore')
                       )}
                     </Button>
                   </div>
