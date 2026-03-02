@@ -11,10 +11,13 @@ import notificationRoutes from "./modules/forum/notifications/notificationRoutes
 import friendRoutes from "./modules/friend/web/friendRoutes.js";
 import messageRoutes from "./modules/message/web/messageRoutes.js";
 import playerRoutes from "./modules/player/playerRoutes.js";
+import profileRoutes from "./modules/profile/ProfileRoutes.js";
 import { loginGame } from "./modules/auth/game/authController.js";
 
 const router = express.Router();
 
+// --- Profile routes (MUST be top-level /api/profile) ---
+router.use("/profile", profileRoutes);
 /**
  * Central Route Loader
  * Mounts all feature routes

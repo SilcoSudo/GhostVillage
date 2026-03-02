@@ -52,6 +52,7 @@ namespace Game.Core.Network
             }
 
             PhotonNetwork.NickName = nickName;
+            PhotonNetwork.AuthValues = new AuthenticationValues(Guid.NewGuid().ToString());
             PhotonNetwork.PhotonServerSettings.AppSettings.AppVersion = "1.0";
             PhotonNetwork.AutomaticallySyncScene = true;
             PhotonNetwork.ConnectUsingSettings();
@@ -81,15 +82,25 @@ namespace Game.Core.Network
                 return;
             }
 
-            if (PhotonNetwork.InLobby)
+            // TƯ DUY KỸ: Chỉ JoinLobby khi trạng thái là ConnectedAndReady
+            if (PhotonNetwork.IsConnectedAndReady)
             {
-                Debug.Log("[Photon] Already in Lobby. Refreshing UI.");
-                OnHallwayJoined?.Invoke();
-                RefreshUIFromCache();
-                return;
+                if (PhotonNetwork.InLobby)
+                {
+                    OnHallwayJoined?.Invoke();
+                    RefreshUIFromCache();
+                }
+                else
+                {
+                    PhotonNetwork.JoinLobby(TypedLobby.Default);
+                }
             }
-
-            if (PhotonNetwork.IsConnected) PhotonNetwork.JoinLobby(TypedLobby.Default);
+            else
+            {
+                // Nếu chưa sẵn sàng (đang Authenticating), log lại để theo dõi
+                Debug.LogWarning("[Photon] Chưa sẵn sàng để JoinLobby. Đang ở trạng thái: " + PhotonNetwork.NetworkClientState);
+                // Photon sẽ tự động gọi OnConnectedToMaster khi xong, lúc đó ta mới JoinLobby (đã có trong callback của bạn)
+            }
         }
 
         /// <summary>
@@ -122,7 +133,7 @@ namespace Game.Core.Network
         public override void OnLeftRoom()
         {
             Debug.Log("[Photon] Left room. Re-joining lobby.");
-            PhotonNetwork.JoinLobby(TypedLobby.Default);
+            UnityEngine.SceneManagement.SceneManager.LoadScene("LobbyListScene");
         }
 
         /// <summary>
