@@ -12,7 +12,7 @@ public class PlayerSpawner : MonoBehaviour
     public void SpawnLocalPlayer(MapDataManager mapData)
     {
         // 1. Xin danh sách điểm spawn người chơi từ MapData
-        List<Transform> spawnPoints = mapData.GetSpawnPoints("SP_Player");
+        List<Transform> spawnPoints = mapData.GetSpawnPointsByTag("SP_Player");
 
         if (PhotonNetwork.IsConnectedAndReady && spawnPoints.Count > 0)
         {

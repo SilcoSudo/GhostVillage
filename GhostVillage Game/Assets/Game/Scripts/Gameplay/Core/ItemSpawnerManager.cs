@@ -2,78 +2,104 @@ using UnityEngine;
 using Photon.Pun;
 using Game.Domain.Map.DTOs;
 using System.Collections.Generic;
+using System.Linq;
+using Game.Core.Database; // Thêm namespace này
 
 public class ItemSpawnerManager : MonoBehaviour
 {
-    public void SpawnItems(ConsumableConfigDTO config, MapDataManager mapData)
+    public void SpawnItems(MapConfigDTO config, MapDataManager mapData, GameResourceDatabaseSO resourceDB)
     {
         if (!PhotonNetwork.IsMasterClient) return;
 
-        Debug.Log("<color=green>[ItemSpawner]</color> Bắt đầu rải Item (Logic không trùng lặp)...");
+        Debug.Log("<color=green>[ItemSpawner]</color> Bắt đầu rải Item & Equipment...");
 
-        // --- 1. CHUẨN BỊ POOL VỊ TRÍ (Tạo bản sao để xóa dần) ---
-        // Lấy toàn bộ điểm Fixed và Random vào list tạm thời để quản lý việc "đã dùng rồi"
-        List<Transform> availableFixPoints = new List<Transform>(mapData.GetSpawnPoints("SP_Item_Fix"));
-        List<Transform> availableRandPoints = new List<Transform>(mapData.GetSpawnPoints("SP_Item_Rand"));
-
-        // --- 2. SPAWN MANDATORY ITEMS (Vào Fix Points) ---
-        foreach (var item in config.mandatoryItems)
+        // --- 1. SPAWN MANDATORY CONSUMABLES ---
+        if (config.consumableConfig?.mandatoryItems != null)
         {
-            int count = Random.Range(item.minCount, item.maxCount + 1);
-            Debug.Log($"[Spawner] Cần spawn cố định {count} cái {item.itemId}");
+            List<string> shuffledPoints = config.consumableConfig.spawnPointIds.OrderBy(x => Random.value).ToList();
+            int pointIndex = 0;
 
-            for (int i = 0; i < count; i++)
+            foreach (var item in config.consumableConfig.mandatoryItems)
             {
-                // Gọi hàm Spawn thông minh: Tự chọn và XÓA vị trí khỏi list
-                SpawnUnique(item.itemId, availableFixPoints, "SP_Item_Fix");
+                int count = Random.Range(item.minCount, item.maxCount + 1);
+                for (int i = 0; i < count; i++)
+                {
+                    if (pointIndex >= shuffledPoints.Count) break;
+                    SpawnUnique(item.itemId, shuffledPoints[pointIndex], mapData, resourceDB);
+                    pointIndex++;
+                }
             }
         }
 
-        // --- 3. SPAWN RANDOM POOL (Vào Random Points) ---
-        int poolCount = Random.Range(config.randomPoolConfig.minCount, config.randomPoolConfig.maxCount + 1);
-        Debug.Log($"[Spawner] Cần spawn ngẫu nhiên {poolCount} món từ Pool");
+        // --- 2. SPAWN MANDATORY EQUIPMENT ---
+        if (config.equipmentConfig?.mandatoryEquipment != null)
+        {
+            List<string> shuffledEquipPoints = config.equipmentConfig.spawnPointIds.OrderBy(x => Random.value).ToList();
+            int equipPointIndex = 0;
+
+            foreach (var equip in config.equipmentConfig.mandatoryEquipment)
+            {
+                int count = Random.Range(equip.minCount, equip.maxCount + 1);
+                for (int i = 0; i < count; i++)
+                {
+                    if (equipPointIndex >= shuffledEquipPoints.Count) break;
+                    SpawnUnique(equip.itemId, shuffledEquipPoints[equipPointIndex], mapData, resourceDB);
+                    equipPointIndex++;
+                }
+            }
+        }
+
+        // --- 3. SPAWN RANDOM CONSUMABLES (Vào Tag SP_Item_Rand) ---
+        SpawnRandomPool(config.consumableConfig?.randomPoolConfig, "SP_Item_Rand", mapData, resourceDB);
+
+        // --- 4. SPAWN RANDOM EQUIPMENT (Vào Tag SP_Item_Equip) ---
+        SpawnRandomPool(config.equipmentConfig?.randomPoolConfig, "SP_Item_Equip", mapData, resourceDB);
+    }
+
+    private void SpawnRandomPool(RandomPoolConfigDTO randomConfig, string tag, MapDataManager mapData, GameResourceDatabaseSO resourceDB)
+    {
+        if (randomConfig == null || randomConfig.pool.Count == 0) return;
+
+        List<Transform> availablePoints = new List<Transform>(mapData.GetSpawnPointsByTag(tag));
+        int poolCount = Random.Range(randomConfig.minCount, randomConfig.maxCount + 1);
 
         for (int i = 0; i < poolCount; i++)
         {
-            string randomItemId = GetWeightedRandomItem(config.randomPoolConfig.pool);
+            if (availablePoints.Count == 0) break;
 
-            // Gọi hàm Spawn thông minh: Tự chọn và XÓA vị trí khỏi list
-            SpawnUnique(randomItemId, availableRandPoints, "SP_Item_Rand");
+            string randomItemId = GetWeightedRandomItem(randomConfig.pool);
+            int randIndex = Random.Range(0, availablePoints.Count);
+            Transform targetPoint = availablePoints[randIndex];
+
+            // Tìm Prefab trong Database
+            GameObject prefab = resourceDB.GetPrefabById(randomItemId);
+            if (prefab != null)
+            {
+                // Instantiate qua Photon bằng TÊN CỦA PREFAB (đã nằm trong thư mục Resources)
+                PhotonNetwork.InstantiateRoomObject(prefab.name, targetPoint.position, targetPoint.rotation);
+                Debug.Log($"---> Đã rải '{randomItemId}' ({prefab.name}) ngẫu nhiên tại '{targetPoint.name}'");
+            }
+            availablePoints.RemoveAt(randIndex);
         }
     }
 
-    /// <summary>
-    /// Hàm Spawn đảm bảo tính duy nhất.
-    /// Nó sẽ chọn ngẫu nhiên 1 điểm trong list, spawn đồ, rồi XÓA điểm đó khỏi list.
-    /// </summary>
-    private void SpawnUnique(string prefabName, List<Transform> availablePoints, string tagName)
+    private void SpawnUnique(string itemId, string pointId, MapDataManager mapData, GameResourceDatabaseSO resourceDB)
     {
-        // 1. Kiểm tra xem còn chỗ không
-        if (availablePoints == null || availablePoints.Count == 0)
+        Transform targetPoint = mapData.GetSpawnPointById(pointId);
+        GameObject prefab = resourceDB.GetPrefabById(itemId);
+
+        if (targetPoint != null && prefab != null)
         {
-            Debug.LogWarning($"⚠️ [ItemSpawner] Hết chỗ spawn cho tag '{tagName}'! Không thể đẻ thêm '{prefabName}'.");
-            return;
+            PhotonNetwork.InstantiateRoomObject(prefab.name, targetPoint.position, targetPoint.rotation);
+            Debug.Log($"---> Đã spawn '{itemId}' tại '{pointId}'");
         }
-
-        // 2. Chọn ngẫu nhiên index
-        int randomIndex = Random.Range(0, availablePoints.Count);
-        Transform targetPoint = availablePoints[randomIndex];
-
-        // 3. Spawn đồ
-        PhotonNetwork.InstantiateRoomObject(prefabName, targetPoint.position, targetPoint.rotation);
-        Debug.Log($"---> Đã spawn '{prefabName}' tại '{targetPoint.name}' (Tag: {tagName})");
-
-        // 4. [QUAN TRỌNG NHẤT] Xóa điểm này khỏi danh sách để không dùng lại
-        availablePoints.RemoveAt(randomIndex);
     }
 
     private string GetWeightedRandomItem(List<ItemWeightDTO> pool)
     {
         if (pool == null || pool.Count == 0) return "";
-
         int totalWeight = 0;
         foreach (var i in pool) totalWeight += i.weight;
-
         int randomValue = Random.Range(0, totalWeight);
         foreach (var i in pool)
         {
