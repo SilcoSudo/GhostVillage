@@ -31,9 +31,8 @@ namespace Game.Core.Network.API
             public bool success;
             public T data;
             public string error;
+            public string message;
         }
-
-
 
         // 3. Hàm GET Generic
         public async UniTask<T> GetAsync<T>(string endpoint)
@@ -84,7 +83,53 @@ namespace Game.Core.Network.API
                 }
             }
         }
+        
+        /// <summary>
+        /// Thực hiện gửi yêu cầu GET kèm mã xác thực (JWT Token).
+        /// Thường dùng cho các API lấy dữ liệu cá nhân như Profile, Lịch sử đấu, Thành tựu.
+        /// </summary>
+        /// <typeparam name="T">Kiểu dữ liệu mong muốn nhận về (Entity hoặc DTO)</typeparam>
+        /// <param name="endpoint">Đường dẫn API (Ví dụ: "/api/game/player/profile")</param>
+        /// <param name="token">Mã JWT Token lấy từ PlayerPrefs hoặc AuthService</param>
+        /// <returns>Trả về dữ liệu kiểu T nếu thành công, ngược lại trả về default</returns>
+        public async UniTask<T> GetAsyncWithAuth<T>(string endpoint, string token)
+        {
+            string url = $"{_baseUrl.TrimEnd('/')}/{endpoint.TrimStart('/')}";
+            using var request = UnityWebRequest.Get(url);
+            request.SetRequestHeader("Authorization", $"Bearer {token.Trim()}");
 
+            try 
+            {
+                await request.SendWebRequest();
+                string jsonResponse = request.downloadHandler.text;
+
+                // BƯỚC 1: Parse lớp vỏ success trước để kiểm tra
+                var baseResponse = JsonUtility.FromJson<ResponseWrapper<string>>(jsonResponse);
+                if (baseResponse == null || !baseResponse.success) return default;
+
+                // BƯỚC 2: "Bóc" lấy nội dung bên trong trường 'data' và parse riêng
+                // Vì JsonUtility yếu với Generics, ta cần parse thẳng vào kiểu T
+                string dataJson = ExtractDataField(jsonResponse); 
+                return JsonUtility.FromJson<T>(dataJson);
+            }
+            catch (Exception e) {
+                Debug.LogError($"[API Error] {e.Message}");
+                return default;
+            }
+        }
+
+        // Hàm hỗ trợ bóc tách trường "data" từ JSON thô
+        private string ExtractDataField(string json)
+        {
+            // Tìm vị trí của "data": và bóc nội dung sau đó
+            int dataIdx = json.IndexOf("\"data\":");
+            if (dataIdx == -1) return "{}";
+            
+            int start = dataIdx + 7;
+            int end = json.LastIndexOf("}") ;
+            return json.Substring(start, end - start);
+        }
+        
         // Hàm POST Generic (Thêm đoạn này vào)
         public async UniTask<T> PostAsync<T>(string endpoint, string jsonBody)
         {

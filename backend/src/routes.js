@@ -22,8 +22,6 @@ import moonEventGameRoutes from "./modules/moonEvent/gameRoutes.js";
 
 const router = express.Router();
 
-// --- Profile routes (MUST be top-level /api/profile) ---
-router.use("/profile", profileRoutes);
 /**
  * Central Route Loader
  * Mounts all feature routes

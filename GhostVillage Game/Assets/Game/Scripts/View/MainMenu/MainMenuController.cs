@@ -136,6 +136,13 @@ namespace Game.UI.MainMenu
             // Chuyển sang scene xem danh sách
             _sceneLoader.LoadSceneAsync("LobbyListScene");
         }
+        
+        // Gắn vào Profile
+        public void OpenProfileScene() 
+        {
+            // Chuyển sang scene Profile
+            _sceneLoader.LoadSceneAsync("ProfileScene");
+        }
 
         // Gắn vào nút "Test Host" (Nút ảo để test)
         public void OnDebugCreateRoomClick()
