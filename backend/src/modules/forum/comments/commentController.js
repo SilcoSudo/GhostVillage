@@ -1,4 +1,6 @@
 import * as commentService from "./commentService.js";
+import NotificationService from "../notifications/notificationService.js";
+import Post from "../posts/postModel.js";
 
 const serializeComment = (comment, userId = null) => {
   const c = comment?.toObject ? comment.toObject() : comment;
@@ -99,6 +101,40 @@ export const createComment = async (req, res, next) => {
     });
 
     const userId = req.user?._id || null;
+
+    // Send notification to post owner or comment owner
+    try {
+      const User = (await import("../../user/userModel.js")).default;
+      const currentUser = await User.findById(authorId);
+      const io = req.app.get("io");
+
+      if (parentId) {
+        // Reply to a comment - notify the parent comment author
+        const parentComment = await commentService.getCommentById(parentId);
+        if (parentComment && String(parentComment.author) !== String(authorId)) {
+          await NotificationService.createCommentRepliedNotification(
+            currentUser,
+            parentComment.author,
+            postId,
+            parentId,
+            io
+          );
+        }
+      } else {
+        // Top-level comment - notify the post owner
+        const post = await Post.findById(postId);
+        if (post && String(post.author) !== String(authorId)) {
+          await NotificationService.createPostCommentedNotification(
+            currentUser,
+            post.author,
+            postId,
+            io
+          );
+        }
+      }
+    } catch (notifError) {
+      console.error("Error sending comment notification:", notifError);
+    }
 
     return res.status(201).json({
       success: true,

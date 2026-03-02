@@ -131,6 +131,34 @@ export const authService = {
       };
     }
   },
+
+  getGoogleAuthUrl: async () => {
+    try {
+      const response = await api.get("/web/auth/google");
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || "Failed to get Google auth URL",
+      };
+    }
+  },
+
+  completeProfile: async (dateOfBirth, password) => {
+    try {
+      const response = await api.post("/web/auth/complete-profile", {
+        dateOfBirth,
+        password,
+      });
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to complete profile",
+      };
+    }
+  },
 };
 
 export default authService;

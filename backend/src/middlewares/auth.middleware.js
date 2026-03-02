@@ -109,3 +109,35 @@ export const authorize = (...roles) => {
     next();
   };
 };
+/**
+ * Socket.IO Middleware: Authenticate Socket Connection
+ * Verifies JWT token for WebSocket connection
+ */
+export const authenticateSocket = async (socket, next) => {
+  try {
+    const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return next(new Error("No token provided"));
+    }
+
+    // Verify JWT
+    const decoded = jwt.verify(token, config.jwt.secret);
+
+    // Fetch user from database
+    const user = await User.findById(decoded.userId).select("-password");
+
+    if (!user) {
+      return next(new Error("User not found"));
+    }
+
+    // Attach userId to socket object
+    socket.userId = user._id;
+    socket.user = user;
+
+    next();
+  } catch (error) {
+    console.error("Socket authentication error:", error.message);
+    next(new Error("Socket authentication failed"));
+  }
+};

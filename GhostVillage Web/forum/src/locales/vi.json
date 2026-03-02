@@ -33,6 +33,44 @@
     "following": "Đang theo dõi"
   },
   "common": {
-    "logout": "Đăng Xuất"
+    "logout": "Đăng Xuất",
+    "loading": "Đang tải...",
+    "error": "Lỗi",
+    "retry": "Thử lại",
+    "loadMore": "Tải thêm",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "delete": "Xóa",
+    "edit": "Sửa"
+  },
+  "posts": {
+    "title": "Bài viết",
+    "createPost": "Tạo bài viết",
+    "noPosts": "Chưa có bài viết nào. Hãy là người đầu tiên tạo bài!",
+    "noPostsRecorded": "CHƯA CÓ BÀI VIẾT",
+    "loadingPosts": "Đang tải bài viết...",
+    "categories": {
+      "general": "Chung",
+      "discussion": "Thảo luận",
+      "trading": "Trao đổi",
+      "teamUp": "Tìm đồng đội",
+      "bugReport": "Báo lỗi"
+    }
+  },
+  "post": {
+    "create": {
+      "title": "Tạo bài viết mới",
+      "titlePlaceholder": "Nhập tiêu đề bài viết...",
+      "category": "Danh mục",
+      "contentPlaceholder": "Viết nội dung bài viết của bạn...",
+      "contentCounter": "ký tự",
+      "creatingButton": "Đang tạo...",
+      "addButton": "Thêm"
+    },
+    "edit": {
+      "title": "Chỉnh sửa bài viết",
+      "savingButton": "Đang lưu...",
+      "saveButton": "Lưu"
+    }
   }
 }

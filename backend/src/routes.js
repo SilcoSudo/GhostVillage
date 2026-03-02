@@ -7,6 +7,9 @@ import postRoutes from "./modules/forum/posts/postRoutes.js";
 import wikiRoutes from "./modules/forum/wiki/wikiRoutes.js";
 import announcementRoutes from "./modules/forum/announcement/announcementRoutes.js";
 import searchRoutes from "./modules/forum/search/searchRoutes.js";
+import notificationRoutes from "./modules/forum/notifications/notificationRoutes.js";
+import friendRoutes from "./modules/friend/web/friendRoutes.js";
+import messageRoutes from "./modules/message/web/messageRoutes.js";
 import playerRoutes from "./modules/player/playerRoutes.js";
 import { loginGame } from "./modules/auth/game/authController.js";
 
@@ -26,6 +29,9 @@ webRoutes.use("/forum", postRoutes);
 webRoutes.use("/wiki", wikiRoutes);
 webRoutes.use("/announcement", announcementRoutes);
 webRoutes.use("/search", searchRoutes);
+webRoutes.use("/notifications", notificationRoutes);
+webRoutes.use("/friend", friendRoutes);
+webRoutes.use("/message", messageRoutes);
 router.use("/web", webRoutes);
 
 // --- HUNG'S GAME LOGIN LOGIC START ---

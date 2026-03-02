@@ -18,6 +18,37 @@
   border-color: var(--accent-color);
 }
 
+.comment-avatar-fallback {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--border-color);
+  background-color: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  transition: border-color 0.2s;
+}
+
+.comment-item:hover .comment-avatar-fallback {
+  border-color: var(--accent-color);
+}
+
+.reply-avatar-fallback {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--border-color);
+  background-color: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
 .comment-content-wrapper {
   flex: 1;
   min-width: 0;
@@ -90,7 +121,9 @@
   border: none;
   background: none;
   opacity: 0.6;
-  transition: opacity 0.2s, color 0.2s;
+  transition:
+    opacity 0.2s,
+    color 0.2s;
 }
 
 .comment-item:hover .comment-menu .dropdown-toggle {
@@ -167,8 +200,9 @@
   background-color: var(--card-bg);
   border: 2px solid var(--border-color);
   border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), 
-              0 0 15px rgba(122, 0, 0, 0.3);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.8),
+    0 0 15px rgba(122, 0, 0, 0.3);
   backdrop-filter: blur(10px);
   margin-top: 8px;
 }
@@ -293,7 +327,9 @@
   background: transparent !important;
   border: none !important;
   text-decoration: none !important;
-  transition: color 0.2s, transform 0.2s;
+  transition:
+    color 0.2s,
+    transform 0.2s;
 }
 
 .reply-send-btn:hover:not(:disabled) {

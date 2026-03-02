@@ -26,6 +26,10 @@ export const getComments = async (postId, { parentId = null } = {}) => {
   return comments;
 };
 
+export const getCommentById = async (commentId) => {
+  return await Comment.findById(commentId).populate("author", "fullname avatar");
+};
+
 export const createComment = async ({
   postId,
   authorId,

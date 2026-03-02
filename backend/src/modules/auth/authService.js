@@ -14,9 +14,9 @@ import Player from "../player/playerModel.js";
  * Handles validation, password hashing, and token generation
  */
 
-const generateToken = (userId, rememberMe = false) => {
+const generateToken = (userId, role, rememberMe = false) => {
   const expiresIn = rememberMe ? "30d" : "1d"; // 30 days if remember me, else 1 day
-  return jwt.sign({ userId }, config.jwt.secret, {
+  return jwt.sign({ userId, role }, config.jwt.secret, {
     expiresIn,
   });
 };
@@ -27,25 +27,6 @@ export const AuthService = {
    */
   // Register new user (do NOT save to DB yet) - send verification email
   register: async (email, fullname, password, dateOfBirth) => {
-    // Age validation - must be at least 13 years old
-    const birthDate = new Date(dateOfBirth);
-    let age = new Date().getFullYear() - birthDate.getFullYear();
-    const month = new Date().getMonth() - birthDate.getMonth();
-    if (month < 0 || (month === 0 && new Date().getDate() < birthDate.getDate())) {
-      age--;
-    }
-    if (age < 13) {
-      throw new Error("User must be at least 13 years old");
-    }
-
-    // password strength validation
-    const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
-    if (!pwdRegex.test(password)) {
-      throw new Error(
-        "Password must be at least 8 characters and include uppercase, lowercase and a special character",
-      );
-    }
-
     // Check for existing user
     const existingUser = await userModel.findOne({
       email: email.toLowerCase(),
@@ -97,13 +78,13 @@ export const AuthService = {
     )}/verify-email?token=${rawToken}`;
     await MailService.sendVerificationEmail(email, verificationLink);
 
-    return { sent: true };
+    return { success: true };
   },
 
   /**
    * WEB: Complete registration from verification token (one-time use)
    */
-  completeRegistration: async (token) => {
+  completeRegistration: async (token, rememberMe = false) => {
     try {
       // Hash the opaque token
       const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
@@ -127,7 +108,7 @@ export const AuthService = {
       user.verificationTokenHash = null;
       await user.save();
 
-      const authToken = generateToken(user._id, false);
+      const authToken = generateToken(user._id, user.role, rememberMe);
       return { token: authToken, user: user.toJSON() };
     } catch (err) {
       throw new Error(err.message || "Invalid or expired token");
@@ -201,7 +182,7 @@ export const AuthService = {
       throw new Error("ACCOUNT_NOT_VERIFIED");
     }
 
-    const token = generateToken(user._id, rememberMe);
+    const token = generateToken(user._id, user.role, rememberMe);
 
     return {
       token,
@@ -334,14 +315,6 @@ export const AuthService = {
    * Uses separate reset password token fields
    */
   resetPassword: async (token, newPassword) => {
-    // Validate password strength
-    const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
-    if (!pwdRegex.test(newPassword)) {
-      throw new Error(
-        "Password must be at least 8 characters and include uppercase, lowercase and a special character",
-      );
-    }
-
     // Hash the opaque token
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
@@ -358,7 +331,7 @@ export const AuthService = {
 
     // Update password
     user.password = newPassword;
-    
+
     // Clean up reset token
     user.resetPasswordTokenHash = null;
     user.resetPasswordExpires = null;
@@ -399,8 +372,25 @@ export const AuthService = {
       });
     }
 
-    const token = generateToken(user._id, true); // Remember me = true for OAuth
+    const token = generateToken(user._id, user.role, true); // Remember me = true for OAuth
     return { token, user: user.toJSON() };
+  },
+
+  /**
+   * WEB: Complete OAuth user profile (add password + dateOfBirth)
+   */
+  completeProfile: async (userId, dateOfBirth, password) => {
+    const user = await userModel.findById(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    user.dateOfBirth = new Date(dateOfBirth);
+    user.password = password; // Will be hashed by pre-save hook
+
+    await user.save();
+
+    return user;
   },
 };
 

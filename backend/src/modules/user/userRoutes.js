@@ -1,8 +1,15 @@
-import express from 'express';
-import { getMyProfile, getUserIdProfile, updateMyProfile, updateName, toggleEmailVisibility, uploadAvatar } from './userController.js';
-import { authMiddleware } from '../../middlewares/auth.middleware.js';
-import { uploadAvatar as uploadAvatarMiddleware } from '../../middlewares/uploadMiddleware.js';
-import { getSavedPosts, completeProfile } from "./userController.js";
+import express from "express";
+import {
+  getMyProfile,
+  getUserIdProfile,
+  updateMyProfile,
+  updateName,
+  toggleEmailVisibility,
+  uploadAvatar,
+} from "./userController.js";
+import { authMiddleware } from "../../middlewares/auth.middleware.js";
+import { uploadAvatar as uploadAvatarMiddleware } from "../../middlewares/uploadMiddleware.js";
+import { getSavedPosts } from "./userController.js";
 
 const router = express.Router();
 
@@ -16,14 +23,22 @@ const router = express.Router();
  * PUT  /api/web/user/profile/toggle-email    - Toggle email visibility (auth required)
  */
 
-router.get('/profile/me', authMiddleware, getMyProfile);
-router.get('/profile/:id', getUserIdProfile);
-router.put('/profile/me', authMiddleware, updateMyProfile);
-router.post('/avatar/upload', authMiddleware, uploadAvatarMiddleware, uploadAvatar);
-router.put('/profile/update-name', authMiddleware, updateName);
-router.put('/profile/toggle-email-visibility', authMiddleware, toggleEmailVisibility);
+router.get("/profile/me", authMiddleware, getMyProfile);
+router.get("/profile/:id", getUserIdProfile);
+router.put("/profile/me", authMiddleware, updateMyProfile);
+router.post(
+  "/avatar/upload",
+  authMiddleware,
+  uploadAvatarMiddleware,
+  uploadAvatar,
+);
+router.put("/profile/update-name", authMiddleware, updateName);
+router.put(
+  "/profile/toggle-email-visibility",
+  authMiddleware,
+  toggleEmailVisibility,
+);
 router.get("/saved-posts", authMiddleware, getSavedPosts);
-router.post("/complete-profile", authMiddleware, completeProfile);
 
 // TODO: Implement other user routes
 // router.get('/profile', getUserProfile);
