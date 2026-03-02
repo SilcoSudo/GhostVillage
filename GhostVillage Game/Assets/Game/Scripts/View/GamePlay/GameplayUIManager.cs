@@ -76,18 +76,40 @@ public class GameplayUIManager : MonoBehaviourPunCallbacks
     private void OnExitMatchClicked()
     {
         ShowEscMenu(false);
-        PhotonNetwork.LeaveRoom();
+        PhotonNetwork.AutomaticallySyncScene = false;
+        if (PhotonNetwork.InRoom)
+        {
+            PlayerPrefs.SetString("TargetSceneAfterLeave", "LobbyListScene"); // Sửa thành LobbyListScene
+            PhotonNetwork.LeaveRoom();
+        }
     }
 
-    public override void OnLeftRoom()
+    // --- INTERACTION UI LOGIC ---
+    public override void OnEnable()
     {
-        // Khi thoát phòng (do bấm Exit hoặc do GameResultUI gọi)
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        base.OnEnable(); // BẮT BUỘC PHẢI CÓ ĐỂ PHOTON HOẠT ĐỘNG
+        // Khi UI được bật, đăng ký nghe sự kiện Raycast
+        InteractionEvents.OnInteractHover += HandleInteractHover;
+    }
 
-        if (_sceneLoader != null)
-            _sceneLoader.LoadSceneAsync("LobbyListScene").Forget();
-        else
-            UnityEngine.SceneManagement.SceneManager.LoadScene("LobbyListScene");
+    public override void OnDisable()
+    {
+        base.OnDisable(); // BẮT BUỘC PHẢI CÓ ĐỂ PHOTON HOẠT ĐỘNG
+        // Hủy đăng ký khi UI bị tắt để tránh lỗi Memory Leak
+        InteractionEvents.OnInteractHover -= HandleInteractHover;
+    }
+
+    // Hàm này sẽ được gọi mỗi khi Player nhìn vào vật phẩm
+    private void HandleInteractHover(string prompt, bool isHovering)
+    {
+        if (interactPanel != null)
+        {
+            interactPanel.SetActive(isHovering);
+
+            if (isHovering && interactText != null)
+            {
+                interactText.text = prompt;
+            }
+        }
     }
 }

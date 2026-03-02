@@ -20,5 +20,31 @@ namespace Game.Scripts.Gameplay.Core
         public static Action OnLocalPlayerRequestEscape;
         public static Action<int, PlayerMatchStatus> OnPlayerStatusChanged;
         public static Action<Dictionary<int, PlayerMatchStatus>> OnGameMatchEnded;
+
+        // --- TRACKING EVENTS (Cho MatchStatisticManager lắng nghe) ---
+
+        // (actorNumber của người giải đố)
+        public static Action<int> OnPlayerSolvedPuzzle;
+
+        // (actorNumber của người nhặt)
+        public static Action<int> OnPlayerLootedItem;
+
+        // (healerActorNumber, knockedActorNumber)
+        public static Action<int, int> OnPlayerRescued;
+
+        // (actorNumber của người bị nock)
+        public static Action<int> OnPlayerKnocked;
+
+        // (killerActorNumber)
+        public static Action<int> OnSmallMonsterKilled;
+
+        // (actorNumber của người bị boss dí)
+        public static Action<int> OnBossTargetedPlayer;
+
+        // (actorNumber của người hét)
+        public static Action<int> OnPlayerScreamed;
+
+        // (actorNumber của người gom key item)
+        public static Action<int> OnKeyItemGathered;
     }
 }

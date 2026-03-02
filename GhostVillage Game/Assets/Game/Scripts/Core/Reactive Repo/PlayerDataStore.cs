@@ -8,6 +8,7 @@ namespace Game.Core.ReactiveRepo
     {
         // Sử dụng ReactiveProperty để UI tự nhảy số khi thay đổi
         public readonly ReactiveProperty<string> DisplayName = new("");
+        public readonly ReactiveProperty<string> AuthToken = new("");  // ✅ Token từ Backend
         public readonly ReactiveProperty<int> Level = new(1);
         public readonly ReactiveProperty<int> Coins = new(0);
         public readonly ReactiveProperty<string> AvatarId = new("");
@@ -20,6 +21,9 @@ namespace Game.Core.ReactiveRepo
         public void Initialize(LoginResponseDTO data)
         {
             if (data?.player?.profile == null) return;
+
+            // ✅ LƯU TOKEN TỪ BACKEND
+            AuthToken.Value = data.token ?? "";
 
             var profile = data.player.profile;
             DisplayName.Value = profile.displayName;
@@ -37,6 +41,7 @@ namespace Game.Core.ReactiveRepo
         public void Clear()
         {
             DisplayName.Value = "";
+            AuthToken.Value = "";  // ✅ Clear token on logout
             Coins.Value = 0;
             OwnedPerks.Value.Clear();
         }

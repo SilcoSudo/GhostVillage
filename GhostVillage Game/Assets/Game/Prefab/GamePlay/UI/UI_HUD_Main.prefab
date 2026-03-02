@@ -1796,7 +1796,7 @@ GameObject:
   - component: {fileID: 2412331637392005556}
   - component: {fileID: 4556677320857829687}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: Txt_WaitingHost
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3079,7 +3079,7 @@ CanvasGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8224882907524806790}
   m_Enabled: 1
-  m_Alpha: 0
+  m_Alpha: 1
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
@@ -3102,6 +3102,7 @@ MonoBehaviour:
   _rowPrefab: {fileID: 719774045527474688, guid: fbf450171e5d88c4dbef7a23bb3d13df, type: 3}
   _btnReturnLobby: {fileID: 2509855629525278595}
   _btnMainMenu: {fileID: 3172048823429203558}
+  _txtWaitingHost: {fileID: 4556677320857829687}
 --- !u!1 &8525200339695764722
 GameObject:
   m_ObjectHideFlags: 0

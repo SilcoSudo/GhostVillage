@@ -50,6 +50,44 @@ namespace Game.Scripts.UI.Lobby
                 // Wait for room connection and map data fetch
                 await UniTask.WhenAll(WaitForInRoom(), FetchLobbyResources());
 
+
+
+                // --- [LOGIC RESET] ---
+                if (PhotonNetwork.IsMasterClient)
+                {
+                    Debug.Log("[LobbyManager] Master: Dọn dẹp chiến trường cũ và Reset Room...");
+
+                    // 1. DỌN RÁC SCENE CŨ: Xóa tất cả các object có PhotonView (như Monster, Item) đã sinh ra ở scene trước
+                    // Lưu ý: Chỉ dùng hàm này nếu bạn chắc chắn Lobby không có các object cần thiết bị dính đạn.
+                    // Thường thì khi load scene, các object cũ tự hủy rồi, nhưng làm cái này để dọn dẹp các lệnh Instantiate còn kẹt trên server.
+                    PhotonNetwork.DestroyAll();
+
+                    // Dọn dẹp danh sách Event/RPC bị treo trên Server. 
+                    // Quan trọng: Nó xóa sạch Event đệm, giúp người mới vào không bị gọi lại đống đồ cũ.
+                    PhotonNetwork.RemoveRPCsInGroup(0); // Nếu bạn ko dùng Interest Group, mặc định là 0
+                                                        // PhotonNetwork.OpCleanRpcBuffer(photonView); // Hoặc dùng hàm này nếu có PhotonView cụ thể
+
+                    // 2. Mở lại phòng
+                    PhotonNetwork.CurrentRoom.IsOpen = true;
+                    PhotonNetwork.CurrentRoom.IsVisible = true;
+
+                    // 3. Reset các Custom Properties (Xóa State cũ)
+                    Hashtable resetProps = new Hashtable
+                {
+                    { "G_State", null }, 
+                    // { MAP_KEY, null } // Bỏ comment nếu muốn bắt chọn lại Map
+                };
+                    PhotonNetwork.CurrentRoom.SetCustomProperties(resetProps);
+
+                    // 4. Un-ready toàn bộ người chơi trong phòng
+                    foreach (var p in PhotonNetwork.PlayerList)
+                    {
+                        Hashtable unreadyProps = new Hashtable { { READY_KEY, false } };
+                        p.SetCustomProperties(unreadyProps);
+                    }
+                }
+                // ------------------------------------
+
                 // Sync initial state for late joiners
                 UpdateMapUIFromNetwork();
                 RefreshStartPrompt();

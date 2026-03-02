@@ -39,6 +39,7 @@ namespace Game.Scripts.Gameplay.Core
             builder.RegisterComponent(GetComponentInChildren<PuzzleSpawnerManager>());
             builder.RegisterComponent(GetComponentInChildren<PlayerSpawner>());
             builder.RegisterComponent(GetComponentInChildren<ObjectiveManager>());
+            builder.RegisterComponent(GetComponentInChildren<MatchStatisticManager>());
             builder.RegisterComponent(GetComponentInChildren<GameManager>());
 
             // 3. SERVICES (Nếu có service nào cần tạo mới hoặc override thì đăng ký ở đây)

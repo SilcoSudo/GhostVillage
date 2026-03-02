@@ -51,6 +51,7 @@ MonoBehaviour:
   - SyncPlayerStatusRPC
   - UpdatePlayerStatusRPC
   - RpcShowGameResult
+  - RPC_AddStat
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

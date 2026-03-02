@@ -24,6 +24,7 @@ public class GameResultUI : MonoBehaviour
     [Header("Buttons")]
     [SerializeField] private Button _btnReturnLobby;
     [SerializeField] private Button _btnMainMenu;
+    [SerializeField] private TextMeshProUGUI _txtWaitingHost;
 
     private CanvasGroup _canvasGroup;
     private ISceneLoaderService _sceneLoader;
@@ -56,46 +57,64 @@ public class GameResultUI : MonoBehaviour
         // 1. Bật Object lên trước
         gameObject.SetActive(true);
 
-        // --- Logic Hiển thị (Giữ nguyên) ---
+        // --- Logic Hiển thị ---
         bool isTeamWin = matchData.playerResults.Any(p => p.outcome == "ESCAPED");
 
         if (isTeamWin) { _txtTeamResult.text = "ĐỘI SỐNG SÓT"; _txtTeamResult.color = Color.green; }
         else { _txtTeamResult.text = "THẤT BẠI"; _txtTeamResult.color = Color.red; }
 
-        string timeStr = System.TimeSpan.FromSeconds(Mathf.Abs(matchData.durationSec)).ToString(@"mm\:ss"); // Fix số âm nếu có
+        string timeStr = System.TimeSpan.FromSeconds(Mathf.Abs(matchData.durationSec)).ToString(@"mm\:ss");
         _txtMapName.text = $"{matchData.mapId} | {timeStr}";
 
-        var myData = matchData.playerResults.Find(p => p.userId == localUserId);
+        string myNickname = PhotonNetwork.LocalPlayer.NickName;
+        var myData = matchData.playerResults.Find(p => p.nickname == myNickname);
+
         bool amIEscaped = myData != null && myData.outcome == "ESCAPED";
 
         if (amIEscaped) { _txtPersonalResult.text = "BẠN ĐÃ THOÁT!"; _txtPersonalResult.color = Color.cyan; }
         else { _txtPersonalResult.text = "BẠN ĐÃ BỊ BẮT!"; _txtPersonalResult.color = new Color(1f, 0.4f, 0.4f); }
 
         foreach (Transform child in _rowContainer) Destroy(child.gameObject);
+
         foreach (var p in matchData.playerResults)
         {
             var rowObj = Instantiate(_rowPrefab, _rowContainer);
             var script = rowObj.GetComponent<ResultRowUI>();
-            if (script) script.Setup(p.nickname, p.outcome, matchData.durationSec, p.rewards.exp, p.rewards.coin, p.titles, p.userId == localUserId);
+
+            // [FIX QUAN TRỌNG 2] Check isMe bằng nickname luôn để tên sáng màu Vàng
+            bool isMe = p.nickname == myNickname;
+
+            if (script) script.Setup(p.nickname, p.outcome, matchData.durationSec, p.rewards.exp, p.rewards.coin, p.titles, isMe);
         }
 
-        // 2. [FIX QUAN TRỌNG] Kiểm tra Active trước khi chạy Coroutine
-        // Nếu cha bị tắt, activeInHierarchy sẽ là false -> Chạy Coroutine sẽ crash game.
+        // --- [FIX QUAN TRỌNG CHỖ NÀY] PHÂN QUYỀN NÚT BẤM ---
+        if (PhotonNetwork.IsMasterClient)
+        {
+            // Nếu là Host: Hiện nút Về Lobby, tắt Text chờ
+            _btnReturnLobby.gameObject.SetActive(true);
+
+        }
+        else
+        {
+            // Nếu là Client: Tắt nút Về Lobby, hiện Text "Đang chờ Trưởng phòng..."
+            _btnReturnLobby.gameObject.SetActive(false);
+        }
+
+        // Nút MainMenu (Thoát game) thì ai cũng có quyền bấm
+        _btnMainMenu.gameObject.SetActive(true);
+
+        // 2. Kiểm tra Active trước khi chạy Coroutine
         if (gameObject.activeInHierarchy)
         {
             StartCoroutine(FadeInRoutine());
         }
         else
         {
-            // Fallback: Nếu không active trong hierarchy (do cha tắt), set luôn alpha = 1
-            // Để khi nào cha bật lên là thấy ngay
             _canvasGroup.alpha = 1;
             _canvasGroup.interactable = true;
             _canvasGroup.blocksRaycasts = true;
-            Debug.LogWarning("⚠️ GameResultUI bật active nhưng cha nó đang ẩn. Đã set Alpha = 1.");
         }
 
-        // Mở chuột
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
@@ -113,22 +132,41 @@ public class GameResultUI : MonoBehaviour
     {
         Debug.Log("Click: Quay lại phòng chờ (Giữ kết nối Photon)");
 
-        // 2. Chuyển Scene về lại LobbyListScene
-        // Lưu ý: Đảm bảo "LobbyListScene" có logic check: Nếu đã ở trong Room rồi thì hiện UI Room thay vì UI List.
-        if (_sceneLoader != null)
+        // KHI BẬT TÍNH NĂNG ĐỒNG BỘ SCENE CỦA PHOTON (AutomaticallySyncScene = true), 
+        // BẠN PHẢI DÙNG PHOTONNETWORK ĐỂ LOAD SCENE, KHÔNG DÙNG SCENE MANAGER HAY SCENE LOADER CỦA BẠN.
+
+        // _sceneLoader.LoadSceneAsync("LobbyGameScene").Forget();  <-- XOÁ DÒNG NÀY
+
+        if (PhotonNetwork.IsMasterClient)
         {
-            _sceneLoader.LoadSceneAsync("LobbyListScene").Forget();
-        }
-        else
-        {
-            UnityEngine.SceneManagement.SceneManager.LoadScene("LobbyListScene");
+            // Dọn dẹp túi đồ và trạng thái trước khi về
+            // (Nên bắn 1 Event để báo UI/Các hệ thống khác dọn dẹp nếu cần)
+
+            // Lệnh này sẽ yêu cầu TẤT CẢ mọi người trong phòng cùng load Scene Lobby
+            PhotonNetwork.LoadLevel("LobbyGameScene");
         }
     }
 
     private void OnMainMenuClicked()
     {
-        PhotonNetwork.Disconnect();
-        if (_sceneLoader != null) _sceneLoader.LoadSceneAsync("MainMenu").Forget();
-        else UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
+        // 1. Vô hiệu hóa nút để tránh bấm nhiều lần
+        _btnMainMenu.interactable = false;
+        _btnReturnLobby.interactable = false;
+
+        // 2. Tắt tự động đồng bộ Scene
+        PhotonNetwork.AutomaticallySyncScene = false;
+
+        // 3. Nếu đang trong phòng thì rời phòng, còn không thì về thẳng MainMenu
+        if (PhotonNetwork.InRoom)
+        {
+            // Báo cho PhotonNetworkManager biết mục tiêu sau khi LeaveRoom xong là về MainMenu
+            PlayerPrefs.SetString("TargetSceneAfterLeave", "MainMenu");
+            PhotonNetwork.LeaveRoom();
+        }
+        else
+        {
+            if (_sceneLoader != null) _sceneLoader.LoadSceneAsync("MainMenu").Forget();
+            else UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
+        }
     }
 }

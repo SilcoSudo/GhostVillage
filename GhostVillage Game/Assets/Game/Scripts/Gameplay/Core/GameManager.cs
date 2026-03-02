@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using ExitGames.Client.Photon;
 using Game.Domain.Map.DTOs;
 using Game.Scripts.Core.Game;
 using Game.Scripts.Gameplay.Core;
@@ -11,6 +10,7 @@ using Game.Domain.Match.Services;
 using Game.Domain.Match.DTO;
 using Cysharp.Threading.Tasks;
 using System.Collections;
+using Game.Scripts.Gameplay.Result;
 
 // Lưu ý: Đảm bảo bạn đã có các Enum và file GameplayEvents.cs như đã bàn trước đó
 public class GameManager : MonoBehaviourPunCallbacks
@@ -31,6 +31,10 @@ public class GameManager : MonoBehaviourPunCallbacks
     private ObjectiveManager _objectiveManager;
     private MatchDataService _matchDataService;
     private GameplayUIManager _uiManager;
+    private MatchStatisticManager _statisticManager;
+
+
+    private MatchRoute _currentMatchRoute = MatchRoute.Lose; // Mặc định là thua
 
     // VContainer sẽ tự động điền các biến này vào khi Prefab GameContext được khởi tạo
     [Inject]
@@ -42,7 +46,8 @@ public class GameManager : MonoBehaviourPunCallbacks
         PlayerSpawner playerSpawner,
         ObjectiveManager objectiveManager,
         MatchDataService matchDataService,
-        GameplayUIManager uiManager
+        GameplayUIManager uiManager,
+        MatchStatisticManager statisticManager
     )
     {
         _mapData = mapData;
@@ -53,6 +58,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         _objectiveManager = objectiveManager;
         _matchDataService = matchDataService;
         _uiManager = uiManager;
+        _statisticManager = statisticManager;
     }
 
     // --- UNITY LIFECYCLE ---
@@ -87,6 +93,17 @@ public class GameManager : MonoBehaviourPunCallbacks
         {
             Debug.LogError("❌ [GameManager] MapData chưa được Inject!");
         }
+
+        // [FIX QUAN TRỌNG] TẤT CẢ MỌI NGƯỜI ĐỀU PHẢI BẬT TRACKER
+        if (_statisticManager != null)
+        {
+            _statisticManager.InitializeTracker();
+        }
+        else
+        {
+            Debug.LogError("❌ [GameManager] MatchStatisticManager chưa được Inject!");
+        }
+
         // 2. Spawn World (Chỉ Master Client thực hiện để tránh trùng lặp)
         if (PhotonNetwork.IsMasterClient)
         {
@@ -221,54 +238,60 @@ public class GameManager : MonoBehaviourPunCallbacks
         yield return null;
     }
 
-    // Hàm tạo Mock Data nhanh để test
-    // Trong GameManager.cs
-
     private SaveMatchRequestDTO CreateMatchResultData()
     {
+        // 1. CHỐT SỔ! Tính toán Title cho tất cả mọi người
+        if (_statisticManager != null)
+        {
+            _statisticManager.CalculateFinalTitles();
+        }
+        else
+        {
+            Debug.LogError("❌ MatchStatisticManager chưa được Inject!");
+        }
+
         var endTime = System.DateTime.UtcNow;
-        // Fix: Đảm bảo thời gian có giá trị
-        string startStr = _matchStartTime == default ? endTime.AddMinutes(-10).ToString("o") : _matchStartTime.ToString("o");
+        // Nếu _matchStartTime chưa được set (do lỗi gì đó), thì mặc định lấy endTime trừ 1 phút cho an toàn, đỡ bị âm
+        if (_matchStartTime == default)
+            _matchStartTime = endTime.AddMinutes(-1);
+
+        // Tính khoảng thời gian bằng giây (luôn ra số dương)
+        int calculatedDuration = (int)(endTime - _matchStartTime).TotalSeconds;
+        calculatedDuration = Mathf.Max(0, calculatedDuration); // Đảm bảo không bao giờ âm
+
+        string startStr = _matchStartTime.ToString("o"); // Format ISO 8601
         string endStr = endTime.ToString("o");
 
         var dto = new SaveMatchRequestDTO
         {
-            // Fix: Map ID phải khớp Config DB
             mapId = _mapData.CurrentMapConfig != null ? _mapData.CurrentMapConfig.identityConfig.mapId : "MAP_01_ONG_KE",
-            // Fix: Session ID không được rỗng
             sessionId = PhotonNetwork.CurrentRoom != null ? PhotonNetwork.CurrentRoom.Name : "Room_Mock_" + Random.Range(100, 999),
             startTime = startStr,
             endTime = endStr,
-            durationSec = (int)(endTime - (System.DateTime.Parse(startStr))).TotalSeconds,
+            durationSec = calculatedDuration,
             playerResults = new List<PlayerResultRequestDTO>()
         };
 
         foreach (var p in PhotonNetwork.PlayerList)
         {
-            bool isMe = p.IsLocal;
+            // Lấy status từ list lưu ở Master
+            PlayerMatchStatus status = _playerStatuses.ContainsKey(p.ActorNumber) ? _playerStatuses[p.ActorNumber] : PlayerMatchStatus.Eliminated;
+            bool isWin = status == PlayerMatchStatus.Escaped; // Cập nhật logic thắng tùy theo yêu cầu của bạn
+            string outcome = isWin ? "ESCAPED" : "DEAD";
 
-            // [FIX QUAN TRỌNG] Mock ID phải chuẩn format MongoDB (24 ký tự hex)
-            // Nếu ID thật chưa có, dùng ID fake chuẩn format này:
-            string mockMongoID = "659d4b1e9d3e2a1b3c4d5e6f"; // ID Hùng (hoặc random ra)
-
-            // Logic lấy ID thật nếu có
+            string mockMongoID = "659d4b1e9d3e2a1b3c4d5e6f"; // [TODO] Đổi ID thật
             if (p.CustomProperties.ContainsKey("UserId"))
                 mockMongoID = (string)p.CustomProperties["UserId"];
 
-            dto.playerResults.Add(new PlayerResultRequestDTO
+            // 2. GỌI STATISTIC MANAGER ĐỂ LẤY KẾT QUẢ ĐÃ TÍNH TOÁN
+            if (_statisticManager != null)
             {
-                userId = mockMongoID,
-                nickname = p.NickName,
-                outcome = isMe ? "ESCAPED" : "DEAD",
-                isWin = isMe,
-                rewards = new MatchRewardDTO { exp = 1000, coin = 500 },
-                titles = new List<string>()
-            });
+                var playerResult = _statisticManager.GetFinalResultForPlayer(p, mockMongoID, isWin, outcome, _currentMatchRoute);
+                dto.playerResults.Add(playerResult);
+            }
         }
         return dto;
     }
-
-    // end Test stuffs ======================
 
     // --- [NEW] LOGIC GỬI MOCK DATA VỀ SERVER ---
     private async UniTaskVoid SendMockMatchReport()
@@ -436,6 +459,7 @@ public class GameManager : MonoBehaviourPunCallbacks
     private void CheckEndGameCondition()
     {
         int activePlayers = 0;
+        bool teamHasEscaped = false; // Thêm biến kiểm tra xem có ai thoát không
 
         foreach (var status in _playerStatuses.Values)
         {
@@ -444,6 +468,12 @@ public class GameManager : MonoBehaviourPunCallbacks
             {
                 activePlayers++;
             }
+
+            // Nếu có ít nhất 1 người thoát thành công
+            if (status == PlayerMatchStatus.Escaped)
+            {
+                teamHasEscaped = true;
+            }
         }
 
         Debug.Log($"[GameManager] Active Players: {activePlayers}");
@@ -451,6 +481,17 @@ public class GameManager : MonoBehaviourPunCallbacks
         if (activePlayers == 0)
         {
             Debug.Log(">>> ALL PLAYERS DONE. END GAME. <<<");
+
+            // [FIX] Cập nhật đúng Route trước khi chốt sổ
+            if (teamHasEscaped)
+            {
+                _currentMatchRoute = MatchRoute.Escape; // Đổi sang Win: Escape (150 exp)
+            }
+            else
+            {
+                _currentMatchRoute = MatchRoute.Lose; // Đổi sang Thua
+            }
+
             UpdateNetworkState(GameState.Ending);
         }
     }

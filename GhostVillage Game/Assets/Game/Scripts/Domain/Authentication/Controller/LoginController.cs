@@ -1,9 +1,11 @@
 using System;
 using Cysharp.Threading.Tasks;
+using Game.Core.Network;
 using Game.Core.ReactiveRepo;
 using Game.Core.Scene;
 using Game.Domain.Authentication;
 using Game.Domain.Authentication.DTOs;
+using Game.Script.UI;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -11,21 +13,22 @@ namespace Game.UI.Login
 {
     public class LoginController
     {
-        [SerializeField]
-        private string sceneToLoad = "MainMenu";
+        [SerializeField] private string sceneToLoad = "MainMenu";
         private readonly AuthService _authService;
         private readonly ISceneLoaderService _sceneLoader;
         private readonly PlayerDataSyncService _syncService;
-        private LocalCallbackServer _callbackServer; // Local HTTP server for OAuth callback
+        private readonly INetworkService _network;
+        private readonly GlobalUIManager _globalUI;
+        private LocalCallbackServer _callbackServer;
 
-        public LoginController(
-            AuthService authService,
-            ISceneLoaderService sceneLoader,
-            PlayerDataSyncService syncService)
+        // [SỬA] Inject thêm Network và GlobalUI
+        public LoginController(AuthService authService, ISceneLoaderService sceneLoader, PlayerDataSyncService syncService, INetworkService network, GlobalUIManager globalUI)
         {
             _authService = authService;
             _sceneLoader = sceneLoader;
             _syncService = syncService;
+            _network = network;
+            _globalUI = globalUI;
         }
 
         /// <summary>
@@ -34,18 +37,43 @@ namespace Game.UI.Login
         public async void HandleLogin(string email, string password, LoginUIManager view)
         {
             view.SetInteractable(false);
-            view.SetStatus("Connecting to Server...");
+            view.SetStatus("Connecting to API...");
 
             var response = await _authService.LoginAsync(email, password);
 
             if (response != null)
             {
-                // đang xài tạm, mốt xóa, không load vào data store nữa
-                view.SetStatus("Syncing Player Data...");
+                // [FIX 1] Thay vì gọi HidePanel() (hàm không tồn tại), 
+                // ta truyền gameObject của view vào hàm ShowPanel() của chính nó 
+                // (hoặc nếu LoginUIManager có gameObject cha chứa toàn bộ UI thì tắt nó đi)
+                view.gameObject.SetActive(false);
+
+                _globalUI.ShowLoading(true, "Đang đồng bộ dữ liệu...");
                 await _syncService.SyncAllDataAsync(response);
 
-                view.SetStatus("<color=green>Đăng nhập thành công!</color>");
-                await _sceneLoader.LoadSceneAsync(sceneToLoad);
+                _globalUI.ShowLoading(true, "Đang kết nối Máy Chủ Trò Chơi...");
+
+                // [FIX 2] Truy cập đúng cấu trúc của LoginResponseDTO
+                string nickName = response.player != null && response.player.profile != null
+                                  ? response.player.profile.displayName
+                                  : "Player_" + UnityEngine.Random.Range(1000, 9999);
+
+
+                // ✅ TRUYỀN TOKEN TỬ BACKEND
+                bool connected = await _network.ConnectAsync(nickName, response.token);
+
+                if (connected)
+                {
+                    await _sceneLoader.LoadSceneAsync(sceneToLoad);
+                    _globalUI.ShowLoading(false); // Xong hết mới tắt
+                }
+                else
+                {
+                    _globalUI.ShowLoading(false);
+                    view.gameObject.SetActive(true); // Bật lại UI
+                    view.SetStatus("<color=red>Lỗi kết nối Photon!</color>");
+                    view.SetInteractable(true);
+                }
             }
             else
             {
@@ -55,11 +83,7 @@ namespace Game.UI.Login
         }
 
         /// <summary>
-        /// Google OAuth Login - Auto redirect (no code copy-paste needed!)
-        /// 1. Start local HTTP server on localhost:8888
-        /// 2. Open browser with OAuth URL
-        /// 3. Server automatically captures code when user authorizes
-        /// 4. Exchange code for token and auto-login
+        /// Google OAuth Login - Auto redirect
         /// </summary>
         public async UniTask HandleGoogleLogin(LoginUIManager view)
         {
@@ -68,19 +92,15 @@ namespace Game.UI.Login
 
             try
             {
-                // Stop previous server if exists
                 _callbackServer?.Stop();
-                await UniTask.Delay(500); // Wait for port to be released
+                await UniTask.Delay(500);
 
-                // 1. Khởi động local callback server
                 _callbackServer = new LocalCallbackServer(8888);
                 _callbackServer.Start(async (authCode) =>
                 {
-                    // 3. Callback được gọi khi server nhận code từ Google
                     await HandleGoogleAuthorizationCodeAuto(authCode, view);
                 });
 
-                // 2. Lấy OAuth URL và mở browser
                 var authUrlResponse = await _authService.GetGoogleAuthUrlAsync();
 
                 if (authUrlResponse != null && !string.IsNullOrEmpty(authUrlResponse.authUrl))
@@ -105,40 +125,31 @@ namespace Game.UI.Login
             }
         }
 
-        /// <summary>
-        /// Auto-handle authorization code (called by local callback server)
-        /// </summary>
         private async UniTask HandleGoogleAuthorizationCodeAuto(string code, LoginUIManager view)
         {
             if (string.IsNullOrEmpty(code))
             {
-                if (view != null)
-                    view.SetStatus("<color=red>Invalid authorization code</color>");
+                if (view != null) view.SetStatus("<color=red>Invalid authorization code</color>");
                 return;
             }
 
-            if (view != null)
-                view.SetStatus("🔄 Processing authorization...");
+            if (view != null) view.SetStatus("🔄 Processing authorization...");
 
             var response = await _authService.HandleGoogleCallbackAsync(code.Trim());
 
             if (response != null)
             {
-                // Profile incomplete - show completion UI (includes age verification)
                 if (!response.profileComplete)
                 {
                     if (view != null)
                     {
-                        view.SetStatus("⚠️ Please complete your profile (Add date of birth)");
+                        view.SetStatus("⚠️ Please complete your profile");
                         view.SetInteractable(true);
                     }
-
-                    // Show profile completion UI (birthday picker for age verification)
                     HandleProfileIncomplete(response.token, view);
                     return;
                 }
 
-                // Age verification (after profile has dateOfBirth)
                 if (!AuthService.IsUserOldEnough(response.user.dateOfBirth ?? ""))
                 {
                     if (view != null)
@@ -149,23 +160,45 @@ namespace Game.UI.Login
                     return;
                 }
 
-                // All checks passed
                 if (response.data != null)
                 {
-                    if (view != null)
-                        view.SetStatus("Syncing Player Data...");
+                    // Tương tự Email Login, che màn hình lại
+                    if (view != null) view.gameObject.SetActive(false);
+
+                    _globalUI.ShowLoading(true, "Đang đồng bộ dữ liệu...");
                     await _syncService.SyncAllDataAsync(response.data);
 
-                    if (view != null)
-                        view.SetStatus("<color=green>Google Login Successful!</color>");
-                    await _sceneLoader.LoadSceneAsync(sceneToLoad);
+                    _globalUI.ShowLoading(true, "Đang kết nối Máy Chủ Trò Chơi...");
+
+                    // Lấy nickname từ response.data
+                    string nickName = response.data.player != null && response.data.player.profile != null
+                                      ? response.data.player.profile.displayName
+                                      : "Player_" + UnityEngine.Random.Range(1000, 9999);
+
+                    // ✅ TRUYỀN TOKEN TỪ RESPONSE DATA
+                    bool connected = await _network.ConnectAsync(nickName, response.data.token);
+
+                    if (connected)
+                    {
+                        await _sceneLoader.LoadSceneAsync(sceneToLoad);
+                        _globalUI.ShowLoading(false);
+                    }
+                    else
+                    {
+                        _globalUI.ShowLoading(false);
+                        if (view != null)
+                        {
+                            view.gameObject.SetActive(true);
+                            view.SetStatus("<color=red>Lỗi kết nối Photon!</color>");
+                            view.SetInteractable(true);
+                        }
+                    }
                 }
             }
             else
             {
                 string errorMsg = response?.error ?? "Unknown error";
-                if (errorMsg == "age_restriction")
-                    errorMsg = "You must be at least 13 years old to play";
+                if (errorMsg == "age_restriction") errorMsg = "You must be at least 13 years old to play";
 
                 if (view != null)
                 {
@@ -174,7 +207,6 @@ namespace Game.UI.Login
                 }
             }
 
-            // Stop callback server
             _callbackServer?.Stop();
         }
 
