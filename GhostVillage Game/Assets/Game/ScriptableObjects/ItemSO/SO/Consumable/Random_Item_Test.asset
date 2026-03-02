@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa3f7f3d6c06dd543a7ade538b47be83, type: 3}
+  m_Name: Random_Item_Test
+  m_EditorClassIdentifier: Assembly-CSharp::ConsumableItemSO
+  itemId: ITEM_RAND_TEST
+  itemName: Something idk
+  description: 
+  itemType: 1
+  itemIcon: {fileID: 21300000, guid: 9d937319cd1388041a3ea87775ebdc07, type: 3}
+  itemWorldPrefab: {fileID: 0}
+  itemHandModel: {fileID: 0}
+  healAmount: 0
+  staminaAmount: 0

@@ -86,5 +86,26 @@
     "edit": "Edit",
     "delete": "Delete",
     "noData": "No wiki entries found"
+  },
+  "announcements": {
+    "title": "Title",
+    "subtitle": "Manage game announcements",
+    "author": "Author",
+    "pinned": "Pinned",
+    "status": "Status",
+    "views": "Views",
+    "created": "Created",
+    "active": "Active",
+    "inactive": "Inactive",
+    "allStatus": "All Status",
+    "allPinned": "All",
+    "unpinned": "Unpinned",
+    "create": "Create",
+    "createNew": "Create New Announcement",
+    "editAnnouncement": "Edit Announcement",
+    "deleteAnnouncement": "Delete Announcement",
+    "content": "Content",
+    "excerpt": "Excerpt",
+    "coverImage": "Cover Image"
   }
 }

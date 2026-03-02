@@ -11,6 +11,8 @@ using Game.Domain.Map.DTOs;
 using System.Linq;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
 using Game.Scripts.View.Lobby.Session;
+using Game.Core.Scene;
+using Game.Core.Network;
 
 namespace Game.Scripts.UI.Lobby
 {
@@ -26,6 +28,8 @@ namespace Game.Scripts.UI.Lobby
         [Inject] private GlobalUIManager _globalUI;
         [Inject] private LobbyUIManager _uiManager;
         [Inject] private IMapDataService _mapService;
+        [Inject] private INetworkService _network;
+        [Inject] private ISceneLoaderService _sceneLoader;
 
         private List<MapConfigDTO> _cachedMaps = new List<MapConfigDTO>();
         private int _currentMapIndex = 0;
@@ -46,6 +50,44 @@ namespace Game.Scripts.UI.Lobby
                 // Wait for room connection and map data fetch
                 await UniTask.WhenAll(WaitForInRoom(), FetchLobbyResources());
 
+
+
+                // --- [LOGIC RESET] ---
+                if (PhotonNetwork.IsMasterClient)
+                {
+                    Debug.Log("[LobbyManager] Master: Dọn dẹp chiến trường cũ và Reset Room...");
+
+                    // 1. DỌN RÁC SCENE CŨ: Xóa tất cả các object có PhotonView (như Monster, Item) đã sinh ra ở scene trước
+                    // Lưu ý: Chỉ dùng hàm này nếu bạn chắc chắn Lobby không có các object cần thiết bị dính đạn.
+                    // Thường thì khi load scene, các object cũ tự hủy rồi, nhưng làm cái này để dọn dẹp các lệnh Instantiate còn kẹt trên server.
+                    PhotonNetwork.DestroyAll();
+
+                    // Dọn dẹp danh sách Event/RPC bị treo trên Server. 
+                    // Quan trọng: Nó xóa sạch Event đệm, giúp người mới vào không bị gọi lại đống đồ cũ.
+                    PhotonNetwork.RemoveRPCsInGroup(0); // Nếu bạn ko dùng Interest Group, mặc định là 0
+                                                        // PhotonNetwork.OpCleanRpcBuffer(photonView); // Hoặc dùng hàm này nếu có PhotonView cụ thể
+
+                    // 2. Mở lại phòng
+                    PhotonNetwork.CurrentRoom.IsOpen = true;
+                    PhotonNetwork.CurrentRoom.IsVisible = true;
+
+                    // 3. Reset các Custom Properties (Xóa State cũ)
+                    Hashtable resetProps = new Hashtable
+                {
+                    { "G_State", null }, 
+                    // { MAP_KEY, null } // Bỏ comment nếu muốn bắt chọn lại Map
+                };
+                    PhotonNetwork.CurrentRoom.SetCustomProperties(resetProps);
+
+                    // 4. Un-ready toàn bộ người chơi trong phòng
+                    foreach (var p in PhotonNetwork.PlayerList)
+                    {
+                        Hashtable unreadyProps = new Hashtable { { READY_KEY, false } };
+                        p.SetCustomProperties(unreadyProps);
+                    }
+                }
+                // ------------------------------------
+
                 // Sync initial state for late joiners
                 UpdateMapUIFromNetwork();
                 RefreshStartPrompt();
@@ -55,6 +97,7 @@ namespace Game.Scripts.UI.Lobby
             if (_uiManager != null)
             {
                 _uiManager.BindSubmitEvent(HandleChatInput);
+                _uiManager.OnExitLobbyRequest += HandleExitLobby;
                 SetupRoomUI();
             }
             else
@@ -68,18 +111,41 @@ namespace Game.Scripts.UI.Lobby
 
         private void Update()
         {
-            // Chat Toggle Logic
-            if (Keyboard.current != null && Keyboard.current.enterKey.wasPressedThisFrame)
-            {
-                if (_uiManager == null) return;
+            // Kiểm tra an toàn thiết bị nhập liệu
+            if (Keyboard.current == null || _uiManager == null) return;
 
-                if (!_uiManager.IsChatFocused()) _uiManager.FocusChat();
-                else HandleChatInput(_uiManager.GetInputText());
+            // --- 1. ESC Key Logic (Menu / Exit Chat) ---
+            if (Keyboard.current.escapeKey.wasPressedThisFrame)
+            {
+                // Ưu tiên 1: Nếu đang chat thì ESC để thoát chat
+                if (_uiManager.IsChatFocused())
+                {
+                    _uiManager.DeFocusChat();
+                }
+                // Ưu tiên 2: Nếu không chat thì bật/tắt Menu thoát
+                else
+                {
+                    _uiManager.ToggleEscMenu();
+                }
+                return; // Ngắt luôn để không dính các phím khác
             }
 
-            // R Key Logic (Ready / Start Game)
-            if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
+            // --- 2. Chat Toggle Logic (Enter) ---
+            if (Keyboard.current.enterKey.wasPressedThisFrame)
             {
+                // Nếu Menu ESC đang mở thì không cho chat (Optional: tùy trải nghiệm game)
+                // if (_uiManager.IsEscMenuOpen) return; 
+
+                if (!_uiManager.IsChatFocused())
+                    _uiManager.FocusChat();
+                else
+                    HandleChatInput(_uiManager.GetInputText());
+            }
+
+            // --- 3. R Key Logic (Ready / Start Game) ---
+            if (Keyboard.current.rKey.wasPressedThisFrame)
+            {
+                // Chặn nếu đang gõ chat
                 if (_uiManager.IsChatFocused()) return;
 
                 if (PhotonNetwork.IsMasterClient)
@@ -344,6 +410,37 @@ namespace Game.Scripts.UI.Lobby
                 PhotonNetwork.Instantiate(_playerPrefabName, spawn.position, spawn.rotation);
                 if (_sceneCamera) _sceneCamera.gameObject.SetActive(false);
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (_uiManager != null)
+            {
+                _uiManager.OnExitLobbyRequest -= HandleExitLobby;
+            }
+        }
+
+        private void HandleExitLobby()
+        {
+            Debug.Log("[LobbyManager] User requested exit. Leaving room...");
+
+            // Tắt UI Menu
+            _uiManager.ShowEscMenu(false);
+
+            // Hiện Loading
+            _globalUI.ShowLoading(true);
+
+            // Gọi Photon rời phòng
+            PhotonNetwork.LeaveRoom();
+        }
+
+        // 5. Callback của Photon (Script phải kế thừa MonoBehaviourPunCallbacks)
+        public override void OnLeftRoom()
+        {
+            Debug.Log("[LobbyManager] Left room successfully. Loading LobbyListScene...");
+
+            // Chuyển cảnh về danh sách phòng
+            _sceneLoader.LoadSceneAsync("LobbyListScene");
         }
 
         #endregion

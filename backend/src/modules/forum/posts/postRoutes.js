@@ -8,13 +8,21 @@ import {
   likePost,
   bookmarkPost,
   lockPost,
+  uploadPostImage,
+  deletePostMedia,
 } from "./postController.js";
 import { authMiddleware } from "../../../middlewares/auth.middleware.js";
+import { uploadAvatar } from "../../../middlewares/uploadMiddleware.js";
 import commentRoutes from "../comments/commentRoutes.js";
 
 const router = express.Router();
 
 router.get("/", listPosts);
+
+// Delete media from Cloudinary - MUST BE BEFORE /:id routes
+router.delete("/delete-media", authMiddleware, deletePostMedia);
+router.post("/upload-image", authMiddleware, uploadAvatar, uploadPostImage);
+
 router.get("/:id", getPost);
 router.post("/", authMiddleware, createPost);
 router.put("/:id", authMiddleware, updatePost);

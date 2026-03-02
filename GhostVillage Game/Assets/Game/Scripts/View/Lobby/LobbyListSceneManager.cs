@@ -47,6 +47,8 @@ namespace Game.UI.Lobby
             if (_createLobbyPopup != null) _createLobbyPopup.SetActive(false);
             if (_passwordModal != null) _passwordModal.SetActive(false);
 
+            UnlockCursor();
+
             if (_network.IsConnected)
             {
                 _globalUI.ShowLoading(true);
@@ -240,6 +242,31 @@ namespace Game.UI.Lobby
         }
 
         public void OnClosePasswordModal() => _passwordModal.SetActive(false);
+
+        /// <summary>
+        /// Hàm xử lý sự kiện khi ấn nút về Main Menu.
+        /// Gán hàm này vào sự kiện OnClick của Button.
+        /// </summary>
+        public void OnReturnToMainMenu()
+        {
+            // 1. Hiện màn hình loading để chặn input người dùng ngay lập tức
+            _globalUI.ShowLoading(true);
+
+            // 2. (Tuỳ chọn) Nếu bạn muốn ngắt kết nối khỏi Lobby hiện tại để về menu sạch sẽ hơn
+            // _network.LeaveLobby(); 
+
+            // 3. Gọi SceneLoader để chuyển về MainMenu
+            _sceneLoader.LoadSceneAsync("MainMenu");
+        }
+
+        /// <summary>
+        /// Hàm giải phóng con trỏ chuột để người chơi có thể click UI.
+        /// </summary>
+        private void UnlockCursor()
+        {
+            Cursor.lockState = CursorLockMode.None; // Cho phép chuột di chuyển tự do
+            Cursor.visible = true;                  // Hiện con trỏ chuột
+        }
 
     }
 }

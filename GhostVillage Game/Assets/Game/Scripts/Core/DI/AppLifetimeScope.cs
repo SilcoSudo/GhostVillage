@@ -43,7 +43,9 @@ namespace Game.Core.DI
             builder.Register<AuthService>(Lifetime.Singleton);
             builder.Register<PlayerDataStore>(Lifetime.Singleton);
             builder.Register<PlayerDataSyncService>(Lifetime.Singleton);
-
+            builder.Register<ProfileService>(Lifetime.Singleton);
+            builder.Register<ProfileController>(Lifetime.Singleton);
+            
             // 3. NETWORK (Sửa lại: Bắt buộc phải có Prefab)
             if (_photonPrefab != null)
             {

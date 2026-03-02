@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const userAchievementSchema = new mongoose.Schema(
+const playerAchievementSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -40,8 +40,9 @@ const userAchievementSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Mỗi user chỉ có 1 record cho mỗi achievement code
-userAchievementSchema.index({ userId: 1, code: 1 }, { unique: true });
+// Ràng buộc: Một người chơi không thể có 2 bản ghi cho cùng 1 thành tựu
+playerAchievementSchema.index({ userId: 1, code: 1 }, { unique: true });
 
-const UserAchievement = mongoose.model("UserAchievement", userAchievementSchema);
-export default UserAchievement;
+const PlayerAchievement = mongoose.model("PlayerAchievement", playerAchievementSchema, "playerachievments");
+
+export default PlayerAchievement;

@@ -11,6 +11,8 @@ namespace Game.Domain.Authentication
         private readonly APIClient _apiClient;
         private const int MIN_AGE = 13;
 
+        private const string TOKEN_KEY = "AccessToken";
+
         public AuthService(APIClient apiClient) => _apiClient = apiClient;
 
 
@@ -19,9 +21,13 @@ namespace Game.Domain.Authentication
             var body = new LoginRequestDTO { email = email, password = password };
             string jsonBody = JsonUtility.ToJson(body);
 
-
             // Gọi API (Lưu ý: APIClient cần update để hỗ trợ POST, code ở dưới*)
             var response = await _apiClient.PostAsync<LoginResponseDTO>("/api/auth/login", jsonBody);
+            // TỰ ĐỘNG LƯU: Nếu login thành công
+            if (response != null && !string.IsNullOrEmpty(response.token))
+            {
+                SaveToken(response.token);
+            }
             return response; // Trả về DTO cho Controller xử lý tiếp
         }
 
@@ -128,6 +134,14 @@ namespace Game.Domain.Authentication
                 Debug.LogError($"[AuthService] Error completing profile: {ex.Message}");
                 return null;
             }
+        }
+
+        // Hàm hỗ trợ lưu Token an toàn
+        private void SaveToken(string token)
+        {
+            PlayerPrefs.SetString(TOKEN_KEY, token);
+            PlayerPrefs.Save();
+            Debug.Log($"<color=green>[AuthService] Token saved to PlayerPrefs: {token.Substring(0, 10)}...</color>");
         }
 
         /// <summary>

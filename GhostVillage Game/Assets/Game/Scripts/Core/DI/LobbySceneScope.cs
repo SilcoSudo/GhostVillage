@@ -2,6 +2,7 @@ using VContainer;
 using VContainer.Unity;
 using UnityEngine;
 using Game.Scripts.UI.Lobby;
+using Game.Scripts.View.Lobby;
 
 namespace Game.Core.DI
 {

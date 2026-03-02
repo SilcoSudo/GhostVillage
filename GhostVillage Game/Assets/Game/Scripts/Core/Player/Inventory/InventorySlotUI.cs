@@ -3,32 +3,42 @@ using UnityEngine.UI;
 
 public class InventorySlotUI : MonoBehaviour
 {
-    public Image icon;
+    [Header("References")]
+    public Image borderImage; // Kéo cái Image viền (100x100) vào đây
+    public Image iconImage;   // Kéo cái Image Icon (90x90) vào đây
 
-    public void SetItem(KeyItemData item)
+    [Header("Visual Settings")]
+    [SerializeField] private Color focusedColor = Color.white;
+    [SerializeField] private Color unfocusedColor = new Color(0.5f, 0.5f, 0.5f, 1f); // Xám
+
+    // Hàm set đồ (giữ nguyên logic cũ nhưng gọn hơn)
+    public void SetItem(ItemDataSO item)
     {
-        if (item == null)
+        if (item != null)
         {
-            Debug.Log($"[UI SLOT] {name}: cleared (no item)");
-            icon.enabled = false;
+            iconImage.sprite = item.itemIcon;
+            iconImage.color = Color.white;
+            iconImage.enabled = true;
         }
         else
         {
-            Debug.Log($"[UI SLOT] {name}: set icon = {item.icon}, name = {item.itemName}");
-            icon.enabled = true;
-            icon.sprite = item.icon;
+            Clear();
         }
     }
 
-    public void DimSlot()
+    public void Clear()
     {
-        // Ví dụ: giảm alpha ảnh xuống hoặc disable button
-        var img = GetComponent<UnityEngine.UI.Image>();
-        if (img != null)
-            img.color = new Color(img.color.r, img.color.g, img.color.b, 0.4f);
+        iconImage.sprite = null;
+        iconImage.enabled = false;
+        iconImage.color = Color.clear;
+    }
 
-        var btn = GetComponent<UnityEngine.UI.Button>();
-        if (btn != null)
-            btn.interactable = false;
+    // HÀM MỚI: Đổi màu viền dựa trên trạng thái chọn
+    public void SetSelected(bool isSelected)
+    {
+        if (borderImage != null)
+        {
+            borderImage.color = isSelected ? focusedColor : unfocusedColor;
+        }
     }
 }

@@ -2,10 +2,14 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import User from "./src/modules/user/userModel.js";
 import Player from "./src/modules/player/playerModel.js";
+import Achievement from "./src/modules/achievement/achievementModel.js"; // Model Định nghĩa
+import GameResult from "./src/modules/profile/gameResultModel.js"; // Model Trận đấu toàn cục
+import PlayerMatchHistory from "./src/modules/profile/playerMatchHistoryModel.js"; // Model Lịch sử cá nhân
 import { config } from "./src/config/env.js";
 import UserMatchHistory from "./src/modules/profile/playerMatchHistoryModel.js";
 import UserAchievement from "./src/modules/profile/playerAchievementModel.js";
 import MapConfig from "./src/modules/map/mapConfigModel.js";
+import MatchResult from "./src/modules/match/matchModel.js";
 
 dotenv.config();
 
@@ -19,10 +23,11 @@ const seedData = async () => {
     await User.deleteMany({});
     await Player.deleteMany({});
     console.log("🗑️  Đã xóa dữ liệu cũ (Users & Players).");
-    await UserMatchHistory.deleteMany({});
-    await UserAchievement.deleteMany({});
+    await Achievement.deleteMany({});
+    await GameResult.deleteMany({});
+    await PlayerMatchHistory.deleteMany({})
     console.log(
-      "🗑️  Đã xóa dữ liệu cũ (PlayerMatchHistory, PlayerAchievement).",
+      "🗑️  Đã xóa dữ liệu cũ.",
     );
     await MapConfig.deleteMany({});
     console.log("🗑️  Đã xóa dữ liệu cũ (MapConfig).");
@@ -31,6 +36,67 @@ const seedData = async () => {
     const user1_Id = new mongoose.Types.ObjectId("659d4b1e9d3e2a1b3c4d5e6f");
     const user2_Id = new mongoose.Types.ObjectId();
     const user3_Id = new mongoose.Types.ObjectId("696da0d5a6e42a937b80aaff");
+
+    // TẠO ĐỊNH NGHĨA THÀNH TỰU (Global Achievements)
+    console.log("⏳ Đang tạo Achievement Definitions...");
+    const achievements = await Achievement.create([
+      {
+        _id: "FIRST_CLEAR",
+        title: "First Clear",
+        desc: "Complete a stage for the first time.",
+        target: 1,
+        reward: { coin: 100, titleId: "Survivor" }
+      },
+      {
+        _id: "KILL_50",
+        title: "Slayer I",
+        desc: "Defeat 50 minions.",
+        target: 50,
+        reward: { coin: 200, titleId: "Ghost Hunter" }
+      },
+      {
+        _id: "KILL_500",
+        title: "Slayer II",
+        desc: "Defeat 500 minions to prove your dominance.",
+        target: 500,
+        reward: { coin: 500, titleId: "Executioner" }
+      },
+      {
+        _id: "WIN_5_STREAK",
+        title: "Unstoppable",
+        desc: "Win 5 matches in a row without losing.",
+        target: 5,
+        reward: { coin: 300, titleId: "Invincible" }
+      },
+      {
+        _id: "REACH_LV_10",
+        title: "Veteran",
+        desc: "Reach player level 10.",
+        target: 10,
+        reward: { coin: 400, titleId: "Elite Survivor" }
+      },
+      {
+        _id: "PLAY_100_MATCHES",
+        title: "Dedicated",
+        desc: "Play 100 total matches in GhostVillage.",
+        target: 100,
+        reward: { coin: 1000, titleId: "Ghost Resident" }
+      },
+      {
+        _id: "FAST_CLEAR",
+        title: "Phantom",
+        desc: "Clear any stage in less than 5 minutes.",
+        target: 1,
+        reward: { coin: 600, titleId: "The Flash" }
+      },
+      {
+        _id: "MAP_EXPERT_RUNG_CHET",
+        title: "Forest Master",
+        desc: "Win 20 matches on the 'Dead Forest' map.",
+        target: 20,
+        reward: { coin: 500, titleId: "Forest Stalker" }
+      }
+    ]);
 
     // --- TẠO USER 1: Web Auth User (Email-only) ---
     // Role: user | admin
@@ -90,7 +156,6 @@ const seedData = async () => {
       profile: {
         displayName: "Hùng Đẹp Trai",
         avatar: "avatar_default_01",
-        bio: "Hùng Đẹp Trai",
         level: 1,
         exp: 0,
         coin: 1000,
@@ -107,7 +172,6 @@ const seedData = async () => {
       profile: {
         displayName: "Bé Lan Support",
         avatar: "avatar_default_01",
-        bio: "Bé Lan Support",
         level: 1,
         exp: 0,
         coin: 1000,
@@ -118,22 +182,58 @@ const seedData = async () => {
       },
     };
 
-    // --- TẠO PLAYER 3: Game Profile của User 3 (Raccoon) ---
+    // --- TẠO PLAYER 3: Game Profile của User 3 ---
     const player3 = {
       userId: user3_Id,
       profile: {
         displayName: "Raccoon",
         avatar: "avatar_default_02",
-        bio: "Raccoon the curious",
-        level: 1,
-        exp: 0,
-        coin: 1000,
+        level: 10,
+        exp: 450,
+        coin: 5000,
       },
-      inventory: {
-        unlockedSkins: ["skin_default"],
-        unlockedPerks: [],
-      },
+      selectedMedals: ["FIRST_CLEAR", "KILL_500"],
+      achievementsProgress: [
+        { achievementCode: "FIRST_CLEAR", current: 1, isClaimed: true },
+        { achievementCode: "KILL_50", current: 50, isClaimed: true },
+        { achievementCode: "REACH_LV_10", current: 10, isClaimed: true },
+        { achievementCode: "FAST_CLEAR", current: 1, isClaimed: true },
+        { achievementCode: "KILL_500", current: 520, isClaimed: true },
+        { achievementCode: "WIN_5_STREAK", current: 3, isClaimed: false },
+        { achievementCode: "PLAY_100_MATCHES", current: 45, isClaimed: false },
+        { achievementCode: "MAP_EXPERT_RUNG_CHET", current: 12, isClaimed: false }
+      ]
     };
+    
+    // 5. TẠO DỮ LIỆU TRẬN ĐẤU (Game Results & 11 History của Raccoon)
+    console.log("⏳ Đang tạo 11 trận đấu cho Raccoon...");
+    const matchIds = Array.from({ length: 11 }, () => new mongoose.Types.ObjectId());
+
+    // Tạo GameResult (Dữ liệu chung)
+    const gameResultsData = matchIds.map((id, index) => ({
+      _id: id,
+      mapId: index % 2 === 0 ? "MAP_VILLAGE" : "MAP_FOREST",
+      roomName: index % 2 === 0 ? "Ông Kẹ" : "Rừng Chết",
+      durationSec: 300 + (index * 60),
+      startTime: new Date(Date.now() - (10 - index) * 24 * 60 * 60 * 1000)
+    }));
+    await GameResult.create(gameResultsData);
+
+    // Tạo PlayerMatchHistory (Dữ liệu cá nhân Raccoon - Collection: playermatchhistories)
+    const historyData = [
+      { userId: user3_Id, matchId: matchIds[0], isWin: true, expGained: 100, coinGained: 50, titles: ["GrimReaper"] },
+      { userId: user3_Id, matchId: matchIds[1], isWin: false, expGained: 20, coinGained: 5, titles: ["PrimeTarget"] },
+      { userId: user3_Id, matchId: matchIds[2], isWin: true, expGained: 120, coinGained: 60, titles: ["WalkingHospital"] },
+      { userId: user3_Id, matchId: matchIds[3], isWin: false, expGained: 10, coinGained: 0, titles: ["PunchingBag"] },
+      { userId: user3_Id, matchId: matchIds[4], isWin: true, expGained: 150, coinGained: 70, titles: ["HumanSiren"] },
+      { userId: user3_Id, matchId: matchIds[5], isWin: true, expGained: 110, coinGained: 55, titles: ["GrimReaper", "PrimeTarget"] },
+      { userId: user3_Id, matchId: matchIds[6], isWin: false, expGained: 30, coinGained: 10, titles: ["PunchingBag", "HumanSiren"] },
+      { userId: user3_Id, matchId: matchIds[7], isWin: true, expGained: 130, coinGained: 65, titles: ["WalkingHospital"] },
+      { userId: user3_Id, matchId: matchIds[8], isWin: true, expGained: 140, coinGained: 75, titles: ["GrimReaper"] },
+      { userId: user3_Id, matchId: matchIds[9], isWin: false, expGained: 15, coinGained: 2, titles: ["PrimeTarget"] },
+      { userId: user3_Id, matchId: matchIds[10], isWin: true, expGained: 200, coinGained: 100, titles: ["GrimReaper", "WalkingHospital", "HumanSiren"] },
+    ];
+    await PlayerMatchHistory.create(historyData);
 
     // 4. LƯU VÀO DB
     console.log("⏳ Đang tạo Users...");
@@ -244,7 +344,7 @@ const seedData = async () => {
       {
         identityConfig: {
           mapId: "MAP_01_ONG_KE",
-          sceneName: "Scene_Game_OngKe", // Updated Name
+          sceneName: "Scene_Game_OngKe",
           displayName: "Làng Cổ - Ông Kẹ",
           thumbnailUrl: "sprite_map_ongke",
           shortDescription:
@@ -258,38 +358,58 @@ const seedData = async () => {
               eventId: "EVENT_MOON_FULL",
               weight: 30,
               uiIcon: "icon_moon_full",
-            }, // Sáng hơn, dễ bị lộ
-            { eventId: "EVENT_MOON_NEW", weight: 40, uiIcon: "icon_moon_new" }, // Tối om, Ông Kẹ mạnh hơn
-            { eventId: "EVENT_MOON_RED", weight: 10, uiIcon: "icon_moon_red" }, // Ông Kẹ cuồng nộ
+            },
+            { eventId: "EVENT_MOON_NEW", weight: 40, uiIcon: "icon_moon_new" },
+            { eventId: "EVENT_MOON_RED", weight: 10, uiIcon: "icon_moon_red" },
           ],
         },
         consumableConfig: {
           spawnPointIds: [
-            "SP_Item_Kitchen",
-            "SP_Item_Well",
-            "SP_Item_Bed",
-            "SP_Item_Altar",
-            "SP_Item_Gate",
-            "SP_Item_Tree",
-            "SP_Item_Roof",
-            "SP_Item_Basement",
+            "SP_Item_Crocodilo",
+            "SP_Item_Skibidi",
+            "SP_Item_Bombadilo",
+            "SP_Item_Bruh",
+            "SP_Item_Lmao",
           ],
           mandatoryItems: [
-            { itemId: "ITEM_FLASHLIGHT_BATTERY", minCount: 5, maxCount: 8 }, // Cần pin đèn pin
+            {
+              itemId: "ITEM_FLASHLIGHT",
+              minCount: 1,
+              maxCount: 1,
+            },
           ],
           randomPoolConfig: {
-            minCount: 3,
-            maxCount: 5,
+            minCount: 2,
+            maxCount: 3,
             pool: [
-              { itemId: "ITEM_HP_POTION_S", weight: 50 },
-              { itemId: "ITEM_STAMINA_DRINK", weight: 30 },
-              { itemId: "ITEM_HOLY_WATER", weight: 20 },
+              {
+                itemId: "ITEM_POTION",
+                weight: 100,
+              },
+            ],
+          },
+        },
+        equipmentConfig: {
+          spawnPointIds: [
+            "SP_Equip_Table_Main",
+            "SP_Equip_Shelf_OldHouse",
+            "SP_Equip_Box_Gate",
+          ],
+          mandatoryEquipment: [
+            { itemId: "ITEM_FLASHLIGHT_PRO", minCount: 1, maxCount: 1 },
+          ],
+          randomPoolConfig: {
+            minCount: 0,
+            maxCount: 1,
+            pool: [
+              { itemId: "ITEM_GHOST_DETECTOR", weight: 40 },
+              { itemId: "ITEM_COMPASS", weight: 60 },
             ],
           },
         },
         monsterSystemConfig: {
           bossConfig: {
-            monsterId: "BOSS_ONG_KE", // Boss bao tải, bắt cóc
+            monsterId: "BOSS_ONG_KE",
             spawnPointIds: [
               "SP_Boss_Center",
               "SP_Boss_OldHouse",
@@ -318,7 +438,7 @@ const seedData = async () => {
       {
         identityConfig: {
           mapId: "MAP_02_MA_DA",
-          sceneName: "Scene_Game_MaDa", // Updated Name
+          sceneName: "Scene_Game_MaDa",
           displayName: "Bến Sông - Ma Da",
           thumbnailUrl: "sprite_map_mada",
           shortDescription:
@@ -332,8 +452,8 @@ const seedData = async () => {
               eventId: "EVENT_TIDE_HIGH",
               weight: 40,
               uiIcon: "icon_tide_high",
-            }, // Nước dâng, khó đi
-            { eventId: "EVENT_FOG_HEAVY", weight: 30, uiIcon: "icon_fog" }, // Sương mù dày đặc
+            },
+            { eventId: "EVENT_FOG_HEAVY", weight: 30, uiIcon: "icon_fog" },
           ],
         },
         consumableConfig: {
@@ -344,7 +464,7 @@ const seedData = async () => {
             "SP_Item_Reed",
           ],
           mandatoryItems: [
-            { itemId: "ITEM_STAMINA_DRINK", minCount: 6, maxCount: 10 }, // Map này tốn stamina bơi/chạy
+            { itemId: "ITEM_STAMINA_DRINK", minCount: 6, maxCount: 10 },
           ],
           randomPoolConfig: {
             minCount: 3,
@@ -355,9 +475,23 @@ const seedData = async () => {
             ],
           },
         },
+        equipmentConfig: {
+          spawnPointIds: ["SP_Equip_Boat_Storage", "SP_Equip_Pier_Box"],
+          mandatoryEquipment: [
+            { itemId: "ITEM_DIVING_GEAR", minCount: 1, maxCount: 1 },
+          ],
+          randomPoolConfig: {
+            minCount: 0,
+            maxCount: 1,
+            pool: [
+              { itemId: "ITEM_WATER_RADAR", weight: 50 },
+              { itemId: "ITEM_FLARE_GUN", weight: 50 },
+            ],
+          },
+        },
         monsterSystemConfig: {
           bossConfig: {
-            monsterId: "BOSS_MA_DA", // Kéo chân, tàng hình dưới nước
+            monsterId: "BOSS_MA_DA",
             spawnPointIds: ["SP_Boss_River_Deep", "SP_Boss_Under_Bridge"],
           },
           minionConfig: {
@@ -378,7 +512,7 @@ const seedData = async () => {
       {
         identityConfig: {
           mapId: "MAP_03_CHANG_TINH",
-          sceneName: "Scene_Game_ChangTinh", // Updated Name
+          sceneName: "Scene_Game_ChangTinh",
           displayName: "Rừng Già - Chằng Tinh",
           thumbnailUrl: "sprite_map_changtinh",
           shortDescription:
@@ -388,7 +522,7 @@ const seedData = async () => {
         environmentConfig: {
           baseLightingId: "LIGHT_PROFILE_JUNGLE",
           moonEventPool: [
-            { eventId: "EVENT_JUNGLE_ROAR", weight: 50, uiIcon: "icon_roar" }, // Tiếng gầm gây choáng
+            { eventId: "EVENT_JUNGLE_ROAR", weight: 50, uiIcon: "icon_roar" },
           ],
         },
         consumableConfig: {
@@ -398,20 +532,34 @@ const seedData = async () => {
             "SP_Item_Tree_Hollow",
           ],
           mandatoryItems: [
-            { itemId: "ITEM_TRAP_TOOL", minCount: 3, maxCount: 5 }, // Cần bẫy để giữ chân Boss
+            { itemId: "ITEM_TRAP_TOOL", minCount: 3, maxCount: 5 },
           ],
           randomPoolConfig: {
             minCount: 4,
             maxCount: 7,
             pool: [
-              { itemId: "ITEM_HP_POTION_L", weight: 40 }, // Boss đánh đau, cần máu to
+              { itemId: "ITEM_HP_POTION_L", weight: 40 },
               { itemId: "ITEM_SPEED_BUFF", weight: 60 },
+            ],
+          },
+        },
+        equipmentConfig: {
+          spawnPointIds: ["SP_Equip_Tent", "SP_Equip_Ruin_Altar"],
+          mandatoryEquipment: [
+            { itemId: "ITEM_NIGHT_VISION_GOGGLES", minCount: 1, maxCount: 1 },
+          ],
+          randomPoolConfig: {
+            minCount: 0,
+            maxCount: 1,
+            pool: [
+              { itemId: "ITEM_MACHETE", weight: 30 },
+              { itemId: "ITEM_THERMAL_CAM", weight: 70 },
             ],
           },
         },
         monsterSystemConfig: {
           bossConfig: {
-            monsterId: "BOSS_CHANG_TINH", // To xác, trâu bò, ném đá
+            monsterId: "BOSS_CHANG_TINH",
             spawnPointIds: ["SP_Boss_Cave_Throne", "SP_Boss_Clearing"],
           },
           minionConfig: {
@@ -432,7 +580,7 @@ const seedData = async () => {
       {
         identityConfig: {
           mapId: "MAP_04_MA_LAI",
-          sceneName: "Scene_Game_MaLai", // Updated Name
+          sceneName: "Scene_Game_MaLai",
           displayName: "Nhà Hoang - Ma Lai",
           thumbnailUrl: "sprite_map_malai",
           shortDescription:
@@ -446,7 +594,7 @@ const seedData = async () => {
               eventId: "EVENT_BLOOD_MOON",
               weight: 100,
               uiIcon: "icon_moon_blood",
-            }, // Map này luôn đỏ lòm
+            },
           ],
         },
         consumableConfig: {
@@ -457,20 +605,34 @@ const seedData = async () => {
             "SP_Item_Attic",
           ],
           mandatoryItems: [
-            { itemId: "ITEM_SALT_BAG", minCount: 5, maxCount: 8 }, // Muối khắc chế Ma Lai
+            { itemId: "ITEM_SALT_BAG", minCount: 5, maxCount: 8 },
           ],
           randomPoolConfig: {
             minCount: 3,
             maxCount: 5,
             pool: [
-              { itemId: "ITEM_BANDAGE", weight: 70 }, // Map này gây chảy máu (Bleed)
+              { itemId: "ITEM_BANDAGE", weight: 70 },
               { itemId: "ITEM_AMMO_BOX", weight: 30 },
+            ],
+          },
+        },
+        equipmentConfig: {
+          spawnPointIds: ["SP_Equip_MasterBedroom", "SP_Equip_Basement_Shelf"],
+          mandatoryEquipment: [
+            { itemId: "ITEM_EMF_READER", minCount: 1, maxCount: 1 },
+          ],
+          randomPoolConfig: {
+            minCount: 0,
+            maxCount: 1,
+            pool: [
+              { itemId: "ITEM_SPIRIT_BOX", weight: 50 },
+              { itemId: "ITEM_HOLY_CROSS", weight: 50 },
             ],
           },
         },
         monsterSystemConfig: {
           bossConfig: {
-            monsterId: "BOSS_MA_LAI", // Bay, xuyên tường, gây chảy máu
+            monsterId: "BOSS_MA_LAI",
             spawnPointIds: ["SP_Boss_LivingRoom", "SP_Boss_Bedroom"],
           },
           minionConfig: {
@@ -494,7 +656,7 @@ const seedData = async () => {
       {
         identityConfig: {
           mapId: "MAP_05_QUY_CAU",
-          sceneName: "Scene_Game_QuyCau", // Updated Name
+          sceneName: "Scene_Game_QuyCau",
           displayName: "Nghĩa Địa - Quỷ Cẩu",
           thumbnailUrl: "sprite_map_quycau",
           shortDescription:
@@ -504,8 +666,8 @@ const seedData = async () => {
         environmentConfig: {
           baseLightingId: "LIGHT_PROFILE_GRAVEYARD",
           moonEventPool: [
-            { eventId: "EVENT_WIND_HOWL", weight: 50, uiIcon: "icon_wind" }, // Gió át tiếng bước chân
-            { eventId: "EVENT_THUNDER", weight: 20, uiIcon: "icon_thunder" }, // Sét đánh lộ vị trí
+            { eventId: "EVENT_WIND_HOWL", weight: 50, uiIcon: "icon_wind" },
+            { eventId: "EVENT_THUNDER", weight: 20, uiIcon: "icon_thunder" },
           ],
         },
         consumableConfig: {
@@ -516,20 +678,34 @@ const seedData = async () => {
             "SP_Item_Statue",
           ],
           mandatoryItems: [
-            { itemId: "ITEM_SCENT_REMOVER", minCount: 4, maxCount: 6 }, // Xóa mùi để trốn chó
+            { itemId: "ITEM_SCENT_REMOVER", minCount: 4, maxCount: 6 },
           ],
           randomPoolConfig: {
             minCount: 4,
             maxCount: 6,
             pool: [
-              { itemId: "ITEM_STAMINA_DRINK", weight: 70 }, // Cần chạy nhiều
-              { itemId: "ITEM_MEAT_BAIT", weight: 30 }, // Thịt để dụ chó
+              { itemId: "ITEM_STAMINA_DRINK", weight: 70 },
+              { itemId: "ITEM_MEAT_BAIT", weight: 30 },
+            ],
+          },
+        },
+        equipmentConfig: {
+          spawnPointIds: ["SP_Equip_Caretaker_Shed", "SP_Equip_Old_Bench"],
+          mandatoryEquipment: [
+            { itemId: "ITEM_SILENT_BOOTS", minCount: 1, maxCount: 1 },
+          ],
+          randomPoolConfig: {
+            minCount: 0,
+            maxCount: 1,
+            pool: [
+              { itemId: "ITEM_OFFERING_BELL", weight: 40 },
+              { itemId: "ITEM_DOG_WHISTLE", weight: 60 },
             ],
           },
         },
         monsterSystemConfig: {
           bossConfig: {
-            monsterId: "BOSS_QUY_CAU", // Chạy siêu nhanh, đánh hơi
+            monsterId: "BOSS_QUY_CAU",
             spawnPointIds: ["SP_Boss_Gate_Main", "SP_Boss_Hill"],
           },
           minionConfig: {
@@ -548,6 +724,100 @@ const seedData = async () => {
     await MapConfig.insertMany(mapConfigs);
     // ---------------------------------------------------------
     // KẾT THÚC PHẦN MAP CONFIG MỚI
+    // ---------------------------------------------------------
+
+    // ---------------------------------------------------------
+    // BẮT ĐẦU PHẦN MATCH RESULTS (LỊCH SỬ ĐẤU TOÀN CỤC)
+    // ---------------------------------------------------------
+
+    // 1. Dọn dẹp dữ liệu cũ của collection matches
+    await MatchResult.deleteMany({});
+    console.log("🗑️  Đã xóa dữ liệu cũ (MatchResult).");
+
+    console.log("⏳ Creating Global Match Results...");
+
+    const matchResults = [
+      // --- TRẬN 1: Hùng & Raccoon thắng ở Map Ông Kẹ ---
+      {
+        mapId: "MAP_01_ONG_KE",
+        sessionId: "Room_Dev_Test_01",
+        startTime: new Date(Date.now() - 86400000), // Hôm qua
+        endTime: new Date(Date.now() - 86400000 + 900000), // +15 phút
+        durationSec: 900,
+        playerResults: [
+          {
+            userId: user1_Id, // Hùng
+            nickname: "Hùng Đẹp Trai",
+            isWin: true,
+            outcome: "ESCAPED",
+            rewards: { exp: 1500, coin: 300 },
+            titles: ["GrimReaper", "WalkingHospital"],
+          },
+          {
+            userId: user3_Id, // Raccoon
+            nickname: "Raccoon",
+            isWin: true,
+            outcome: "ESCAPED",
+            rewards: { exp: 1200, coin: 250 },
+            titles: ["Survivor"],
+          },
+        ],
+      },
+
+      // --- TRẬN 2: Lan & Raccoon thua ở Map Ma Da ---
+      {
+        mapId: "MAP_02_MA_DA",
+        sessionId: "Room_Dev_Test_02",
+        startTime: new Date(Date.now() - 43200000), // 12 tiếng trước
+        endTime: new Date(Date.now() - 43200000 + 600000), // +10 phút
+        durationSec: 600,
+        playerResults: [
+          {
+            userId: user2_Id, // Bé Lan
+            nickname: "Bé Lan Support",
+            isWin: false,
+            outcome: "CAUGHT", // Bị bắt
+            rewards: { exp: 50, coin: 10 },
+            titles: ["PunchingBag"],
+          },
+          {
+            userId: user3_Id, // Raccoon
+            nickname: "Raccoon",
+            isWin: false,
+            outcome: "CAUGHT",
+            rewards: { exp: 80, coin: 15 },
+            titles: ["HumanSiren"],
+          },
+        ],
+      },
+
+      // --- TRẬN 3: Hùng Solo thắng ở Map Quỷ Cẩu ---
+      {
+        mapId: "MAP_05_QUY_CAU",
+        sessionId: "Room_Solo_Hunt",
+        startTime: new Date(Date.now() - 3600000), // 1 tiếng trước
+        endTime: new Date(Date.now() - 3600000 + 1200000), // +20 phút
+        durationSec: 1200,
+        playerResults: [
+          {
+            userId: user1_Id, // Hùng
+            nickname: "Hùng Đẹp Trai",
+            isWin: true,
+            outcome: "ESCAPED",
+            rewards: { exp: 2000, coin: 500 },
+            titles: ["GrimReaper", "Survivor", "WalkingHospital"],
+          },
+        ],
+      },
+    ];
+
+    await MatchResult.insertMany(matchResults);
+    console.log(
+      `✅ Đã tạo ${matchResults.length} trận đấu mẫu vào MatchResult.`,
+    );
+
+    // ---------------------------------------------------------
+    // KẾT THÚC PHẦN MATCH RESULTS
     // ---------------------------------------------------------
 
     console.log("✅ KHỞI TẠO DỮ LIỆU THÀNH CÔNG!");

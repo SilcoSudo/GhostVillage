@@ -1,28 +1,17 @@
 import mongoose from "mongoose";
 
-const userMatchHistorySchema = new mongoose.Schema(
-  {
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      required: true,
-      index: true,
-    },
-    mapId: String,
-    isWin: Boolean,
-    durationSec: Number,
-    exp: Number,
-    coin: Number,
-    titles: {
-      type: [String],
-      default: [],
-    },
-  },
-  { timestamps: true }
-);
+  const playerMatchHistorySchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  matchId: { type: mongoose.Schema.Types.ObjectId, ref: 'GameResult', required: true },
+  isWin: { type: Boolean, default: false },
+  expGained: { type: Number, default: 0 },
+  coinGained: { type: Number, default: 0 },
+  titles: { type: [String], default: [] }, 
+  resultStatus: {
+    type: String, 
+    enum: ['Escaped', 'Killed', 'Disconnected', 'Victory', 'Defeat'], 
+    default: 'Killed' 
+  }
+}, { timestamps: true });
 
-const UserMatchHistory = mongoose.model(
-  "UserMatchHistory",
-  userMatchHistorySchema
-);
-
-export default UserMatchHistory;
+export default mongoose.model("PlayerMatchHistory", playerMatchHistorySchema, "playermatchhistories");

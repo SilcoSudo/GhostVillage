@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using ExitGames.Client.Photon;
 using Game.Core.Network.Lobby;
+using Cysharp.Threading.Tasks;
 
 namespace Game.Core.Network
 {
@@ -40,22 +41,57 @@ namespace Game.Core.Network
 
         /// <summary>
         /// Thuc hien ket noi den server Photon.
-        /// Tham so: nickName - Ten cua nguoi choi.
-        /// Logic: Thiet lap phien ban app, dong bo scene va goi lenh ket noi.
+        /// Tham so: nickName - Ten cua nguoi choi, token - Authentication token tu Backend.
+        /// Logic: Thiet lap phien ban app, dong bo scene va goi lenh ket noi voi token thuc tu Backend.
         /// </summary>
-        public void Connect(string nickName)
+        public async UniTask<bool> ConnectAsync(string nickName, string token)
         {
-            if (PhotonNetwork.IsConnected)
+            // 1. Chờ cho đến khi tiến trình Disconnect trước đó hoàn tất hẳn 100%
+            while (PhotonNetwork.NetworkClientState == ClientState.Disconnecting ||
+                   PhotonNetwork.NetworkClientState == ClientState.Leaving)
             {
-                JoinHallway();
-                return;
+                await UniTask.Yield();
             }
 
+            if (PhotonNetwork.IsConnectedAndReady) return true;
+
+            // Vẫn log ra để biết là có nhận được Token
+            Debug.Log($"[Photon] Nhận lệnh kết nối. Có Token: {!string.IsNullOrEmpty(token)}");
+
             PhotonNetwork.NickName = nickName;
-            PhotonNetwork.AuthValues = new AuthenticationValues(Guid.NewGuid().ToString());
+
+            // [FIX Ở ĐÂY] SỬ DỤNG AUTHENTICATION MẶC ĐỊNH THAY VÌ CUSTOM
+            var authValues = new AuthenticationValues();
+            authValues.UserId = nickName; // ID người chơi
+                                          // Nếu bạn KHÔNG dùng Photon Custom Auth Dashboard, KHÔNG ĐƯỢC set AuthType = Custom
+                                          // authValues.AuthType = CustomAuthenticationType.Custom; <-- XÓA HOẶC COMMENT DÒNG NÀY
+
+            PhotonNetwork.AuthValues = authValues;
+
             PhotonNetwork.PhotonServerSettings.AppSettings.AppVersion = "1.0";
             PhotonNetwork.AutomaticallySyncScene = true;
+
+            Debug.Log($"[Photon] Bắt đầu kết nối Server...");
+
             PhotonNetwork.ConnectUsingSettings();
+
+            // Chờ kết nối (Timeout 15 giây)
+            float timeout = 15f;
+            float timer = 0f;
+
+            while (!PhotonNetwork.IsConnectedAndReady)
+            {
+                await UniTask.Yield();
+                timer += Time.deltaTime;
+                if (timer >= timeout)
+                {
+                    Debug.LogError($"[Photon] Kết nối Server thất bại (Timeout)! Trạng thái hiện tại: {PhotonNetwork.NetworkClientState}");
+                    return false;
+                }
+            }
+
+            Debug.Log("[Photon] Đã kết nối và sẵn sàng!");
+            return true;
         }
 
         /// <summary>
@@ -132,8 +168,14 @@ namespace Game.Core.Network
         /// </summary>
         public override void OnLeftRoom()
         {
-            Debug.Log("[Photon] Left room. Re-joining lobby.");
-            UnityEngine.SceneManagement.SceneManager.LoadScene("LobbyListScene");
+            Debug.Log("[Photon] Đã rời khỏi phòng an toàn.");
+
+            // Kiểm tra xem trước khi rời phòng, người chơi muốn đi đâu?
+            string targetScene = PlayerPrefs.GetString("TargetSceneAfterLeave", "LobbyListScene"); // Mặc định là LobbyListScene
+            PlayerPrefs.DeleteKey("TargetSceneAfterLeave"); // Xóa sau khi lấy để tránh rác
+
+            // Load Scene một cách an toàn
+            UnityEngine.SceneManagement.SceneManager.LoadScene(targetScene);
         }
 
         /// <summary>
@@ -277,6 +319,22 @@ namespace Game.Core.Network
             {
                 PhotonNetwork.LoadLevel("LobbyGameScene");
             }
+        }
+
+        /// <summary>
+        /// Callback xử lý Custom Authentication Response từ Photon Server.
+        /// </summary>
+        public override void OnCustomAuthenticationResponse(Dictionary<string, object> data)
+        {
+            Debug.Log("[Photon] Custom authentication successful!");
+        }
+
+        /// <summary>
+        /// Callback xử lý Custom Authentication Failed từ Photon Server.
+        /// </summary>
+        public override void OnCustomAuthenticationFailed(string debugMessage)
+        {
+            Debug.LogError($"[Photon] Custom authentication failed: {debugMessage}");
         }
     }
 }

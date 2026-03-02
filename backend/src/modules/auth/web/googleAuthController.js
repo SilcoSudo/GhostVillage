@@ -41,10 +41,22 @@ export const getGoogleAuthUrl = async (req, res) => {
  */
 export const googleCallback = async (req, res) => {
   try {
-    const { code } = req.query;
+    const { code, error, error_description } = req.query;
 
+    // Handle Google denied access or other OAuth errors
+    if (error) {
+      console.error(`Google OAuth error: ${error} - ${error_description}`);
+      return res.redirect(
+        `${config.frontendUrl}/login?error=${error}&error_description=${encodeURIComponent(error_description || "")}`,
+      );
+    }
+
+    // No authorization code received
     if (!code) {
-      return res.redirect(`${config.frontendUrl}/login?error=no_code`);
+      console.error("No authorization code received from Google");
+      return res.redirect(
+        `${config.frontendUrl}/login?error=no_authorization_code`,
+      );
     }
 
     // Exchange code for tokens
@@ -74,6 +86,8 @@ export const googleCallback = async (req, res) => {
     return res.redirect(`${config.frontendUrl}/auth/callback?token=${token}`);
   } catch (error) {
     console.error("Google Callback error:", error);
-    return res.redirect(`${config.frontendUrl}/login?error=google_auth_failed`);
+    return res.redirect(
+      `${config.frontendUrl}/login?error=server_error&error_description=${encodeURIComponent(error.message || "Unknown error")}`,
+    );
   }
 };

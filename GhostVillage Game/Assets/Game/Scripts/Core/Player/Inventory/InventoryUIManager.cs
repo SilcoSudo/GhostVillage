@@ -2,94 +2,64 @@ using UnityEngine;
 
 public class InventoryUIManager : MonoBehaviour
 {
-    [Header("Inventory UI Slots")]
+    [Header("UI Slots")]
     public InventorySlotUI[] slots;
 
-    [Header("Optional: Auto find Player Inventory")]
-    public InventoryManager inventory; // có thể gán tay hoặc tự tìm
+    private InventoryManager _inventory;
 
-
-    void Start()
-    {
-        if (inventory == null)
-        {
-            // Tìm player thực sự trong scene
-            var player = GameObject.FindWithTag("Player");
-            if (player != null)
-            {
-                inventory = player.GetComponent<InventoryManager>();
-                Debug.Log($"[UI] Auto-bound to runtime player: {player.name}");
-            }
-            else
-            {
-                Debug.LogWarning("[UI] Không tìm thấy Player trong scene!");
-            }
-        }
-
-        if (inventory != null)
-            BindInventory(inventory);
-    }
-
+    // XÓA HÀM START CŨ ĐI
+    // Script này không tự đi tìm ai cả. Nó chờ được gọi.
 
     public void BindInventory(InventoryManager inv)
     {
-        Debug.Log($"[UI] Bound inventory from: {inv.gameObject.name}");
+        // Logic hủy đăng ký cũ (để tránh memory leak khi bind lại)
+        if (_inventory != null)
+        {
+            _inventory.OnInventoryChanged -= UpdateUI;
+            _inventory.OnSlotChanged -= UpdateSelectionUI;
+        }
 
-        // Unsubscribe event cũ nếu có
-        if (inventory != null)
-            inventory.OnInventoryChanged -= UpdateUI;
+        _inventory = inv;
 
-        inventory = inv;
-        inventory.OnInventoryChanged += UpdateUI;
+        // Logic đăng ký mới
+        if (_inventory != null)
+        {
+            _inventory.OnInventoryChanged += UpdateUI;
+            _inventory.OnSlotChanged += UpdateSelectionUI;
 
-        UpdateUI();
-    }
-
-    private void OnDestroy()
-    {
-        if (inventory != null)
-            inventory.OnInventoryChanged -= UpdateUI;
+            // Cập nhật ngay lập tức
+            UpdateUI();
+            UpdateSelectionUI(_inventory.currentSlotIndex);
+        }
     }
 
     private void UpdateUI()
     {
-        Debug.Log("[UI] UpdateUI called");
-        if (inventory == null || slots == null)
+        if (_inventory == null || slots == null) return;
+        var items = _inventory.items;
+
+        for (int i = 0; i < slots.Length; i++)
         {
-            Debug.LogWarning("[UI] UpdateUI bị gọi nhưng inventory hoặc slots null!");
-            return;
-        }
-
-        // Reset tất cả slot trước
-        foreach (var s in slots)
-            s.SetItem(null);
-
-        Debug.Log($"[UI] Updating UI - Inventory count: {inventory.items.Count}, Slot count: {slots.Length}");
-
-        int currentSlot = 0;
-
-        foreach (var item in inventory.items)
-        {
-            if (currentSlot >= slots.Length)
-                break;
-
-            // Slot đầu tiên hiển thị icon
-            slots[currentSlot].SetItem(item);
-
-            // Nếu item chiếm nhiều slot -> các slot kế cũng hiển thị cùng icon
-            for (int i = 1; i < item.slotSize; i++)
-            {
-                int extraIndex = currentSlot + i;
-                if (extraIndex < slots.Length)
-                {
-                    slots[extraIndex].SetItem(item); // Dùng cùng icon cho slot kế
-                    slots[extraIndex].DimSlot(); // Làm mờ hoặc disable slot phụ
-                }
-            }
-
-
-            currentSlot += item.slotSize;
+            if (i < items.Count) slots[i].SetItem(items[i]);
+            else slots[i].Clear();
         }
     }
 
+    private void UpdateSelectionUI(int selectedIndex)
+    {
+        for (int i = 0; i < slots.Length; i++)
+        {
+            slots[i].SetSelected(i == selectedIndex);
+        }
+    }
+
+    // Khi UI bị hủy (chuyển scene), tự động gỡ event cho chắc ăn
+    private void OnDestroy()
+    {
+        if (_inventory != null)
+        {
+            _inventory.OnInventoryChanged -= UpdateUI;
+            _inventory.OnSlotChanged -= UpdateSelectionUI;
+        }
+    }
 }

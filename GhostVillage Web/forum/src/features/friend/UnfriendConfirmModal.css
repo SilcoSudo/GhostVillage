@@ -1,0 +1,64 @@
+.unfriend-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 16px;
+}
+
+.unfriend-modal-content {
+  width: min(420px, 100%);
+  background: var(--bg-primary, #121212);
+  border: 1px solid var(--border-color, #520000);
+  border-radius: 10px;
+  box-shadow: var(--shadow-blood);
+  padding: 20px;
+}
+
+.unfriend-modal-title {
+  margin: 0 0 8px;
+  color: var(--text-primary, #b5a642);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.unfriend-modal-message {
+  margin: 0;
+  color: var(--text-secondary, #a68b6a);
+  line-height: 1.5;
+}
+
+.unfriend-modal-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.unfriend-modal-btn {
+  border-radius: 6px;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.unfriend-modal-btn.cancel {
+  background: transparent;
+  border-color: var(--border-color, #520000);
+  color: var(--text-secondary, #a68b6a);
+}
+
+.unfriend-modal-btn.confirm {
+  background: var(--primary-color, #990000);
+  border-color: var(--primary-dark, #520000);
+  color: #fff;
+}
+
+.unfriend-modal-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

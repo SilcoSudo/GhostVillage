@@ -1,35 +1,35 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../../app/hooks/useAuth';
-import LangmaText from '../../../shared/assets/images/logo.png';
-import FogEffect from '../components/FogEffect';
-import './LoginPage.css';
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../../app/hooks/useAuth";
+import LangmaText from "../../../shared/assets/images/logo.png";
+import FogEffect from "../components/FogEffect";
+import "./LoginPage.css";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    email: "",
+    password: "",
   });
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const { login } = useAuth();
   const navigate = useNavigate();
 
   // Load saved credentials on mount
   useEffect(() => {
-    const rememberMeExpiry = localStorage.getItem('rememberMeExpiry');
+    const rememberMeExpiry = localStorage.getItem("rememberMeExpiry");
     if (rememberMeExpiry) {
       const expiryDate = new Date(rememberMeExpiry);
       const now = new Date();
-      
+
       if (now < expiryDate) {
         // Still within 30 days, user should be auto-logged in by AuthContext
         setRememberMe(true);
       } else {
         // Expired, clear it
-        localStorage.removeItem('rememberMeExpiry');
+        localStorage.removeItem("rememberMeExpiry");
       }
     }
   }, []);
@@ -37,29 +37,37 @@ const LoginPage = () => {
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
-    
+
     // Clear error when user starts typing
     if (error) {
-      setError('');
+      setError("");
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     const result = await login(formData, rememberMe);
-    
+
     if (result?.success) {
-      navigate('/');
+      // Check if user is admin
+      if (result.user?.role === "admin") {
+        navigate("/");
+      } else {
+        setError("Only admin accounts can access this portal");
+        // Clear stored token and user since they're not admin
+        localStorage.removeItem("token");
+        localStorage.removeItem("rememberMeExpiry");
+      }
     } else {
-      let errorMessage = result?.message || 'Login failed';
+      let errorMessage = result?.message || "Login failed";
       setError(errorMessage);
     }
-    
+
     setLoading(false);
   };
 
@@ -70,9 +78,9 @@ const LoginPage = () => {
         <div className="login-form-wrapper">
           <h2>Login</h2>
           <p className="form-subtitle">Login into your account</p>
-          
+
           {error && <div className="alert-message alert-danger">{error}</div>}
-          
+
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Email</label>
@@ -113,7 +121,7 @@ const LoginPage = () => {
             </div>
 
             <button type="submit" className="btn-signin" disabled={loading}>
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? "Logging in..." : "Login"}
             </button>
           </form>
         </div>
@@ -122,7 +130,7 @@ const LoginPage = () => {
       {/* Right side - Fog Physics */}
       <div className="login-image-section">
         <FogEffect />
-        
+
         <img src={LangmaText} alt="Langma" className="langma-image" />
       </div>
     </div>

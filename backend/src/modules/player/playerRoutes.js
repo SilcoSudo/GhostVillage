@@ -1,15 +1,9 @@
-import express from 'express';
+import express from "express";
+import { getProfile } from "./playerController.js";
+import { authMiddleware } from "../../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
-/**
- * Player Routes
- * Game client player management routes
- */
-
-// TODO: Implement player routes
-// router.get('/profile', getPlayerProfile);
-// router.put('/profile', updatePlayerProfile);
-// router.get('/inventory', getPlayerInventory);
+router.get("/profile", authMiddleware, getProfile);
 
 export default router;

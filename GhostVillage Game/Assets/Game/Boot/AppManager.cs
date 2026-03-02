@@ -1,43 +1,58 @@
 using VContainer;
 using VContainer.Unity;
 using UnityEngine;
-using System.Threading;
-using Cysharp.Threading.Tasks; // Khuyên dùng UniTask thay vì Coroutine
+using Cysharp.Threading.Tasks;
 using Game.Core.Scene;
-using Game.ScriptableObjects.GameConfig;
 using Game.Core.ReactiveRepo;
+using Game.Core.Network;
+using Game.Script.UI;
 
 namespace Game.Boot
 {
-    // IStartable là interface của VContainer. 
-    // Khi AppLifetimeScope chạy xong, nó sẽ gọi hàm Start() của class này ngay lập tức.
     public class AppManager : IStartable
     {
         private readonly ISceneLoaderService _sceneLoader;
         private readonly PlayerDataStore _store;
+        private readonly INetworkService _network;
+        private readonly GlobalUIManager _globalUI;
 
-        public AppManager(ISceneLoaderService sceneLoader, PlayerDataStore store)
+        // [SỬA] Inject thêm Network và GlobalUI
+        public AppManager(ISceneLoaderService sceneLoader, PlayerDataStore store, INetworkService network, GlobalUIManager globalUI)
         {
             _sceneLoader = sceneLoader;
             _store = store;
+            _network = network;
+            _globalUI = globalUI;
         }
 
         public void Start() => RunFlow().Forget();
 
         private async UniTaskVoid RunFlow()
         {
-            // 1. Giả lập Splash Screen / Loading Config
             await UniTask.Delay(1000);
 
-            // 2. Check xem đã đăng nhập chưa (Iteration sau sẽ check Token lưu ở LocalStorage)
             if (_store.IsLoggedIn)
             {
-                await _sceneLoader.LoadSceneAsync("MainMenu");
+                _globalUI.ShowLoading(true, "Đang kết nối Máy Chủ...");
+
+                // ✅ KẾT NỐI PHOTON VỚI TOKEN TỬ STORE
+                bool connected = await _network.ConnectAsync(_store.DisplayName.Value, _store.AuthToken.Value);
+
+                if (connected)
+                {
+                    await _sceneLoader.LoadSceneAsync("MainMenu");
+                    _globalUI.ShowLoading(false); // Xong hết mới tắt
+                }
+                else
+                {
+                    _globalUI.ShowLoading(false);
+                    _globalUI.ShowError("Lỗi Mạng", "Không thể kết nối đến máy chủ trò chơi.");
+                    await _sceneLoader.LoadSceneAsync("LoginScene");
+                }
             }
             else
             {
-                // Theo Flow: Boot -> Login
-                await _sceneLoader.LoadSceneAsync("Map_1");
+                await _sceneLoader.LoadSceneAsync("LoginScene");
             }
         }
     }

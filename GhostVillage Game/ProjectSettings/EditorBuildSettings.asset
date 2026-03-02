@@ -26,6 +26,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Game/Scenes/LobbyListScene.unity
     guid: a51a8828de9bc594f8d8066f472533eb
+  - enabled: 1
+    path: Assets/Game/Scenes/5_Maps/Scene_Game_OngKe.unity
+    guid: b8057f9b784723e4ab70fb25e7c72a20
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 9f5a283fbbf7dd74bab1d4eb14eeb509, type: 3}
   m_UseUCBPForAssetBundles: 0
