@@ -1,4 +1,4 @@
-import * as announcementService from "./announcementService.js";
+import * as announcementService from "../announcementService.js";
 
 const serializeAnnouncement = (doc) => {
     const announcement = doc?.toObject ? doc.toObject() : doc;
@@ -17,16 +17,16 @@ const serializeAnnouncement = (doc) => {
 };
 
 /**
- * GET /api/web/announcement
- * List active announcements
+ * GET /api/admin/announcement
+ * List all announcements including inactive ones (Admin only)
  */
-export const listAnnouncements = async (req, res, next) => {
+export const listAllAnnouncements = async (req, res, next) => {
     try {
         const { page, limit, includeInactive } = req.query;
         const { items, pagination } = await announcementService.listAnnouncements({
             page,
             limit,
-            includeInactive: includeInactive === "true",
+            includeInactive: includeInactive === "true" || true, // Admin can see all
         });
 
         return res.status(200).json({
@@ -39,30 +39,12 @@ export const listAnnouncements = async (req, res, next) => {
 };
 
 /**
- * GET /api/web/announcement/pinned
- * Get pinned announcements
+ * GET /api/admin/announcement/:id
+ * Get single announcement by ID (Admin only)
  */
-export const getPinnedAnnouncements = async (req, res, next) => {
+export const getAnnouncementById = async (req, res, next) => {
     try {
-        const { limit } = req.query;
-        const announcements = await announcementService.getPinnedAnnouncements(limit);
-
-        return res.status(200).json({
-            success: true,
-            data: announcements.map(serializeAnnouncement),
-        });
-    } catch (err) {
-        next(err);
-    }
-};
-
-/**
- * GET /api/web/announcement/:slug
- * Get single announcement by slug
- */
-export const getAnnouncement = async (req, res, next) => {
-    try {
-        const announcement = await announcementService.getAnnouncementBySlug(req.params.slug);
+        const announcement = await announcementService.getAnnouncementById(req.params.id);
 
         if (!announcement) {
             return res.status(404).json({
@@ -81,8 +63,8 @@ export const getAnnouncement = async (req, res, next) => {
 };
 
 /**
- * POST /api/web/announcement
- * Create new announcement (admin only)
+ * POST /api/admin/announcement
+ * Create new announcement (Admin only)
  */
 export const createAnnouncement = async (req, res, next) => {
     try {
@@ -132,8 +114,8 @@ export const createAnnouncement = async (req, res, next) => {
 };
 
 /**
- * PUT /api/web/announcement/:id
- * Update announcement (admin only)
+ * PUT /api/admin/announcement/:id
+ * Update announcement (Admin only)
  */
 export const updateAnnouncement = async (req, res, next) => {
     try {
@@ -174,8 +156,8 @@ export const updateAnnouncement = async (req, res, next) => {
 };
 
 /**
- * DELETE /api/web/announcement/:id
- * Delete announcement (admin only)
+ * DELETE /api/admin/announcement/:id
+ * Delete announcement (Admin only)
  */
 export const deleteAnnouncement = async (req, res, next) => {
     try {
@@ -198,8 +180,8 @@ export const deleteAnnouncement = async (req, res, next) => {
 };
 
 /**
- * POST /api/web/announcement/:id/toggle-pin
- * Toggle pin status (admin only)
+ * POST /api/admin/announcement/:id/toggle-pin
+ * Toggle pin status (Admin only)
  */
 export const togglePin = async (req, res, next) => {
     try {
@@ -222,8 +204,8 @@ export const togglePin = async (req, res, next) => {
 };
 
 /**
- * POST /api/web/announcement/:id/toggle-active
- * Toggle active status (admin only)
+ * POST /api/admin/announcement/:id/toggle-active
+ * Toggle active status (Admin only)
  */
 export const toggleActive = async (req, res, next) => {
     try {

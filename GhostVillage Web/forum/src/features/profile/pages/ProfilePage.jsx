@@ -25,6 +25,10 @@ import {
   Users,
 } from "lucide-react";
 import "./ProfilePage.css";
+import PostDetailModal from '../../posts/components/PostDetailModal';
+import PostCard from '../../posts/components/PostCard';
+import ChangePasswordModal from '../../../shared/components/modals/ChangePasswordModal';
+import './ProfilePage.css';
 
 const ProfilePage = () => {
   const { id } = useParams();
@@ -44,6 +48,9 @@ const ProfilePage = () => {
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState(null);
+  const [showPostModal, setShowPostModal] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
   const isOwnProfile = currentUser && (id ? currentUser._id === id : true);
 
@@ -214,6 +221,16 @@ const ProfilePage = () => {
     }
   };
 
+  const handlePostClick = (postId) => {
+    setSelectedPostId(postId);
+    setShowPostModal(true);
+  };
+
+  const handleClosePostModal = () => {
+    setShowPostModal(false);
+    setSelectedPostId(null);
+  };
+
   if (loading) {
     return (
       <div className="profile-loading">
@@ -253,11 +270,6 @@ const ProfilePage = () => {
               alt={profileUser.fullname}
               className="profile-avatar"
             />
-            {isOwnProfile && (
-              <button className="edit-avatar-btn">
-                <Edit2 size={16} />
-              </button>
-            )}
           </div>
 
           <div className="profile-main-info">
@@ -267,34 +279,31 @@ const ProfilePage = () => {
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   className="horror-input-small"
+                  placeholder="Enter display name"
+                  maxLength={100}
                 />
-                <button onClick={handleUpdateName} className="btn-horror-save">
-                  SAVE
+                <button onClick={handleUpdateProfile} className="btn-horror-save" disabled={updating}>
+                  {updating ? 'SAVING...' : 'SAVE'}
                 </button>
-                <button
-                  onClick={() => setIsEditingName(false)}
-                  className="btn-horror-cancel"
-                >
-                  X
+                <button onClick={() => setIsEditingName(false)} className="btn-horror-cancel">
+                  CANCEL
                 </button>
               </div>
             ) : (
               <div className="name-display-group">
                 <h1 className="profile-name">
-                  {profileUser.fullname || "Anonymous Subject"}
-                  {isOwnProfile && (
-                    <Edit2
-                      size={16}
-                      className="edit-inline-icon"
-                      onClick={() => setIsEditingName(true)}
-                    />
-                  )}
+                  {profileUser.fullname || 'Anonymous Subject'}
                 </h1>
+                {isOwnProfile && (
+                  <Edit2 
+                    size={20} 
+                    className="edit-inline-icon" 
+                    onClick={() => setIsEditingName(true)}
+                    title="Edit display name"
+                  />
+                )}
               </div>
             )}
-            <p className="profile-username">
-              @{profileUser.fullname?.toLowerCase().replace(/\s/g, "")}
-            </p>
             <div className="profile-badges">
               {profileUser.role === "admin" && (
                 <span className="badge admin-badge">WARDEN</span>
@@ -370,7 +379,7 @@ const ProfilePage = () => {
             <h3>VITAL SIGNS</h3>
             <div className="stats-mini-grid">
               <div className="stat-mini-item">
-                <span className="stat-value">0</span>
+                <span className="stat-value">{profileUser.pagination?.total || profileUser.posts?.length || 0}</span>
                 <span className="stat-label">POSTS</span>
               </div>
               <div className="stat-mini-item">
@@ -442,11 +451,30 @@ const ProfilePage = () => {
             {activeTab === "posts" && (
               <div className="posts-list">
                 <h4 className="feed-title">PUBLISHED POSTS</h4>
-                <div className="empty-feed">
-                  <BookOpen size={48} />
-                  <p>NO POSTS RECORDED</p>
-                  <span>This folder is currently empty.</span>
-                </div>
+                {profileUser?.posts && profileUser.posts.length > 0 ? (
+                  <>
+                    <div className="posts-feed">
+                      {profileUser.posts.map((post) => (
+                        <PostCard 
+                          key={post._id} 
+                          post={post}
+                          onPostUpdate={() => {}}
+                        />
+                      ))}
+                    </div>
+                    {profileUser.pagination && profileUser.pagination.hasMore && (
+                      <button className="btn-horror-outline load-more-btn">
+                        LOAD MORE
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <div className="empty-feed">
+                    <BookOpen size={48} />
+                    <p>NO POSTS RECORDED</p>
+                    <span>This folder is currently empty.</span>
+                  </div>
+                )}
               </div>
             )}
 
@@ -587,13 +615,8 @@ const ProfilePage = () => {
                   </div>
 
                   <div className="settings-group">
-                    <label>
-                      <Lock size={16} /> SECURITY
-                    </label>
-                    <button
-                      className="btn-horror-outline"
-                      onClick={() => navigate("/account/change-password")}
-                    >
+                    <label><Lock size={16} /> SECURITY</label>
+                    <button className="btn-horror-outline" onClick={() => setShowChangePasswordModal(true)}>
                       CHANGE PASSWORD
                     </button>
                     <button
@@ -624,6 +647,23 @@ const ProfilePage = () => {
           </div>
         </div>
       </div>
+
+      {/* Post Detail Modal */}
+      <PostDetailModal
+        show={showPostModal}
+        onHide={handleClosePostModal}
+        postId={selectedPostId}
+      />
+
+      {/* Change Password Modal */}
+      {showChangePasswordModal && (
+        <ChangePasswordModal
+          onClose={() => setShowChangePasswordModal(false)}
+          onSuccess={() => {
+            console.log('Password changed successfully');
+          }}
+        />
+      )}
     </div>
   );
 };

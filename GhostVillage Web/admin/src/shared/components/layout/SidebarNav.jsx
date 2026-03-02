@@ -18,6 +18,9 @@ import {
   ChevronLast,
   LogOut,
   LogIn,
+  Skull,
+  Map,
+  Moon,
 } from 'lucide-react';
 import "../../assets/styles/SidebarNav.css";
 
@@ -66,6 +69,9 @@ const SidebarNav = () => {
   ];
 
   const gameLinks = [ 
+    { icon: Skull, label: 'Monster Management', path: '/monsters', color: 'red' },
+    { icon: Map, label: 'Map Management', path: '/maps', color: 'blue' },
+    { icon: Moon, label: 'Moon Event Management', path: '/moon-events', color: 'yellow' },
     { icon: Activity, label: t('dashboard.activityLog'), path: '/activity-log', color: 'gray' },
     { icon: Package, label: t('dashboard.gameVersion'), path: '/game-versions', color: 'indigo' },
   ]

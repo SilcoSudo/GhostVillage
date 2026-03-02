@@ -59,5 +59,26 @@
     "unban": "Mở khóa",
     "muteReason": "Lý do tắt tiếng",
     "noUsersFound": "Không tìm thấy người dùng nào"
+  },
+  "announcements": {
+    "title": "Tiêu đề",
+    "subtitle": "Quản lý thông báo game",
+    "author": "Tác giả",
+    "pinned": "Ghim",
+    "status": "Trạng thái",
+    "views": "Lượt xem",
+    "created": "Ngày tạo",
+    "active": "Hoạt động",
+    "inactive": "Không hoạt động",
+    "allStatus": "Tất cả trạng thái",
+    "allPinned": "Tất cả",
+    "unpinned": "Không ghim",
+    "create": "Tạo mới",
+    "createNew": "Tạo thông báo mới",
+    "editAnnouncement": "Chỉnh sửa thông báo",
+    "deleteAnnouncement": "Xóa thông báo",
+    "content": "Nội dung",
+    "excerpt": "Trích đoạn",
+    "coverImage": "Ảnh bìa"
   }
 }

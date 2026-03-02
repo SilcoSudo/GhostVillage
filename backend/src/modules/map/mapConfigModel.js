@@ -9,6 +9,7 @@ const MapConfigSchema = new mongoose.Schema(
       displayName: { type: String, required: true },
       thumbnailUrl: { type: String, default: "" },
       shortDescription: { type: String, default: "" },
+      requiredLevel: { type: Number, default: 1, min: 1 }, // Cấp độ yêu cầu để vào map
       isActive: { type: Boolean, default: true },
     },
 
