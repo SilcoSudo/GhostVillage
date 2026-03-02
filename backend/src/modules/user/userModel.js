@@ -128,9 +128,4 @@ userSchema.methods.toJSON = function () {
 
 const User = mongoose.model("User", userSchema);
 
-// Drop old username index if it exists (migration from old schema)
-User.collection.dropIndex("username_1").catch(() => {
-  // Index doesn't exist, that's fine
-});
-
 export default User;

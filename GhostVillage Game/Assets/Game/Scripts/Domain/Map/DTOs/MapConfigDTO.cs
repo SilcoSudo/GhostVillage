@@ -9,6 +9,7 @@ namespace Game.Domain.Map.DTOs
         public IdentityConfigDTO identityConfig;
         public EnvironmentConfigDTO environmentConfig;
         public ConsumableConfigDTO consumableConfig;
+        public EquipmentConfigDTO equipmentConfig; // <-- MỚI THÊM
         public MonsterSystemConfigDTO monsterSystemConfig;
         public PuzzleConfigDTO puzzleConfig;
         public RewardConfigDTO rewardConfig;
@@ -47,6 +48,18 @@ namespace Game.Domain.Map.DTOs
         public List<MandatoryItemDTO> mandatoryItems;
         public RandomPoolConfigDTO randomPoolConfig;
     }
+
+    // --- MỚI THÊM CLASS NÀY ---
+    [Serializable]
+    public class EquipmentConfigDTO
+    {
+        public List<string> spawnPointIds;
+        // Tái sử dụng MandatoryItemDTO vì cấu trúc JSON giống hệt (itemId, min, max)
+        public List<MandatoryItemDTO> mandatoryEquipment;
+        // Tái sử dụng RandomPoolConfigDTO vì cấu trúc JSON giống hệt
+        public RandomPoolConfigDTO randomPoolConfig;
+    }
+    // ---------------------------
 
     [Serializable]
     public class MandatoryItemDTO

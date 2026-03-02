@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using TMPro;
 using Game.Core.ReactiveRepo;
 using R3;
+using Cysharp.Threading.Tasks;
 
 namespace Game.UI.MainMenu
 {
@@ -49,12 +50,25 @@ namespace Game.UI.MainMenu
             // 1. KẾT NỐI UI VỚI DATA STORE (REACTIVE BINDING)
             BindUI();
 
-            // 2. Logic kết nối mạng cũ giữ nguyên
-            _network.OnPhotonConnected += HandleConnected;
-            string playerName = _store.DisplayName.Value; // Lấy giá trị hiện tại từ Store
+            if (_network.IsConnected)
+            {
+                HandleConnected();
+            }
+            else
+            {
+                // Nếu bị rớt mạng hoặc chưa kết nối (do lỗi nào đó), thử kết nối lại ngầm
+                Debug.Log("[MainMenu] Photon offline, đang kết nối lại...");
+                _statusText.text = "Đang kết nối lại...";
+                _statusText.color = Color.yellow;
+                _lobbyListButton.interactable = false;
+                _debugHostButton.interactable = false;
 
-            if (!_network.IsConnected) _network.Connect(playerName);
-            else HandleConnected();
+                string playerName = _store.DisplayName.Value;
+                string token = _store.AuthToken.Value;
+                // Gọi kết nối lại. Khi kết nối xong, HandleConnected sẽ tự động được gọi (vì đã đăng ký ở OnEnable/Start trước đó)
+                // Lưu ý: Đảm bảo bạn đã đăng ký _network.OnPhotonConnected += HandleConnected; ở đâu đó trong MainMenuController.
+                _network.ConnectAsync(playerName, token).Forget();
+            }
         }
 
         private void BindUI()

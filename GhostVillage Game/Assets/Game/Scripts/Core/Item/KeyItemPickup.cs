@@ -1,53 +1,69 @@
-using Game.Core.Player.RayCast;
-using Photon.Pun;
 using UnityEngine;
+using Photon.Pun;
+// SỬA: Namespace đúng chứa PlayerInteract (dựa trên file PlayerInteract bạn gửi trước đó)
+using Game.Core.Player.RayCast;
 
-public class KeyItemPickup : MonoBehaviour, IInteractable
+public class KeyItemPickup : MonoBehaviourPun, IInteractable // Thêm MonoBehaviourPun để dùng photonView
 {
     [Header("Key Item Settings")]
-    public KeyItemData data;
+    public ItemDataSO data; // Lưu ý: Dùng ItemDataSO thay vì KeyItemData nếu bạn đã đổi tên
 
     [Header("Prompt Settings")]
     public string promptText = "Nhặt vật phẩm";
 
-
-    public void Interact()
+    // SỬA: Thêm tham số actor
+    public void Interact(GameObject actor)
     {
-        var players = Object.FindObjectsByType<PlayerInteract>(FindObjectsSortMode.None);
+        // Logic mới: Không cần tìm tất cả player. Actor chính là người bấm nút F.
+        Debug.Log($"[Pickup] {actor.name} đang cố nhặt {data.itemName}");
 
-        foreach (var p in players)
+        var playerInteract = actor.GetComponent<PlayerInteract>();
+
+        // Kiểm tra xem người tương tác có phải là Local Player không (quan trọng cho Photon)
+        PhotonView actorPv = actor.GetComponent<PhotonView>();
+
+        if (playerInteract != null && actorPv != null && actorPv.IsMine)
         {
-            var pv = p.GetComponent<PhotonView>();
-            if (pv != null && pv.IsMine)
-            {
-                TryPickup(p);
-                break;
-            }
+            TryPickup(playerInteract);
         }
     }
 
     private void TryPickup(PlayerInteract player)
     {
-        // Giả sử Hùng có Component InventoryManager trên cùng GameObject với PlayerInteract
         var inventory = player.GetComponent<InventoryManager>();
         if (inventory == null) return;
 
+        // Thêm vào túi đồ
         if (inventory.AddItem(data))
         {
-            if (data.heldPrefab != null)
+            // Nếu có Prefab cầm tay -> Gắn vào tay
+            if (data.itemHandModel != null)
             {
-                // SỬA: Fix lỗi chính tả từ 'AttachaHeldItem' thành 'AttachHeldItem'
-                player.AttachHeldItem(data.heldPrefab);
+                player.AttachHeldItem(data.itemHandModel);
             }
 
-            // Xóa vật phẩm trên môi trường sau khi nhặt thành công
-            Destroy(gameObject);
+            // Hủy vật phẩm dưới đất (Đồng bộ qua mạng)
+            if (PhotonNetwork.IsMasterClient)
+            {
+                PhotonNetwork.Destroy(gameObject);
+            }
+            else
+            {
+                // Gửi RPC yêu cầu Master hủy (nếu không phải chủ phòng)
+                photonView.RPC("RequestDestroyRPC", RpcTarget.MasterClient);
+            }
         }
+    }
+
+    [PunRPC]
+    public void RequestDestroyRPC()
+    {
+        PhotonNetwork.Destroy(gameObject);
     }
 
     public string GetPromptMessage()
     {
         string itemName = data != null ? data.itemName : "vật phẩm";
-        return $"{promptText} ({itemName})"; // Tự động thêm tên vật phẩm vào prompt
+        return $"{promptText} ({itemName}) (F)";
     }
 }

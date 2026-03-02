@@ -1,6 +1,7 @@
 // File: src/Game/Core/Network/INetworkService.cs
 using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using Game.Core.Network.Lobby; // Nhớ namespace chứa LobbyData
 
 namespace Game.Core.Network
@@ -18,8 +19,7 @@ namespace Game.Core.Network
         event Action<string> OnJoinLobbyFailed; // Thêm event báo lỗi kèm nội dung
 
         // --- METHODS ---
-        void Connect(string nickName);
-
+        UniTask<bool> ConnectAsync(string nickName, string token);
         // Vào Sảnh Chờ (để lấy danh sách)
         void JoinHallway();
 

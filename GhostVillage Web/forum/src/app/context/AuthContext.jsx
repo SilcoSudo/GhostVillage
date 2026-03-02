@@ -1,5 +1,6 @@
-import { createContext, useState, useEffect, useContext } from 'react';
-import authService from '../../features/auth/services/authService';
+import { createContext, useState, useEffect, useContext } from "react";
+import authService from "../../features/auth/services/authService";
+import { clearAllAvatarCaches } from "../../shared/utils/avatarCache";
 
 export const AuthContext = createContext();
 
@@ -9,68 +10,46 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // Auto-login from saved token on mount
+  // Token expiry is handled by JWT verification on backend
   useEffect(() => {
-    const savedToken = localStorage.getItem('token');
-    const rememberMeExpiry = localStorage.getItem('rememberMeExpiry');
+    const savedToken = localStorage.getItem("token");
 
-    if (savedToken && rememberMeExpiry) {
-      const expiryDate = new Date(rememberMeExpiry);
-      const now = new Date();
-
-      if (now < expiryDate) {
-        // Token still valid, restore session
-        setToken(savedToken);
-        authService.getCurrentUser(savedToken)
-          .then(result => {
-            if (result.success) {
-              setUser(result.user);
-            } else {
-              // Token invalid, clear storage
-              localStorage.removeItem('token');
-              localStorage.removeItem('rememberMeExpiry');
-            }
-          })
-          .catch(() => {
-            localStorage.removeItem('token');
-            localStorage.removeItem('rememberMeExpiry');
-          })
-          .finally(() => setLoading(false));
-      } else {
-        // Token expired, clear storage
-        localStorage.removeItem('token');
-        localStorage.removeItem('rememberMeExpiry');
-        setLoading(false);
-      }
+    if (savedToken) {
+      // Restore session and verify token with backend
+      setToken(savedToken);
+      authService
+        .getCurrentUser(savedToken)
+        .then((result) => {
+          if (result.success) {
+            setUser(result.user);
+          } else {
+            // Token invalid or expired, backend will reject it
+            localStorage.removeItem("token");
+          }
+        })
+        .catch(() => {
+          // Token verification failed, clear storage
+          localStorage.removeItem("token");
+        })
+        .finally(() => setLoading(false));
     } else {
       setLoading(false);
     }
   }, []);
 
   const login = async (credentials, rememberMe = false) => {
-    const result = await authService.login(credentials.email, credentials.password, rememberMe);
-    
-    if (result.success) {
-      setUser(result.user);
-      setToken(result.token);
-      
-      // Always save token to localStorage for axios interceptor to work, 
-      // but managed expiry differs
-      localStorage.setItem("token", result.token);
+    const result = await authService.login(
+      credentials.email,
+      credentials.password,
+      rememberMe,
+    );
 
-      if (rememberMe) {
-        // Save expiry for 30 days
-        const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + 30);
-        localStorage.setItem('rememberMeExpiry', expiryDate.toISOString());
-      } else {
-        // For session-only, we store it in sessionStorage OR just don't set local expiry
-        // Choosing to set a short local expiry (1 day) to match backend
-        const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + 1);
-        localStorage.setItem('rememberMeExpiry', expiryDate.toISOString());
-      }
+    if (result.success) {
+      // Backend generates JWT with expiry based on rememberMe flag
+      // No need to store expiry separately - backend verifies token
+      setSession(result.token, result.user);
     }
-    
+
     return result;
   };
 
@@ -80,21 +59,22 @@ export const AuthProvider = ({ children }) => {
       formData.fullName,
       formData.password,
       formData.confirmPassword,
-      formData.dateOfBirth
+      formData.dateOfBirth,
     );
     // register now only sends verification email; frontend should show message
     return result;
   };
 
   const setSession = (tokenValue, userValue) => {
-    setUser(userValue);
+    if (!tokenValue || !userValue) return false;
     setToken(tokenValue);
-    if (tokenValue) localStorage.setItem('token', tokenValue);
-    else localStorage.removeItem('token');
+    setUser(userValue);
+    localStorage.setItem("token", tokenValue);
+    return true;
   };
 
   const refreshUser = async () => {
-    const savedToken = localStorage.getItem('token');
+    const savedToken = localStorage.getItem("token");
     if (savedToken) {
       const result = await authService.getCurrentUser(savedToken);
       if (result.success) {
@@ -107,12 +87,13 @@ export const AuthProvider = ({ children }) => {
     await authService.logout();
     setUser(null);
     setToken(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('rememberMeExpiry');
-    sessionStorage.removeItem('token');
-    
+    localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
+    // Clear all cached avatars on logout
+    clearAllAvatarCaches();
+
     // Redirect về home sau khi logout
-    window.location.href = '/';
+    window.location.href = "/";
   };
 
   const forgotPassword = async (email) => {
@@ -128,32 +109,37 @@ export const AuthProvider = ({ children }) => {
   };
 
   const refetchUser = async () => {
-    const currentToken = token || localStorage.getItem('token');
+    const currentToken = token || localStorage.getItem("token");
     if (!currentToken) return;
-    
+
     try {
       const result = await authService.getCurrentUser(currentToken);
       if (result.success) {
         setUser(result.user);
       }
     } catch (error) {
-      console.error('Failed to refetch user:', error);
+      console.error("Failed to refetch user:", error);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      token, 
-      loading, 
-      login, 
-      register, 
-      logout, 
-      setSession,      refreshUser,      forgotPassword,
-      resetPassword,
-      changePassword,
-      refetchUser
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        loading,
+        login,
+        register,
+        logout,
+        setSession,
+        refreshUser,
+        forgotPassword,
+        resetPassword,
+        changePassword,
+        refetchUser,
+        userRole: user?.role,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -162,7 +148,7 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
+    throw new Error("useAuth must be used within AuthProvider");
   }
   return context;
 };

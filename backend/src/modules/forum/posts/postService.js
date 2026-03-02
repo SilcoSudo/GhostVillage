@@ -1,4 +1,9 @@
 import Post from "./postModel.js";
+import UserModel from "../../user/userModel.js";
+import {
+  deleteFromCloudinary,
+  extractPublicIdFromUrl,
+} from "../../../services/uploadService.js";
 
 export const listPosts = async ({ page = 1, limit = 10, category }) => {
   const p = Math.max(parseInt(page) || 1, 1);
@@ -40,13 +45,37 @@ export const createPost = async ({ title, body, author, category, media }) => {
 };
 
 export const updatePost = async (id, { title, body, category, media }) => {
+  const existingPost = await Post.findById(id);
+  if (!existingPost) return null;
+
+  const nextMedia = Array.isArray(media) ? media : [];
+  const nextKeys = new Set(
+    nextMedia.map((item) => item.publicId || item.url).filter(Boolean),
+  );
+
+  const removedMedia = (existingPost.media || []).filter((item) => {
+    const key = item.publicId || item.url;
+    return key && !nextKeys.has(key);
+  });
+
+  if (removedMedia.length > 0) {
+    await Promise.allSettled(
+      removedMedia.map(async (item) => {
+        const publicId = item.publicId || extractPublicIdFromUrl(item.url);
+        if (publicId) {
+          await deleteFromCloudinary(publicId);
+        }
+      }),
+    );
+  }
+
   return await Post.findByIdAndUpdate(
     id,
     {
       title,
       body,
       category,
-      media,
+      media: nextMedia,
       isEdited: true,
       editedAt: new Date(),
       updatedAt: new Date(),
@@ -56,7 +85,23 @@ export const updatePost = async (id, { title, body, category, media }) => {
 };
 
 export const deletePost = async (id) => {
-  return await Post.findByIdAndDelete(id);
+  const post = await Post.findById(id);
+  if (!post) return null;
+
+  const mediaList = Array.isArray(post.media) ? post.media : [];
+  if (mediaList.length > 0) {
+    await Promise.allSettled(
+      mediaList.map(async (item) => {
+        const publicId = item.publicId || extractPublicIdFromUrl(item.url);
+        if (publicId) {
+          await deleteFromCloudinary(publicId);
+        }
+      }),
+    );
+  }
+
+  await post.deleteOne();
+  return post;
 };
 
 export const toggleLike = async (id, userId) => {
@@ -70,7 +115,7 @@ export const toggleLike = async (id, userId) => {
 };
 
 export const toggleBookmark = async (id, userId) => {
-  const User = (await import("../../user/userModel.js")).default;
+  const User = UserModel;
   const post = await Post.findById(id);
   if (!post) return null;
 

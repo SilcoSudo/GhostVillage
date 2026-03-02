@@ -44,6 +44,14 @@ MonoBehaviour:
   - RespawnSpaceship
   - RPC_ReceiveChatMessage
   - RPC_GetKicked
+  - RequestDestroyRPC
+  - DisablePuzzleRPC
+  - ActivateAltarSuccessRPC
+  - CheckAltarConditionRPC
+  - SyncPlayerStatusRPC
+  - UpdatePlayerStatusRPC
+  - RpcShowGameResult
+  - RPC_AddStat
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

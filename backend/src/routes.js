@@ -8,10 +8,14 @@ import wikiRoutes from "./modules/forum/wiki/wikiRoutes.js";
 import webAnnouncementRoutes from "./modules/forum/announcement/web/announcementRoutes.js";
 import adminAnnouncementRoutes from "./modules/forum/announcement/admin/announcementRoutes.js";
 import searchRoutes from "./modules/forum/search/searchRoutes.js";
+import notificationRoutes from "./modules/forum/notifications/notificationRoutes.js";
+import friendRoutes from "./modules/friend/web/friendRoutes.js";
+import messageRoutes from "./modules/message/web/messageRoutes.js";
 import playerRoutes from "./modules/player/playerRoutes.js";
 import profileRoutes from "./modules/profile/ProfileRoutes.js";
 import { loginGame } from "./modules/auth/game/authController.js";
 import mapRoute from "./modules/map/mapRoute.js";
+import matchRoutes from "./modules/match/matchRoutes.js";
 import monsterRoutes from "./modules/monster/monsterRoutes.js";
 import moonEventRoutes from "./modules/moonEvent/moonEventRoutes.js";
 import moonEventGameRoutes from "./modules/moonEvent/gameRoutes.js";
@@ -29,6 +33,7 @@ router.use("/profile", profileRoutes);
 router.use("/maps", mapRoute);
 // End of Map Routes
 
+router.use("/matches", matchRoutes);
 // Monster Routes (mounted at /api/monsters)
 router.use("/monsters", monsterRoutes);
 // End of Monster Routes
@@ -43,6 +48,9 @@ webRoutes.use("/wiki", wikiRoutes);
 webRoutes.use("/announcement", webAnnouncementRoutes);
 webRoutes.use("/search", searchRoutes);
 webRoutes.use("/moon-events", moonEventRoutes);
+webRoutes.use("/notifications", notificationRoutes);
+webRoutes.use("/friend", friendRoutes);
+webRoutes.use("/message", messageRoutes);
 router.use("/web", webRoutes);
 
 // Admin Routes (mounted at /api/admin)
