@@ -118,7 +118,7 @@ export const getMeWeb = async (req, res) => {
 
 export const changePasswordWeb = async (req, res) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?._id;
     const { currentPassword, newPassword } = req.body;
 
     if (!userId) {
