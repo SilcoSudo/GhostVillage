@@ -12,14 +12,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d427e944b5c9f44f8af237faf4fa73b, type: 3}
   m_Name: GameResourceDatabase
   m_EditorClassIdentifier: Assembly-CSharp::Game.Core.Database.GameResourceDatabaseSO
-  items:
-  - entityId: ITEM_FLASHLIGHT
-    prefab: {fileID: 7723053562602984848, guid: 50b849f38cc225a44ba541096021650f, type: 3}
-  - entityId: ITEM_FLASHLIGHT_Hand
-    prefab: {fileID: 7024614330379377522, guid: 1b117bcded2c1474b92c35134ab8145c, type: 3}
+  mandatoryConsumables:
+  - entityId: ITEM_MEDKIT
+    prefab: {fileID: 2810111993189452950, guid: e3a073d6ad5164e4d860f6c13281f9f0, type: 3}
+  randomConsumables:
   - entityId: ITEM_POTION
     prefab: {fileID: 6617366009198203666, guid: 6d8941f04ea4e72428d46e386b06bce8, type: 3}
-  - entityId: Potion_Hand
-    prefab: {fileID: 5531813679393782470, guid: e0868c15efabe0e409b33bcde0bed52f, type: 3}
-  monsters: []
-  puzzles: []
+  mandatoryEquipments:
+  - entityId: ITEM_FLASHLIGHT
+    prefab: {fileID: 7723053562602984848, guid: 50b849f38cc225a44ba541096021650f, type: 3}
+  randomEquipments:
+  - entityId: ITEM_COMPASS
+    prefab: {fileID: 6173607550887213707, guid: 141ae60163944c547bad3478bf765d7e, type: 3}
+  - entityId: ITEM_GHOST_DETECTOR
+    prefab: {fileID: 5753313422348951679, guid: 67c51bc07f5141a48a504ba5f3b2342f, type: 3}
+  monsters:
+  - entityId: BOSS_ONG_KE
+    prefab: {fileID: 3636443237326501205, guid: a310be84496b44447806cfa5def0967b, type: 3}
+  - entityId: MINION_SHADOW_HAND
+    prefab: {fileID: 6458741422548826572, guid: dfa5bfd4df52a764b89b669a967427b6, type: 3}
+  - entityId: MINION_CURSED_RAT
+    prefab: {fileID: 5122327123068424174, guid: 060097ba8ab758541a7c62b3b0feff6a, type: 3}
+  puzzles:
+  - entityId: PUZZLE_FIND_DOLL
+    prefab: {fileID: 8126756268081071111, guid: f0aa56b0f0b6cab4480a1f0f89562a60, type: 3}
+  - entityId: PUZZLE_FIX_LIGHT
+    prefab: {fileID: 8891307657192998306, guid: abe4dd02f1be2524f8b7e1bdbe4194dd, type: 3}
