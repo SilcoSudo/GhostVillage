@@ -5,6 +5,7 @@ import { config } from "../../config/env.js";
 import MailService from "../../services/mailService.js";
 import userModel from "../user/userModel.js";
 import Player from "../player/playerModel.js";
+import { uploadToCloudinary } from "../../services/uploadService.js";
 
 /**
  * Auth Service
@@ -19,6 +20,64 @@ const generateToken = (userId, role, rememberMe = false) => {
   return jwt.sign({ userId, role }, config.jwt.secret, {
     expiresIn,
   });
+};
+
+const isGoogleAvatarUrl = (url) => {
+  if (!url || typeof url !== "string") return false;
+  return /googleusercontent\.com|ggpht\.com/i.test(url);
+};
+
+const downloadAvatarBuffer = async (avatarUrl) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    const response = await fetch(avatarUrl, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "GhostVillage-Backend/1.0",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Avatar download failed with status ${response.status}`);
+    }
+
+    const mimeType = response.headers.get("content-type") || "image/jpeg";
+    const arrayBuffer = await response.arrayBuffer();
+    return {
+      buffer: Buffer.from(arrayBuffer),
+      mimeType,
+    };
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};
+
+const syncGoogleAvatarToCloudinary = async (user, googleAvatarUrl) => {
+  if (!user || !googleAvatarUrl) {
+    return user?.avatar || null;
+  }
+
+  if (user.avatar) {
+    return user.avatar;
+  }
+
+  const { buffer, mimeType } = await downloadAvatarBuffer(googleAvatarUrl);
+  const uploadResult = await uploadToCloudinary(buffer, {
+    folder: `ghostvillage/avatars/google/${user._id}`,
+    public_id: `google_avatar_${Date.now()}`,
+    resource_type: "image",
+    mimeType,
+    quality: "auto",
+    fetch_format: "auto",
+    width: 300,
+    height: 300,
+    crop: "fill",
+    gravity: "auto",
+  });
+
+  return uploadResult?.secure_url || null;
 };
 
 export const AuthService = {
@@ -353,10 +412,18 @@ export const AuthService = {
       if (!user.googleId) {
         user.googleId = googleId;
       }
-      // Only set avatar from Google if user doesn't have one yet
-      if (avatar && (!user.avatar || user.avatar === "")) {
-        user.avatar = avatar;
+
+      if (avatar && !user.avatar) {
+        try {
+          const syncedAvatar = await syncGoogleAvatarToCloudinary(user, avatar);
+          if (syncedAvatar) {
+            user.avatar = syncedAvatar;
+          }
+        } catch (error) {
+          console.warn("Google avatar sync failed:", error.message);
+        }
       }
+
       // Mark as verified (Google verified the email)
       user.isVerified = true;
       await user.save();
@@ -366,10 +433,19 @@ export const AuthService = {
         googleId,
         email: email.toLowerCase(),
         fullname,
-        avatar,
+        avatar: null,
         isVerified: true, // Google OAuth users are auto-verified
         password: null, // No password for OAuth users
       });
+
+      if (avatar) {
+        try {
+          user.avatar = await syncGoogleAvatarToCloudinary(user, avatar);
+          await user.save();
+        } catch (error) {
+          console.warn("Initial Google avatar sync failed:", error.message);
+        }
+      }
     }
 
     const token = generateToken(user._id, user.role, true); // Remember me = true for OAuth

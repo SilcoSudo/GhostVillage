@@ -72,7 +72,9 @@ startServer();
 // Handle unhandled promise rejections
 process.on("unhandledRejection", (err) => {
   console.error("❌ Unhandled Rejection:", err);
-  process.exit(1);
+  if (config.nodeEnv === "production") {
+    process.exit(1);
+  }
 });
 
 process.on("SIGINT", () => {

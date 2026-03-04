@@ -1,0 +1,129 @@
+.report-post-modal .modal-dialog {
+  max-width: 520px;
+}
+
+.report-post-modal .modal-content {
+  background: var(--card-bg);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.report-post-modal .modal-header {
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.report-post-modal .modal-title {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.report-post-modal .btn-close {
+  filter: brightness(0) saturate(100%) invert(82%) sepia(13%) saturate(1089%)
+    hue-rotate(6deg) brightness(91%) contrast(84%);
+  opacity: 0.85;
+}
+
+.report-post-modal .btn-close:hover {
+  opacity: 1;
+}
+
+.report-post-modal .modal-body {
+  background: var(--card-bg);
+}
+
+.report-post-modal .modal-footer {
+  border-top: 1px solid var(--border-color);
+  background: var(--card-bg);
+}
+
+.report-post-modal .form-label {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.report-post-modal .form-control {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.report-post-modal .form-control::placeholder {
+  color: var(--text-muted);
+}
+
+.report-post-modal .form-control:focus {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 0.2rem rgba(181, 166, 66, 0.15);
+}
+
+.report-cancel-btn,
+.report-submit-btn {
+  min-width: 110px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.report-cancel-btn {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.report-cancel-btn:hover {
+  background: var(--bg-primary);
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+.report-submit-btn {
+  background: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  color: var(--text-primary);
+}
+
+.report-submit-btn:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  color: var(--text-primary);
+}
+
+.report-submit-btn:disabled,
+.report-cancel-btn:disabled {
+  opacity: 0.65;
+}
+
+.report-fullscreen-loading {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.report-fullscreen-loading-content {
+  min-width: 260px;
+  text-align: center;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px 24px;
+  color: var(--text-primary);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.8),
+    0 0 15px rgba(122, 0, 0, 0.25);
+}
+
+.report-fullscreen-loading-content .spinner-border {
+  color: var(--accent-color);
+}
+
+.report-fullscreen-loading-content p {
+  margin: 12px 0 0;
+  color: var(--text-secondary);
+  font-weight: 600;
+}

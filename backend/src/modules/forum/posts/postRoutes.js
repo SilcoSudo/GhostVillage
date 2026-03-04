@@ -10,6 +10,7 @@ import {
   lockPost,
   uploadPostImage,
   deletePostMedia,
+  reportPost,
 } from "./postController.js";
 import { authMiddleware } from "../../../middlewares/auth.middleware.js";
 import { uploadAvatar } from "../../../middlewares/uploadMiddleware.js";
@@ -30,6 +31,7 @@ router.delete("/:id", authMiddleware, deletePost);
 router.post("/:id/like", authMiddleware, likePost);
 router.post("/:id/bookmark", authMiddleware, bookmarkPost);
 router.post("/:id/lock", authMiddleware, lockPost);
+router.post("/:id/report", authMiddleware, reportPost);
 
 // Comment routes
 router.use("/:postId/comments", commentRoutes);

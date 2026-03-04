@@ -1,6 +1,24 @@
 import cloudinary from "cloudinary";
 import { config } from "../config/env.js";
 
+const normalizeCloudinaryError = (error) => {
+  const nested = error?.error || {};
+  return {
+    message:
+      error?.message || nested?.message || "Unknown Cloudinary upload error",
+    statusCode:
+      error?.http_code ||
+      error?.statusCode ||
+      error?.status ||
+      nested?.http_code ||
+      nested?.statusCode ||
+      nested?.status ||
+      0,
+    name: error?.name || nested?.name || "CloudinaryError",
+    raw: error,
+  };
+};
+
 // Check if Cloudinary is configured
 const isCloudinaryConfigured = () => {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim();
@@ -57,27 +75,53 @@ export const uploadToCloudinary = async (fileBuffer, options = {}) => {
 
   const doUpload = () =>
     new Promise((resolve, reject) => {
+      let settled = false;
+      const finishResolve = (value) => {
+        if (settled) return;
+        settled = true;
+        resolve(value);
+      };
+      const finishReject = (err) => {
+        if (settled) return;
+        settled = true;
+        reject(err);
+      };
+
+      const uploadParams = {
+        resource_type: "auto",
+        folder: options.folder || "ghostvillage/avatars",
+        public_id: options.public_id || undefined,
+        overwrite: options.overwrite !== false,
+        timeout: options.timeout || 120000,
+        ...options,
+      };
+
+      if (
+        uploadParams.resource_type !== "video" &&
+        uploadParams.resource_type !== "raw" &&
+        uploadParams.transformation === undefined
+      ) {
+        uploadParams.transformation = [
+          { width: 1280, height: 720, crop: "fill" },
+          { quality: "auto" },
+          { fetch_format: "auto" },
+        ];
+      }
+
       const uploadStream = cloudinary.v2.uploader.upload_stream(
-        {
-          resource_type: "auto",
-          folder: options.folder || "ghostvillage/avatars",
-          public_id: options.public_id || undefined,
-          overwrite: options.overwrite !== false, // Default to true
-          transformation: [
-            { width: 1280, height: 720, crop: "fill" }, // 720p
-            { quality: "auto" },
-            { fetch_format: "auto" },
-          ],
-          ...options,
-        },
+        uploadParams,
         (error, result) => {
           if (error) {
-            reject(error);
+            finishReject(error);
           } else {
-            resolve(result);
+            finishResolve(result);
           }
         },
       );
+
+      uploadStream.on("error", (streamError) => {
+        finishReject(streamError);
+      });
 
       uploadStream.end(fileBuffer);
     });
@@ -87,9 +131,9 @@ export const uploadToCloudinary = async (fileBuffer, options = {}) => {
     try {
       return await doUpload();
     } catch (error) {
-      lastError = error;
-      const statusCode =
-        error?.http_code || error?.statusCode || error?.status || 0;
+      const normalized = normalizeCloudinaryError(error);
+      lastError = normalized;
+      const statusCode = normalized.statusCode;
       const isRateLimit = statusCode === 429;
       const isLastAttempt = attempt === maxAttempts;
 
@@ -102,11 +146,16 @@ export const uploadToCloudinary = async (fileBuffer, options = {}) => {
     }
   }
 
-  const statusCode =
-    lastError?.http_code || lastError?.statusCode || lastError?.status || 0;
+  const statusCode = lastError?.statusCode || 0;
   const message = lastError?.message || "Unknown upload error";
   const suffix = statusCode ? ` (status ${statusCode})` : "";
-  throw new Error(`Cloudinary upload failed: ${message}${suffix}`);
+  const uploadError = new Error(
+    `Cloudinary upload failed: ${message}${suffix}`,
+  );
+  uploadError.statusCode = statusCode;
+  uploadError.name = lastError?.name || "CloudinaryUploadError";
+  uploadError.raw = lastError?.raw;
+  throw uploadError;
 };
 
 /**

@@ -34,6 +34,15 @@ const commentService = {
     );
     return response.data;
   },
+
+  // Report a comment
+  reportComment: async (postId, commentId, reportData) => {
+    const response = await axios.post(
+      `/web/forum/${postId}/comments/${commentId}/report`,
+      reportData,
+    );
+    return response.data;
+  },
 };
 
 export default commentService;

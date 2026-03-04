@@ -4,6 +4,62 @@ import {
   uploadToCloudinary,
   deleteFromCloudinary,
 } from "../../../services/uploadService.js";
+import { evaluateReportWithGemini } from "../../../services/aiModerationService.js";
+
+const isRateLimitedAvatarUrl = (url) => {
+  if (!url || typeof url !== "string") return false;
+  return /googleusercontent\.com|ggpht\.com/i.test(url);
+};
+
+const MAX_POST_IMAGES = 10;
+const MAX_POST_VIDEOS = 1;
+
+const validatePostMediaLimits = (media) => {
+  if (!Array.isArray(media)) return null;
+
+  const imageCount = media.filter((item) => item?.type === "image").length;
+  const videoCount = media.filter((item) => item?.type === "video").length;
+
+  if (videoCount > MAX_POST_VIDEOS) {
+    return `A post can contain up to ${MAX_POST_VIDEOS} video.`;
+  }
+
+  if (imageCount > MAX_POST_IMAGES) {
+    return `A post can contain up to ${MAX_POST_IMAGES} images.`;
+  }
+
+  return null;
+};
+
+const buildReportReasonText = ({ reason, customReason }) => {
+  const reasonCode = String(reason || "")
+    .trim()
+    .toUpperCase();
+  const custom = String(customReason || "").trim();
+
+  if (reasonCode === "OTHER") {
+    return {
+      reasonCode,
+      reasonText: custom ? `Other: ${custom}` : "Other",
+    };
+  }
+
+  return {
+    reasonCode: reasonCode || "CUSTOM",
+    reasonText: String(reason || "").trim(),
+  };
+};
+
+const findExistingModerationByReason = (reports, reasonText) => {
+  if (!Array.isArray(reports) || !reasonText) return null;
+
+  const matched = reports.find(
+    (item) => String(item?.reason || "").trim() === String(reasonText).trim(),
+  );
+
+  if (!matched?.aiModeration) return null;
+  return matched.aiModeration;
+};
 
 const serializePost = (doc) => {
   const p = doc?.toObject ? doc.toObject() : doc;
@@ -20,7 +76,10 @@ const serializePost = (doc) => {
         _id: user._id,
         username: user.fullname || "Anonymous User",
         fullname: user.fullname || "Anonymous User",
-        avatar: user.avatar || null,
+        avatar:
+          user.avatar && !isRateLimitedAvatarUrl(user.avatar)
+            ? user.avatar
+            : null,
       };
     }
     // Handle case where author is just an ID (old data or not populated)
@@ -38,6 +97,8 @@ const serializePost = (doc) => {
     ...p,
     author: authorData,
     likes: Array.isArray(p.likes) ? p.likes : [],
+    reports: Array.isArray(p.reports) ? p.reports : [],
+    report: Array.isArray(p.reports) ? p.reports.length : 0,
     commentCount: p.commentCount || 0,
   };
 };
@@ -81,6 +142,14 @@ export const createPost = async (req, res, next) => {
         .status(400)
         .json({ success: false, message: "Missing required fields" });
     }
+
+    const mediaValidationError = validatePostMediaLimits(media);
+    if (mediaValidationError) {
+      return res
+        .status(400)
+        .json({ success: false, message: mediaValidationError });
+    }
+
     const effectiveAuthor = author || (req.user && req.user._id) || undefined;
     const created = await postService.createPost({
       title,
@@ -100,6 +169,14 @@ export const createPost = async (req, res, next) => {
 export const updatePost = async (req, res, next) => {
   try {
     const { title, body, category, media } = req.body;
+
+    const mediaValidationError = validatePostMediaLimits(media);
+    if (mediaValidationError) {
+      return res
+        .status(400)
+        .json({ success: false, message: mediaValidationError });
+    }
+
     const updated = await postService.updatePost(req.params.id, {
       title,
       body,
@@ -236,23 +313,32 @@ export const uploadPostImage = async (req, res, next) => {
 
     const mimeType = req.file.mimetype || "";
     const isVideo = mimeType.startsWith("video/");
+    const maxVideoSizeBytes = 20 * 1024 * 1024;
 
-    const uploadOptions = {
-      folder: "ghostvillage/posts",
-      resource_type: isVideo ? "video" : "image",
-      transformation: [
-        { width: 1280, height: 720, crop: "limit" },
-        { quality: "auto:good" },
-        { fetch_format: "auto" },
-      ],
-      ...(isVideo
-        ? {
-            video_codec: "auto",
-          }
-        : {
-            flags: "progressive",
-          }),
-    };
+    if (isVideo && req.file.size > maxVideoSizeBytes) {
+      return res.status(400).json({
+        success: false,
+        message: "Video file is too large. Maximum allowed size is 20MB.",
+      });
+    }
+
+    const uploadOptions = isVideo
+      ? {
+          folder: "ghostvillage/posts",
+          resource_type: "video",
+          timeout: 600000,
+          transformation: [{ width: 1280, height: 720, crop: "limit" }],
+        }
+      : {
+          folder: "ghostvillage/posts",
+          resource_type: "image",
+          transformation: [
+            { width: 1920, height: 1080, crop: "limit" },
+            { quality: "auto:good" },
+            { fetch_format: "auto" },
+          ],
+          flags: "progressive",
+        };
 
     // Upload to Cloudinary with optimizations
     const uploadResult = await uploadToCloudinary(
@@ -275,6 +361,17 @@ export const uploadPostImage = async (req, res, next) => {
         success: false,
         message:
           "Cloudinary is rate limiting uploads right now. Please wait a moment and try again.",
+      });
+    }
+    if (
+      message.includes("status 499") ||
+      message.includes("Timeout") ||
+      err?.statusCode === 499
+    ) {
+      return res.status(503).json({
+        success: false,
+        message:
+          "Video upload timed out at media server. Please try a smaller file or try again in a moment.",
       });
     }
     next(err);
@@ -300,6 +397,129 @@ export const deletePostMedia = async (req, res, next) => {
     });
   } catch (err) {
     console.error("Delete post media error:", err);
+    next(err);
+  }
+};
+
+export const reportPost = async (req, res, next) => {
+  try {
+    const effectiveUserId = (req.user && req.user._id) || req.body.userId;
+    if (!effectiveUserId) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authorized, no user" });
+    }
+
+    const normalizedReason = buildReportReasonText({
+      reason: req.body.reason,
+      customReason: req.body.customReason,
+    });
+
+    if (!normalizedReason.reasonText) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Report reason is required" });
+    }
+
+    const post = await postService.getPostById(req.params.id);
+    if (!post) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Post not found" });
+    }
+
+    const alreadyReported = (post.reports || []).some(
+      (item) => String(item?.reporter) === String(effectiveUserId),
+    );
+
+    if (alreadyReported) {
+      return res.status(409).json({
+        success: false,
+        message: "You have already reported this post",
+      });
+    }
+
+    const existingModeration = findExistingModerationByReason(
+      post.reports,
+      normalizedReason.reasonText,
+    );
+
+    let aiModeration = existingModeration;
+
+    if (!aiModeration) {
+      const uniqueReporterCount = new Set(
+        (post.reports || [])
+          .map((item) => String(item?.reporter))
+          .filter(Boolean),
+      ).size;
+
+      aiModeration = await evaluateReportWithGemini({
+        postText: `${post.title || ""}\n${post.body || ""}`,
+        reportReason: normalizedReason.reasonText,
+        reportCountUniqueUsers: uniqueReporterCount + 1,
+      });
+    }
+
+    const reportPayload = {
+      reporter: effectiveUserId,
+      reason: normalizedReason.reasonText,
+      aiModeration,
+      createdAt: new Date(),
+    };
+
+    const saveResult = await postService.addPostReport(
+      req.params.id,
+      reportPayload,
+    );
+
+    if (!saveResult) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Post not found" });
+    }
+
+    if (saveResult.duplicated) {
+      return res.status(409).json({
+        success: false,
+        message: "You have already reported this post",
+      });
+    }
+
+    try {
+      const io = req.app.get("io");
+      await NotificationService.createReportProcessedNotification(
+        effectiveUserId,
+        saveResult.post._id,
+        normalizedReason.reasonCode,
+        aiModeration,
+        io,
+      );
+    } catch (notificationError) {
+      console.error(
+        "Error sending report processed notification:",
+        notificationError,
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: existingModeration
+        ? "Report submitted (reused existing AI evaluation)"
+        : "Report submitted",
+      data: {
+        postId: saveResult.post._id,
+        isTemporarilyHidden: Boolean(saveResult.post.isTemporarilyHidden),
+        report: Array.isArray(saveResult.post.reports)
+          ? saveResult.post.reports.length
+          : 0,
+        reports: Array.isArray(saveResult.post.reports)
+          ? saveResult.post.reports
+          : [],
+        reasonCode: normalizedReason.reasonCode,
+        aiModeration,
+      },
+    });
+  } catch (err) {
     next(err);
   }
 };

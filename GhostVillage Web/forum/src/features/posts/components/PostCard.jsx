@@ -22,11 +22,13 @@ import {
   useDeletePost,
   useToggleLike,
   useToggleBookmark,
+  useReportPost,
 } from "../hooks/usePosts";
 import { linkifyHtmlContent } from "../../../shared/utils/linkify";
 import { removeImagesAndVideosFromHtml } from "../../../shared/utils/mediaExtractor";
 import { getAvatarUrl, cacheAvatar } from "../../../shared/utils/avatarCache";
 import ShareModal from "./ShareModal";
+import ReportPostModal from "./ReportPostModal";
 import "./PostCard.css";
 
 const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
@@ -83,6 +85,7 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [failedAvatars, setFailedAvatars] = useState({});
   const [scrollToComments, setScrollToComments] = useState(false);
 
@@ -90,6 +93,7 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
   const deletePostMutation = useDeletePost();
   const toggleLikeMutation = useToggleLike();
   const toggleBookmarkMutation = useToggleBookmark();
+  const reportPostMutation = useReportPost();
 
   const handleAvatarError = (authorId) => {
     setFailedAvatars((prev) => ({ ...prev, [authorId]: true }));
@@ -152,6 +156,15 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
 
   const handleShare = () => {
     setShowShareModal(true);
+  };
+
+  const handleReportSubmit = async ({ reason, customReason }) => {
+    await reportPostMutation.mutateAsync({
+      postId: post._id,
+      reason,
+      customReason,
+    });
+    setShowReportModal(false);
   };
 
   return (
@@ -223,7 +236,9 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
                 </>
               ) : (
                 <>
-                  <Dropdown.Item>{t("posts.report")}</Dropdown.Item>
+                  <Dropdown.Item onClick={() => setShowReportModal(true)}>
+                    {t("posts.report")}
+                  </Dropdown.Item>
                   <Dropdown.Item>{t("posts.hide")}</Dropdown.Item>
                 </>
               )}
@@ -367,12 +382,12 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
             <div className="post-videos">
               {mediaVideos.map((src, index) => (
                 <div key={index} className="video-wrapper">
-                  <iframe
+                  <video
                     src={src}
                     title={`Video ${index + 1}`}
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
+                    controls
+                    preload="metadata"
+                    playsInline
                   />
                 </div>
               ))}
@@ -465,6 +480,17 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
           show={showShareModal}
           onHide={() => setShowShareModal(false)}
           post={post}
+        />
+      )}
+
+      {showReportModal && (
+        <ReportPostModal
+          show={showReportModal}
+          onHide={() => setShowReportModal(false)}
+          onSubmit={handleReportSubmit}
+          isSubmitting={Boolean(
+            reportPostMutation.isPending || reportPostMutation.isLoading,
+          )}
         />
       )}
     </Card>

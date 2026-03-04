@@ -2,7 +2,11 @@ import Comment from "./commentModel.js";
 import * as postService from "../posts/postService.js";
 
 export const getComments = async (postId, { parentId = null } = {}) => {
-  const query = { post: postId, isDeleted: false };
+  const query = {
+    post: postId,
+    isDeleted: false,
+    isHiddenByModeration: { $ne: true },
+  };
 
   if (parentId === "null" || parentId === null || parentId === undefined) {
     query.parentId = null;
@@ -27,7 +31,10 @@ export const getComments = async (postId, { parentId = null } = {}) => {
 };
 
 export const getCommentById = async (commentId) => {
-  return await Comment.findById(commentId).populate("author", "fullname avatar");
+  return await Comment.findById(commentId).populate(
+    "author",
+    "fullname avatar",
+  );
 };
 
 export const createComment = async ({
@@ -103,4 +110,29 @@ export const deleteComment = async (commentId, userId) => {
   }
 
   return comment;
+};
+
+export const addCommentReport = async (commentId, reportPayload) => {
+  const comment = await Comment.findById(commentId);
+  if (!comment) return null;
+
+  const reporterId = String(reportPayload?.reporter || "");
+  const alreadyReportedByUser = (comment.reports || []).some(
+    (item) => String(item?.reporter) === reporterId,
+  );
+
+  if (alreadyReportedByUser) {
+    return { comment, duplicated: true };
+  }
+
+  comment.reports.push(reportPayload);
+  if (
+    reportPayload?.aiModeration?.recommendedAction === "hide_temp" ||
+    reportPayload?.aiModeration?.recommendedAction === "remove"
+  ) {
+    comment.isHiddenByModeration = true;
+  }
+
+  await comment.save();
+  return { comment, duplicated: false };
 };

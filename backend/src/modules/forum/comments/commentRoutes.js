@@ -16,4 +16,11 @@ router.put("/:commentId", authMiddleware, commentController.updateComment);
 // Delete a comment
 router.delete("/:commentId", authMiddleware, commentController.deleteComment);
 
+// Report a comment
+router.post(
+  "/:commentId/report",
+  authMiddleware,
+  commentController.reportComment,
+);
+
 export default router;
