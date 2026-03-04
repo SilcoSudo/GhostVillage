@@ -96,6 +96,12 @@ namespace Game.UI.Friend
             // --- Bind My Profile Data ---
             _playerDataStore.DisplayName.Subscribe(val => _txtMyDisplayName.text = val).AddTo(_disposables);
 
+            // 🎯 [TEMPORARY MOCK DATA] Gắn cứng UID ảo để test UI chạy lên trước
+            if (_txtMyUID != null)
+            {
+                _txtMyUID.text = "UID: 10000001"; // Gắn đại một số nào đó cho nó hiện lên UI
+            }
+
             // Assuming UID is stored in PlayerDataStore or derived. 
             // If it's not in the store, you might need to fetch it or pass it differently.
             // For now, I'll assume you add a UID property to PlayerDataStore.
