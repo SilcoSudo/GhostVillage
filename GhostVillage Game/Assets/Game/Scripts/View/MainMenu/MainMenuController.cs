@@ -15,9 +15,6 @@ namespace Game.UI.MainMenu
         [Header("UI References")]
         [SerializeField] private Button _lobbyListButton; // Nút vào xem danh sách
         [SerializeField] private Button _debugHostButton; // Nút test tạo nhanh phòng
-
-        [SerializeField] private Button _shopButton; // Nút vào cửa hàng
-
         [SerializeField] private TextMeshProUGUI _statusText; // Hiện trạng thái kết nối
 
         [Header("Profile Text")]
@@ -65,7 +62,6 @@ namespace Game.UI.MainMenu
                 _statusText.color = Color.yellow;
                 _lobbyListButton.interactable = false;
                 _debugHostButton.interactable = false;
-                _shopButton.interactable = false;
 
                 string playerName = _store.DisplayName.Value;
                 string token = _store.AuthToken.Value;
@@ -132,8 +128,8 @@ namespace Game.UI.MainMenu
             // Mở khóa các nút chức năng
             _lobbyListButton.interactable = true;
             _debugHostButton.interactable = true;
-            _shopButton.interactable = true;
         }
+
         // Gắn vào nút "Lobby List"
         public void OnLobbyListClick()
         {
@@ -146,13 +142,6 @@ namespace Game.UI.MainMenu
         {
             // Chuyển sang scene Profile
             _sceneLoader.LoadSceneAsync("ProfileScene");
-        }
-
-        // Gắn vào nút "Shop"
-        public void OpenShopScene() 
-        {
-            // Chuyển sang scene Shop
-            _sceneLoader.LoadSceneAsync("ShopScene");
         }
 
         // Gắn vào nút "Test Host" (Nút ảo để test)
