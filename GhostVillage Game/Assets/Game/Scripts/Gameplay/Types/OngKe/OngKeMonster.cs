@@ -46,11 +46,14 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
         private AttackState attackState;
         private InvestigateState investigateState;
         private PullSkill pullSkill;
-        
         private Vector3 lastKnownPos = Vector3.zero;
         private float chaseTimer = 0f;
-        private bool hasResetChaseLostSight = false; // Track if we've reset timer when losing sight
-        private bool investigateExitWasPlayerDetected = false; // Track why Investigate exited
+        private bool hasResetChaseLostSight = false; // Theo dõi thời điểm reset timer khi mất sight trong ChaseState (Phase B)
+        private bool investigateExitWasPlayerDetected = false; // theo dõi lý do exit của InvestigateState (player detected hay timeout) để quyết định chuyển state tiếp theo
+
+        // ── Forced Chase (triggered bởi Puzzle thua) ──────────────────────
+        private Transform _forcedChaseTarget = null;
+        private float _forcedChaseTimer = 0f;
 
         protected override void Awake()
         {
@@ -58,10 +61,36 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
             monsterName = "Ông Kẹ";
         }
 
+        // ─────────────────────────────────────────────────────────────────────
+        // Được gọi từ TugOfWarPuzzle (MasterClient only) khi người chơi thua kéo co.
+        // Bỏ qua PlayerDetector – OngKe đuổi thẳng target trong duration giây.
+        // ─────────────────────────────────────────────────────────────────────
+        public void ForceChasePlayer(Transform target, float duration = 20f)
+        {
+            if (target == null) return;
+            _forcedChaseTarget = target;
+            _forcedChaseTimer = duration;
+            Debug.Log($"[OngKe] ForceChase → {target.name} trong {duration}s");
+            ChangeStateType(OngKeStateType.Chase);
+        }
+
+        // Override để ChaseState "thấy" player kể cả khi PlayerDetector không detect
+        public override bool IsPlayerDetected()
+        {
+            if (_forcedChaseTarget != null) return true;
+            return base.IsPlayerDetected();
+        }
+
+        public override Vector3 GetPlayerPosition()
+        {
+            if (_forcedChaseTarget != null) return _forcedChaseTarget.position;
+            return base.GetPlayerPosition();
+        }
+
         private void Start()
         {
             Debug.Log($"🔧 OngKeMonster.Start() called");
-            
+
             if (patrolZones != null && patrolZones.Length > 0)
             {
                 Vector3[] zonePositions = System.Array.ConvertAll(patrolZones, t => t.position);
@@ -76,13 +105,13 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
             chaseState = new ChaseState(this, 2f, chaseRange);
             attackState = new AttackState(this, attackRange, attackDamage, attackCooldown);
             pullSkill = new PullSkill(transform, pullActivationRange, pullConeHalfAngle, pullMaxForce, pullMinForce, pullCastTime, pullDuration, pullCooldown);
-            
+
             Debug.Log($"✓ States initialized");
             Debug.Log($"✓ PatrolOrigin: {transform.position} | Radius: {patrolRadius}m");
             Debug.Log($"✓ NavMeshAgent: {GetComponent<UnityEngine.AI.NavMeshAgent>()}");
-            
+
             ChangeStateType(OngKeStateType.Patrol);
-            
+
             Debug.Log($"✓ Start() complete - currentState: {currentState}");
         }
 
@@ -180,6 +209,21 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
                     break;
 
                 case OngKeStateType.Chase:
+                    // ── Forced Chase (từ puzzle kéo co thua) ──────────────────
+                    if (_forcedChaseTarget != null)
+                    {
+                        _forcedChaseTimer -= Time.deltaTime;
+                        if (_forcedChaseTimer <= 0f)
+                        {
+                            Debug.Log("[OngKe] Forced chase hết thời gian → về Patrol");
+                            _forcedChaseTarget = null;
+                            ChangeStateType(OngKeStateType.Patrol);
+                            break;
+                        }
+                        // Trong forced chase: bỏ qua toàn bộ detection logic bên dưới
+                        break;
+                    }
+
                     // Pull skill: kích hoạt khi player trong range và skill sẵn sàng
                     if (detected && pullSkill.IsReady)
                     {
