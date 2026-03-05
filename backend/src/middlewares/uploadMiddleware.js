@@ -15,6 +15,7 @@ const fileFilter = (req, file, cb) => {
     // Videos
     "video/mp4",
     "video/webm",
+    "video/ogg",
     "video/quicktime",
     "video/x-msvideo",
   ];

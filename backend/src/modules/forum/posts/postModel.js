@@ -67,6 +67,59 @@ const PostSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  isTemporarilyHidden: {
+    type: Boolean,
+    default: false,
+  },
+
+  reports: [
+    {
+      reporter: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+      },
+      reason: {
+        type: String,
+        trim: true,
+        required: true,
+      },
+      aiModeration: {
+        isValidReport: {
+          type: Boolean,
+          default: false,
+        },
+        label: {
+          type: String,
+          enum: ["spam", "scam", "abuse", "adult", "misinfo", "no_violation"],
+          default: "no_violation",
+        },
+        confidence: {
+          type: Number,
+          default: 0,
+          min: 0,
+          max: 1,
+        },
+        reason: {
+          type: String,
+          default: "",
+        },
+        evidence: {
+          type: [String],
+          default: [],
+        },
+        recommendedAction: {
+          type: String,
+          enum: ["keep", "warn", "hide_temp", "remove", "escalate_human"],
+          default: "escalate_human",
+        },
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now,
+      },
+    },
+  ],
 
   // Timestamps
   editedAt: {

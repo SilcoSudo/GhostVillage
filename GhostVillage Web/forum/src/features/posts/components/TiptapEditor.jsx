@@ -30,7 +30,10 @@ const TiptapEditor = ({
 }) => {
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        link: false,
+        underline: false,
+      }),
       TextStyle,
       Color,
       Image.configure({

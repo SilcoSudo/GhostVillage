@@ -57,6 +57,7 @@ const NotificationBell = () => {
           n.type === "post_commented" ||
           n.type === "commentReplied" ||
           n.type === "comment_replied" ||
+          n.type === "report_processed" ||
           n.type === "friend_accepted" ||
           n.type === "announcement"),
     ) || [];

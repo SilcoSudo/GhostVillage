@@ -7,6 +7,7 @@ import {
   Send,
   Edit2,
   User,
+  Flag,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { vi, enUS } from "date-fns/locale";
@@ -17,7 +18,9 @@ import {
   useCreateComment,
   useComments,
   useUpdateComment,
+  useReportComment,
 } from "../hooks/useComments";
+import ReportPostModal from "./ReportPostModal";
 import { getAvatarUrl, cacheAvatar } from "../../../shared/utils/avatarCache";
 import "./Comment.css";
 
@@ -29,10 +32,12 @@ const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
   const [showReplies, setShowReplies] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.content);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   const deleteCommentMutation = useDeleteComment(postId);
   const createCommentMutation = useCreateComment(postId);
   const updateCommentMutation = useUpdateComment(postId);
+  const reportCommentMutation = useReportComment(postId);
 
   // Get the top-level comment ID (for flat reply structure)
   const rootCommentId = topLevelCommentId || comment._id;
@@ -93,6 +98,17 @@ const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
 
   const isAuthor = user?._id === comment.author._id;
 
+  const handleSubmitReport = async ({ reason, customReason }) => {
+    await reportCommentMutation.mutateAsync({
+      commentId: comment._id,
+      reportData: {
+        reason,
+        customReason,
+      },
+    });
+    setShowReportModal(false);
+  };
+
   return (
     <div className="comment-item">
       {comment.author.avatarUrl ? (
@@ -131,23 +147,33 @@ const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
                 </>
               )}
             </span>
-            {isAuthor && (
-              <Dropdown align="end" className="comment-menu">
-                <Dropdown.Toggle variant="link" bsPrefix="p-0">
-                  <MoreVertical size={16} />
-                </Dropdown.Toggle>
-                <Dropdown.Menu>
-                  <Dropdown.Item onClick={() => setIsEditing(true)}>
-                    <Edit2 size={14} />
-                    {t("posts.edit")}
+            <Dropdown align="end" className="comment-menu">
+              <Dropdown.Toggle variant="link" bsPrefix="p-0">
+                <MoreVertical size={16} />
+              </Dropdown.Toggle>
+              <Dropdown.Menu>
+                {isAuthor ? (
+                  <>
+                    <Dropdown.Item onClick={() => setIsEditing(true)}>
+                      <Edit2 size={14} />
+                      {t("posts.edit")}
+                    </Dropdown.Item>
+                    <Dropdown.Item
+                      className="text-danger"
+                      onClick={handleDelete}
+                    >
+                      <Trash2 size={14} />
+                      {t("posts.delete")}
+                    </Dropdown.Item>
+                  </>
+                ) : (
+                  <Dropdown.Item onClick={() => setShowReportModal(true)}>
+                    <Flag size={14} />
+                    {t("posts.report")}
                   </Dropdown.Item>
-                  <Dropdown.Item className="text-danger" onClick={handleDelete}>
-                    <Trash2 size={14} />
-                    {t("posts.delete")}
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
-            )}
+                )}
+              </Dropdown.Menu>
+            </Dropdown>
           </div>
           {isEditing ? (
             <Form.Control
@@ -266,6 +292,17 @@ const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
           </div>
         )}
       </div>
+
+      {showReportModal && (
+        <ReportPostModal
+          show={showReportModal}
+          onHide={() => setShowReportModal(false)}
+          onSubmit={handleSubmitReport}
+          isSubmitting={Boolean(
+            reportCommentMutation.isPending || reportCommentMutation.isLoading,
+          )}
+        />
+      )}
     </div>
   );
 };

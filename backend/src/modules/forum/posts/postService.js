@@ -159,3 +159,36 @@ export const toggleLockPost = async (id) => {
   await post.save();
   return post;
 };
+
+export const countUniqueReporters = async (id) => {
+  const post = await Post.findById(id).select("reports.reporter");
+  if (!post) return null;
+
+  const reporterIds = new Set(
+    (post.reports || []).map((item) => String(item?.reporter)).filter(Boolean),
+  );
+
+  return reporterIds.size;
+};
+
+export const addPostReport = async (id, reportPayload) => {
+  const post = await Post.findById(id);
+  if (!post) return null;
+
+  const reporterId = String(reportPayload?.reporter || "");
+  const alreadyReported = (post.reports || []).some(
+    (item) => String(item?.reporter) === reporterId,
+  );
+
+  if (alreadyReported) {
+    return { post, duplicated: true };
+  }
+
+  post.reports.push(reportPayload);
+  if (reportPayload?.aiModeration?.recommendedAction === "hide_temp") {
+    post.isTemporarilyHidden = true;
+  }
+  await post.save();
+
+  return { post, duplicated: false };
+};

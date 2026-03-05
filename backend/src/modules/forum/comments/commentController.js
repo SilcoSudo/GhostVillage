@@ -1,6 +1,42 @@
 import * as commentService from "./commentService.js";
 import NotificationService from "../notifications/notificationService.js";
 import Post from "../posts/postModel.js";
+import { evaluateReportWithGemini } from "../../../services/aiModerationService.js";
+
+const isRateLimitedAvatarUrl = (url) => {
+  if (!url || typeof url !== "string") return false;
+  return /googleusercontent\.com|ggpht\.com/i.test(url);
+};
+
+const buildReportReasonText = ({ reason, customReason }) => {
+  const reasonCode = String(reason || "")
+    .trim()
+    .toUpperCase();
+  const custom = String(customReason || "").trim();
+
+  if (reasonCode === "OTHER") {
+    return {
+      reasonCode,
+      reasonText: custom ? `Other: ${custom}` : "Other",
+    };
+  }
+
+  return {
+    reasonCode: reasonCode || "CUSTOM",
+    reasonText: String(reason || "").trim(),
+  };
+};
+
+const findExistingModerationByReason = (reports, reasonText) => {
+  if (!Array.isArray(reports) || !reasonText) return null;
+
+  const matched = reports.find(
+    (item) => String(item?.reason || "").trim() === String(reasonText).trim(),
+  );
+
+  if (!matched?.aiModeration) return null;
+  return matched.aiModeration;
+};
 
 const serializeComment = (comment, userId = null) => {
   const c = comment?.toObject ? comment.toObject() : comment;
@@ -13,7 +49,10 @@ const serializeComment = (comment, userId = null) => {
       authorData = {
         _id: c.author._id,
         username: c.author.fullname || "Anonymous User",
-        avatarUrl: c.author.avatar || null,
+        avatarUrl:
+          c.author.avatar && !isRateLimitedAvatarUrl(c.author.avatar)
+            ? c.author.avatar
+            : null,
       };
     } else {
       authorData = {
@@ -111,13 +150,16 @@ export const createComment = async (req, res, next) => {
       if (parentId) {
         // Reply to a comment - notify the parent comment author
         const parentComment = await commentService.getCommentById(parentId);
-        if (parentComment && String(parentComment.author) !== String(authorId)) {
+        if (
+          parentComment &&
+          String(parentComment.author) !== String(authorId)
+        ) {
           await NotificationService.createCommentRepliedNotification(
             currentUser,
             parentComment.author,
             postId,
             parentId,
-            io
+            io,
           );
         }
       } else {
@@ -128,7 +170,7 @@ export const createComment = async (req, res, next) => {
             currentUser,
             post.author,
             postId,
-            io
+            io,
           );
         }
       }
@@ -223,6 +265,134 @@ export const deleteComment = async (req, res, next) => {
         message: err.message,
       });
     }
+    next(err);
+  }
+};
+
+export const reportComment = async (req, res, next) => {
+  try {
+    const { commentId, postId } = req.params;
+    const effectiveUserId = (req.user && req.user._id) || req.body.userId;
+
+    if (!effectiveUserId) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authorized, no user",
+      });
+    }
+
+    const normalizedReason = buildReportReasonText({
+      reason: req.body.reason,
+      customReason: req.body.customReason,
+    });
+
+    if (!normalizedReason.reasonText) {
+      return res.status(400).json({
+        success: false,
+        message: "Report reason is required",
+      });
+    }
+
+    const comment = await commentService.getCommentById(commentId);
+    if (!comment || String(comment.post) !== String(postId)) {
+      return res.status(404).json({
+        success: false,
+        message: "Comment not found",
+      });
+    }
+
+    const alreadyReportedByUser = (comment.reports || []).some(
+      (item) => String(item?.reporter) === String(effectiveUserId),
+    );
+
+    if (alreadyReportedByUser) {
+      return res.status(409).json({
+        success: false,
+        message: "You have already reported this comment",
+      });
+    }
+
+    const existingModeration = findExistingModerationByReason(
+      comment.reports,
+      normalizedReason.reasonText,
+    );
+
+    let aiModeration = existingModeration;
+    if (!aiModeration) {
+      const uniqueReporterCount = new Set(
+        (comment.reports || [])
+          .map((item) => String(item?.reporter))
+          .filter(Boolean),
+      ).size;
+
+      aiModeration = await evaluateReportWithGemini({
+        postText: comment.content || "",
+        reportReason: normalizedReason.reasonText,
+        reportCountUniqueUsers: uniqueReporterCount + 1,
+      });
+    }
+
+    const reportPayload = {
+      reporter: effectiveUserId,
+      reason: normalizedReason.reasonText,
+      aiModeration,
+      createdAt: new Date(),
+    };
+
+    const saveResult = await commentService.addCommentReport(
+      commentId,
+      reportPayload,
+    );
+
+    if (!saveResult) {
+      return res.status(404).json({
+        success: false,
+        message: "Comment not found",
+      });
+    }
+
+    if (saveResult.duplicated) {
+      return res.status(409).json({
+        success: false,
+        message: "You have already reported this comment",
+      });
+    }
+
+    try {
+      const io = req.app.get("io");
+      await NotificationService.createReportProcessedNotification(
+        effectiveUserId,
+        postId,
+        normalizedReason.reasonCode,
+        aiModeration,
+        io,
+      );
+    } catch (notificationError) {
+      console.error(
+        "Error sending comment report processed notification:",
+        notificationError,
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: existingModeration
+        ? "Comment report submitted (reused existing AI evaluation)"
+        : "Comment report submitted",
+      data: {
+        commentId: saveResult.comment._id,
+        isHiddenByModeration: Boolean(saveResult.comment.isHiddenByModeration),
+        report: Array.isArray(saveResult.comment.reports)
+          ? saveResult.comment.reports.length
+          : 0,
+        reports: Array.isArray(saveResult.comment.reports)
+          ? saveResult.comment.reports
+          : [],
+        reasonCode: normalizedReason.reasonCode,
+        aiModeration,
+      },
+    });
+  } catch (err) {
     next(err);
   }
 };

@@ -142,6 +142,60 @@ class NotificationService {
     }
   }
 
+  static async createReportProcessedNotification(
+    reporterId,
+    postId,
+    reasonCode,
+    aiModeration,
+    io,
+  ) {
+    try {
+      const action = String(
+        aiModeration?.recommendedAction || "escalate_human",
+      );
+      const label = String(aiModeration?.label || "no_violation");
+
+      const actionLabelMap = {
+        keep: "No action needed",
+        warn: "Warning issued",
+        hide_temp: "Post temporarily hidden",
+        remove: "Post removed",
+        escalate_human: "Escalated to human review",
+      };
+
+      const confidenceText = Number.isFinite(Number(aiModeration?.confidence))
+        ? Number(aiModeration.confidence).toFixed(2)
+        : "0.00";
+
+      const notification = await Notification.create({
+        userId: reporterId,
+        type: "report_processed",
+        title: "Report review completed",
+        message: `Your ${reasonCode || "REPORT"} report was evaluated as ${label} (confidence: ${confidenceText}). Recommended action: ${actionLabelMap[action] || action}.`,
+        relatedEntity: {
+          entityType: "post",
+          entityId: postId,
+          link: `/post/${postId}`,
+        },
+      });
+
+      if (io) {
+        io.to(`user:${reporterId}`).emit("new_notification", {
+          id: notification._id,
+          title: notification.title,
+          message: notification.message,
+          type: notification.type,
+          link: notification.relatedEntity.link,
+        });
+      }
+
+      return notification;
+    } catch (error) {
+      console.error("Error creating report processed notification:", error);
+      throw error;
+    }
+  }
+
   /**
    * Tạo notification comment reply
    */

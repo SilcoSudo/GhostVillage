@@ -8,6 +8,19 @@ import TiptapEditor from "./TiptapEditor";
 import { uploadImage } from "../services/uploadService";
 import "./CreatePostModal.css";
 
+const MAX_POST_IMAGES = 10;
+const MAX_POST_VIDEOS = 1;
+
+const getMediaCounts = (mediaList = []) => {
+  const imageCount = mediaList.filter(
+    (media) => media?.type === "image",
+  ).length;
+  const videoCount = mediaList.filter(
+    (media) => media?.type === "video",
+  ).length;
+  return { imageCount, videoCount };
+};
+
 const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
   const { t } = useTranslation();
   const createPostMutation = useCreatePost();
@@ -100,6 +113,17 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
     e.preventDefault();
 
     if (!validateForm()) {
+      return;
+    }
+
+    const { imageCount, videoCount } = getMediaCounts(uploadedImages);
+    if (imageCount > MAX_POST_IMAGES) {
+      toast.error(`A post can contain up to ${MAX_POST_IMAGES} images.`);
+      return;
+    }
+
+    if (videoCount > MAX_POST_VIDEOS) {
+      toast.error(`A post can contain up to ${MAX_POST_VIDEOS} video.`);
       return;
     }
 
@@ -208,6 +232,15 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
       const files = Array.from(e.target.files);
       if (!files.length) return;
 
+      const { imageCount } = getMediaCounts(uploadedImages);
+      const remainingImageSlots = MAX_POST_IMAGES - imageCount;
+      if (remainingImageSlots <= 0) {
+        toast.error(
+          `You can only add up to ${MAX_POST_IMAGES} images per post.`,
+        );
+        return;
+      }
+
       const allowedTypes = [
         "image/jpeg",
         "image/png",
@@ -232,8 +265,16 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
         return true;
       });
 
+      if (validFiles.length > remainingImageSlots) {
+        toast.error(
+          `Only ${remainingImageSlots} image slot${remainingImageSlots > 1 ? "s" : ""} left.`,
+        );
+      }
+
+      const filesToAdd = validFiles.slice(0, remainingImageSlots);
+
       // Save files locally (don't upload yet)
-      for (const file of validFiles) {
+      for (const file of filesToAdd) {
         const preview = URL.createObjectURL(file);
         setUploadedImages((prev) => [
           ...prev,
@@ -256,6 +297,15 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
       const files = Array.from(e.target.files);
       if (!files.length) return;
 
+      const { videoCount } = getMediaCounts(uploadedImages);
+      const remainingVideoSlots = MAX_POST_VIDEOS - videoCount;
+      if (remainingVideoSlots <= 0) {
+        toast.error(
+          `You can only add up to ${MAX_POST_VIDEOS} video per post.`,
+        );
+        return;
+      }
+
       const allowedTypes = ["video/mp4", "video/webm", "video/ogg"];
 
       const validFiles = files.filter((file) => {
@@ -263,15 +313,21 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
           toast.error(`${file.name}: Invalid type. Allowed: MP4, WebM, OGG`);
           return false;
         }
-        if (file.size > 50 * 1024 * 1024) {
-          toast.error(`${file.name}: Too large. Max 50MB.`);
+        if (file.size > 20 * 1024 * 1024) {
+          toast.error(`${file.name}: Too large. Max 20MB.`);
           return false;
         }
         return true;
       });
 
+      if (validFiles.length > remainingVideoSlots) {
+        toast.error(`Only ${remainingVideoSlots} video slot left.`);
+      }
+
+      const filesToAdd = validFiles.slice(0, remainingVideoSlots);
+
       // Save files locally (don't upload yet)
-      for (const file of validFiles) {
+      for (const file of filesToAdd) {
         const preview = URL.createObjectURL(file);
         setUploadedImages((prev) => [
           ...prev,
@@ -430,6 +486,12 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
             <Form.Text className="char-counter">
               {formData.body.replace(/<[^>]*>/g, "").length}{" "}
               {t("post.create.contentCounter")}
+            </Form.Text>
+            <Form.Text className="char-counter d-block">
+              Media: {getMediaCounts(uploadedImages).imageCount}/
+              {MAX_POST_IMAGES} images,{" "}
+              {getMediaCounts(uploadedImages).videoCount}/{MAX_POST_VIDEOS}{" "}
+              video
             </Form.Text>
           </Form.Group>
 
