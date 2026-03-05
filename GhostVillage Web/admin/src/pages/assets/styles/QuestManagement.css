@@ -1,0 +1,670 @@
+/* Quest Management Page - GhostVillage Theme */
+/* Using Found Footage / Industrial Palette */
+
+:root {
+  --primary-color: #990000;      /* Blood Red */
+  --primary-dark: #520000;       /* Dark Blood Red */
+  --primary-light: #CC0000;      /* Bright Blood Red */
+  --accent-color: #7A0000;       /* Blood Red Accent */
+  --secondary-color: #121212;    
+  --bg-primary: #121212;         /* Matte Black */
+  --bg-secondary: #0D0D0D;       
+  --bg-tertiary: #1E1E1E;        /* Concrete Gray */
+  --card-bg: #1A1A1A;            
+  --text-primary: #B5A642;       /* Old Brass / Muted Gold */
+  --text-secondary: #A68B6A;     /* Muted Leather */
+  --border-color: #520000;       /* Dark Dried Blood */
+  --border-subtle: #330000;      
+  --card-border: #7A0000;        /* Fresh Blood highlight */
+}
+
+.quest-management-container {
+  width: 100%;
+  min-height: 100vh;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  color: var(--text-secondary);
+}
+
+/* Header */
+.quest-management-header {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(153, 0, 0, 0.15) 0%, rgba(181, 166, 66, 0.05) 100%);
+  border-left: 4px solid var(--primary-color);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(181, 166, 66, 0.2);
+  box-shadow: 0 4px 15px rgba(122, 0, 0, 0.2);
+}
+
+.quest-management-header h1 {
+  margin: 0 0 8px 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary-light);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: 'Courier New', Courier, monospace;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.quest-management-header p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-primary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Statistics Cards */
+.quest-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.quest-stat-card {
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(30, 30, 30, 0.7) 100%);
+  border: 1.5px solid rgba(181, 166, 66, 0.25);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.quest-stat-card:hover {
+  border-color: var(--text-primary);
+  box-shadow: 0 0 16px rgba(181, 166, 66, 0.3);
+  transform: translateY(-2px);
+}
+
+.quest-stat-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.quest-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.quest-stat-value.total {
+  color: var(--text-primary);
+}
+
+.quest-stat-value.active {
+  color: #4CAF50;
+}
+
+.quest-stat-value.inactive {
+  color: var(--primary-color);
+}
+
+.quest-stat-value.lines {
+  color: #2196F3;
+}
+
+/* Toolbar - Reuse similar styling */
+.quest-toolbar {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(26, 26, 26, 0.8) 0%, rgba(30, 30, 30, 0.6) 100%);
+  border: 1.5px solid rgba(181, 166, 66, 0.25);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.quest-toolbar-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quest-toolbar-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Quest Table */
+.quest-table-wrapper {
+  background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(30, 30, 30, 0.85) 100%);
+  border: 1.5px solid rgba(181, 166, 66, 0.25);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.quest-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.quest-table thead {
+  background: linear-gradient(135deg, rgba(153, 0, 0, 0.2) 0%, rgba(82, 0, 0, 0.1) 100%);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.quest-table thead th {
+  padding: 16px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.quest-table thead th.center {
+  text-align: center;
+}
+
+.quest-table tbody tr {
+  border-bottom: 1px solid var(--border-subtle);
+  transition: all 0.3s ease;
+}
+
+.quest-table tbody tr:hover {
+  background: rgba(181, 166, 66, 0.05);
+  box-shadow: inset 0 0 10px rgba(181, 166, 66, 0.1);
+}
+
+.quest-table tbody td {
+  padding: 14px 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+
+.quest-table tbody td.center {
+  text-align: center;
+}
+
+/* Quest ID */
+.quest-id {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Quest Title */
+.quest-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.quest-description {
+  font-size: 12px;
+  color: var(--text-secondary);
+  opacity: 0.8;
+}
+
+/* Badges */
+.quest-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: 'Courier New', Courier, monospace;
+  border: 1px solid;
+}
+
+/* Quest Line Badges */
+.quest-badge.main-story {
+  background: rgba(33, 150, 243, 0.15);
+  color: #2196F3;
+  border-color: #2196F3;
+}
+
+.quest-badge.side-quest {
+  background: rgba(0, 188, 212, 0.15);
+  color: #00BCD4;
+  border-color: #00BCD4;
+}
+
+.quest-badge.daily {
+  background: rgba(76, 175, 80, 0.15);
+  color: #4CAF50;
+  border-color: #4CAF50;
+}
+
+.quest-badge.weekly {
+  background: rgba(156, 39, 176, 0.15);
+  color: #9C27B0;
+  border-color: #9C27B0;
+}
+
+.quest-badge.event {
+  background: rgba(233, 30, 99, 0.15);
+  color: #E91E63;
+  border-color: #E91E63;
+}
+
+.quest-badge.tutorial {
+  background: rgba(158, 158, 158, 0.15);
+  color: #9E9E9E;
+  border-color: #9E9E9E;
+}
+
+/* Difficulty Badges */
+.quest-badge.easy {
+  background: rgba(76, 175, 80, 0.15);
+  color: #4CAF50;
+  border-color: #4CAF50;
+}
+
+.quest-badge.medium {
+  background: rgba(255, 193, 7, 0.15);
+  color: #FFC107;
+  border-color: #FFC107;
+}
+
+.quest-badge.hard {
+  background: rgba(255, 152, 0, 0.15);
+  color: #FF9800;
+  border-color: #FF9800;
+}
+
+.quest-badge.expert {
+  background: rgba(153, 0, 0, 0.15);
+  color: var(--primary-light);
+  border-color: var(--primary-color);
+}
+
+.quest-badge.nightmare {
+  background: rgba(156, 39, 176, 0.15);
+  color: #9C27B0;
+  border-color: #9C27B0;
+}
+
+/* Objective Count */
+.quest-objective-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(33, 150, 243, 0.15);
+  border: 1px solid #2196F3;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #2196F3;
+}
+
+/* Status Toggle Button */
+.quest-status-toggle {
+  padding: 6px 12px;
+  border: 1.5px solid;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: 'Courier New', Courier, monospace;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: transparent;
+}
+
+.quest-status-toggle.active {
+  color: #4CAF50;
+  border-color: #4CAF50;
+  background: rgba(76, 175, 80, 0.1);
+}
+
+.quest-status-toggle.active:hover {
+  background: rgba(76, 175, 80, 0.2);
+  box-shadow: 0 0 12px rgba(76, 175, 80, 0.3);
+}
+
+.quest-status-toggle.inactive {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+  background: rgba(153, 0, 0, 0.1);
+}
+
+.quest-status-toggle.inactive:hover {
+  background: rgba(153, 0, 0, 0.2);
+  box-shadow: 0 0 12px rgba(153, 0, 0, 0.3);
+}
+
+/* Action Buttons */
+.quest-action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.quest-action-btn {
+  padding: 8px;
+  border: 1.5px solid;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quest-action-btn.edit {
+  color: #2196F3;
+  border-color: #2196F3;
+}
+
+.quest-action-btn.edit:hover {
+  background: rgba(33, 150, 243, 0.2);
+  box-shadow: 0 0 12px rgba(33, 150, 243, 0.3);
+}
+
+.quest-action-btn.delete {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.quest-action-btn.delete:hover {
+  background: rgba(153, 0, 0, 0.2);
+  box-shadow: 0 0 12px rgba(153, 0, 0, 0.3);
+}
+
+/* Expand Button */
+.quest-expand-btn {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quest-expand-btn:hover {
+  color: var(--text-primary);
+  transform: scale(1.1);
+}
+
+/* Expanded Details Row */
+.quest-details-row {
+  background: linear-gradient(135deg, rgba(30, 30, 30, 0.95) 0%, rgba(26, 26, 26, 0.9) 100%);
+}
+
+.quest-details-content {
+  padding: 20px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.quest-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.quest-details-section {
+  padding: 12px;
+  background: rgba(26, 26, 26, 0.5);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+}
+
+.quest-details-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.quest-objective-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quest-objective-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.quest-objective-bullet {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.quest-objective-type {
+  font-weight: 700;
+  color: #2196F3;
+  text-transform: uppercase;
+}
+
+.quest-reward-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.quest-reward-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quest-reward-label {
+  color: var(--text-secondary);
+  min-width: 60px;
+}
+
+.quest-reward-value {
+  font-weight: 700;
+}
+
+.quest-reward-value.exp {
+  color: #2196F3;
+}
+
+.quest-reward-value.coin {
+  color: #FFC107;
+}
+
+.quest-reward-value.items {
+  color: #4CAF50;
+}
+
+.quest-reward-value.titles {
+  color: #9C27B0;
+}
+
+.quest-additional-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  font-size: 12px;
+}
+
+.quest-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.quest-info-label {
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.quest-info-value {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* Error Message */
+.quest-error-message {
+  padding: 16px;
+  background: rgba(153, 0, 0, 0.15);
+  border: 1.5px solid var(--primary-color);
+  border-radius: 10px;
+  color: var(--primary-light);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 600;
+}
+
+/* Loading State */
+.quest-loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.quest-spinner {
+  color: var(--text-primary);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Empty State */
+.quest-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+}
+
+.quest-empty-state p {
+  font-size: 14px;
+  font-family: 'Courier New', Courier, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Pagination */
+.quest-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(26, 26, 26, 0.8) 0%, rgba(30, 30, 30, 0.6) 100%);
+  border: 1.5px solid rgba(181, 166, 66, 0.25);
+  border-radius: 12px;
+}
+
+.quest-pagination-btn {
+  padding: 10px 20px;
+  border: 1.5px solid var(--text-primary);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: 'Courier New', Courier, monospace;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.quest-pagination-btn:hover:not(:disabled) {
+  background: rgba(181, 166, 66, 0.2);
+  box-shadow: 0 0 16px rgba(181, 166, 66, 0.3);
+}
+
+.quest-pagination-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  border-color: var(--text-secondary);
+  color: var(--text-secondary);
+}
+
+.quest-pagination-info {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .quest-toolbar-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .quest-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .quest-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .quest-details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .quest-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quest-management-header h1 {
+    font-size: 18px;
+  }
+
+  .quest-table thead th {
+    font-size: 10px;
+    padding: 12px 8px;
+  }
+
+  .quest-table tbody td {
+    font-size: 11px;
+    padding: 10px 8px;
+  }
+}

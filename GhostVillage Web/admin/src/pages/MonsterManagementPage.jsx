@@ -224,7 +224,6 @@ const MonsterManagementPage = () => {
                 <table className="monsters-table">
                   <thead>
                     <tr>
-                      <th>Avatar</th>
                       <th>Tên</th>
                       <th className="center">HP</th>
                       <th className="center">ATK</th>
@@ -237,23 +236,13 @@ const MonsterManagementPage = () => {
                   <tbody>
                     {filteredMonsters.length === 0 ? (
                       <tr>
-                        <td colSpan="8" className="empty-state">
+                        <td colSpan="7" className="empty-state">
                           <p>Không tìm thấy quái vật nào</p>
                         </td>
                       </tr>
                     ) : (
                       filteredMonsters.map((monster) => (
                         <tr key={monster._id}>
-                          <td>
-                            <img
-                              src={monster.avatar || "/images/default-monster.png"}
-                              alt={monster.name}
-                              className="monster-avatar"
-                              onError={(e) => {
-                                e.target.src = "/images/default-monster.png";
-                              }}
-                            />
-                          </td>
                           <td>
                             <div className="monster-name">{monster.name}</div>
                           </td>

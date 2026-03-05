@@ -14,6 +14,7 @@ import AnnouncementPage from '../pages/AnnouncementPage';
 import WikiManagementPage from '../pages/WikiManagementPage';
 import MonsterManagementPage from '../pages/MonsterManagementPage';
 import MapManagementPage from '../pages/MapManagementPage';
+import QuestManagementPage from '../pages/QuestManagementPage';
 import MoonEventManagementPage from '../pages/MoonEventManagementPage';
 import ProtectedRoute from './router/ProtectedRoute';
 import '../shared/assets/styles/theme.css';
@@ -48,6 +49,7 @@ function AppContent() {
             <Route path="/wiki" element={<ProtectedRoute><WikiManagementPage /></ProtectedRoute>} />
             <Route path="/monsters" element={<ProtectedRoute><MonsterManagementPage /></ProtectedRoute>} />
             <Route path="/maps" element={<ProtectedRoute><MapManagementPage /></ProtectedRoute>} />
+            <Route path="/quests" element={<ProtectedRoute><QuestManagementPage /></ProtectedRoute>} />
             <Route path="/moon-events" element={<ProtectedRoute><MoonEventManagementPage /></ProtectedRoute>} />
             <Route path="/reports/posts" element={<ProtectedRoute><ReportedPostPage /></ProtectedRoute>} />
             <Route path="/reports/comments" element={<ProtectedRoute><ReportedCommentPage /></ProtectedRoute>} />
