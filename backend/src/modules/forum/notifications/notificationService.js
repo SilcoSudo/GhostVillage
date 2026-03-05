@@ -144,52 +144,102 @@ class NotificationService {
 
   static async createReportProcessedNotification(
     reporterId,
-    postId,
+    entityId,
     reasonCode,
     aiModeration,
     io,
+    options = {},
   ) {
     try {
-      const action = String(
-        aiModeration?.recommendedAction || "escalate_human",
-      );
-      const label = String(aiModeration?.label || "no_violation");
+      const {
+        reportedUserId = null,
+        entityType = "post",
+        moderationPenalty = null,
+        entityLink = null,
+      } = options;
 
-      const actionLabelMap = {
-        keep: "No action needed",
-        warn: "Warning issued",
-        hide_temp: "Post temporarily hidden",
-        remove: "Post removed",
-        escalate_human: "Escalated to human review",
+      const label = String(aiModeration?.label || "no_violation").toLowerCase();
+      const action = label === "no_violation" ? "keep" : "remove";
+
+      const reporterMessageByAction = {
+        keep: "Thanks for your report. We reviewed the content and no further action is needed right now.",
+        remove:
+          "Thanks for your report. We reviewed the content and removed it under community guidelines.",
       };
 
-      const confidenceText = Number.isFinite(Number(aiModeration?.confidence))
-        ? Number(aiModeration.confidence).toFixed(2)
-        : "0.00";
+      const entityTypeLabel = entityType === "comment" ? "comment" : "post";
+      const link = entityLink || `/post/${entityId}`;
+      const reporterMessage =
+        label === "no_violation"
+          ? "Thanks for your report. We reviewed the content and did not find a clear violation at this time."
+          : reporterMessageByAction[action] ||
+            "Thanks for your report. We reviewed the case and handled it under community guidelines.";
 
-      const notification = await Notification.create({
+      const createdNotifications = [];
+
+      const reporterNotification = await Notification.create({
         userId: reporterId,
         type: "report_processed",
-        title: "Report review completed",
-        message: `Your ${reasonCode || "REPORT"} report was evaluated as ${label} (confidence: ${confidenceText}). Recommended action: ${actionLabelMap[action] || action}.`,
+        title: "Report Update",
+        message: reporterMessage,
         relatedEntity: {
-          entityType: "post",
-          entityId: postId,
-          link: `/post/${postId}`,
+          entityType: entityTypeLabel,
+          entityId,
+          link,
         },
       });
+      createdNotifications.push(reporterNotification);
 
       if (io) {
         io.to(`user:${reporterId}`).emit("new_notification", {
-          id: notification._id,
-          title: notification.title,
-          message: notification.message,
-          type: notification.type,
-          link: notification.relatedEntity.link,
+          id: reporterNotification._id,
+          title: reporterNotification.title,
+          message: reporterNotification.message,
+          type: reporterNotification.type,
+          link: reporterNotification.relatedEntity.link,
         });
       }
 
-      return notification;
+      if (reportedUserId && String(reportedUserId) !== String(reporterId)) {
+        const penaltyMessage =
+          moderationPenalty?.penaltyType === "warning"
+            ? "A reminder has been applied to your account in line with community guidelines."
+            : moderationPenalty?.penaltyType === "mute"
+              ? "Your account is temporarily restricted from posting and commenting."
+              : moderationPenalty?.penaltyType === "merged_hide_only"
+                ? "Some of your content visibility has been limited to protect the community."
+                : "Please follow community guidelines to avoid stricter moderation actions.";
+
+        const reviewedMessage =
+          label === "no_violation"
+            ? "Your content was reviewed and no clear violation was found at this time."
+            : `Your ${entityTypeLabel} was reviewed under community guidelines.`;
+
+        const reportedUserNotification = await Notification.create({
+          userId: reportedUserId,
+          type: "report_processed",
+          title: "Moderation Notice",
+          message: `${reviewedMessage} ${penaltyMessage}`,
+          relatedEntity: {
+            entityType: entityTypeLabel,
+            entityId,
+            link,
+          },
+        });
+        createdNotifications.push(reportedUserNotification);
+
+        if (io) {
+          io.to(`user:${reportedUserId}`).emit("new_notification", {
+            id: reportedUserNotification._id,
+            title: reportedUserNotification.title,
+            message: reportedUserNotification.message,
+            type: reportedUserNotification.type,
+            link: reportedUserNotification.relatedEntity.link,
+          });
+        }
+      }
+
+      return createdNotifications;
     } catch (error) {
       console.error("Error creating report processed notification:", error);
       throw error;

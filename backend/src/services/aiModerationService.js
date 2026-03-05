@@ -6,7 +6,7 @@ const DEFAULT_RESULT = {
   confidence: 0,
   reason: "AI moderation is unavailable.",
   evidence: [],
-  recommendedAction: "escalate_human",
+  recommendedAction: "keep",
 };
 
 const VALID_LABELS = new Set([
@@ -18,13 +18,7 @@ const VALID_LABELS = new Set([
   "no_violation",
 ]);
 
-const VALID_ACTIONS = new Set([
-  "keep",
-  "warn",
-  "hide_temp",
-  "remove",
-  "escalate_human",
-]);
+const VALID_ACTIONS = new Set(["keep", "remove"]);
 
 const DEFAULT_MODEL_CANDIDATES = [
   "gemini-2.5-flash",
@@ -121,7 +115,10 @@ const buildPrompt = ({ postText, reportReason, reportCountUniqueUsers }) => {
     '  "confidence": 0.0,',
     '  "reason": "short explanation",',
     '  "evidence": ["snippet 1", "snippet 2"],',
-    '  "recommended_action": "keep|warn|hide_temp|remove|escalate_human"',
+    '  "recommended_action": "keep|remove"',
+    "Rule for action:",
+    '- If label is "no_violation", set recommended_action to "keep".',
+    '- For all other labels, set recommended_action to "remove".',
     "}",
     "",
     "INPUT:",
@@ -140,20 +137,21 @@ const normalizeResponse = (raw) => {
     ? raw.evidence.map((item) => String(item)).slice(0, 5)
     : [];
   const recommendedAction = String(
-    raw?.recommended_action || raw?.recommendedAction || "escalate_human",
+    raw?.recommended_action || raw?.recommendedAction || "keep",
   ).toLowerCase();
 
   const normalizedLabel = VALID_LABELS.has(label) ? label : "no_violation";
-  let normalizedAction = VALID_ACTIONS.has(recommendedAction)
+  const modelAction = VALID_ACTIONS.has(recommendedAction)
     ? recommendedAction
-    : "escalate_human";
-
-  if (normalizedLabel === "no_violation") {
-    normalizedAction = "keep";
-  }
+    : "keep";
+  const normalizedAction =
+    normalizedLabel === "no_violation" ? "keep" : "remove";
 
   return {
-    isValidReport: normalizedLabel === "no_violation" ? false : isValidReport,
+    isValidReport:
+      normalizedLabel === "no_violation"
+        ? false
+        : isValidReport || modelAction === "remove",
     label: normalizedLabel,
     confidence:
       Number.isFinite(confidence) && confidence >= 0 && confidence <= 1

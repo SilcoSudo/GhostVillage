@@ -5,6 +5,11 @@ import {
   deleteFromCloudinary,
 } from "../../../services/uploadService.js";
 import { evaluateReportWithGemini } from "../../../services/aiModerationService.js";
+import {
+  applyProgressiveModerationPenalty,
+  getUserPostingRestriction,
+  isAIViolation,
+} from "../../../services/moderationPenaltyService.js";
 
 const isRateLimitedAvatarUrl = (url) => {
   if (!url || typeof url !== "string") return false;
@@ -137,6 +142,29 @@ export const getPost = async (req, res, next) => {
 export const createPost = async (req, res, next) => {
   try {
     const { title, body, author, category, media } = req.body;
+    const effectiveAuthor = author || (req.user && req.user._id) || undefined;
+
+    if (!effectiveAuthor) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authorized, no user",
+      });
+    }
+
+    const postingRestriction = await getUserPostingRestriction({
+      userId: effectiveAuthor,
+    });
+    if (!postingRestriction.allowed) {
+      return res.status(postingRestriction.statusCode || 403).json({
+        success: false,
+        message: postingRestriction.message,
+        data: {
+          mutedUntil: postingRestriction.mutedUntil || null,
+          remainingSeconds: postingRestriction.remainingSeconds || 0,
+        },
+      });
+    }
+
     if (!title || !body) {
       return res
         .status(400)
@@ -150,7 +178,6 @@ export const createPost = async (req, res, next) => {
         .json({ success: false, message: mediaValidationError });
     }
 
-    const effectiveAuthor = author || (req.user && req.user._id) || undefined;
     const created = await postService.createPost({
       title,
       body,
@@ -485,6 +512,20 @@ export const reportPost = async (req, res, next) => {
       });
     }
 
+    let moderationPenalty = null;
+    if (isAIViolation(aiModeration)) {
+      try {
+        moderationPenalty = await applyProgressiveModerationPenalty({
+          userId: saveResult.post.author,
+        });
+      } catch (penaltyError) {
+        console.error(
+          "Error applying moderation penalty for post:",
+          penaltyError,
+        );
+      }
+    }
+
     try {
       const io = req.app.get("io");
       await NotificationService.createReportProcessedNotification(
@@ -493,6 +534,12 @@ export const reportPost = async (req, res, next) => {
         normalizedReason.reasonCode,
         aiModeration,
         io,
+        {
+          reportedUserId: saveResult.post.author,
+          entityType: "post",
+          moderationPenalty,
+          entityLink: `/post/${saveResult.post._id}`,
+        },
       );
     } catch (notificationError) {
       console.error(
@@ -517,6 +564,7 @@ export const reportPost = async (req, res, next) => {
           : [],
         reasonCode: normalizedReason.reasonCode,
         aiModeration,
+        moderationPenalty,
       },
     });
   } catch (err) {

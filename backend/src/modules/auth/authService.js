@@ -27,6 +27,26 @@ const isGoogleAvatarUrl = (url) => {
   return /googleusercontent\.com|ggpht\.com/i.test(url);
 };
 
+const isCloudinaryUrl = (url) => {
+  if (!url || typeof url !== "string") return false;
+  return /res\.cloudinary\.com/i.test(url);
+};
+
+const isDataUri = (url) => {
+  if (!url || typeof url !== "string") return false;
+  return /^data:image\//i.test(url);
+};
+
+const normalizeGoogleAvatarUrl = (avatarUrl) => {
+  if (!isGoogleAvatarUrl(avatarUrl)) return avatarUrl;
+  return avatarUrl.replace(/=s\d+-c$/, "=s512-c");
+};
+
+const buildDefaultAvatarUrl = (displayName) => {
+  const safeName = String(displayName || "Ghost Village User").trim();
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(safeName)}&background=f48024&color=fff&format=png&size=512`;
+};
+
 const downloadAvatarBuffer = async (avatarUrl) => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -59,14 +79,46 @@ const syncGoogleAvatarToCloudinary = async (user, googleAvatarUrl) => {
     return user?.avatar || null;
   }
 
-  if (user.avatar) {
+  if (isCloudinaryUrl(user.avatar)) {
     return user.avatar;
   }
 
-  const { buffer, mimeType } = await downloadAvatarBuffer(googleAvatarUrl);
+  const normalizedGoogleAvatar = normalizeGoogleAvatarUrl(googleAvatarUrl);
+  const sourceAvatarUrl = isGoogleAvatarUrl(user.avatar)
+    ? user.avatar
+    : normalizedGoogleAvatar;
+
+  const { buffer, mimeType } = await downloadAvatarBuffer(sourceAvatarUrl);
   const uploadResult = await uploadToCloudinary(buffer, {
     folder: `ghostvillage/avatars/google/${user._id}`,
     public_id: `google_avatar_${Date.now()}`,
+    resource_type: "image",
+    mimeType,
+    quality: "auto",
+    fetch_format: "auto",
+    width: 300,
+    height: 300,
+    crop: "fill",
+    gravity: "auto",
+  });
+
+  return uploadResult?.secure_url || null;
+};
+
+const syncDefaultAvatarToCloudinary = async (user, displayName) => {
+  if (!user) {
+    return null;
+  }
+
+  if (isCloudinaryUrl(user.avatar)) {
+    return user.avatar;
+  }
+
+  const defaultAvatarUrl = buildDefaultAvatarUrl(displayName || user.fullname);
+  const { buffer, mimeType } = await downloadAvatarBuffer(defaultAvatarUrl);
+  const uploadResult = await uploadToCloudinary(buffer, {
+    folder: `ghostvillage/avatars/default/${user._id}`,
+    public_id: `default_avatar_${Date.now()}`,
     resource_type: "image",
     mimeType,
     quality: "auto",
@@ -165,6 +217,24 @@ export const AuthService = {
       user.verificationUsed = true;
       user.verificationExpires = null;
       user.verificationTokenHash = null;
+
+      if (!user.avatar) {
+        try {
+          const defaultAvatar = await syncDefaultAvatarToCloudinary(
+            user,
+            user.fullname,
+          );
+          if (defaultAvatar) {
+            user.avatar = defaultAvatar;
+          }
+        } catch (error) {
+          console.warn(
+            "Default avatar sync failed on verification:",
+            error.message,
+          );
+        }
+      }
+
       await user.save();
 
       const authToken = generateToken(user._id, user.role, rememberMe);
@@ -239,6 +309,21 @@ export const AuthService = {
     // Check if account is verified
     if (!user.isVerified) {
       throw new Error("ACCOUNT_NOT_VERIFIED");
+    }
+
+    if (!user.avatar) {
+      try {
+        const defaultAvatar = await syncDefaultAvatarToCloudinary(
+          user,
+          user.fullname,
+        );
+        if (defaultAvatar) {
+          user.avatar = defaultAvatar;
+          await user.save();
+        }
+      } catch (error) {
+        console.warn("Default avatar sync failed on login:", error.message);
+      }
     }
 
     const token = generateToken(user._id, user.role, rememberMe);
@@ -413,7 +498,17 @@ export const AuthService = {
         user.googleId = googleId;
       }
 
-      if (avatar && !user.avatar) {
+      if (
+        avatar &&
+        (!user.avatar ||
+          isGoogleAvatarUrl(user.avatar) ||
+          isDataUri(user.avatar))
+      ) {
+        const normalizedGoogleAvatar = normalizeGoogleAvatarUrl(avatar);
+        if (!user.avatar) {
+          user.avatar = normalizedGoogleAvatar;
+        }
+
         try {
           const syncedAvatar = await syncGoogleAvatarToCloudinary(user, avatar);
           if (syncedAvatar) {
@@ -433,7 +528,7 @@ export const AuthService = {
         googleId,
         email: email.toLowerCase(),
         fullname,
-        avatar: null,
+        avatar: avatar ? normalizeGoogleAvatarUrl(avatar) : null,
         isVerified: true, // Google OAuth users are auto-verified
         password: null, // No password for OAuth users
       });

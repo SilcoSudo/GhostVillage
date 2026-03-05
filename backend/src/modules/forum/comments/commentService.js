@@ -1,5 +1,6 @@
 import Comment from "./commentModel.js";
 import * as postService from "../posts/postService.js";
+import { isAIViolation } from "../../../services/moderationPenaltyService.js";
 
 export const getComments = async (postId, { parentId = null } = {}) => {
   const query = {
@@ -126,10 +127,7 @@ export const addCommentReport = async (commentId, reportPayload) => {
   }
 
   comment.reports.push(reportPayload);
-  if (
-    reportPayload?.aiModeration?.recommendedAction === "hide_temp" ||
-    reportPayload?.aiModeration?.recommendedAction === "remove"
-  ) {
+  if (isAIViolation(reportPayload?.aiModeration)) {
     comment.isHiddenByModeration = true;
   }
 

@@ -2,6 +2,11 @@ import * as commentService from "./commentService.js";
 import NotificationService from "../notifications/notificationService.js";
 import Post from "../posts/postModel.js";
 import { evaluateReportWithGemini } from "../../../services/aiModerationService.js";
+import {
+  applyProgressiveModerationPenalty,
+  getUserPostingRestriction,
+  isAIViolation,
+} from "../../../services/moderationPenaltyService.js";
 
 const isRateLimitedAvatarUrl = (url) => {
   if (!url || typeof url !== "string") return false;
@@ -129,6 +134,20 @@ export const createComment = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: "Content is required",
+      });
+    }
+
+    const postingRestriction = await getUserPostingRestriction({
+      userId: authorId,
+    });
+    if (!postingRestriction.allowed) {
+      return res.status(postingRestriction.statusCode || 403).json({
+        success: false,
+        message: postingRestriction.message,
+        data: {
+          mutedUntil: postingRestriction.mutedUntil || null,
+          remainingSeconds: postingRestriction.remainingSeconds || 0,
+        },
       });
     }
 
@@ -358,14 +377,34 @@ export const reportComment = async (req, res, next) => {
       });
     }
 
+    let moderationPenalty = null;
+    if (isAIViolation(aiModeration)) {
+      try {
+        moderationPenalty = await applyProgressiveModerationPenalty({
+          userId: saveResult.comment.author,
+        });
+      } catch (penaltyError) {
+        console.error(
+          "Error applying moderation penalty for comment:",
+          penaltyError,
+        );
+      }
+    }
+
     try {
       const io = req.app.get("io");
       await NotificationService.createReportProcessedNotification(
         effectiveUserId,
-        postId,
+        saveResult.comment._id,
         normalizedReason.reasonCode,
         aiModeration,
         io,
+        {
+          reportedUserId: saveResult.comment.author,
+          entityType: "comment",
+          moderationPenalty,
+          entityLink: `/post/${postId}#comment-${saveResult.comment._id}`,
+        },
       );
     } catch (notificationError) {
       console.error(
@@ -390,6 +429,7 @@ export const reportComment = async (req, res, next) => {
           : [],
         reasonCode: normalizedReason.reasonCode,
         aiModeration,
+        moderationPenalty,
       },
     });
   } catch (err) {

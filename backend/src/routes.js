@@ -56,6 +56,7 @@ router.use("/web", webRoutes);
 // Admin Routes (mounted at /api/admin)
 const adminRoutes = express.Router();
 adminRoutes.use("/announcement", adminAnnouncementRoutes);
+adminRoutes.use("/users", userRoutes);
 router.use("/admin", adminRoutes);
 
 // --- HUNG'S GAME LOGIN LOGIC START ---

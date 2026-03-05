@@ -4,6 +4,7 @@ import {
   deleteFromCloudinary,
   extractPublicIdFromUrl,
 } from "../../../services/uploadService.js";
+import { isAIViolation } from "../../../services/moderationPenaltyService.js";
 
 export const listPosts = async ({ page = 1, limit = 10, category }) => {
   const p = Math.max(parseInt(page) || 1, 1);
@@ -185,7 +186,7 @@ export const addPostReport = async (id, reportPayload) => {
   }
 
   post.reports.push(reportPayload);
-  if (reportPayload?.aiModeration?.recommendedAction === "hide_temp") {
+  if (isAIViolation(reportPayload?.aiModeration)) {
     post.isTemporarilyHidden = true;
   }
   await post.save();
