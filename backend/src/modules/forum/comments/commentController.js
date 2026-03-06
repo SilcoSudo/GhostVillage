@@ -100,6 +100,46 @@ const serializeComment = (comment, userId = null) => {
   };
 };
 
+const serializeReportedCommentForAdmin = (comment) => {
+  const c = comment?.toObject ? comment.toObject() : comment;
+  if (!c) return null;
+
+  const reports = Array.isArray(c.reports) ? c.reports : [];
+  const latestReport = reports.length
+    ? [...reports].sort(
+        (a, b) => new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0),
+      )[0]
+    : null;
+
+  const authorName =
+    (typeof c.author === "object" && c.author?.fullname) || "Unknown";
+
+  return {
+    _id: c._id,
+    postId: typeof c.post === "object" ? c.post?._id : c.post,
+    postTitle:
+      typeof c.post === "object"
+        ? c.post?.title || "Unknown post"
+        : "Unknown post",
+    author: {
+      _id: typeof c.author === "object" ? c.author?._id : c.author,
+      fullname: authorName,
+      avatar:
+        typeof c.author === "object" && c.author?.avatar
+          ? c.author.avatar
+          : null,
+    },
+    content: c.content || "",
+    reports,
+    reportCount: reports.length,
+    reason: latestReport?.reason || "Reported content",
+    reportedDate: latestReport?.createdAt || null,
+    isHiddenByModeration: Boolean(c.isHiddenByModeration),
+    createdAt: c.createdAt,
+    updatedAt: c.updatedAt,
+  };
+};
+
 export const getComments = async (req, res, next) => {
   try {
     const { postId } = req.params;
@@ -430,6 +470,28 @@ export const reportComment = async (req, res, next) => {
         reasonCode: normalizedReason.reasonCode,
         aiModeration,
         moderationPenalty,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const listReportedCommentsForAdmin = async (req, res, next) => {
+  try {
+    const { page, limit, search } = req.query;
+    const { items, pagination } =
+      await commentService.listReportedCommentsForAdmin({
+        page,
+        limit,
+        search,
+      });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        comments: items.map(serializeReportedCommentForAdmin).filter(Boolean),
+        pagination,
       },
     });
   } catch (err) {

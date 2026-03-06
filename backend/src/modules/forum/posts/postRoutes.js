@@ -13,12 +13,20 @@ import {
   reportPost,
 } from "./postController.js";
 import { authMiddleware } from "../../../middlewares/auth.middleware.js";
+import { authorize } from "../../../middlewares/auth.middleware.js";
 import { uploadAvatar } from "../../../middlewares/uploadMiddleware.js";
 import commentRoutes from "../comments/commentRoutes.js";
+import { listReportedCommentsForAdmin } from "../comments/commentController.js";
 
 const router = express.Router();
 
 router.get("/", listPosts);
+router.get(
+  "/reported-comments",
+  authMiddleware,
+  authorize("admin"),
+  listReportedCommentsForAdmin,
+);
 
 // Delete media from Cloudinary - MUST BE BEFORE /:id routes
 router.delete("/delete-media", authMiddleware, deletePostMedia);

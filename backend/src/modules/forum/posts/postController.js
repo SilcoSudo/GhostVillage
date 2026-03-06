@@ -110,11 +110,15 @@ const serializePost = (doc) => {
 
 export const listPosts = async (req, res, next) => {
   try {
-    const { page, limit, category } = req.query;
+    const { page, limit, category, reportedOnly, hiddenOnly } = req.query;
     const { items, pagination } = await postService.listPosts({
       page,
       limit,
       category,
+      reportedOnly:
+        String(reportedOnly).toLowerCase() === "true" || reportedOnly === "1",
+      hiddenOnly:
+        String(hiddenOnly).toLowerCase() === "true" || hiddenOnly === "1",
     });
     return res.status(200).json({
       success: true,
