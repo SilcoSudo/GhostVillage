@@ -489,6 +489,95 @@
   accent-color: #990000;
 }
 
+/* Image Upload Styles */
+.image-upload-container {
+  margin-top: 8px;
+}
+
+.image-upload-label {
+  display: block;
+  cursor: pointer;
+}
+
+.image-upload-input {
+  display: none;
+}
+
+.image-upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 20px;
+  border: 2px dashed rgba(181, 166, 66, 0.4);
+  border-radius: 8px;
+  background: rgba(26, 26, 26, 0.5);
+  transition: all 0.3s ease;
+}
+
+.image-upload-placeholder:hover {
+  border-color: #B5A642;
+  background: rgba(181, 166, 66, 0.1);
+}
+
+.image-upload-placeholder svg {
+  color: #B5A642;
+}
+
+.image-upload-placeholder span {
+  color: #B5A642;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+.image-upload-placeholder small {
+  color: #A68B6A;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+}
+
+.image-preview-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  max-width: 300px;
+}
+
+.image-preview {
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 2px solid rgba(181, 166, 66, 0.4);
+  background: rgba(26, 26, 26, 0.5);
+}
+
+.image-remove-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(153, 0, 0, 0.9);
+  border: 1.5px solid #990000;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #B5A642;
+  transition: all 0.3s ease;
+}
+
+.image-remove-btn:hover {
+  background: #CC0000;
+  box-shadow: 0 0 12px rgba(153, 0, 0, 0.6);
+  transform: scale(1.1);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .modal-container {
