@@ -4,8 +4,15 @@ import {
   deleteFromCloudinary,
   extractPublicIdFromUrl,
 } from "../../../services/uploadService.js";
+import { isAIViolation } from "../../../services/moderationPenaltyService.js";
 
-export const listPosts = async ({ page = 1, limit = 10, category }) => {
+export const listPosts = async ({
+  page = 1,
+  limit = 10,
+  category,
+  reportedOnly = false,
+  hiddenOnly = false,
+}) => {
   const p = Math.max(parseInt(page) || 1, 1);
   const l = Math.min(Math.max(parseInt(limit) || 10, 1), 100);
   const skip = (p - 1) * l;
@@ -15,10 +22,22 @@ export const listPosts = async ({ page = 1, limit = 10, category }) => {
   if (category && category !== "all") {
     filter.category = category;
   }
+  if (reportedOnly) {
+    // Only posts with at least one report entry
+    filter["reports.0"] = { $exists: true };
+  }
+  if (hiddenOnly) {
+    // Only posts that are currently hidden by moderation
+    filter.isTemporarilyHidden = true;
+  }
+
+  const sort = hiddenOnly
+    ? { updatedAt: -1, createdAt: -1 }
+    : { createdAt: -1 };
 
   const [items, total] = await Promise.all([
     Post.find(filter)
-      .sort({ createdAt: -1 })
+      .sort(sort)
       .skip(skip)
       .limit(l)
       .populate("author", "fullname avatar"),
@@ -185,10 +204,22 @@ export const addPostReport = async (id, reportPayload) => {
   }
 
   post.reports.push(reportPayload);
-  if (reportPayload?.aiModeration?.recommendedAction === "hide_temp") {
+  post.updatedAt = new Date();
+  if (isAIViolation(reportPayload?.aiModeration)) {
     post.isTemporarilyHidden = true;
   }
   await post.save();
 
   return { post, duplicated: false };
+};
+
+export const restoreHiddenPost = async (id) => {
+  const post = await Post.findById(id);
+  if (!post) return null;
+
+  post.isTemporarilyHidden = false;
+  post.updatedAt = new Date();
+  await post.save();
+
+  return post;
 };

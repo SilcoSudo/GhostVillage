@@ -1,5 +1,10 @@
 import mongoose from "mongoose";
 
+const normalizeRecommendedAction = (label) => {
+  const normalizedLabel = String(label || "").toLowerCase();
+  return normalizedLabel === "no_violation" ? "keep" : "remove";
+};
+
 const commentSchema = new mongoose.Schema(
   {
     post: {
@@ -77,8 +82,11 @@ const commentSchema = new mongoose.Schema(
           },
           recommendedAction: {
             type: String,
-            enum: ["keep", "warn", "hide_temp", "remove", "escalate_human"],
-            default: "escalate_human",
+            enum: ["keep", "remove"],
+            default: "keep",
+            set: function () {
+              return normalizeRecommendedAction(this?.label);
+            },
           },
         },
         createdAt: {
@@ -96,6 +104,22 @@ const commentSchema = new mongoose.Schema(
 // Index for efficient querying
 commentSchema.index({ post: 1, parentId: 1, createdAt: -1 });
 commentSchema.index({ post: 1, createdAt: -1 });
+
+commentSchema.pre("validate", function (next) {
+  if (!Array.isArray(this.reports)) {
+    next();
+    return;
+  }
+
+  this.reports.forEach((report) => {
+    if (!report?.aiModeration) return;
+    report.aiModeration.recommendedAction = normalizeRecommendedAction(
+      report.aiModeration.label,
+    );
+  });
+
+  next();
+});
 
 const Comment = mongoose.model("Comment", commentSchema);
 
