@@ -33,12 +33,21 @@ public class MonsterSpawnerManager : MonoBehaviour
 
     private void SpawnBoss()
     {
-        if (_currentConfig.bossConfig.spawnPointIds.Count == 0) return;
-
+        // [FIX] Thêm lớp khiên bảo vệ Null Check cực mạnh
+        if (_currentConfig == null ||
+            _currentConfig.bossConfig == null ||
+            _currentConfig.bossConfig.spawnPointIds == null ||
+            _currentConfig.bossConfig.spawnPointIds.Count == 0)
+        {
+            Debug.LogWarning("⚠️ [MonsterSpawner] Bản đồ này không có cấu hình Boss hoặc thiếu điểm Spawn Boss!");
+            return;
+        }
         string randomPointId = _currentConfig.bossConfig.spawnPointIds[Random.Range(0, _currentConfig.bossConfig.spawnPointIds.Count)];
         Transform target = _mapData.GetSpawnPointById(randomPointId);
 
         string bossId = _currentConfig.bossConfig.monsterId;
+        // Kiểm tra xem ID Boss có rỗng không
+        if (string.IsNullOrEmpty(bossId)) return;
         GameObject prefab = _resourceDB.GetPrefabById(bossId);
 
         if (target != null && prefab != null)
@@ -70,10 +79,15 @@ public class MonsterSpawnerManager : MonoBehaviour
 
     private void SpawnSingleMinion()
     {
+        // [FIX] Khiên bảo vệ cho Minion
+        if (_currentConfig == null || _currentConfig.minionConfig == null) return;
         var minionPool = _currentConfig.minionConfig.allowedMonsterIds;
         var pointPool = _currentConfig.minionConfig.spawnPointIds;
 
-        if (minionPool.Count == 0 || pointPool.Count == 0) return;
+        if (minionPool == null || minionPool.Count == 0 || pointPool == null || pointPool.Count == 0)
+        {
+            return;
+        }
 
         string randomMinionId = minionPool[Random.Range(0, minionPool.Count)];
         string randomPointId = pointPool[Random.Range(0, pointPool.Count)];

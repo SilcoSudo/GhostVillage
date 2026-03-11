@@ -10,6 +10,8 @@ using Game.UI.Login;
 using Game.Script.UI;
 using Game.Core.ReactiveRepo;
 using Game.Domain.Map.Services;
+using Game.Domain.Friend.Services;
+using Game.Domain.Friend.Controllers;
 
 namespace Game.Core.DI
 {
@@ -45,7 +47,9 @@ namespace Game.Core.DI
             builder.Register<PlayerDataSyncService>(Lifetime.Singleton);
             builder.Register<ProfileService>(Lifetime.Singleton);
             builder.Register<ProfileController>(Lifetime.Singleton);
-            
+            builder.Register<FriendService>(Lifetime.Singleton);
+            builder.Register<FriendController>(Lifetime.Singleton);
+
             // 3. NETWORK (Sửa lại: Bắt buộc phải có Prefab)
             if (_photonPrefab != null)
             {

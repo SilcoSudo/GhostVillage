@@ -42,6 +42,15 @@ export const toggleBookmark = async (postId) => {
   return response.data;
 };
 
+// Report post
+export const reportPost = async ({ postId, reason, customReason = "" }) => {
+  const response = await axios.post(`/web/forum/${postId}/report`, {
+    reason,
+    customReason,
+  });
+  return response.data;
+};
+
 // Get user's posts
 export const getUserPosts = async (userId, params = {}) => {
   const response = await axios.get(`/users/${userId}/posts`, { params });

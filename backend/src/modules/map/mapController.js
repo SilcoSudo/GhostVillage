@@ -34,7 +34,6 @@ export const MapController = {
       }
 
       const maps = await MapConfig.find(filter)
-        .select("identityConfig rewardConfig")
         .sort({ "identityConfig.displayName": 1 })
         .lean();
 
@@ -136,7 +135,8 @@ export const MapController = {
   updateMapMetadata: async (req, res) => {
     try {
       const { id } = req.params;
-      const { displayName, requiredLevel, shortDescription, thumbnailUrl } = req.body;
+      const { displayName, requiredLevel, shortDescription, thumbnailUrl } =
+        req.body;
 
       const map = await MapConfig.findById(id);
 

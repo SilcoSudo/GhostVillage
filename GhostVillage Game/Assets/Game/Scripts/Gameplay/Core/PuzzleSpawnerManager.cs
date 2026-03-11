@@ -3,14 +3,22 @@ using Photon.Pun;
 using Game.Domain.Map.DTOs;
 using System.Collections.Generic;
 using System.Linq;
-using Game.Core.Database; // Thêm namespace này
+using Game.Core.Database;
 
 public class PuzzleSpawnerManager : MonoBehaviour
 {
     public void SpawnPuzzles(PuzzleConfigDTO config, MapDataManager mapData, GameResourceDatabaseSO resourceDB)
     {
         if (!PhotonNetwork.IsMasterClient) return;
-        if (config == null || config.puzzlePoolIds.Count == 0 || config.spawnPointIds.Count == 0) return;
+
+        // [FIX CHÍNH LÀ Ở ĐÂY]: Kiểm tra cả trường hợp config bị null và các List bên trong bị null
+        if (config == null ||
+            config.puzzlePoolIds == null || config.puzzlePoolIds.Count == 0 ||
+            config.spawnPointIds == null || config.spawnPointIds.Count == 0)
+        {
+            Debug.LogWarning("⚠️ [PuzzleSpawner] Map này không có Puzzle hoặc thiếu config Puzzle.");
+            return;
+        }
 
         Debug.Log($"[PuzzleSpawner] Đang setup {config.puzzlePoolIds.Count} câu đố...");
 
@@ -23,6 +31,10 @@ public class PuzzleSpawnerManager : MonoBehaviour
             string pointId = shuffledPoints[i];
 
             Transform targetPoint = mapData.GetSpawnPointById(pointId);
+
+            // Check nếu ID rỗng thì bỏ qua
+            if (string.IsNullOrEmpty(puzzlePrefabId)) continue;
+
             GameObject prefab = resourceDB.GetPrefabById(puzzlePrefabId);
 
             if (targetPoint != null && prefab != null)

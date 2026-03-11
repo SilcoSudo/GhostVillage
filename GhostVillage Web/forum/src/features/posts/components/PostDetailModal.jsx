@@ -25,6 +25,7 @@ import { useAuth } from "../../../app/context/AuthContext";
 import CreatePostModal from "./CreatePostModal";
 import ShareModal from "./ShareModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
+import ReportPostModal from "./ReportPostModal";
 import Comment from "./Comment";
 import { useComments, useCreateComment } from "../hooks/useComments";
 import {
@@ -32,6 +33,7 @@ import {
   useToggleLike,
   useToggleBookmark,
   usePost,
+  useReportPost,
 } from "../hooks/usePosts";
 import { linkifyHtmlContent } from "../../../shared/utils/linkify";
 import { removeImagesAndVideosFromHtml } from "../../../shared/utils/mediaExtractor";
@@ -49,6 +51,7 @@ const PostDetailModal = ({
   const [showEditModal, setShowEditModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [failedAvatars, setFailedAvatars] = useState({});
   const commentsSectionRef = useRef(null);
@@ -128,6 +131,7 @@ const PostDetailModal = ({
   const deletePostMutation = useDeletePost();
   const toggleLikeMutation = useToggleLike();
   const toggleBookmarkMutation = useToggleBookmark();
+  const reportPostMutation = useReportPost();
 
   const handleDelete = async () => {
     try {
@@ -144,6 +148,7 @@ const PostDetailModal = ({
     setShowEditModal(false);
     setShowShareModal(false);
     setShowDeleteModal(false);
+    setShowReportModal(false);
     onHide();
   };
 
@@ -153,6 +158,7 @@ const PostDetailModal = ({
       setShowEditModal(false);
       setShowShareModal(false);
       setShowDeleteModal(false);
+      setShowReportModal(false);
     }
   }, [show]);
 
@@ -180,6 +186,15 @@ const PostDetailModal = ({
 
   const handleShare = () => {
     setShowShareModal(true);
+  };
+
+  const handleReportSubmit = async ({ reason, customReason }) => {
+    await reportPostMutation.mutateAsync({
+      postId,
+      reason,
+      customReason,
+    });
+    setShowReportModal(false);
   };
 
   const handleCommentSubmit = async (e) => {
@@ -306,7 +321,9 @@ const PostDetailModal = ({
                       </>
                     ) : (
                       <>
-                        <Dropdown.Item>{t("posts.report")}</Dropdown.Item>
+                        <Dropdown.Item onClick={() => setShowReportModal(true)}>
+                          {t("posts.report")}
+                        </Dropdown.Item>
                         <Dropdown.Item>{t("posts.hide")}</Dropdown.Item>
                       </>
                     )}
@@ -503,6 +520,17 @@ const PostDetailModal = ({
           onConfirm={handleDelete}
           isDeleting={deletePostMutation.isLoading}
           itemType="post"
+        />
+      )}
+
+      {showReportModal && (
+        <ReportPostModal
+          show={showReportModal}
+          onHide={() => setShowReportModal(false)}
+          onSubmit={handleReportSubmit}
+          isSubmitting={Boolean(
+            reportPostMutation.isPending || reportPostMutation.isLoading,
+          )}
         />
       )}
     </>

@@ -64,3 +64,19 @@ export const useDeleteComment = (postId) => {
     },
   });
 };
+
+export const useReportComment = (postId) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ commentId, reportData }) =>
+      commentService.reportComment(postId, commentId, reportData),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries([COMMENT_QUERY_KEYS.COMMENTS, postId]);
+      toast.success(data?.message || "Comment report submitted");
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to report comment");
+    },
+  });
+};

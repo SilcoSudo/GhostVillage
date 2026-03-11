@@ -7,12 +7,13 @@ import axios from "../../../shared/services/axios";
  */
 export const uploadImage = async (file) => {
   const formData = new FormData();
-  formData.append('avatar', file); // Use 'avatar' to match uploadAvatar middleware
+  formData.append("avatar", file); // Use 'avatar' to match uploadAvatar middleware
 
   const response = await axios.post("/web/forum/upload-image", formData, {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      "Content-Type": "multipart/form-data",
     },
+    timeout: 600000,
   });
 
   return response.data.data; // Returns { url, publicId }

@@ -9,6 +9,7 @@ import webAnnouncementRoutes from "./modules/forum/announcement/web/announcement
 import adminAnnouncementRoutes from "./modules/forum/announcement/admin/announcementRoutes.js";
 import searchRoutes from "./modules/forum/search/searchRoutes.js";
 import notificationRoutes from "./modules/forum/notifications/notificationRoutes.js";
+import supportTicketRoutes from "./modules/forum/supportTickets/supportTicketRoutes.js";
 import friendRoutes from "./modules/friend/web/friendRoutes.js";
 import messageRoutes from "./modules/message/web/messageRoutes.js";
 import playerRoutes from "./modules/player/playerRoutes.js";
@@ -17,6 +18,8 @@ import { loginGame } from "./modules/auth/game/authController.js";
 import mapRoute from "./modules/map/mapRoute.js";
 import matchRoutes from "./modules/match/matchRoutes.js";
 import monsterRoutes from "./modules/monster/monsterRoutes.js";
+import questRoutes from "./modules/quest/questRoutes.js";
+import costumeRoutes from "./modules/costume/costumeRoutes.js";
 import moonEventRoutes from "./modules/moonEvent/moonEventRoutes.js";
 import moonEventGameRoutes from "./modules/moonEvent/gameRoutes.js";
 
@@ -36,6 +39,14 @@ router.use("/matches", matchRoutes);
 router.use("/monsters", monsterRoutes);
 // End of Monster Routes
 
+// Quest Routes (mounted at /api/quests)
+router.use("/quests", questRoutes);
+// End of Quest Routes
+
+// Costume Routes (mounted at /api/costumes)
+router.use("/costumes", costumeRoutes);
+// End of Costume Routes
+
 // Web Routes (mounted at /api/web)
 const webRoutes = express.Router();
 webRoutes.use("/auth", webAuthRoutes);
@@ -47,6 +58,7 @@ webRoutes.use("/announcement", webAnnouncementRoutes);
 webRoutes.use("/search", searchRoutes);
 webRoutes.use("/moon-events", moonEventRoutes);
 webRoutes.use("/notifications", notificationRoutes);
+webRoutes.use("/support-tickets", supportTicketRoutes);
 webRoutes.use("/friend", friendRoutes);
 webRoutes.use("/message", messageRoutes);
 router.use("/web", webRoutes);
@@ -54,6 +66,7 @@ router.use("/web", webRoutes);
 // Admin Routes (mounted at /api/admin)
 const adminRoutes = express.Router();
 adminRoutes.use("/announcement", adminAnnouncementRoutes);
+adminRoutes.use("/users", userRoutes);
 router.use("/admin", adminRoutes);
 
 // --- HUNG'S GAME LOGIN LOGIC START ---

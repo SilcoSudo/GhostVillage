@@ -109,3 +109,20 @@ export const useToggleBookmark = () => {
     },
   });
 };
+
+// Report post
+export const useReportPost = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: postService.reportPost,
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries([QUERY_KEYS.POSTS]);
+      queryClient.invalidateQueries([QUERY_KEYS.POST, variables.postId]);
+      toast.success(data?.message || "Report submitted");
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to report post");
+    },
+  });
+};
