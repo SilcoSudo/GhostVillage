@@ -1,4 +1,5 @@
 import Quest from "./questModel.js";
+import { logActivity } from "../activityLog/activityLogController.js";
 
 /**
  * Quest Controller
@@ -199,6 +200,20 @@ export const QuestController = {
 
       await newQuest.save();
 
+      // Log activity
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "CREATE",
+        entityType: "QUEST",
+        entityId: newQuest._id,
+        entityName: newQuest.questId,
+        description: `Tạo quest: ${newQuest.title} (${newQuest.questId})`,
+        severity: "LOW",
+        metadata: { questId, title, questLine },
+        req,
+      });
+
       return res.status(201).json({
         success: true,
         message: "Tạo quest thành công",
@@ -284,6 +299,20 @@ export const QuestController = {
 
       await quest.save();
 
+      // Log activity
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "UPDATE",
+        entityType: "QUEST",
+        entityId: quest._id,
+        entityName: quest.questId,
+        description: `Cập nhật quest: ${quest.title} (${quest.questId})`,
+        severity: "LOW",
+        metadata: { updateData },
+        req,
+      });
+
       return res.status(200).json({
         success: true,
         message: "Cập nhật quest thành công",
@@ -337,6 +366,20 @@ export const QuestController = {
       quest.isActive = isActive !== undefined ? isActive : !quest.isActive;
       await quest.save();
 
+      // Log activity
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "TOGGLE_STATUS",
+        entityType: "QUEST",
+        entityId: quest._id,
+        entityName: quest.questId,
+        description: `${quest.isActive ? "Kích hoạt" : "Vô hiệu hóa"} quest: ${quest.title} (${quest.questId})`,
+        severity: "LOW",
+        metadata: { isActive: quest.isActive },
+        req,
+      });
+
       return res.status(200).json({
         success: true,
         message: `Quest đã được ${quest.isActive ? "kích hoạt" : "vô hiệu hóa"}`,
@@ -378,6 +421,20 @@ export const QuestController = {
           message: "Không tìm thấy quest",
         });
       }
+
+      // Log activity
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "DELETE",
+        entityType: "QUEST",
+        entityId: quest._id,
+        entityName: quest.questId,
+        description: `Xóa quest: ${quest.title} (${quest.questId})`,
+        severity: "HIGH",
+        metadata: { deletedQuest: quest },
+        req,
+      });
 
       return res.status(200).json({
         success: true,

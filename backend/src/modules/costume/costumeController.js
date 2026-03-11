@@ -1,4 +1,5 @@
 import Costume from "./costumeModel.js";
+import { logActivity } from "../activityLog/activityLogController.js";
 
 /**
  * Costume Controller
@@ -123,6 +124,20 @@ export const CostumeController = {
       // Tạo costume mới
       const newCostume = await Costume.create(costumeData);
 
+      // Log activity
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "CREATE",
+        entityType: "COSTUME",
+        entityId: newCostume._id,
+        entityName: newCostume.costumeId,
+        description: `Tạo costume: ${newCostume.costumeId}`,
+        severity: "LOW",
+        metadata: { costumeData },
+        req,
+      });
+
       res.status(201).json({
         success: true,
         message: "Tạo costume thành công",
@@ -174,6 +189,20 @@ export const CostumeController = {
           message: `Không tìm thấy costume với ID: ${id}`,
         });
       }
+
+      // Log activity
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "UPDATE",
+        entityType: "COSTUME",
+        entityId: costume._id,
+        entityName: costume.costumeId,
+        description: `Cập nhật costume: ${costume.costumeId}`,
+        severity: "LOW",
+        metadata: { updateData },
+        req,
+      });
 
       res.status(200).json({
         success: true,
@@ -229,7 +258,19 @@ export const CostumeController = {
           message: `Không tìm thấy costume với ID: ${id}`,
         });
       }
-
+      // Log activity
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "TOGGLE_STATUS",
+        entityType: "COSTUME",
+        entityId: costume._id,
+        entityName: costume.costumeId,
+        description: `${isActive ? "Kích hoạt" : "Vô hiệu hóa"} costume: ${costume.costumeId}`,
+        severity: "LOW",
+        metadata: { isActive },
+        req,
+      });
       res.status(200).json({
         success: true,
         message: `${isActive ? "Kích hoạt" : "Vô hiệu hóa"} costume thành công`,
@@ -309,6 +350,20 @@ export const CostumeController = {
           message: `Không tìm thấy costume với ID: ${id}`,
         });
       }
+
+      // Log activity
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "DELETE",
+        entityType: "COSTUME",
+        entityId: costume._id,
+        entityName: costume.costumeId,
+        description: `Xóa costume: ${costume.costumeId}`,
+        severity: "MEDIUM",
+        metadata: { deletedCostume: costume },
+        req,
+      });
 
       res.status(200).json({
         success: true,

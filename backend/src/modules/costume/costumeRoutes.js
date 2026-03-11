@@ -1,7 +1,11 @@
 import express from "express";
 import { CostumeController } from "./costumeController.js";
+import { authMiddleware } from "../../middlewares/auth.middleware.js";
 
 const router = express.Router();
+
+// Apply authentication middleware to all routes
+router.use(authMiddleware);
 
 /**
  * Costume Routes
