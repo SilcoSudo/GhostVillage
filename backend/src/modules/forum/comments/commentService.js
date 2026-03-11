@@ -199,3 +199,14 @@ export const listReportedCommentsForAdmin = async ({
     },
   };
 };
+
+export const restoreHiddenComment = async (commentId) => {
+  const comment = await Comment.findById(commentId);
+  if (!comment) return null;
+
+  comment.isHiddenByModeration = false;
+  comment.updatedAt = new Date();
+  await comment.save();
+
+  return comment;
+};

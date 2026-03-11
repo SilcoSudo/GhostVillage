@@ -257,6 +257,43 @@ const SupportTicketPage = () => {
         </div>
       )}
 
+      {Array.isArray(ticket.adminReplies) && ticket.adminReplies.length > 0 && (
+        <div className="support-ticket-replies">
+          <div className="support-ticket-replies-title">
+            {t("support.adminReplies") || "Admin replies"}
+          </div>
+
+          <div className="support-ticket-replies-list">
+            {[...ticket.adminReplies]
+              .sort(
+                (a, b) =>
+                  new Date(a?.repliedAt || 0).getTime() -
+                  new Date(b?.repliedAt || 0).getTime(),
+              )
+              .map((reply, index) => (
+                <div
+                  key={reply?._id || `${ticket._id}-reply-${index}`}
+                  className="support-ticket-reply-item"
+                >
+                  <div className="support-ticket-reply-meta">
+                    <span className="support-ticket-reply-author">
+                      {reply?.repliedBy?.fullname ||
+                        t("support.admin") ||
+                        "Admin"}
+                    </span>
+                    <span className="support-ticket-reply-time">
+                      {formatDate(reply?.repliedAt)}
+                    </span>
+                  </div>
+                  <p className="support-ticket-reply-content">
+                    {reply?.content || ""}
+                  </p>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
       <div className="text-muted small">
         {t("support.createdAt")} {formatDate(ticket.createdAt)}
       </div>

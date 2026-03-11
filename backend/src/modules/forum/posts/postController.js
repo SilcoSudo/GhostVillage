@@ -241,6 +241,57 @@ export const deletePost = async (req, res, next) => {
   }
 };
 
+export const restorePost = async (req, res, next) => {
+  try {
+    const recoveryReason = String(req.body?.recoveryReason || "")
+      .trim()
+      .slice(0, 500);
+    const restored = await postService.restoreHiddenPost(req.params.id);
+    if (!restored) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Post not found" });
+    }
+
+    const restoredUserId = restored?.author?._id || restored?.author || null;
+    if (
+      restoredUserId &&
+      String(restoredUserId) !== String(req.user?._id || "")
+    ) {
+      try {
+        const io = req.app.get("io");
+        await NotificationService.createContentRestoredNotification(
+          {
+            restoredUserId,
+            moderatorUser: req.user,
+            entityType: "post",
+            entityId: restored._id,
+            entityLink: `/post/${restored._id}`,
+            recoveryReason,
+          },
+          io,
+        );
+      } catch (notificationError) {
+        console.error(
+          "Error sending post restored notification:",
+          notificationError,
+        );
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Post restored",
+      data: {
+        postId: restored._id,
+        isTemporarilyHidden: Boolean(restored.isTemporarilyHidden),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const likePost = async (req, res, next) => {
   try {
     const effectiveUserId = (req.user && req.user._id) || req.body.userId;

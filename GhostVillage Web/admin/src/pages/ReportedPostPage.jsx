@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { RotateCcw, Trash2 } from "lucide-react";
+import { Eye, RotateCcw, Trash2 } from "lucide-react";
+import PostDetailModal from "../shared/components/modals/PostDetailModal";
 import PostRecoveryModal from "../shared/components/modals/PostRecoveryModal";
 import axios from "../shared/services/axios";
 import "./assets/styles/ReportedPost.css";
@@ -18,6 +19,9 @@ const ReportedPostPage = () => {
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [selectedPost, setSelectedPost] = useState(null);
   const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [detailPost, setDetailPost] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const tr = (key, fallback) => {
     const translated = t(key);
@@ -161,15 +165,47 @@ const ReportedPostPage = () => {
   };
 
   const openRecoveryModal = (post) => {
+    setError("");
     setSelectedPost(post);
     setIsRecoveryModalOpen(true);
   };
 
-  const handleRestorePost = () => {
-    if (selectedPost) {
+  const openDetailModal = (post) => {
+    setDetailPost(post);
+    setIsDetailModalOpen(true);
+  };
+
+  const closeDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setDetailPost(null);
+  };
+
+  const closeRecoveryModal = () => {
+    setIsRecoveryModalOpen(false);
+    setSelectedPost(null);
+  };
+
+  const handleRestorePost = async (recoveryReason = "") => {
+    if (!selectedPost?.postId) {
+      setError("Invalid post data. Please refresh and try again.");
+      return;
+    }
+
+    try {
+      setIsRestoring(true);
+      setError("");
+
+      await axios.patch(`/web/forum/${selectedPost.postId}/restore`, {
+        recoveryReason: String(recoveryReason || "").trim(),
+      });
+
       setReportedPosts((prev) => prev.filter((p) => p.id !== selectedPost.id));
-      setIsRecoveryModalOpen(false);
-      setSelectedPost(null);
+      closeRecoveryModal();
+    } catch (err) {
+      console.error("Error restoring post:", err);
+      setError(err?.response?.data?.message || "Failed to restore post");
+    } finally {
+      setIsRestoring(false);
     }
   };
 
@@ -255,6 +291,13 @@ const ReportedPostPage = () => {
                     </td>
                     <td className="post-actions-cell">
                       <button
+                        className="action-btn view-btn"
+                        onClick={() => openDetailModal(post)}
+                        title={tr("common.view", "View Details")}
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <button
                         className="action-btn restore-btn"
                         onClick={() => openRecoveryModal(post)}
                         title={tr("posts.restore", "Restore Post")}
@@ -287,8 +330,16 @@ const ReportedPostPage = () => {
       <PostRecoveryModal
         isOpen={isRecoveryModalOpen}
         post={selectedPost}
-        onClose={() => setIsRecoveryModalOpen(false)}
+        onClose={closeRecoveryModal}
         onConfirm={handleRestorePost}
+        isSubmitting={isRestoring}
+      />
+
+      <PostDetailModal
+        isOpen={isDetailModalOpen}
+        post={detailPost}
+        onClose={closeDetailModal}
+        isLoading={false}
       />
     </div>
   );

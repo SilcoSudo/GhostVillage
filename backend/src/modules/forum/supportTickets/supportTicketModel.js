@@ -37,6 +37,25 @@ const SupportTicketSchema = new mongoose.Schema({
     default: "OPEN",
     index: true,
   },
+  adminReplies: [
+    {
+      content: {
+        type: String,
+        required: true,
+        trim: true,
+        maxlength: 2000,
+      },
+      repliedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+      },
+      repliedAt: {
+        type: Date,
+        default: Date.now,
+      },
+    },
+  ],
   createdAt: {
     type: Date,
     default: Date.now,

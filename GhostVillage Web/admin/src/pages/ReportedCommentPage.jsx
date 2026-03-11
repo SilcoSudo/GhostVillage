@@ -18,6 +18,7 @@ const ReportedCommentPage = () => {
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [selectedComment, setSelectedComment] = useState(null);
   const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
 
   const tr = (key, fallback) => {
     const translated = t(key);
@@ -161,17 +162,42 @@ const ReportedCommentPage = () => {
   };
 
   const openRecoveryModal = (comment) => {
+    setError("");
     setSelectedComment(comment);
     setIsRecoveryModalOpen(true);
   };
 
-  const handleRestoreComment = () => {
-    if (selectedComment) {
+  const closeRecoveryModal = () => {
+    setIsRecoveryModalOpen(false);
+    setSelectedComment(null);
+  };
+
+  const handleRestoreComment = async (recoveryReason = "") => {
+    if (!selectedComment?.commentId || !selectedComment?.postId) {
+      setError("Invalid comment data. Please refresh and try again.");
+      return;
+    }
+
+    try {
+      setIsRestoring(true);
+      setError("");
+
+      await axios.patch(
+        `/web/forum/${selectedComment.postId}/comments/${selectedComment.commentId}/restore`,
+        {
+          recoveryReason: String(recoveryReason || "").trim(),
+        },
+      );
+
       setReportedComments((prev) =>
         prev.filter((c) => c.id !== selectedComment.id),
       );
-      setIsRecoveryModalOpen(false);
-      setSelectedComment(null);
+      closeRecoveryModal();
+    } catch (err) {
+      console.error("Error restoring comment:", err);
+      setError(err?.response?.data?.message || "Failed to restore comment");
+    } finally {
+      setIsRestoring(false);
     }
   };
 
@@ -305,8 +331,9 @@ const ReportedCommentPage = () => {
       <CommentRecoveryModal
         isOpen={isRecoveryModalOpen}
         comment={selectedComment}
-        onClose={() => setIsRecoveryModalOpen(false)}
+        onClose={closeRecoveryModal}
         onConfirm={handleRestoreComment}
+        isSubmitting={isRestoring}
       />
     </div>
   );

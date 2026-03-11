@@ -5,6 +5,7 @@ import {
   createPost,
   updatePost,
   deletePost,
+  restorePost,
   likePost,
   bookmarkPost,
   lockPost,
@@ -36,6 +37,7 @@ router.get("/:id", getPost);
 router.post("/", authMiddleware, createPost);
 router.put("/:id", authMiddleware, updatePost);
 router.delete("/:id", authMiddleware, deletePost);
+router.patch("/:id/restore", authMiddleware, authorize("admin"), restorePost);
 router.post("/:id/like", authMiddleware, likePost);
 router.post("/:id/bookmark", authMiddleware, bookmarkPost);
 router.post("/:id/lock", authMiddleware, lockPost);

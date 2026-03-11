@@ -212,3 +212,14 @@ export const addPostReport = async (id, reportPayload) => {
 
   return { post, duplicated: false };
 };
+
+export const restoreHiddenPost = async (id) => {
+  const post = await Post.findById(id);
+  if (!post) return null;
+
+  post.isTemporarilyHidden = false;
+  post.updatedAt = new Date();
+  await post.save();
+
+  return post;
+};

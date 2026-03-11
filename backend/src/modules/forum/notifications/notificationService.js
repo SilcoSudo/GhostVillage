@@ -246,6 +246,58 @@ class NotificationService {
     }
   }
 
+  static async createContentRestoredNotification(
+    {
+      restoredUserId,
+      moderatorUser = null,
+      entityType = "post",
+      entityId,
+      entityLink,
+      recoveryReason = "",
+    },
+    io,
+  ) {
+    try {
+      if (!restoredUserId || !entityId) return null;
+
+      const entityTypeLabel = entityType === "comment" ? "comment" : "post";
+      const moderatorName =
+        moderatorUser?.fullname || moderatorUser?.username || "Admin";
+      const normalizedReason = String(recoveryReason || "").trim();
+      const message = normalizedReason
+        ? `Your ${entityTypeLabel} has been restored by ${moderatorName}. Moderator note: "${normalizedReason}"`
+        : `Your ${entityTypeLabel} has been restored by ${moderatorName}.`;
+
+      const notification = await Notification.create({
+        userId: restoredUserId,
+        type: "report_processed",
+        title: "Content Restored",
+        message,
+        relatedUser: moderatorUser?._id || null,
+        relatedEntity: {
+          entityType: entityTypeLabel,
+          entityId,
+          link: entityLink || `/post/${entityId}`,
+        },
+      });
+
+      if (io) {
+        io.to(`user:${restoredUserId}`).emit("new_notification", {
+          id: notification._id,
+          title: notification.title,
+          message: notification.message,
+          type: notification.type,
+          link: notification.relatedEntity.link,
+        });
+      }
+
+      return notification;
+    } catch (error) {
+      console.error("Error creating content restored notification:", error);
+      throw error;
+    }
+  }
+
   /**
    * Tạo notification comment reply
    */
@@ -283,6 +335,51 @@ class NotificationService {
       return notification;
     } catch (error) {
       console.error("Error creating comment replied notification:", error);
+      throw error;
+    }
+  }
+
+  static async createTicketRepliedNotification(
+    { ticketOwnerId, adminUser = null, ticketId, subject = "" },
+    io,
+  ) {
+    try {
+      if (!ticketOwnerId || !ticketId) return null;
+
+      const adminName =
+        adminUser?.fullname ||
+        adminUser?.username ||
+        adminUser?.email ||
+        "Admin";
+      const normalizedSubject = String(subject || "").trim();
+      const ticketSuffix = normalizedSubject ? `: "${normalizedSubject}"` : "";
+
+      const notification = await Notification.create({
+        userId: ticketOwnerId,
+        type: "ticket_replied",
+        title: "Support Ticket Updated",
+        message: `${adminName} replied to your support ticket${ticketSuffix}.`,
+        relatedUser: adminUser?._id || null,
+        relatedEntity: {
+          entityType: "ticket",
+          entityId: ticketId,
+          link: "/support/ticket",
+        },
+      });
+
+      if (io) {
+        io.to(`user:${ticketOwnerId}`).emit("new_notification", {
+          id: notification._id,
+          title: notification.title,
+          message: notification.message,
+          type: notification.type,
+          link: notification.relatedEntity?.link || "/support/ticket",
+        });
+      }
+
+      return notification;
+    } catch (error) {
+      console.error("Error creating ticket replied notification:", error);
       throw error;
     }
   }

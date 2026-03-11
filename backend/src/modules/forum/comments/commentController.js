@@ -328,6 +328,68 @@ export const deleteComment = async (req, res, next) => {
   }
 };
 
+export const restoreCommentByAdmin = async (req, res, next) => {
+  try {
+    const { postId, commentId } = req.params;
+    const recoveryReason = String(req.body?.recoveryReason || "")
+      .trim()
+      .slice(0, 500);
+
+    const existing = await commentService.getCommentById(commentId);
+    if (!existing || String(existing.post) !== String(postId)) {
+      return res.status(404).json({
+        success: false,
+        message: "Comment not found",
+      });
+    }
+
+    const restored = await commentService.restoreHiddenComment(commentId);
+    if (!restored) {
+      return res.status(404).json({
+        success: false,
+        message: "Comment not found",
+      });
+    }
+
+    const restoredUserId = existing?.author?._id || existing?.author || null;
+    if (
+      restoredUserId &&
+      String(restoredUserId) !== String(req.user?._id || "")
+    ) {
+      try {
+        const io = req.app.get("io");
+        await NotificationService.createContentRestoredNotification(
+          {
+            restoredUserId,
+            moderatorUser: req.user,
+            entityType: "comment",
+            entityId: restored._id,
+            entityLink: `/post/${postId}#comment-${commentId}`,
+            recoveryReason,
+          },
+          io,
+        );
+      } catch (notificationError) {
+        console.error(
+          "Error sending comment restored notification:",
+          notificationError,
+        );
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Comment restored",
+      data: {
+        commentId: restored._id,
+        isHiddenByModeration: Boolean(restored.isHiddenByModeration),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const reportComment = async (req, res, next) => {
   try {
     const { commentId, postId } = req.params;
