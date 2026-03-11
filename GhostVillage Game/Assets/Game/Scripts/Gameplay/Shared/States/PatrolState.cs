@@ -22,7 +22,7 @@ namespace GhostVillage.Gameplay.Shared
         {
             if (waypoints == null || waypoints.Length == 0)
             {
-                Debug.LogError("PatrolState: Không có waypoint nào được cấu hình!");
+                Debug.LogError("PatrolState: Không có waypoint nào được cấu hình!");     
                 return;
             }
 
@@ -35,21 +35,20 @@ namespace GhostVillage.Gameplay.Shared
 
         public void Update()
         {
-            // Luôn di chuyển theo waypoint
+            // Luôn di chuyển theo waypoint hiện tại
             Vector3 targetWaypoint = waypoints[currentWaypointIndex];
             float distanceToWaypoint = Vector3.Distance(monster.transform.position, targetWaypoint);
 
-            // Kiểm tra waypoint với distance thay vì IsMoving (chính xác hơn)
-            if (distanceToWaypoint < 1f) // Tới gần waypoint
+            // Luôn gọi MoveTo mỗi frame để giữ NavMeshAgent active
+            monster.MoveTo(targetWaypoint);
+
+            // Kiểm tra xem đã tới waypoint chưa
+            if (distanceToWaypoint < 1f)
             {
-                if (!monster.IsMoving())
-                {
-                    Debug.Log($"📍 PatrolState: Đã đến waypoint {currentWaypointIndex}. Chuyển sang waypoint {(currentWaypointIndex + 1) % waypoints.Length}");
-                    
-                    // Increment TRƯỚC khi move
-                    currentWaypointIndex = (currentWaypointIndex + 1) % waypoints.Length;
-                    GoToNextWaypoint();
-                }
+                Debug.Log($"📍 PatrolState: Đã đến waypoint {currentWaypointIndex}. Chuyển sang waypoint {(currentWaypointIndex + 1) % waypoints.Length}");
+                
+                // Chuyển sang waypoint tiếp theo
+                currentWaypointIndex = (currentWaypointIndex + 1) % waypoints.Length;
             }
 
             // Debug: show current target
@@ -63,6 +62,13 @@ namespace GhostVillage.Gameplay.Shared
             else
             {
                 monster.LookForward();
+            }
+
+            // QUAN TRỌNG: Cập nhật detection cone để xoay cùng với model
+            // Lấy hướng di chuyển từ NavMeshAgent velocity
+            if (monster.GetNavMeshAgent() != null && monster.GetNavMeshAgent().velocity.sqrMagnitude > 0.01f)
+            {
+                monster.GetPlayerDetector().UpdateDetectionDirection(monster.GetNavMeshAgent().velocity.normalized);
             }
         }
 
