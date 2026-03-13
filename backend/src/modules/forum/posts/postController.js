@@ -5,6 +5,11 @@ import {
   deleteFromCloudinary,
 } from "../../../services/uploadService.js";
 import { evaluateReportWithGemini } from "../../../services/aiModerationService.js";
+import {
+  applyProgressiveModerationPenalty,
+  getUserPostingRestriction,
+  isAIViolation,
+} from "../../../services/moderationPenaltyService.js";
 
 const isRateLimitedAvatarUrl = (url) => {
   if (!url || typeof url !== "string") return false;
@@ -105,11 +110,15 @@ const serializePost = (doc) => {
 
 export const listPosts = async (req, res, next) => {
   try {
-    const { page, limit, category } = req.query;
+    const { page, limit, category, reportedOnly, hiddenOnly } = req.query;
     const { items, pagination } = await postService.listPosts({
       page,
       limit,
       category,
+      reportedOnly:
+        String(reportedOnly).toLowerCase() === "true" || reportedOnly === "1",
+      hiddenOnly:
+        String(hiddenOnly).toLowerCase() === "true" || hiddenOnly === "1",
     });
     return res.status(200).json({
       success: true,
@@ -137,6 +146,29 @@ export const getPost = async (req, res, next) => {
 export const createPost = async (req, res, next) => {
   try {
     const { title, body, author, category, media } = req.body;
+    const effectiveAuthor = author || (req.user && req.user._id) || undefined;
+
+    if (!effectiveAuthor) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authorized, no user",
+      });
+    }
+
+    const postingRestriction = await getUserPostingRestriction({
+      userId: effectiveAuthor,
+    });
+    if (!postingRestriction.allowed) {
+      return res.status(postingRestriction.statusCode || 403).json({
+        success: false,
+        message: postingRestriction.message,
+        data: {
+          mutedUntil: postingRestriction.mutedUntil || null,
+          remainingSeconds: postingRestriction.remainingSeconds || 0,
+        },
+      });
+    }
+
     if (!title || !body) {
       return res
         .status(400)
@@ -150,7 +182,6 @@ export const createPost = async (req, res, next) => {
         .json({ success: false, message: mediaValidationError });
     }
 
-    const effectiveAuthor = author || (req.user && req.user._id) || undefined;
     const created = await postService.createPost({
       title,
       body,
@@ -205,6 +236,57 @@ export const deletePost = async (req, res, next) => {
         .json({ success: false, message: "Post not found" });
     }
     return res.status(200).json({ success: true, message: "Post deleted" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const restorePost = async (req, res, next) => {
+  try {
+    const recoveryReason = String(req.body?.recoveryReason || "")
+      .trim()
+      .slice(0, 500);
+    const restored = await postService.restoreHiddenPost(req.params.id);
+    if (!restored) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Post not found" });
+    }
+
+    const restoredUserId = restored?.author?._id || restored?.author || null;
+    if (
+      restoredUserId &&
+      String(restoredUserId) !== String(req.user?._id || "")
+    ) {
+      try {
+        const io = req.app.get("io");
+        await NotificationService.createContentRestoredNotification(
+          {
+            restoredUserId,
+            moderatorUser: req.user,
+            entityType: "post",
+            entityId: restored._id,
+            entityLink: `/post/${restored._id}`,
+            recoveryReason,
+          },
+          io,
+        );
+      } catch (notificationError) {
+        console.error(
+          "Error sending post restored notification:",
+          notificationError,
+        );
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Post restored",
+      data: {
+        postId: restored._id,
+        isTemporarilyHidden: Boolean(restored.isTemporarilyHidden),
+      },
+    });
   } catch (err) {
     next(err);
   }
@@ -485,6 +567,20 @@ export const reportPost = async (req, res, next) => {
       });
     }
 
+    let moderationPenalty = null;
+    if (isAIViolation(aiModeration)) {
+      try {
+        moderationPenalty = await applyProgressiveModerationPenalty({
+          userId: saveResult.post.author,
+        });
+      } catch (penaltyError) {
+        console.error(
+          "Error applying moderation penalty for post:",
+          penaltyError,
+        );
+      }
+    }
+
     try {
       const io = req.app.get("io");
       await NotificationService.createReportProcessedNotification(
@@ -493,6 +589,12 @@ export const reportPost = async (req, res, next) => {
         normalizedReason.reasonCode,
         aiModeration,
         io,
+        {
+          reportedUserId: saveResult.post.author,
+          entityType: "post",
+          moderationPenalty,
+          entityLink: `/post/${saveResult.post._id}`,
+        },
       );
     } catch (notificationError) {
       console.error(
@@ -517,6 +619,7 @@ export const reportPost = async (req, res, next) => {
           : [],
         reasonCode: normalizedReason.reasonCode,
         aiModeration,
+        moderationPenalty,
       },
     });
   } catch (err) {

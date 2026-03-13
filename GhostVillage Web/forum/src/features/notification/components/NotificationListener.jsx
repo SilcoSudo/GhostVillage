@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
-import { useNotifications, useSocket } from '../hooks/useSocket';
-import { useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+import { useEffect } from "react";
+import { useNotifications, useSocket } from "../hooks/useSocket";
+import { useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
 /**
  * Global component để handle realtime notifications
@@ -13,21 +13,34 @@ export const NotificationListener = ({ token }) => {
 
   // Listen for notifications
   useNotifications((notification) => {
-    console.log('Notification received:', notification);
+    console.log("Notification received:", notification);
 
     // Show toast
     toast.success(notification.message, {
       duration: 4000,
-      icon: '🔔',
+      icon: "🔔",
     });
 
     // Invalidate queries to refresh data
-    if (notification.type === 'post_liked' || notification.type === 'post_commented') {
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
+    if (
+      notification.type === "post_liked" ||
+      notification.type === "post_commented"
+    ) {
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
     }
 
-    if (notification.type === 'friend_request' || notification.type === 'friend_accepted') {
-      queryClient.invalidateQueries({ queryKey: ['friends'] });
+    if (
+      notification.type === "friend_request" ||
+      notification.type === "friend_accepted"
+    ) {
+      queryClient.invalidateQueries({ queryKey: ["friends"] });
+    }
+
+    if (
+      notification.type === "ticket_replied" ||
+      notification.type === "ticketReplied"
+    ) {
+      queryClient.invalidateQueries({ queryKey: ["supportTickets"] });
     }
 
     // Optional: Play sound
@@ -37,9 +50,9 @@ export const NotificationListener = ({ token }) => {
   // Show connection status
   useEffect(() => {
     if (isConnected) {
-      console.log('✓ Socket connected - Ready for realtime notifications');
+      console.log("✓ Socket connected - Ready for realtime notifications");
     } else {
-      console.log('✗ Socket disconnected - Will retry connection');
+      console.log("✗ Socket disconnected - Will retry connection");
     }
   }, [isConnected]);
 
@@ -50,10 +63,10 @@ export const NotificationListener = ({ token }) => {
  * Play notification sound (optional)
  */
 const playNotificationSound = () => {
-  const audio = new Audio('/sounds/notification.mp3');
+  const audio = new Audio("/sounds/notification.mp3");
   audio.play().catch((err) => {
     // Audio play might be blocked by browser
-    console.log('Notification sound blocked by browser');
+    console.log("Notification sound blocked by browser");
   });
 };
 

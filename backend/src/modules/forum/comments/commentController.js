@@ -2,6 +2,11 @@ import * as commentService from "./commentService.js";
 import NotificationService from "../notifications/notificationService.js";
 import Post from "../posts/postModel.js";
 import { evaluateReportWithGemini } from "../../../services/aiModerationService.js";
+import {
+  applyProgressiveModerationPenalty,
+  getUserPostingRestriction,
+  isAIViolation,
+} from "../../../services/moderationPenaltyService.js";
 
 const isRateLimitedAvatarUrl = (url) => {
   if (!url || typeof url !== "string") return false;
@@ -95,6 +100,46 @@ const serializeComment = (comment, userId = null) => {
   };
 };
 
+const serializeReportedCommentForAdmin = (comment) => {
+  const c = comment?.toObject ? comment.toObject() : comment;
+  if (!c) return null;
+
+  const reports = Array.isArray(c.reports) ? c.reports : [];
+  const latestReport = reports.length
+    ? [...reports].sort(
+        (a, b) => new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0),
+      )[0]
+    : null;
+
+  const authorName =
+    (typeof c.author === "object" && c.author?.fullname) || "Unknown";
+
+  return {
+    _id: c._id,
+    postId: typeof c.post === "object" ? c.post?._id : c.post,
+    postTitle:
+      typeof c.post === "object"
+        ? c.post?.title || "Unknown post"
+        : "Unknown post",
+    author: {
+      _id: typeof c.author === "object" ? c.author?._id : c.author,
+      fullname: authorName,
+      avatar:
+        typeof c.author === "object" && c.author?.avatar
+          ? c.author.avatar
+          : null,
+    },
+    content: c.content || "",
+    reports,
+    reportCount: reports.length,
+    reason: latestReport?.reason || "Reported content",
+    reportedDate: latestReport?.createdAt || null,
+    isHiddenByModeration: Boolean(c.isHiddenByModeration),
+    createdAt: c.createdAt,
+    updatedAt: c.updatedAt,
+  };
+};
+
 export const getComments = async (req, res, next) => {
   try {
     const { postId } = req.params;
@@ -129,6 +174,20 @@ export const createComment = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: "Content is required",
+      });
+    }
+
+    const postingRestriction = await getUserPostingRestriction({
+      userId: authorId,
+    });
+    if (!postingRestriction.allowed) {
+      return res.status(postingRestriction.statusCode || 403).json({
+        success: false,
+        message: postingRestriction.message,
+        data: {
+          mutedUntil: postingRestriction.mutedUntil || null,
+          remainingSeconds: postingRestriction.remainingSeconds || 0,
+        },
       });
     }
 
@@ -269,6 +328,68 @@ export const deleteComment = async (req, res, next) => {
   }
 };
 
+export const restoreCommentByAdmin = async (req, res, next) => {
+  try {
+    const { postId, commentId } = req.params;
+    const recoveryReason = String(req.body?.recoveryReason || "")
+      .trim()
+      .slice(0, 500);
+
+    const existing = await commentService.getCommentById(commentId);
+    if (!existing || String(existing.post) !== String(postId)) {
+      return res.status(404).json({
+        success: false,
+        message: "Comment not found",
+      });
+    }
+
+    const restored = await commentService.restoreHiddenComment(commentId);
+    if (!restored) {
+      return res.status(404).json({
+        success: false,
+        message: "Comment not found",
+      });
+    }
+
+    const restoredUserId = existing?.author?._id || existing?.author || null;
+    if (
+      restoredUserId &&
+      String(restoredUserId) !== String(req.user?._id || "")
+    ) {
+      try {
+        const io = req.app.get("io");
+        await NotificationService.createContentRestoredNotification(
+          {
+            restoredUserId,
+            moderatorUser: req.user,
+            entityType: "comment",
+            entityId: restored._id,
+            entityLink: `/post/${postId}#comment-${commentId}`,
+            recoveryReason,
+          },
+          io,
+        );
+      } catch (notificationError) {
+        console.error(
+          "Error sending comment restored notification:",
+          notificationError,
+        );
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Comment restored",
+      data: {
+        commentId: restored._id,
+        isHiddenByModeration: Boolean(restored.isHiddenByModeration),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const reportComment = async (req, res, next) => {
   try {
     const { commentId, postId } = req.params;
@@ -358,14 +479,34 @@ export const reportComment = async (req, res, next) => {
       });
     }
 
+    let moderationPenalty = null;
+    if (isAIViolation(aiModeration)) {
+      try {
+        moderationPenalty = await applyProgressiveModerationPenalty({
+          userId: saveResult.comment.author,
+        });
+      } catch (penaltyError) {
+        console.error(
+          "Error applying moderation penalty for comment:",
+          penaltyError,
+        );
+      }
+    }
+
     try {
       const io = req.app.get("io");
       await NotificationService.createReportProcessedNotification(
         effectiveUserId,
-        postId,
+        saveResult.comment._id,
         normalizedReason.reasonCode,
         aiModeration,
         io,
+        {
+          reportedUserId: saveResult.comment.author,
+          entityType: "comment",
+          moderationPenalty,
+          entityLink: `/post/${postId}#comment-${saveResult.comment._id}`,
+        },
       );
     } catch (notificationError) {
       console.error(
@@ -390,6 +531,29 @@ export const reportComment = async (req, res, next) => {
           : [],
         reasonCode: normalizedReason.reasonCode,
         aiModeration,
+        moderationPenalty,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const listReportedCommentsForAdmin = async (req, res, next) => {
+  try {
+    const { page, limit, search } = req.query;
+    const { items, pagination } =
+      await commentService.listReportedCommentsForAdmin({
+        page,
+        limit,
+        search,
+      });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        comments: items.map(serializeReportedCommentForAdmin).filter(Boolean),
+        pagination,
       },
     });
   } catch (err) {

@@ -10,7 +10,6 @@ import "../assets/styles/Modal.css";
 const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     name: "",
-    avatar: "",
     hp: 100,
     atk: 10,
     def: 5,
@@ -24,7 +23,6 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
     if (monster) {
       setFormData({
         name: monster.name || "",
-        avatar: monster.avatar || "",
         hp: monster.hp || 100,
         atk: monster.atk || 10,
         def: monster.def || 5,
@@ -125,30 +123,6 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
               placeholder="Nhập tên quái vật"
               required
             />
-          </div>
-
-          {/* Avatar URL */}
-          <div className="form-group">
-            <label className="form-label">Avatar URL</label>
-            <input
-              type="text"
-              name="avatar"
-              value={formData.avatar}
-              onChange={handleChange}
-              className="form-input"
-              placeholder="/images/monsters/monster.png"
-            />
-            {formData.avatar && (
-              <div className="image-preview">
-                <img
-                  src={formData.avatar}
-                  alt="Preview"
-                  onError={(e) => {
-                    e.target.src = "/images/default-monster.png";
-                  }}
-                />
-              </div>
-            )}
           </div>
 
           {/* Stats Grid */}
