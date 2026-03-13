@@ -1,6 +1,6 @@
 using System;
 using Cysharp.Threading.Tasks;
-using Game.Core.ReactiveRepo;
+using Game.Core.Network;
 using Game.Core.Scene;
 using Game.Domain.Authentication;
 using Game.Domain.Authentication.DTOs;
@@ -16,18 +16,18 @@ namespace Game.UI.Login
     {
         private readonly AuthService _authService;
         private readonly ISceneLoaderService _sceneLoader;
-        private readonly PlayerDataSyncService _syncService;
+        private readonly GameSession _session;
         private string _token;
         private string _sceneToLoad = "MainMenu";
 
         public ProfileCompletionController(
             AuthService authService,
             ISceneLoaderService sceneLoader,
-            PlayerDataSyncService syncService)
+            GameSession session)
         {
             _authService = authService;
             _sceneLoader = sceneLoader;
-            _syncService = syncService;
+            _session = session;
         }
 
         /// <summary>
@@ -65,13 +65,12 @@ namespace Game.UI.Login
                     view.SetStatus("✓ Profile updated! Loading game...");
 
                     // Get updated player data
-                    await _syncService.SyncAllDataAsync(response.data);
-
+                    await _authService.FetchMyProfileAsync();
                     view.SetStatus("<color=green>✓ Welcome to Ghost Village!</color>");
-                    
+
                     // Brief delay before scene load
                     await UniTask.Delay(1000);
-                    
+
                     await _sceneLoader.LoadSceneAsync(_sceneToLoad);
                 }
                 else
