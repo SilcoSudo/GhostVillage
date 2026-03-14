@@ -8,10 +8,11 @@ using Game.ScriptableObjects.GameConfig;
 using Game.Domain.Authentication;
 using Game.UI.Login;
 using Game.Script.UI;
-using Game.Core.ReactiveRepo;
 using Game.Domain.Map.Services;
 using Game.Domain.Friend.Services;
 using Game.Domain.Friend.Controllers;
+using Game.Domain.Settings.Services;
+using Game.Domain.Settings.Controllers;
 
 namespace Game.Core.DI
 {
@@ -25,8 +26,7 @@ namespace Game.Core.DI
         [SerializeField] private PhotonNetworkManager _photonPrefab;
 
         // Kéo Prefab UI (Canvas + Loading) vào đây
-        [SerializeField] private GlobalUIManager _globalUIPrefab;
-
+        [SerializeField] private GameObject _globalUIPrefab; // ĐÃ TRẢ LẠI THÀNH GAMEOBJECT
         protected override void Awake()
         {
             base.Awake(); // Quan trọng: Phải gọi base.Awake() của VContainer
@@ -43,12 +43,17 @@ namespace Game.Core.DI
             // 2. Core Services
             builder.Register<SceneLoaderService>(Lifetime.Singleton).As<ISceneLoaderService>();
             builder.Register<AuthService>(Lifetime.Singleton);
-            builder.Register<PlayerDataStore>(Lifetime.Singleton);
-            builder.Register<PlayerDataSyncService>(Lifetime.Singleton);
+            builder.Register<GameSession>(Lifetime.Singleton);
             builder.Register<ProfileService>(Lifetime.Singleton);
             builder.Register<ProfileController>(Lifetime.Singleton);
             builder.Register<FriendService>(Lifetime.Singleton);
             builder.Register<FriendController>(Lifetime.Singleton);
+            builder.Register<SettingsSaveLoadService>(Lifetime.Singleton);
+            builder.Register<GraphicsSettingService>(Lifetime.Singleton);
+            builder.Register<AudioSettingService>(Lifetime.Singleton);
+            builder.Register<SettingsController>(Lifetime.Singleton);
+            builder.Register<PlayerInputActions>(Lifetime.Singleton);
+            builder.Register<InputRebindService>(Lifetime.Singleton);
 
             // 3. NETWORK (Sửa lại: Bắt buộc phải có Prefab)
             if (_photonPrefab != null)
@@ -61,11 +66,21 @@ namespace Game.Core.DI
                 Debug.LogError("❌ LỖI: Chưa kéo Photon Prefab vào AppLifetimeScope!");
             }
 
-            // 4. UI (Sửa lại: Dùng RegisterComponentInNewPrefab)
-            // Thay vì tìm trong Scene, nó sẽ spawn cái Prefab UI này ra
+            // 4. UI (Tự Instantiate và đăng ký)
             if (_globalUIPrefab != null)
             {
-                builder.RegisterComponentInNewPrefab(_globalUIPrefab, Lifetime.Singleton);
+                var uiObj = Instantiate(_globalUIPrefab);
+                DontDestroyOnLoad(uiObj);
+
+                var uiManager = uiObj.GetComponent<GlobalUIManager>();
+                if (uiManager != null)
+                {
+                    builder.RegisterInstance(uiManager);
+                }
+
+                // ĐÂY LÀ ĐÒN CHÍ MẠNG DIỆT LỖI Ở DÒNG 113: 
+                // Yêu cầu VContainer quét toàn bộ GameObject này và tiêm _settingsController vào SettingsUIManager
+                builder.RegisterBuildCallback(resolver => resolver.InjectGameObject(uiObj));
             }
             else
             {

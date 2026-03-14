@@ -13,6 +13,7 @@ TagManager:
   - SP_Item_Equip
   - SP_Item_Fix
   - SP_Player
+  - TestMonster
   layers:
   - Default
   - TransparentFX

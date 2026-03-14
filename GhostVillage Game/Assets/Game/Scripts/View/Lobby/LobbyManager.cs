@@ -13,6 +13,7 @@ using Hashtable = ExitGames.Client.Photon.Hashtable;
 using Game.Scripts.View.Lobby.Session;
 using Game.Core.Scene;
 using Game.Core.Network;
+using VContainer.Unity;
 
 namespace Game.Scripts.UI.Lobby
 {
@@ -31,6 +32,8 @@ namespace Game.Scripts.UI.Lobby
         [Inject] private INetworkService _network;
         [Inject] private ISceneLoaderService _sceneLoader;
 
+        [Inject] private IObjectResolver _resolver;
+
         private List<MapConfigDTO> _cachedMaps = new List<MapConfigDTO>();
         private int _currentMapIndex = 0;
         private const string MAP_KEY = "mapId";
@@ -44,6 +47,8 @@ namespace Game.Scripts.UI.Lobby
         {
             _globalUI.ShowLoading(true);
             BindUIEvents();
+
+            _globalUI.OnLobbyExitClicked = HandleExitLobby;
 
             try
             {
@@ -114,21 +119,29 @@ namespace Game.Scripts.UI.Lobby
             // Kiểm tra an toàn thiết bị nhập liệu
             if (Keyboard.current == null || _uiManager == null) return;
 
-            // --- 1. ESC Key Logic (Menu / Exit Chat) ---
+            // --- 1. ESC Key Logic ---
             if (Keyboard.current.escapeKey.wasPressedThisFrame)
             {
-                // Ưu tiên 1: Nếu đang chat thì ESC để thoát chat
                 if (_uiManager.IsChatFocused())
                 {
                     _uiManager.DeFocusChat();
                 }
-                // Ưu tiên 2: Nếu không chat thì bật/tắt Menu thoát
                 else
                 {
-                    _uiManager.ToggleEscMenu();
+                    if (_globalUI.IsEscMenuOpen())
+                    {
+                        _globalUI.CloseEscMenu(true); // Lobby khóa chuột khi đóng ESC
+                    }
+                    else
+                    {
+                        _globalUI.OpenEscMenu(GlobalUIManager.EscMenuType.Lobby, true);
+                    }
                 }
-                return; // Ngắt luôn để không dính các phím khác
+                return;
             }
+
+            // --- Chặn các phím khác nếu Menu đang mở ---
+            if (_globalUI.IsEscMenuOpen()) return;
 
             // --- 2. Chat Toggle Logic (Enter) ---
             if (Keyboard.current.enterKey.wasPressedThisFrame)
@@ -162,6 +175,13 @@ namespace Game.Scripts.UI.Lobby
                     ToggleReady();
                 }
             }
+        }
+
+        public override void OnDisable()
+        {
+            base.OnDisable();
+            // RÚT ỐNG RA KHI RỜI SCENE
+            if (_globalUI != null) _globalUI.OnLobbyExitClicked -= HandleExitLobby;
         }
 
         #endregion
@@ -407,7 +427,16 @@ namespace Game.Scripts.UI.Lobby
                 int spawnIndex = (PhotonNetwork.LocalPlayer.ActorNumber - 1) % _spawnPoints.Count;
                 Transform spawn = _spawnPoints[spawnIndex];
 
-                PhotonNetwork.Instantiate(_playerPrefabName, spawn.position, spawn.rotation);
+                // 1. Dùng Photon để sinh ra Player trên mạng
+                GameObject playerObj = PhotonNetwork.Instantiate(_playerPrefabName, spawn.position, spawn.rotation);
+
+                // 2. NGAY LẬP TỨC: Ép VContainer quét thằng Player này và Inject các thứ (như PlayerInputActions) vào nó!
+                if (playerObj != null && _resolver != null)
+                {
+                    _resolver.InjectGameObject(playerObj);
+                    Debug.Log("[LobbyManager] Đã Inject VContainer vào Player vừa sinh ra.");
+                }
+
                 if (_sceneCamera) _sceneCamera.gameObject.SetActive(false);
             }
         }
@@ -423,10 +452,6 @@ namespace Game.Scripts.UI.Lobby
         private void HandleExitLobby()
         {
             Debug.Log("[LobbyManager] User requested exit. Leaving room...");
-
-            // Tắt UI Menu
-            _uiManager.ShowEscMenu(false);
-
             // Hiện Loading
             _globalUI.ShowLoading(true);
 

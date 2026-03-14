@@ -1,7 +1,6 @@
 using System;
 using Cysharp.Threading.Tasks;
 using Game.Core.Network;
-using Game.Core.ReactiveRepo;
 using Game.Core.Scene;
 using Game.Domain.Authentication;
 using Game.Domain.Authentication.DTOs;
@@ -16,19 +15,19 @@ namespace Game.UI.Login
         [SerializeField] private string sceneToLoad = "MainMenu";
         private readonly AuthService _authService;
         private readonly ISceneLoaderService _sceneLoader;
-        private readonly PlayerDataSyncService _syncService;
+        private readonly GameSession _session; // THAY SYNC SERVICE BẰNG SESSION
         private readonly INetworkService _network;
         private readonly GlobalUIManager _globalUI;
         private LocalCallbackServer _callbackServer;
 
         // [SỬA] Inject thêm Network và GlobalUI
-        public LoginController(AuthService authService, ISceneLoaderService sceneLoader, PlayerDataSyncService syncService, INetworkService network, GlobalUIManager globalUI)
+        public LoginController(AuthService authService, ISceneLoaderService sceneLoader, INetworkService network, GlobalUIManager globalUI, GameSession session)
         {
             _authService = authService;
             _sceneLoader = sceneLoader;
-            _syncService = syncService;
             _network = network;
             _globalUI = globalUI;
+            _session = session;
         }
 
         /// <summary>
@@ -43,34 +42,30 @@ namespace Game.UI.Login
 
             if (response != null)
             {
-                // [FIX 1] Thay vì gọi HidePanel() (hàm không tồn tại), 
-                // ta truyền gameObject của view vào hàm ShowPanel() của chính nó 
-                // (hoặc nếu LoginUIManager có gameObject cha chứa toàn bộ UI thì tắt nó đi)
                 view.gameObject.SetActive(false);
 
-                _globalUI.ShowLoading(true, "Đang đồng bộ dữ liệu...");
-                await _syncService.SyncAllDataAsync(response);
+                // --- BƯỚC MỚI: FETCH PROFILE SAU KHI CÓ TOKEN ---
+                _globalUI.ShowLoading(true, "Đang tải dữ liệu nhân vật...");
+                var profileResponse = await _authService.FetchMyProfileAsync();
 
                 _globalUI.ShowLoading(true, "Đang kết nối Máy Chủ Trò Chơi...");
 
-                // [FIX 2] Truy cập đúng cấu trúc của LoginResponseDTO
-                string nickName = response.player != null && response.player.profile != null
-                                  ? response.player.profile.displayName
+                // Lấy Nickname từ profile vừa fetch
+                string nickName = (profileResponse != null && profileResponse.profile != null)
+                                  ? profileResponse.profile.displayName
                                   : "Player_" + UnityEngine.Random.Range(1000, 9999);
 
-
-                // ✅ TRUYỀN TOKEN TỬ BACKEND
                 bool connected = await _network.ConnectAsync(nickName, response.token);
 
                 if (connected)
                 {
                     await _sceneLoader.LoadSceneAsync(sceneToLoad);
-                    _globalUI.ShowLoading(false); // Xong hết mới tắt
+                    _globalUI.ShowLoading(false);
                 }
                 else
                 {
                     _globalUI.ShowLoading(false);
-                    view.gameObject.SetActive(true); // Bật lại UI
+                    view.gameObject.SetActive(true);
                     view.SetStatus("<color=red>Lỗi kết nối Photon!</color>");
                     view.SetInteractable(true);
                 }
@@ -162,20 +157,25 @@ namespace Game.UI.Login
 
                 if (response.data != null)
                 {
-                    // Tương tự Email Login, che màn hình lại
+                    // Che màn hình lại
                     if (view != null) view.gameObject.SetActive(false);
 
-                    _globalUI.ShowLoading(true, "Đang đồng bộ dữ liệu...");
-                    await _syncService.SyncAllDataAsync(response.data);
+                    // --- BƯỚC MỚI: FETCH PROFILE BẰNG TOKEN TỪ GOOGLE LOGIN ---
+                    _globalUI.ShowLoading(true, "Đang tải dữ liệu nhân vật...");
+
+                    // Lưu token vào session trước để hàm Fetch có thể dùng
+                    _session.Token = response.data.token;
+
+                    var profileResponse = await _authService.FetchMyProfileAsync();
 
                     _globalUI.ShowLoading(true, "Đang kết nối Máy Chủ Trò Chơi...");
 
-                    // Lấy nickname từ response.data
-                    string nickName = response.data.player != null && response.data.player.profile != null
-                                      ? response.data.player.profile.displayName
+                    // Lấy nickname từ profile vừa fetch
+                    string nickName = (profileResponse != null && profileResponse.profile != null)
+                                      ? profileResponse.profile.displayName
                                       : "Player_" + UnityEngine.Random.Range(1000, 9999);
 
-                    // ✅ TRUYỀN TOKEN TỪ RESPONSE DATA
+                    // Connect Photon
                     bool connected = await _network.ConnectAsync(nickName, response.data.token);
 
                     if (connected)
@@ -237,10 +237,11 @@ namespace Game.UI.Login
             if (profileCompletionPanel != null)
             {
                 // Create and initialize controller
+                // [FIX] TRUYỀN SESSION VÀO THAY VÌ SYNCSERVICE
                 var profileController = new ProfileCompletionController(
                     _authService,
                     _sceneLoader,
-                    _syncService);
+                    _session);
 
                 profileController.Initialize(token);
                 profileCompletionPanel.Initialize(profileController, view);

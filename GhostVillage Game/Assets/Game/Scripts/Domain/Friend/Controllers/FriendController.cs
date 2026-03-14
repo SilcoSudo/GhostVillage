@@ -5,39 +5,34 @@ using R3;
 using Game.Domain.Friend.Services;
 using Game.Domain.Friend.DTOs;
 using System.Collections.Generic;
+using Game.Script.UI; // Thêm GlobalUIManager
+using System;
 
 namespace Game.Domain.Friend.Controllers
 {
     public class FriendController
     {
         private readonly FriendService _friendService;
+        private readonly GlobalUIManager _globalUI; // Bơm UI vào
 
-        // --- STATE QUẢN LÝ UI (Reactive) ---
         public ReactiveProperty<bool> IsLoading { get; } = new(false);
-
         public ReactiveProperty<List<FriendProfileDTO>> FriendList { get; } = new(new List<FriendProfileDTO>());
         public ReactiveProperty<List<FriendProfileDTO>> PendingRequests { get; } = new(new List<FriendProfileDTO>());
         public ReactiveProperty<List<FriendProfileDTO>> SentRequests { get; } = new(new List<FriendProfileDTO>());
-
-        // Trạng thái tìm kiếm
         public ReactiveProperty<PlayerSearchDTO> CurrentSearchResult { get; } = new(null);
         public ReactiveProperty<string> SearchError { get; } = new(string.Empty);
 
         [Inject]
-        public FriendController(FriendService friendService)
+        public FriendController(FriendService friendService, GlobalUIManager globalUI)
         {
             _friendService = friendService;
+            _globalUI = globalUI;
         }
 
-        // Khởi tạo: Lấy danh sách bạn bè và lời mời khi mở Modal
         public async UniTask InitializeDataAsync()
         {
             IsLoading.Value = true;
-            await UniTask.WhenAll(
-                FetchFriendListAsync(),
-                FetchPendingRequestsAsync(),
-                FetchSentRequestsAsync()
-            );
+            await UniTask.WhenAll(FetchFriendListAsync(), FetchPendingRequestsAsync(), FetchSentRequestsAsync());
             IsLoading.Value = false;
         }
 
@@ -51,9 +46,6 @@ namespace Game.Domain.Friend.Controllers
         {
             var list = await _friendService.GetPendingRequestsAsync();
             PendingRequests.Value = list;
-
-            // Xử lý chấm đỏ Notification ở đây: 
-            // Nếu list.Count > 0 thì có thư chưa đọc!
         }
 
         public async UniTask FetchSentRequestsAsync()
@@ -62,7 +54,6 @@ namespace Game.Domain.Friend.Controllers
             SentRequests.Value = list;
         }
 
-        // TÌM KIẾM
         public async UniTask SearchByUID(string uid)
         {
             if (string.IsNullOrEmpty(uid) || uid.Length != 8)
@@ -76,63 +67,92 @@ namespace Game.Domain.Friend.Controllers
             SearchError.Value = string.Empty;
 
             var result = await _friendService.SearchPlayerAsync(uid);
-
-            if (result != null && !string.IsNullOrEmpty(result.userId))
-            {
-                CurrentSearchResult.Value = result;
-            }
-            else
-            {
-                SearchError.Value = "Không tìm thấy người chơi!";
-                CurrentSearchResult.Value = null;
-            }
+            if (result != null && !string.IsNullOrEmpty(result.userId)) CurrentSearchResult.Value = result;
+            else SearchError.Value = "Không tìm thấy người chơi!";
 
             IsLoading.Value = false;
         }
 
-        // GỬI LỜI MỜI (Dùng userId từ kết quả tìm kiếm)
-        public async UniTask SendFriendRequest(string targetUserId)
+        // ===============================================
+        // CÁC HÀM CÓ DÙNG TRY-CATCH VÀ SHOW GLOBAL POPUP LỖI
+        // ===============================================
+
+        public async UniTask<bool> SendFriendRequest(string targetUserId)
         {
             IsLoading.Value = true;
-            bool success = await _friendService.AddFriendAsync(targetUserId);
-            if (success)
+            try
             {
-                Debug.Log("Gửi lời mời thành công!");
-                await FetchSentRequestsAsync(); // Refresh lại danh sách đã gửi
+                bool success = await _friendService.AddFriendAsync(targetUserId);
+                if (success)
+                {
+                    _globalUI.ShowError("Thành công", "Đã gửi lời mời kết bạn!"); // Dùng ké Popup báo OK
+                    await FetchSentRequestsAsync();
+                }
+                return true; // Trả về true nếu thành công
             }
-            IsLoading.Value = false;
-        }
-
-        // CHẤP NHẬN
-        public async UniTask AcceptRequest(string senderUserId)
-        {
-            IsLoading.Value = true;
-            bool success = await _friendService.AcceptFriendAsync(senderUserId);
-            if (success)
+            catch (Exception)
             {
-                // Cập nhật lại 2 danh sách
-                await FetchPendingRequestsAsync();
-                await FetchFriendListAsync();
+                // Bắt lỗi 400 từ Backend
+                _globalUI.ShowError("Lỗi thêm bạn", "Người này đã là bạn, hoặc bạn đã gửi lời mời trước đó rồi!");
+                return false; // Trả về false nếu lỗi
             }
-            IsLoading.Value = false;
+            finally { IsLoading.Value = false; }
         }
 
-        // TỪ CHỐI
-        public async UniTask RejectRequest(string senderUserId)
+        public async UniTask<bool> AcceptRequest(string friendshipId)
         {
             IsLoading.Value = true;
-            bool success = await _friendService.RejectFriendAsync(senderUserId);
-            if (success) await FetchPendingRequestsAsync();
-            IsLoading.Value = false;
+            try
+            {
+                bool success = await _friendService.AcceptFriendAsync(friendshipId);
+                if (success)
+                {
+                    await FetchPendingRequestsAsync();
+                    await FetchFriendListAsync();
+                }
+                return true;
+            }
+            catch (Exception)
+            {
+                _globalUI.ShowError("Lỗi", "Không thể chấp nhận (Có thể lời mời đã bị hủy)!");
+                await FetchPendingRequestsAsync(); // Cập nhật lại UI nhỡ lời mời biến mất thật
+                return false;
+            }
+            finally { IsLoading.Value = false; }
         }
 
-        // XÓA BẠN
-        public async UniTask Unfriend(string targetUserId)
+        public async UniTask<bool> RejectRequest(string friendshipId)
         {
             IsLoading.Value = true;
-            bool success = await _friendService.UnfriendAsync(targetUserId);
-            if (success) await FetchFriendListAsync();
-            IsLoading.Value = false;
+            try
+            {
+                bool success = await _friendService.RejectFriendAsync(friendshipId);
+                if (success) await FetchPendingRequestsAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                _globalUI.ShowError("Lỗi", "Không thể từ chối lời mời lúc này!");
+                return false;
+            }
+            finally { IsLoading.Value = false; }
+        }
+
+        public async UniTask<bool> Unfriend(string targetUserId)
+        {
+            IsLoading.Value = true;
+            try
+            {
+                bool success = await _friendService.UnfriendAsync(targetUserId);
+                if (success) await FetchFriendListAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                _globalUI.ShowError("Lỗi", "Không thể xóa bạn bè lúc này!");
+                return false;
+            }
+            finally { IsLoading.Value = false; }
         }
     }
 }

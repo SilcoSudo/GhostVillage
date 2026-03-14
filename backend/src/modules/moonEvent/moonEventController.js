@@ -1,4 +1,5 @@
 import { MoonEventService } from "./moonEventService.js";
+import { logActivity } from "../activityLog/activityLogController.js";
 
 export const MoonEventController = {
   /**
@@ -57,6 +58,21 @@ export const MoonEventController = {
   createEvent: async (req, res, next) => {
     try {
       const event = await MoonEventService.createEvent(req.body);
+
+      // Log activity
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "CREATE",
+        entityType: "MOON_EVENT",
+        entityId: event._id,
+        entityName: event.eventId,
+        description: `Tạo moon event: ${event.displayName} (${event.eventId})`,
+        severity: "LOW",
+        metadata: { eventId: event.eventId, category: event.category },
+        req,
+      });
+
       res.status(201).json({
         success: true,
         data: event,
@@ -73,6 +89,21 @@ export const MoonEventController = {
   updateEvent: async (req, res, next) => {
     try {
       const event = await MoonEventService.updateEvent(req.params.id, req.body);
+
+      // Log activity
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "UPDATE",
+        entityType: "MOON_EVENT",
+        entityId: event._id,
+        entityName: event.eventId,
+        description: `Cập nhật moon event: ${event.displayName} (${event.eventId})`,
+        severity: "LOW",
+        metadata: { updateData: req.body },
+        req,
+      });
+
       res.json({
         success: true,
         data: event,
@@ -89,6 +120,21 @@ export const MoonEventController = {
   toggleActive: async (req, res, next) => {
     try {
       const event = await MoonEventService.toggleActive(req.params.id);
+
+      // Log activity
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "TOGGLE_STATUS",
+        entityType: "MOON_EVENT",
+        entityId: event._id,
+        entityName: event.eventId,
+        description: `${event.isActive ? "Kích hoạt" : "Vô hiệu hóa"} moon event: ${event.displayName} (${event.eventId})`,
+        severity: "LOW",
+        metadata: { isActive: event.isActive },
+        req,
+      });
+
       res.json({
         success: true,
         data: event,
@@ -104,7 +150,23 @@ export const MoonEventController = {
    */
   deleteEvent: async (req, res, next) => {
     try {
+      const event = await MoonEventService.getEventById(req.params.id);
       await MoonEventService.deleteEvent(req.params.id);
+
+      // Log activity
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "DELETE",
+        entityType: "MOON_EVENT",
+        entityId: event._id,
+        entityName: event.eventId,
+        description: `Xóa moon event: ${event.displayName} (${event.eventId})`,
+        severity: "HIGH",
+        metadata: { deletedEvent: event },
+        req,
+      });
+
       res.json({
         success: true,
         message: "Moon Event deleted successfully",

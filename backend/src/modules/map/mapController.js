@@ -1,5 +1,6 @@
 import { MapService } from "./mapService.js";
 import MapConfig from "./mapConfigModel.js";
+import { logActivity } from "../activityLog/activityLogController.js";
 
 export const MapController = {
   getMaps: async (req, res) => {
@@ -110,6 +111,20 @@ export const MapController = {
       map.identityConfig.isActive = isActive;
       await map.save();
 
+      // Log activity
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "TOGGLE_STATUS",
+        entityType: "MAP",
+        entityId: map._id,
+        entityName: map.identityConfig.displayName,
+        description: `${isActive ? "Kích hoạt" : "Vô hiệu hóa"} map: ${map.identityConfig.displayName}`,
+        severity: "LOW",
+        metadata: { isActive },
+        req,
+      });
+
       return res.status(200).json({
         success: true,
         message: `${isActive ? "Kích hoạt" : "Vô hiệu hóa"} map thành công`,
@@ -170,6 +185,20 @@ export const MapController = {
       }
 
       await map.save();
+
+      // Log activity
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "UPDATE",
+        entityType: "MAP",
+        entityId: map._id,
+        entityName: map.identityConfig.displayName,
+        description: `Cập nhật metadata map: ${map.identityConfig.displayName}`,
+        severity: "LOW",
+        metadata: { displayName, requiredLevel, shortDescription, thumbnailUrl },
+        req,
+      });
 
       return res.status(200).json({
         success: true,

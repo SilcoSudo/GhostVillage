@@ -3,24 +3,24 @@ using UnityEngine;
 using VContainer;
 using Game.Core.Network.API;
 using Game.Domain.Friend.DTOs;
-using Game.Core.ReactiveRepo;
 using System.Collections.Generic;
+using Game.Core.Network;
 
 namespace Game.Domain.Friend.Services
 {
     public class FriendService
     {
         private readonly APIClient _apiClient;
-        private readonly PlayerDataStore _store;
+        private readonly GameSession _session; // THAY ĐỔI Ở ĐÂY
 
         [Inject]
-        public FriendService(APIClient apiClient, PlayerDataStore store)
+        public FriendService(APIClient apiClient, GameSession session) // THAY ĐỔI Ở ĐÂY
         {
             _apiClient = apiClient;
-            _store = store;
+            _session = session; // THAY ĐỔI Ở ĐÂY
         }
 
-        private string Token => _store.AuthToken.Value;
+        private string Token => _session.Token;
 
         // 1. TÌM KIẾM THEO UID
         public async UniTask<PlayerSearchDTO> SearchPlayerAsync(string uid)
@@ -42,11 +42,11 @@ namespace Game.Domain.Friend.Services
             return response != null; // Có object trả về nghĩa là wrapper.success = true
         }
 
-        // 3. ĐỒNG Ý KẾT BẠN
-        public async UniTask<bool> AcceptFriendAsync(string senderUserId)
+        public async UniTask<bool> AcceptFriendAsync(string friendshipId)
         {
             string endpoint = "/api/web/friend/accept";
-            var body = new FriendRequestBody { relatedUserId = senderUserId };
+            // GỬI LÊN LÀ friendshipId THAY VÌ relatedUserId
+            var body = new FriendRequestBody { friendshipId = friendshipId };
             string jsonBody = JsonUtility.ToJson(body);
 
             var response = await _apiClient.PostAsyncWithAuth<object>(endpoint, jsonBody, Token);
@@ -54,10 +54,11 @@ namespace Game.Domain.Friend.Services
         }
 
         // 4. TỪ CHỐI KẾT BẠN
-        public async UniTask<bool> RejectFriendAsync(string senderUserId)
+        public async UniTask<bool> RejectFriendAsync(string friendshipId)
         {
             string endpoint = "/api/web/friend/reject";
-            var body = new FriendRequestBody { relatedUserId = senderUserId };
+            // GỬI LÊN LÀ friendshipId
+            var body = new FriendRequestBody { friendshipId = friendshipId };
             string jsonBody = JsonUtility.ToJson(body);
 
             var response = await _apiClient.PostAsyncWithAuth<object>(endpoint, jsonBody, Token);
