@@ -20,6 +20,8 @@ import matchRoutes from "./modules/match/matchRoutes.js";
 import monsterRoutes from "./modules/monster/monsterRoutes.js";
 import questRoutes from "./modules/quest/questRoutes.js";
 import costumeRoutes from "./modules/costume/costumeRoutes.js";
+import consumableRoutes from "./modules/consumable/consumableRoutes.js";
+import activityLogRoutes from "./modules/activityLog/activityLogRoutes.js";
 import moonEventRoutes from "./modules/moonEvent/moonEventRoutes.js";
 import moonEventGameRoutes from "./modules/moonEvent/gameRoutes.js";
 
@@ -46,6 +48,14 @@ router.use("/quests", questRoutes);
 // Costume Routes (mounted at /api/costumes)
 router.use("/costumes", costumeRoutes);
 // End of Costume Routes
+
+// Consumable Item Routes (mounted at /api/consumables)
+router.use("/consumables", consumableRoutes);
+// End of Consumable Item Routes
+
+// Activity Log Routes (mounted at /api/activity-logs)
+router.use("/activity-logs", activityLogRoutes);
+// End of Activity Log Routes
 
 // Web Routes (mounted at /api/web)
 const webRoutes = express.Router();
