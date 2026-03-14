@@ -17,6 +17,7 @@ public class TestMovement : MonoBehaviour
 
     private PlayerInputActions _inputActions;
     private Rigidbody _rb;
+    private CapsuleCollider _col; // Thêm collider để tắt/mở
     private float _verticalRotation = 0f;
     private MovementState _currentState = MovementState.Idle;
     private bool _isDead = false;
@@ -29,6 +30,7 @@ public class TestMovement : MonoBehaviour
     {
         _inputActions = new PlayerInputActions();
         _rb = GetComponent<Rigidbody>();
+        _col = GetComponent<CapsuleCollider>();
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
@@ -69,23 +71,13 @@ public class TestMovement : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        // Kiểm tra nếu đụng trúng Monster và mình chưa chết
         if (collision.gameObject.CompareTag("TestMonster") && !_isDead)
         {
-            // --- CÁCH 2: ĐUỔI CÁI CUBE ĐI CHỖ KHÁC ---
-            
-            // 1. Tính toán hướng từ bạn đến cái Cube
             Vector3 pushDir = (collision.transform.position - transform.position).normalized;
-            
-            // 2. Ép hướng đẩy chỉ nằm ngang (để nó không bị bay lên trời hoặc lún xuống đất)
             pushDir.y = 0;
-
-            // 3. Dịch chuyển cái Cube ra xa 4 mét ngay lập tức
             collision.transform.position += pushDir * 4f;
 
-            // 4. Gọi hàm chết để diễn animation
             Die();
-            
             Debug.Log("💥 Đã đẩy quái ra xa để lấy chỗ diễn Dying!");
         }
     }
@@ -102,6 +94,9 @@ public class TestMovement : MonoBehaviour
             _rb.isKinematic = true; 
         }
 
+        // 1. TẮT COLLIDER: Trị dứt điểm lỗi "thụt xuống đất"
+        if (_col != null) _col.enabled = false;
+
         animator.SetTrigger(DieHash);
         Debug.Log("💀 ĐÃ CHẾT! Bấm F để đứng dậy.");
     }
@@ -109,36 +104,26 @@ public class TestMovement : MonoBehaviour
     private IEnumerator ReviveRoutine()
     {
         _isDead = false; 
+
+        // 1. Kích hoạt animation đứng dậy
         animator.SetTrigger(GetUpHash);
 
-        // 1. Lưu lại vị trí CHÍNH XÁC lúc bạn đang nằm
-        Vector3 startPosition = transform.position;
+        // 2. Tạm thời tắt vật lý để animation diễn ra mượt (không bị lún sàn do va chạm)
+        if (_rb != null) _rb.isKinematic = true;
+        if (_col != null) _col.enabled = false;
 
-        int playerLayer = LayerMask.NameToLayer("TestPlayer");
-        int monsterLayer = LayerMask.NameToLayer("TestMonster");
-        Physics.IgnoreLayerCollision(playerLayer, monsterLayer, true);
+        // 3. Đợi cho đến khi đứng dậy xong (ví dụ clip dài 2 giây)
+        yield return new WaitForSeconds(2.0f);
 
-        // 2. Chạy một vòng lặp trong 2 giây (thời gian đứng dậy)
-        float duration = 2.0f; 
-        float elapsed = 0f;
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            
-            // Ép vị trí X và Z không được thay đổi, chỉ cho phép animation diễn hoạt
-            // Điều này triệt tiêu hoàn toàn việc bị lệch trái/phải/trước/sau
-            transform.position = new Vector3(startPosition.x, transform.position.y, startPosition.z);
-            
-            yield return null;
-        }
-
+        // 4. Bật lại mọi thứ để chơi tiếp
         if (_rb != null) 
         {
             _rb.isKinematic = false;
             _rb.linearVelocity = Vector3.zero;
         }
+        if (_col != null) _col.enabled = true;
 
-        Physics.IgnoreLayerCollision(playerLayer, monsterLayer, false);
+        Debug.Log("🛡️ Đã đứng dậy xong!");
     }
 
     private void HandleRotation()
