@@ -46,14 +46,16 @@ namespace Game.Boot
 
                 if (connected)
                 {
-                    await _sceneLoader.LoadSceneAsync("MainMenu");
+                    //MainMenu
+                    await _sceneLoader.LoadSceneAsync("AnimationPlayer");
                     _globalUI.ShowLoading(false);
                 }
                 else
                 {
+                    //LoginScene
                     _globalUI.ShowLoading(false);
                     _globalUI.ShowError("Lỗi Mạng", "Không thể kết nối đến máy chủ trò chơi.");
-                    await _sceneLoader.LoadSceneAsync("LoginScene");
+                    await _sceneLoader.LoadSceneAsync("AnimationPlayer");
                 }
             }
             else
