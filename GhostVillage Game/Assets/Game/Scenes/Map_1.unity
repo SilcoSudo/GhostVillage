@@ -781,6 +781,72 @@ Transform:
   m_Children: []
   m_Father: {fileID: 540715063}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &633588498
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -6689036041284674117, guid: 27e9bec2f3f21e743a341466c99f9d69, type: 3}
+      propertyPath: m_Name
+      value: VongNhi
+      objectReference: {fileID: 0}
+    - target: {fileID: 2774220344278030320, guid: 27e9bec2f3f21e743a341466c99f9d69, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 44.85
+      objectReference: {fileID: 0}
+    - target: {fileID: 2774220344278030320, guid: 27e9bec2f3f21e743a341466c99f9d69, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2774220344278030320, guid: 27e9bec2f3f21e743a341466c99f9d69, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 49.287674
+      objectReference: {fileID: 0}
+    - target: {fileID: 2774220344278030320, guid: 27e9bec2f3f21e743a341466c99f9d69, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 2774220344278030320, guid: 27e9bec2f3f21e743a341466c99f9d69, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 2774220344278030320, guid: 27e9bec2f3f21e743a341466c99f9d69, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2774220344278030320, guid: 27e9bec2f3f21e743a341466c99f9d69, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2774220344278030320, guid: 27e9bec2f3f21e743a341466c99f9d69, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2774220344278030320, guid: 27e9bec2f3f21e743a341466c99f9d69, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2774220344278030320, guid: 27e9bec2f3f21e743a341466c99f9d69, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: -6689036041284674117, guid: 27e9bec2f3f21e743a341466c99f9d69, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2115994701}
+    - targetCorrespondingSourceObject: {fileID: -6689036041284674117, guid: 27e9bec2f3f21e743a341466c99f9d69, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2115994700}
+    - targetCorrespondingSourceObject: {fileID: -6689036041284674117, guid: 27e9bec2f3f21e743a341466c99f9d69, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2115994699}
+  m_SourcePrefab: {fileID: -5645937942226959685, guid: 27e9bec2f3f21e743a341466c99f9d69, type: 3}
 --- !u!1 &672775962
 GameObject:
   m_ObjectHideFlags: 0
@@ -1185,7 +1251,7 @@ MonoBehaviour:
   timerText: {fileID: 1690505886}
   resultPanel: {fileID: 1806170951}
   resultText: {fileID: 412907045}
-  vongNhi: {fileID: 0}
+  vongNhi: {fileID: 2115994699}
   playerPullPerPress: 0.07
   aiPullSpeed: 0.04
   winThreshold: 0.82
@@ -2519,6 +2585,74 @@ RectTransform:
   m_AnchoredPosition: {x: -5, y: 0}
   m_SizeDelta: {x: -20, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &2115994698 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -6689036041284674117, guid: 27e9bec2f3f21e743a341466c99f9d69, type: 3}
+  m_PrefabInstance: {fileID: 633588498}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2115994699
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2115994698}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 016a84989de69624e925ac76fa4323c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GhostVillage.Gameplay.Monsters.VongNhi.VongNhiMonster
+  monsterName: Monster
+  moveSpeed: 3.5
+  stoppingDistance: 0.5
+  patrolWaypoints: []
+  fleeDuration: 8
+  fleeDistance: 15
+  alertCooldown: 20
+--- !u!195 &2115994700
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2115994698}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.5
+  m_Speed: 3.5
+  m_Acceleration: 8
+  avoidancePriority: 50
+  m_AngularSpeed: 120
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 2
+  m_BaseOffset: 0
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
+--- !u!114 &2115994701
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2115994698}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: PhotonUnityNetworking::Photon.Pun.PhotonView
+  ObservedComponentsFoldoutOpen: 1
+  Group: 0
+  prefixField: -1
+  Synchronization: 3
+  OwnershipTransfer: 0
+  observableSearch: 2
+  ObservedComponents: []
+  sceneViewId: 3
+  InstantiationId: 0
+  isRuntimeInstantiated: 0
 --- !u!1 &2121330276
 GameObject:
   m_ObjectHideFlags: 0
@@ -2782,3 +2916,4 @@ SceneRoots:
   - {fileID: 1901512200}
   - {fileID: 481898951}
   - {fileID: 1659584947}
+  - {fileID: 633588498}
