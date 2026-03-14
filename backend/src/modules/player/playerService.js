@@ -38,7 +38,15 @@ export const PlayerService = {
       profile: player.profile,
       selectedMedals: player.selectedMedals,
       achievements: mergedAchievements,
-      history: matchHistory
+      history: matchHistory,
+      storage: {
+        unlockedSkins: player.unlockedSkins,
+        unlockedPerks: player.unlockedPerks
+      },
+      equipped: {
+        skins: player.equippedSkins,
+        perks: player.equippedPerks
+      }
     };
   },
   // Thêm hàm Update Medal
@@ -53,5 +61,26 @@ export const PlayerService = {
         { new: true }
       );
       return player.selectedMedals;
+    },
+
+    updateEquippedSkins: async (userId, headId, bodyId) => {
+    // 1. Tìm player
+    const player = await Player.findOne({ userId });
+    if (!player) throw new Error("Player not found");
+
+    // 2. Validate quyền sở hữu (bỏ qua nếu truyền lên chuỗi rỗng "" để tháo đồ)
+    if (headId && !player.unlockedSkins.includes(headId)) {
+      throw new Error("You do not own this head skin.");
     }
+    if (bodyId && !player.unlockedSkins.includes(bodyId)) {
+      throw new Error("You do not own this body skin.");
+    }
+
+    // 3. Cập nhật (chỉ cập nhật trường nào được truyền lên)
+    if (headId !== undefined) player.equippedSkins.head = headId;
+    if (bodyId !== undefined) player.equippedSkins.body = bodyId;
+
+    await player.save();
+    return player.equippedSkins;
+  }
 };

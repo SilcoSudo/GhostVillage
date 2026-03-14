@@ -29,6 +29,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Game/Scenes/5_Maps/Scene_Game_OngKe.unity
     guid: b8057f9b784723e4ab70fb25e7c72a20
+  - enabled: 1
+    path: Assets/Game/Scenes/ShopScene.unity
+    guid: 522f88fe1289e6b4abc7a7892407d983
+  - enabled: 1
+    path: Assets/Game/Scenes/ProfileScene.unity
+    guid: 800494a94d3153e40b4fe13bde363ebb
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 9f5a283fbbf7dd74bab1d4eb14eeb509, type: 3}
   m_UseUCBPForAssetBundles: 0

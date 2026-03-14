@@ -4,13 +4,15 @@ import User from "./src/modules/user/userModel.js";
 import Player from "./src/modules/player/playerModel.js";
 import Achievement from "./src/modules/achievement/achievementModel.js"; // Model Định nghĩa
 import GameResult from "./src/modules/profile/gameResultModel.js"; // Model Trận đấu toàn cục
-import PlayerMatchHistory from "./src/modules/profile/playerMatchHistoryModel.js"; // Model Lịch sử cá nhân
+// import PlayerMatchHistory from "./src/modules/profile/playerMatchHistoryModel.js"; // Model Lịch sử cá nhân
 import { config } from "./src/config/env.js";
-import UserMatchHistory from "./src/modules/profile/playerMatchHistoryModel.js";
+// import UserMatchHistory from "./src/modules/profile/playerMatchHistoryModel.js";
 import UserAchievement from "./src/modules/profile/playerAchievementModel.js";
 import MapConfig from "./src/modules/map/mapConfigModel.js";
 import MatchResult from "./src/modules/match/matchModel.js";
-
+import CosmeticItem from "./src/modules/shop/cosmeticItemModel.js";
+import Perk from "./src/modules/shop/perkModel.js";
+import ShopPool from "./src/modules/shop/shopPoolModel.js";
 dotenv.config();
 
 const seedData = async () => {
@@ -25,7 +27,11 @@ const seedData = async () => {
     console.log("🗑️  Đã xóa dữ liệu cũ (Users & Players).");
     await Achievement.deleteMany({});
     await GameResult.deleteMany({});
-    await PlayerMatchHistory.deleteMany({})
+    await UserAchievement.deleteMany({});
+    // await PlayerMatchHistory.deleteMany({})
+    await CosmeticItem.deleteMany({});
+    await Perk.deleteMany({});
+    await ShopPool.deleteMany({});
     console.log(
       "🗑️  Đã xóa dữ liệu cũ.",
     );
@@ -98,6 +104,41 @@ const seedData = async () => {
       }
     ]);
 
+  //Shop (Skin & Perk)
+  const cosmeticItems = await CosmeticItem.create([
+    { name: "Straw Hat", type: "Hat", price: 100, rarity: "COMMON", prefabId: "SO_Hat_Straw" },
+    { name: "Officer Cap", type: "Hat", price: 500, rarity: "RARE", prefabId: "SO_Hat_Officer" },
+    { name: "Villager Shirt", type: "Body", price: 200, rarity: "COMMON", prefabId: "SO_Body_Villager" },
+    { name: "Dark Armor", type: "Body", price: 2000, rarity: "EPIC", prefabId: "SO_Body_Armor" }
+  ]);
+
+  const perkData = [
+    // --- COMMON PERKS (9) ---
+    { name: "Runner I", rarity: "COMMON", price: 100, prefabId: "PERK_Runner_1" },
+    { name: "Runner II", rarity: "COMMON", price: 120, prefabId: "PERK_Runner_2" },
+    { name: "Runner III", rarity: "COMMON", price: 140, prefabId: "PERK_Runner_3" },
+    { name: "Stamina I", rarity: "COMMON", price: 150, prefabId: "PERK_Stam_1" },
+    { name: "Stamina II", rarity: "COMMON", price: 170, prefabId: "PERK_Stam_2" },
+    { name: "Stamina III", rarity: "COMMON", price: 190, prefabId: "PERK_Stam_3" },
+    { name: "Battery I", rarity: "COMMON", price: 100, prefabId: "PERK_Bat_1" },
+    { name: "Battery II", rarity: "COMMON", price: 120, prefabId: "PERK_Bat_2" },
+    { name: "Battery III", rarity: "COMMON", price: 140, prefabId: "PERK_Bat_3" },
+
+    // --- RARE PERKS (6) ---
+    { name: "Luck I", rarity: "RARE", price: 400, prefabId: "PERK_Luck_1" },
+    { name: "Luck II", rarity: "RARE", price: 450, prefabId: "PERK_Luck_2" },
+    { name: "Luck III", rarity: "RARE", price: 500, prefabId: "PERK_Luck_3" },
+    { name: "Luck IV", rarity: "RARE", price: 550, prefabId: "PERK_Luck_4" },
+    { name: "Luck V", rarity: "RARE", price: 600, prefabId: "PERK_Luck_5" },
+    { name: "Luck VI", rarity: "RARE", price: 650, prefabId: "PERK_Luck_6" },
+
+    // --- EPIC PERKS (3) ---
+    { name: "Zenith I", rarity: "EPIC", price: 1000, prefabId: "PERK_Zen_1" },
+    { name: "Zenith II", rarity: "EPIC", price: 1200, prefabId: "PERK_Zen_2" },
+    { name: "Zenith III", rarity: "EPIC", price: 1500, prefabId: "PERK_Zen_3" }
+  ];
+  const createdPerks = await Perk.create(perkData);
+
     // --- TẠO USER 1: Web Auth User (Email-only) ---
     // Role: user | admin
     // Game sẽ dùng chung tài khoản này
@@ -160,7 +201,7 @@ const seedData = async () => {
         exp: 0,
         coin: 1000,
       },
-      inventory: {
+      storage: {
         unlockedSkins: ["skin_default"],
         unlockedPerks: [],
       },
@@ -176,7 +217,7 @@ const seedData = async () => {
         exp: 0,
         coin: 1000,
       },
-      inventory: {
+      storage: {
         unlockedSkins: ["skin_default"],
         unlockedPerks: [],
       },
@@ -192,6 +233,13 @@ const seedData = async () => {
         exp: 450,
         coin: 5000,
       },
+      unlockedSkins: ["SO_Hat_Straw", "SO_Body_Villager"], 
+      unlockedPerks: ["PERK_Runner_1"],
+      equippedSkins: {
+        head: "SO_Hat_Straw",     // Đang đội Nón rơm
+        body: "SO_Body_Villager"  // Đang mặc áo dân làng
+      },
+      equippedPerks: ["PERK_Runner_1"],
       selectedMedals: ["FIRST_CLEAR", "KILL_500"],
       achievementsProgress: [
         { achievementCode: "FIRST_CLEAR", current: 1, isClaimed: true },
@@ -205,35 +253,35 @@ const seedData = async () => {
       ]
     };
     
-    // 5. TẠO DỮ LIỆU TRẬN ĐẤU (Game Results & 11 History của Raccoon)
-    console.log("⏳ Đang tạo 11 trận đấu cho Raccoon...");
-    const matchIds = Array.from({ length: 11 }, () => new mongoose.Types.ObjectId());
+    // // 5. TẠO DỮ LIỆU TRẬN ĐẤU (Game Results & 11 History của Raccoon)
+    // console.log("⏳ Đang tạo 11 trận đấu cho Raccoon...");
+    // const matchIds = Array.from({ length: 11 }, () => new mongoose.Types.ObjectId());
 
-    // Tạo GameResult (Dữ liệu chung)
-    const gameResultsData = matchIds.map((id, index) => ({
-      _id: id,
-      mapId: index % 2 === 0 ? "MAP_VILLAGE" : "MAP_FOREST",
-      roomName: index % 2 === 0 ? "Ông Kẹ" : "Rừng Chết",
-      durationSec: 300 + (index * 60),
-      startTime: new Date(Date.now() - (10 - index) * 24 * 60 * 60 * 1000)
-    }));
-    await GameResult.create(gameResultsData);
+    // // Tạo GameResult (Dữ liệu chung)
+    // const gameResultsData = matchIds.map((id, index) => ({
+    //   _id: id,
+    //   mapId: index % 2 === 0 ? "MAP_VILLAGE" : "MAP_FOREST",
+    //   roomName: index % 2 === 0 ? "Ông Kẹ" : "Rừng Chết",
+    //   durationSec: 300 + (index * 60),
+    //   startTime: new Date(Date.now() - (10 - index) * 24 * 60 * 60 * 1000)
+    // }));
+    // await GameResult.create(gameResultsData);
 
-    // Tạo PlayerMatchHistory (Dữ liệu cá nhân Raccoon - Collection: playermatchhistories)
-    const historyData = [
-      { userId: user3_Id, matchId: matchIds[0], isWin: true, expGained: 100, coinGained: 50, titles: ["GrimReaper"] },
-      { userId: user3_Id, matchId: matchIds[1], isWin: false, expGained: 20, coinGained: 5, titles: ["PrimeTarget"] },
-      { userId: user3_Id, matchId: matchIds[2], isWin: true, expGained: 120, coinGained: 60, titles: ["WalkingHospital"] },
-      { userId: user3_Id, matchId: matchIds[3], isWin: false, expGained: 10, coinGained: 0, titles: ["PunchingBag"] },
-      { userId: user3_Id, matchId: matchIds[4], isWin: true, expGained: 150, coinGained: 70, titles: ["HumanSiren"] },
-      { userId: user3_Id, matchId: matchIds[5], isWin: true, expGained: 110, coinGained: 55, titles: ["GrimReaper", "PrimeTarget"] },
-      { userId: user3_Id, matchId: matchIds[6], isWin: false, expGained: 30, coinGained: 10, titles: ["PunchingBag", "HumanSiren"] },
-      { userId: user3_Id, matchId: matchIds[7], isWin: true, expGained: 130, coinGained: 65, titles: ["WalkingHospital"] },
-      { userId: user3_Id, matchId: matchIds[8], isWin: true, expGained: 140, coinGained: 75, titles: ["GrimReaper"] },
-      { userId: user3_Id, matchId: matchIds[9], isWin: false, expGained: 15, coinGained: 2, titles: ["PrimeTarget"] },
-      { userId: user3_Id, matchId: matchIds[10], isWin: true, expGained: 200, coinGained: 100, titles: ["GrimReaper", "WalkingHospital", "HumanSiren"] },
-    ];
-    await PlayerMatchHistory.create(historyData);
+    // // Tạo PlayerMatchHistory (Dữ liệu cá nhân Raccoon - Collection: playermatchhistories)
+    // const historyData = [
+    //   { userId: user3_Id, matchId: matchIds[0], isWin: true, expGained: 100, coinGained: 50, titles: ["GrimReaper"] },
+    //   { userId: user3_Id, matchId: matchIds[1], isWin: false, expGained: 20, coinGained: 5, titles: ["PrimeTarget"] },
+    //   { userId: user3_Id, matchId: matchIds[2], isWin: true, expGained: 120, coinGained: 60, titles: ["WalkingHospital"] },
+    //   { userId: user3_Id, matchId: matchIds[3], isWin: false, expGained: 10, coinGained: 0, titles: ["PunchingBag"] },
+    //   { userId: user3_Id, matchId: matchIds[4], isWin: true, expGained: 150, coinGained: 70, titles: ["HumanSiren"] },
+    //   { userId: user3_Id, matchId: matchIds[5], isWin: true, expGained: 110, coinGained: 55, titles: ["GrimReaper", "PrimeTarget"] },
+    //   { userId: user3_Id, matchId: matchIds[6], isWin: false, expGained: 30, coinGained: 10, titles: ["PunchingBag", "HumanSiren"] },
+    //   { userId: user3_Id, matchId: matchIds[7], isWin: true, expGained: 130, coinGained: 65, titles: ["WalkingHospital"] },
+    //   { userId: user3_Id, matchId: matchIds[8], isWin: true, expGained: 140, coinGained: 75, titles: ["GrimReaper"] },
+    //   { userId: user3_Id, matchId: matchIds[9], isWin: false, expGained: 15, coinGained: 2, titles: ["PrimeTarget"] },
+    //   { userId: user3_Id, matchId: matchIds[10], isWin: true, expGained: 200, coinGained: 100, titles: ["GrimReaper", "WalkingHospital", "HumanSiren"] },
+    // ];
+    // await PlayerMatchHistory.create(historyData);
 
     // 4. LƯU VÀO DB
     console.log("⏳ Đang tạo Users...");
@@ -243,62 +291,62 @@ const seedData = async () => {
     await Player.create([player1, player2, player3]);
     console.log("⏳ Đang tạo Match History (UserMatchHistory)...");
 
-    //add match-hisory
-    await UserMatchHistory.insertMany([
-      // --- Raccoon (user3) ---
-      {
-        userId: user3_Id,
-        mapId: "MAP_02",
-        isWin: true,
-        durationSec: 612,
-        exp: 120,
-        coin: 60,
-        titles: ["Survivor", "Medic"],
-        createdAt: new Date("2026-01-19T03:11:17.259Z"),
-      },
-      {
-        userId: user3_Id,
-        mapId: "MAP_04",
-        isWin: false,
-        durationSec: 287,
-        exp: 45,
-        coin: 15,
-        titles: ["Slayer"],
-        createdAt: new Date("2026-01-18T20:05:10.000Z"),
-      },
-      {
-        userId: user3_Id,
-        mapId: "MAP_03",
-        isWin: true,
-        durationSec: 503,
-        exp: 90,
-        coin: 40,
-        titles: ["Survivor", "Keymaster"],
-        createdAt: new Date("2026-01-17T15:22:31.000Z"),
-      },
+    // //add match-hisory
+    // await UserMatchHistory.insertMany([
+    //   // --- Raccoon (user3) ---
+    //   {
+    //     userId: user3_Id,
+    //     mapId: "MAP_02",
+    //     isWin: true,
+    //     durationSec: 612,
+    //     exp: 120,
+    //     coin: 60,
+    //     titles: ["Survivor", "Medic"],
+    //     createdAt: new Date("2026-01-19T03:11:17.259Z"),
+    //   },
+    //   {
+    //     userId: user3_Id,
+    //     mapId: "MAP_04",
+    //     isWin: false,
+    //     durationSec: 287,
+    //     exp: 45,
+    //     coin: 15,
+    //     titles: ["Slayer"],
+    //     createdAt: new Date("2026-01-18T20:05:10.000Z"),
+    //   },
+    //   {
+    //     userId: user3_Id,
+    //     mapId: "MAP_03",
+    //     isWin: true,
+    //     durationSec: 503,
+    //     exp: 90,
+    //     coin: 40,
+    //     titles: ["Survivor", "Keymaster"],
+    //     createdAt: new Date("2026-01-17T15:22:31.000Z"),
+    //   },
 
-      // --- (Tuỳ chọn) Hùng / Lan để test nhiều user ---
-      {
-        userId: user1_Id,
-        mapId: "MAP_01",
-        isWin: true,
-        durationSec: 800,
-        exp: 110,
-        coin: 70,
-        titles: ["Survivor"],
-        createdAt: new Date("2026-01-16T10:00:00.000Z"),
-      },
-      {
-        userId: user2_Id,
-        mapId: "MAP_02",
-        isWin: false,
-        durationSec: 350,
-        exp: 30,
-        coin: 10,
-        titles: ["Medic"],
-        createdAt: new Date("2026-01-15T12:30:00.000Z"),
-      },
-    ]);
+    //   // --- (Tuỳ chọn) Hùng / Lan để test nhiều user ---
+    //   {
+    //     userId: user1_Id,
+    //     mapId: "MAP_01",
+    //     isWin: true,
+    //     durationSec: 800,
+    //     exp: 110,
+    //     coin: 70,
+    //     titles: ["Survivor"],
+    //     createdAt: new Date("2026-01-16T10:00:00.000Z"),
+    //   },
+    //   {
+    //     userId: user2_Id,
+    //     mapId: "MAP_02",
+    //     isWin: false,
+    //     durationSec: 350,
+    //     exp: 30,
+    //     coin: 10,
+    //     titles: ["Medic"],
+    //     createdAt: new Date("2026-01-15T12:30:00.000Z"),
+    //   },
+    // ]);
 
     console.log("⏳ Creating Achievements (UserAchievement)...");
     await UserAchievement.insertMany([

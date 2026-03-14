@@ -10,6 +10,7 @@ using Game.UI.Login;
 using Game.Script.UI;
 using Game.Core.ReactiveRepo;
 using Game.Domain.Map.Services;
+using GhostVillage.Shop;
 
 namespace Game.Core.DI
 {
@@ -17,6 +18,7 @@ namespace Game.Core.DI
     {
         [Header("Global Settings")]
         [SerializeField] private GameConfigSO _gameConfig; // Kéo thả ScriptableObject config chung vào đây
+        [SerializeField] private ItemDatabaseSO _shopItemDatabase; // Thêm Database cửa hàng vào đây
 
         [Header("Network Prefabs")]
         // Kéo Prefab chứa script PhotonNetworkManager vào đây
@@ -35,6 +37,7 @@ namespace Game.Core.DI
         {
             // 1. Config & Data
             builder.RegisterInstance(_gameConfig);
+            builder.RegisterInstance(_shopItemDatabase);
             builder.Register<APIClient>(Lifetime.Singleton);
             builder.Register<MapDataService>(Lifetime.Singleton).As<IMapDataService>();
 
@@ -45,6 +48,7 @@ namespace Game.Core.DI
             builder.Register<PlayerDataSyncService>(Lifetime.Singleton);
             builder.Register<ProfileService>(Lifetime.Singleton);
             builder.Register<ProfileController>(Lifetime.Singleton);
+            builder.Register<ShopService>(Lifetime.Singleton);
             
             // 3. NETWORK (Sửa lại: Bắt buộc phải có Prefab)
             if (_photonPrefab != null)

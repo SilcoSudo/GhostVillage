@@ -12,13 +12,14 @@ import notificationRoutes from "./modules/forum/notifications/notificationRoutes
 import friendRoutes from "./modules/friend/web/friendRoutes.js";
 import messageRoutes from "./modules/message/web/messageRoutes.js";
 import playerRoutes from "./modules/player/playerRoutes.js";
-import profileRoutes from "./modules/profile/ProfileRoutes.js";
+import profileRoutes from "./modules/profile/profileRoutes.js";
 import { loginGame } from "./modules/auth/game/authController.js";
 import mapRoute from "./modules/map/mapRoute.js";
 import matchRoutes from "./modules/match/matchRoutes.js";
 import monsterRoutes from "./modules/monster/monsterRoutes.js";
 import moonEventRoutes from "./modules/moonEvent/moonEventRoutes.js";
 import moonEventGameRoutes from "./modules/moonEvent/gameRoutes.js";
+import shopRoutes from "./modules/shop/shopRoutes.js";
 
 const router = express.Router();
 
@@ -70,7 +71,8 @@ const gameRoutes = express.Router();
 gameRoutes.use("/auth", gameAuthRoutes);
 gameRoutes.use("/moon-events", moonEventGameRoutes);
 gameRoutes.use("/player", playerRoutes);
-
+gameRoutes.use("/profile", profileRoutes);
+gameRoutes.use("/shop", shopRoutes);
 router.use("/game", gameRoutes);
 
 export default router;

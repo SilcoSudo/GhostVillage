@@ -11,13 +11,21 @@ const playerSchema = new mongoose.Schema(
     },
 
     // Player profile (Game-specific)
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: true },
+    // userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: true },
     profile: {
       displayName: String,
+      avatar: { type: String, default: "avatar_default_01" },
       level: { type: Number, default: 1 },
-      coin: { type: Number, default: 1000 },
-      avatar: String
+      exp: { type: Number, default: 0 },
+      coin: { type: Number, default: 1000 }
     },
+    unlockedSkins: { type: [String], default: [] }, 
+    unlockedPerks: { type: [String], default: [] },
+    equippedSkins: {
+      head: { type: String, default: "" }, // Lưu prefabId của head
+      body: { type: String, default: "" }  // Lưu prefabId của body
+    },
+    equippedPerks: { type: [String], default: [] },
     unlockedMedals: [String],
     selectedMedals: { type: [String], default: [] },
     // Sub-document để truy vấn tiến độ cực nhanh
