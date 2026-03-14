@@ -5,7 +5,6 @@ import {
   Trash2,
   Plus,
   Search,
-  Filter,
   Loader2,
   AlertCircle,
   Skull,
@@ -162,7 +161,7 @@ const MonsterManagementPage = () => {
         {/* Toolbar */}
         <div className="monster-toolbar">
           <div className="toolbar-content">
-            <div className="toolbar-row">
+            <div className="toolbar-row toolbar-row-top">
               {/* Search */}
               <div className="search-wrapper">
                 <Search className="search-icon" size={20} />
@@ -174,11 +173,12 @@ const MonsterManagementPage = () => {
                   className="search-input"
                 />
               </div>
+            </div>
 
+            <div className="toolbar-row toolbar-row-bottom">
               {/* Filter and Create Button */}
               <div className="filter-actions-group">
                 <div className="filter-group">
-                  <Filter size={20} className="filter-icon" />
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
