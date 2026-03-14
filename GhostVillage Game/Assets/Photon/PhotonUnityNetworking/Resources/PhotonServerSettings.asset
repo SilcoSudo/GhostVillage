@@ -57,6 +57,10 @@ MonoBehaviour:
   - RPC_RingBell
   - RPC_SetRealChickenIndex
   - RPC_StickInteracted
+  - SetPlayingRPC
+  - StartKeoCoRPC
+  - VongNhiLoseRPC
+  - VongNhiWinRPC
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1
