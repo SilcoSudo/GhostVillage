@@ -8,7 +8,9 @@
   <Project Path="PhotonVoice.API.csproj" />
   <Project Path="Unity.VisualScripting.Core.Editor.csproj" />
   <Project Path="Unity.PerformanceTesting.Editor.csproj" />
+  <Project Path="glTFast.Editor.csproj" />
   <Project Path="Unity.Burst.csproj" />
+  <Project Path="glTFast.csproj" />
   <Project Path="PhotonRealtime.csproj" />
   <Project Path="Unity.VisualScripting.Flow.Editor.csproj" />
   <Project Path="Unity.VisualStudio.Editor.csproj" />
@@ -22,15 +24,18 @@
   <Project Path="PhotonUnityNetworking.csproj" />
   <Project Path="Unity.VisualScripting.Flow.csproj" />
   <Project Path="Unity.PerformanceTesting.csproj" />
+  <Project Path="glTFast.Export.csproj" />
   <Project Path="PhotonUnityNetworking.Demos.csproj" />
   <Project Path="Unity.Burst.Editor.csproj" />
   <Project Path="Unity.Rider.Editor.csproj" />
   <Project Path="Unity.VisualScripting.State.csproj" />
   <Project Path="Unity.AI.Navigation.Updater.csproj" />
   <Project Path="PhotonVoice.PUN.Editor.csproj" />
+  <Project Path="glTFast.Newtonsoft.csproj" />
   <Project Path="PhotonVoice.csproj" />
   <Project Path="Unity.AI.Navigation.Editor.csproj" />
   <Project Path="PhotonUnityNetworking.Utilities.csproj" />
+  <Project Path="glTFast.Documentation.Examples.csproj" />
   <Project Path="Unity.InputSystem.ForUI.csproj" />
   <Project Path="Unity.AI.Navigation.csproj" />
   <Project Path="Unity.Collections.CodeGen.csproj" />
@@ -45,6 +50,7 @@
   <Project Path="MicAmplifierEditor.Editor.csproj" />
   <Project Path="Unity.CollabProxy.Editor.csproj" />
   <Project Path="PhotonUnityNetworking.Utilities.PhotonPlayer.Editor.csproj" />
+  <Project Path="glTFast.dots.csproj" />
   <Project Path="PhotonVoice.PUN.csproj" />
   <Project Path="Unity.InputSystem.DocCodeSamples.csproj" />
   <Project Path="Voice.FMOD.Editor.csproj" />
