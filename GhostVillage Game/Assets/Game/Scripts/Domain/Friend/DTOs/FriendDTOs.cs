@@ -7,23 +7,57 @@ namespace Game.Domain.Friend.DTOs
     [Serializable]
     public class PlayerSearchDTO
     {
-        public string userId;      // ID gốc để add friend (Cái mã dài)
-        public string uid;         // 8 số
+        public string userId;
+        public string uid;
         public string displayName;
         public string avatar;
         public int level;
+    }
+
+    [Serializable]
+    public class FriendInfoDTO
+    {
+        public string _id;
+        public string fullname;
+        public string avatar;
+        public string bio;
     }
 
     // DTO cho 1 người bạn trong danh sách
     [Serializable]
     public class FriendProfileDTO
     {
-        public string _id;          // ID của User đó
-        public string fullname;     // Tên (từ bảng User)
-        public string avatar;       // Avatar
-        public string bio;
-        public string friendshipId; // ID của mối quan hệ (Dùng khi Accept/Reject nếu cần)
-        // Lưu ý: Tên biến phải khớp với JSON trả về từ Backend
+        public string _id; // Đây là FriendshipId ("69a81df5...")
+        public string friendshipId; // Có sẵn trong API List
+        public string fullname;     // Có sẵn trong API List
+
+        // Backend trả về 'requester' (cho Pending) hoặc 'targetUser' (cho Sent)
+        public FriendInfoDTO requester;
+        public FriendInfoDTO targetUser;
+
+
+        // Lấy User ID để gửi API (Add, Unfriend)
+        public string GetUserId()
+        {
+            if (requester != null && !string.IsNullOrEmpty(requester._id)) return requester._id;
+            if (targetUser != null && !string.IsNullOrEmpty(targetUser._id)) return targetUser._id;
+            return _id; // Rơi vào Tab FriendList thì _id chính là User ID
+        }
+
+        // Lấy Friendship ID để gửi API (Accept, Reject)
+        public string GetFriendshipId()
+        {
+            if (!string.IsNullOrEmpty(friendshipId)) return friendshipId;
+            return _id; // Với Pending/Sent thì _id gốc chính là Friendship ID
+        }
+
+        // Lấy Tên hiển thị lên UI
+        public string GetDisplayName()
+        {
+            if (requester != null && !string.IsNullOrEmpty(requester.fullname)) return requester.fullname;
+            if (targetUser != null && !string.IsNullOrEmpty(targetUser.fullname)) return targetUser.fullname;
+            return fullname;
+        }
     }
 
     // Helper wrapper để Unity JsonUtility parse được Array JSON (Ví dụ: [ {..}, {..} ])
@@ -38,6 +72,7 @@ namespace Game.Domain.Friend.DTOs
     public class FriendRequestBody
     {
         public string targetUserId;  // Dùng cho Add, Unfriend
-        public string relatedUserId; // Dùng cho Accept, Reject
+        public string relatedUserId; // Dùng dự phòng
+        public string friendshipId;  // Dùng cho Accept, Reject
     }
 }

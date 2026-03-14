@@ -6,6 +6,8 @@ using System;
 using Cysharp.Threading.Tasks;
 using Photon.Pun;
 using Photon.Realtime;
+using Game.Script.UI; // Thêm thư viện GlobalUIManager
+using VContainer;     // Thêm thư viện Inject
 
 namespace Game.Scripts.UI.Lobby
 {
@@ -44,7 +46,7 @@ namespace Game.Scripts.UI.Lobby
         [Header("Management Modal")]
         [SerializeField] private GameObject _imgDimBG;
         [SerializeField] private GameObject _managementModal;
-        [SerializeField] private FriendBoardItem[] _playerSlots;
+        [SerializeField] private FriendBoardItem[] _playerSlots; // Cần kiểm tra script này có tồn tại không
 
         [Header("Map Picker Modal")]
         [SerializeField] private GameObject _mapPickerModal;
@@ -60,10 +62,13 @@ namespace Game.Scripts.UI.Lobby
         [Header("Game Control")]
         [SerializeField] private TextMeshProUGUI _txtStartGamePrompt;
 
-        [Header("ESC Menu")]
-        [SerializeField] private GameObject _escMenuModal; // Kéo Grp_EscTab vào đây
-        [SerializeField] private Button _btnExitLobby;     // Kéo Btn_ExitToLobbyList vào đây
-        [SerializeField] private Button _btnCloseEscMenu;  // Kéo Btn_CloseModal vào đây
+
+        #endregion
+
+        #region Dependencies (DI)
+
+        // [THÊM MỚI] Inject Global UI để bật Setting
+        [Inject] private GlobalUIManager _globalUI;
 
         #endregion
 
@@ -89,15 +94,12 @@ namespace Game.Scripts.UI.Lobby
             if (_mapPickerModal) _mapPickerModal.SetActive(false);
             if (_grpMapInfo) _grpMapInfo.SetActive(false);
             if (_txtStartGamePrompt) _txtStartGamePrompt.gameObject.SetActive(false);
-            if (_escMenuModal) _escMenuModal.SetActive(false);
 
             // Bind Button Events
             if (_btnNextMap) _btnNextMap.onClick.AddListener(() => OnNextMapClicked?.Invoke());
             if (_btnPrevMap) _btnPrevMap.onClick.AddListener(() => OnPrevMapClicked?.Invoke());
             if (_btnSelectMap) _btnSelectMap.onClick.AddListener(() => OnSelectMapClicked?.Invoke());
             if (_btnClosePicker) _btnClosePicker.onClick.AddListener(() => OnClosePickerClicked?.Invoke());
-            if (_btnExitLobby) _btnExitLobby.onClick.AddListener(() => OnExitLobbyRequest?.Invoke());
-            if (_btnCloseEscMenu) _btnCloseEscMenu.onClick.AddListener(() => ShowEscMenu(false));
         }
 
         #endregion
@@ -124,9 +126,6 @@ namespace Game.Scripts.UI.Lobby
 
         #region Player List Logic
 
-        /// <summary>
-        /// Updates the side player list. Handles different status text for Host (START) vs Players (READY).
-        /// </summary>
         public void RefreshPlayerList(IEnumerable<Player> players, bool canHostStart)
         {
             foreach (Transform child in _playerListContent) Destroy(child.gameObject);
@@ -142,12 +141,10 @@ namespace Game.Scripts.UI.Lobby
 
                     if (player.IsMasterClient)
                     {
-                        // Host shows START status (Green if all ready, Grey if not)
                         texts[1].text = canHostStart ? "<color=green>START</color>" : "<color=#808080>START</color>";
                     }
                     else
                     {
-                        // Players show READY status
                         bool isReady = player.CustomProperties.ContainsKey("isReady") && (bool)player.CustomProperties["isReady"];
                         texts[1].text = isReady ? "<color=green>READY</color>" : "<color=red>NOT READY</color>";
                     }
@@ -172,8 +169,6 @@ namespace Game.Scripts.UI.Lobby
 
         #region Map UI Logic
 
-        // --- Main Lobby Display ---
-
         public void UpdateLobbyMapInfo(string mapName, Sprite icon)
         {
             if (_grpMapInfo) _grpMapInfo.SetActive(true);
@@ -191,8 +186,6 @@ namespace Game.Scripts.UI.Lobby
         {
             if (_grpMapInfo) _grpMapInfo.SetActive(false);
         }
-
-        // --- Map Picker Modal ---
 
         public void ShowMapPicker(bool show)
         {
@@ -324,39 +317,21 @@ namespace Game.Scripts.UI.Lobby
 
         #endregion
 
-        // Trong LobbyUIManager.cs
-
         public override void OnEnable()
         {
             base.OnEnable(); // Nếu có
-            InteractionEvents.OnInteractHover += HandleInteractHover;
+            // InteractionEvents.OnInteractHover += HandleInteractHover; // Bỏ comment nếu có InteractionEvents
         }
 
         public override void OnDisable()
         {
             base.OnDisable();
-            InteractionEvents.OnInteractHover -= HandleInteractHover;
+            // InteractionEvents.OnInteractHover -= HandleInteractHover; // Bỏ comment nếu có InteractionEvents
         }
 
-        // Hàm xử lý khi nhận sự kiện
         private void HandleInteractHover(string msg, bool isVisible)
         {
             SetInteractPrompt(msg, isVisible);
-        }
-
-        public void ToggleEscMenu()
-        {
-            if (_escMenuModal == null) return;
-            ShowEscMenu(!_escMenuModal.activeSelf);
-        }
-
-        public void ShowEscMenu(bool show)
-        {
-            if (_escMenuModal) _escMenuModal.SetActive(show);
-
-            // Xử lý trỏ chuột
-            Cursor.lockState = show ? CursorLockMode.None : CursorLockMode.Locked;
-            Cursor.visible = show;
         }
 
     }
