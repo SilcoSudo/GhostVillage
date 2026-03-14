@@ -1,4 +1,5 @@
 import Monster from "./monsterModel.js";
+import { logActivity } from "../activityLog/activityLogController.js";
 
 /**
  * Monster Controller
@@ -115,6 +116,20 @@ export const MonsterController = {
 
       await newMonster.save();
 
+      // Log activity
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "CREATE",
+        entityType: "MONSTER",
+        entityId: newMonster._id,
+        entityName: newMonster.name,
+        description: `Tạo quái vật: ${newMonster.name}`,
+        severity: "LOW",
+        metadata: { name, hp, atk, def, spawnRate },
+        req,
+      });
+
       return res.status(201).json({
         success: true,
         message: "Tạo quái vật thành công",
@@ -188,6 +203,20 @@ export const MonsterController = {
 
       await monster.save();
 
+      // Log activity
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "UPDATE",
+        entityType: "MONSTER",
+        entityId: monster._id,
+        entityName: monster.name,
+        description: `Cập nhật quái vật: ${monster.name}`,
+        severity: "LOW",
+        metadata: { name, avatar, hp, atk, def, spawnRate },
+        req,
+      });
+
       return res.status(200).json({
         success: true,
         message: "Cập nhật quái vật thành công",
@@ -223,6 +252,20 @@ export const MonsterController = {
       // Soft delete
       monster.isActive = false;
       await monster.save();
+
+      // Log activity
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "DELETE",
+        entityType: "MONSTER",
+        entityId: monster._id,
+        entityName: monster.name,
+        description: `Xóa quái vật: ${monster.name}`,
+        severity: "MEDIUM",
+        metadata: { deletedMonster: monster },
+        req,
+      });
 
       return res.status(200).json({
         success: true,
@@ -266,7 +309,19 @@ export const MonsterController = {
 
       monster.isActive = isActive;
       await monster.save();
-
+      // Log activity
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "TOGGLE_STATUS",
+        entityType: "MONSTER",
+        entityId: monster._id,
+        entityName: monster.name,
+        description: `${isActive ? "Kích hoạt" : "Vô hiệu hóa"} quái vật: ${monster.name}`,
+        severity: "LOW",
+        metadata: { isActive },
+        req,
+      });
       return res.status(200).json({
         success: true,
         message: `${isActive ? "Kích hoạt" : "Vô hiệu hóa"} quái vật thành công`,

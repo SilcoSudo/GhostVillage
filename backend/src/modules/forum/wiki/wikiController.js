@@ -1,4 +1,5 @@
 import * as wikiService from "./wikiService.js";
+import { logActivity } from "../../activityLog/activityLogController.js";
 
 const serializeWiki = (doc) => {
     const wiki = doc ?.toObject ? doc.toObject() : doc;
@@ -146,6 +147,20 @@ export const createWiki = async(req, res, next) => {
 
         const created = await wikiService.createWiki(wikiData);
 
+        // Log activity
+        await logActivity({
+            userId: effectiveAuthor,
+            username: req.user?.username || req.user?.email,
+            action: "CREATE",
+            entityType: "WIKI",
+            entityId: created._id,
+            entityName: created.title,
+            description: `Tạo wiki: ${created.title}`,
+            severity: "LOW",
+            metadata: { category, status },
+            req,
+        });
+
         return res.status(201).json({
             success: true,
             data: serializeWiki(created),
@@ -223,6 +238,20 @@ export const updateWiki = async(req, res, next) => {
             });
         }
 
+        // Log activity
+        await logActivity({
+            userId: userId,
+            username: req.user?.username || req.user?.email,
+            action: "UPDATE",
+            entityType: "WIKI",
+            entityId: updated._id,
+            entityName: updated.title,
+            description: `Cập nhật wiki: ${updated.title}`,
+            severity: "LOW",
+            metadata: { updateData },
+            req,
+        });
+
         return res.status(200).json({
             success: true,
             data: serializeWiki(updated),
@@ -238,6 +267,7 @@ export const updateWiki = async(req, res, next) => {
  */
 export const deleteWiki = async(req, res, next) => {
     try {
+        const wiki = await wikiService.getWikiById(req.params.id);
         const deleted = await wikiService.deleteWiki(req.params.id);
 
         if (!deleted) {
@@ -246,6 +276,20 @@ export const deleteWiki = async(req, res, next) => {
                 message: "Wiki not found",
             });
         }
+
+        // Log activity
+        await logActivity({
+            userId: req.user?._id,
+            username: req.user?.username || req.user?.email,
+            action: "DELETE",
+            entityType: "WIKI",
+            entityId: wiki._id,
+            entityName: wiki.title,
+            description: `Xóa wiki: ${wiki.title}`,
+            severity: "MEDIUM",
+            metadata: { deletedWiki: wiki },
+            req,
+        });
 
         return res.status(200).json({
             success: true,

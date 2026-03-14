@@ -1,7 +1,11 @@
 import express from "express";
 import { QuestController } from "./questController.js";
+import { authMiddleware } from "../../middlewares/auth.middleware.js";
 
 const router = express.Router();
+
+// Apply authentication middleware to all routes
+router.use(authMiddleware);
 
 /**
  * Quest Routes
