@@ -25,7 +25,6 @@ import activityLogRoutes from "./modules/activityLog/activityLogRoutes.js";
 import moonEventRoutes from "./modules/moonEvent/moonEventRoutes.js";
 import perkRoutes from "./modules/perk/perkRoutes.js";
 import itemRoutes from "./modules/item/itemRoutes.js";
-import moonEventGameRoutes from "./modules/moonEvent/gameRoutes.js";
 import shopRoutes from "./modules/shop/shopRoutes.js";
 
 const router = express.Router();

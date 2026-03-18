@@ -250,7 +250,8 @@ namespace Game.Core.Network.API
             {
                 Debug.LogError($"[API Error] {e.Message}");
                 return null;
-        
+            }
+        }
         /// <summary>
         /// PUT request (Dùng để cập nhật dữ liệu như Trang bị đồ)
         /// </summary>

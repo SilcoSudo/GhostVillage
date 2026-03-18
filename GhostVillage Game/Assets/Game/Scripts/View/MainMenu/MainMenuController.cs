@@ -104,15 +104,9 @@ namespace Game.UI.MainMenu
                 _statusText.color = Color.yellow;
                 _lobbyListButton.interactable = false;
                 _debugHostButton.interactable = false;
-                _network.ConnectAsync(_session.DisplayName, _session.Token).Forget();
                 _shopButton.interactable = false;
                 _storageButton.interactable = false;
-
-                string playerName = _store.DisplayName.Value;
-                string token = _store.AuthToken.Value;
-                // Gọi kết nối lại. Khi kết nối xong, HandleConnected sẽ tự động được gọi (vì đã đăng ký ở OnEnable/Start trước đó)
-                // Lưu ý: Đảm bảo bạn đã đăng ký _network.OnPhotonConnected += HandleConnected; ở đâu đó trong MainMenuController.
-                _network.ConnectAsync(playerName, token).Forget();
+                _network.ConnectAsync(_session.DisplayName, _session.Token).Forget();
             }
         }
 
