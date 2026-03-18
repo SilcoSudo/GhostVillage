@@ -157,6 +157,18 @@ namespace GhostVillage.Gameplay.Monsters.VongNhi
             ChangeState(fleeState);
         }
 
+        /// <summary>Hủy kéo co (không thắng/thua): quay về patrol để có thể chơi lại</summary>
+        public void CancelKeoCo()
+        {
+            _isKeoCo = false;
+            _keoCoPlayerTf = null;
+
+            if (currentState != patrolState)
+                ChangeState(patrolState);
+
+            Debug.Log("[VongNhi] Hủy kéo co → quay lại patrol.");
+        }
+
 #if UNITY_EDITOR
         private void OnDrawGizmos()
         {
