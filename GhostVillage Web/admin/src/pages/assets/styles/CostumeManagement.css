@@ -1,0 +1,710 @@
+/* Costume Management Page - GhostVillage Theme */
+/* Using Found Footage / Industrial Palette */
+
+:root {
+  --primary-color: #990000;      /* Blood Red */
+  --primary-dark: #520000;       /* Dark Blood Red */
+  --primary-light: #CC0000;      /* Bright Blood Red */
+  --accent-color: #7A0000;       /* Blood Red Accent */
+  --secondary-color: #121212;    
+  --bg-primary: #121212;         /* Matte Black */
+  --bg-secondary: #0D0D0D;       
+  --bg-tertiary: #1E1E1E;        /* Concrete Gray */
+  --card-bg: #1A1A1A;            
+  --text-primary: #B5A642;       /* Old Brass / Muted Gold */
+  --text-secondary: #A68B6A;     /* Muted Leather */
+  --border-color: #520000;       /* Dark Dried Blood */
+  --border-subtle: #330000;      
+  --card-border: #7A0000;        /* Fresh Blood highlight */
+}
+
+.costume-management-container {
+  width: 100%;
+  min-height: 100vh;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  color: var(--text-secondary);
+}
+
+/* Header */
+.costume-management-header {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(153, 0, 0, 0.15) 0%, rgba(181, 166, 66, 0.05) 100%);
+  border-left: 4px solid var(--primary-color);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(181, 166, 66, 0.2);
+  box-shadow: 0 4px 15px rgba(122, 0, 0, 0.2);
+}
+
+.costume-management-header h1 {
+  margin: 0 0 8px 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary-light);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: 'Courier New', Courier, monospace;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.costume-management-header p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-primary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Statistics Cards */
+.costume-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.costume-stat-card {
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(30, 30, 30, 0.7) 100%);
+  border: 1.5px solid rgba(181, 166, 66, 0.25);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.costume-stat-card:hover {
+  border-color: var(--text-primary);
+  box-shadow: 0 0 16px rgba(181, 166, 66, 0.3);
+  transform: translateY(-2px);
+}
+
+.costume-stat-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.costume-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.costume-stat-value.total {
+  color: var(--text-primary);
+}
+
+.costume-stat-value.active {
+  color: #4CAF50;
+}
+
+.costume-stat-value.inactive {
+  color: var(--primary-color);
+}
+
+.costume-stat-value.store {
+  color: #FFC107;
+}
+
+/* Toolbar */
+.costume-toolbar {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(26, 26, 26, 0.8) 0%, rgba(30, 30, 30, 0.6) 100%);
+  border: 1.5px solid rgba(181, 166, 66, 0.25);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.costume-toolbar-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.costume-toolbar-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Search & Filter Components (reused from quest) */
+.search-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 250px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 12px 10px 40px;
+  background: rgba(26, 26, 26, 0.8);
+  border: 1.5px solid rgba(181, 166, 66, 0.25);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: 'Courier New', Courier, monospace;
+  transition: all 0.3s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--text-primary);
+  box-shadow: 0 0 12px rgba(181, 166, 66, 0.2);
+}
+
+.search-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.5;
+}
+
+.filter-actions-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-select {
+  padding: 10px 12px;
+  background: rgba(26, 26, 26, 0.8);
+  border: 1.5px solid rgba(181, 166, 66, 0.25);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: 'Courier New', Courier, monospace;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--text-primary);
+  box-shadow: 0 0 12px rgba(181, 166, 66, 0.2);
+}
+
+.filter-select option {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.btn-create {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  border: 1.5px solid var(--primary-light);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: 'Courier New', Courier, monospace;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-create:hover {
+  background: var(--primary-light);
+  box-shadow: 0 0 16px rgba(153, 0, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Costume Table */
+.costume-table-wrapper {
+  background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(30, 30, 30, 0.85) 100%);
+  border: 1.5px solid rgba(181, 166, 66, 0.25);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.costume-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.costume-table thead {
+  background: linear-gradient(135deg, rgba(153, 0, 0, 0.2) 0%, rgba(82, 0, 0, 0.1) 100%);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.costume-table thead th {
+  padding: 16px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.costume-table thead th.center {
+  text-align: center;
+}
+
+.costume-table tbody tr {
+  border-bottom: 1px solid var(--border-subtle);
+  transition: all 0.3s ease;
+}
+
+.costume-table tbody tr:hover {
+  background: rgba(181, 166, 66, 0.05);
+  box-shadow: inset 0 0 10px rgba(181, 166, 66, 0.1);
+}
+
+.costume-table tbody td {
+  padding: 14px 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+
+.costume-table tbody td.center {
+  text-align: center;
+}
+
+/* Costume ID */
+.costume-id {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Costume Name & Description */
+.costume-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.costume-description {
+  font-size: 12px;
+  color: var(--text-secondary);
+  opacity: 0.8;
+}
+
+/* Costume Thumbnail */
+.costume-thumbnail {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1.5px solid var(--border-subtle);
+  background: rgba(26, 26, 26, 0.5);
+  transition: all 0.3s ease;
+}
+
+.costume-thumbnail:hover {
+  transform: scale(2);
+  border-color: var(--text-primary);
+  box-shadow: 0 0 16px rgba(181, 166, 66, 0.3);
+  z-index: 10;
+}
+
+.costume-thumbnail-placeholder {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border-subtle);
+  background: rgba(26, 26, 26, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 20px;
+}
+
+/* Rarity Badges */
+.costume-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: 'Courier New', Courier, monospace;
+  border: 1px solid;
+}
+
+.costume-badge.common {
+  background: rgba(158, 158, 158, 0.15);
+  color: #9E9E9E;
+  border-color: #9E9E9E;
+}
+
+.costume-badge.rare {
+  background: rgba(33, 150, 243, 0.15);
+  color: #2196F3;
+  border-color: #2196F3;
+}
+
+.costume-badge.epic {
+  background: rgba(156, 39, 176, 0.15);
+  color: #9C27B0;
+  border-color: #9C27B0;
+}
+
+.costume-badge.legendary {
+  background: rgba(255, 152, 0, 0.15);
+  color: #FF9800;
+  border-color: #FF9800;
+}
+
+.costume-badge.mythic {
+  background: linear-gradient(135deg, rgba(233, 30, 99, 0.2), rgba(156, 39, 176, 0.2));
+  color: #E91E63;
+  border-color: #E91E63;
+  box-shadow: 0 0 8px rgba(233, 30, 99, 0.3);
+}
+
+/* Category Badges */
+.costume-badge.full-body {
+  background: rgba(33, 150, 243, 0.15);
+  color: #2196F3;
+  border-color: #2196F3;
+}
+
+.costume-badge.head {
+  background: rgba(156, 39, 176, 0.15);
+  color: #9C27B0;
+  border-color: #9C27B0;
+}
+
+.costume-badge.body {
+  background: rgba(0, 188, 212, 0.15);
+  color: #00BCD4;
+  border-color: #00BCD4;
+}
+
+.costume-badge.accessory {
+  background: rgba(76, 175, 80, 0.15);
+  color: #4CAF50;
+  border-color: #4CAF50;
+}
+
+.costume-badge.weapon {
+  background: rgba(153, 0, 0, 0.15);
+  color: var(--primary-light);
+  border-color: var(--primary-color);
+}
+
+.costume-badge.pet {
+  background: rgba(255, 193, 7, 0.15);
+  color: #FFC107;
+  border-color: #FFC107;
+}
+
+/* Price Display */
+.costume-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(255, 193, 7, 0.15);
+  border: 1px solid #FFC107;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #FFC107;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.costume-price-special {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+}
+
+.costume-price-original {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.costume-price-sale {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(233, 30, 99, 0.15);
+  border: 1px solid #E91E63;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #E91E63;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* Toggle Buttons */
+.costume-toggle-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.costume-toggle-btn {
+  padding: 6px 12px;
+  border: 1.5px solid;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: 'Courier New', Courier, monospace;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: transparent;
+  min-width: 100px;
+}
+
+.costume-toggle-btn.active {
+  color: #4CAF50;
+  border-color: #4CAF50;
+  background: rgba(76, 175, 80, 0.1);
+}
+
+.costume-toggle-btn.active:hover {
+  background: rgba(76, 175, 80, 0.2);
+  box-shadow: 0 0 12px rgba(76, 175, 80, 0.3);
+}
+
+.costume-toggle-btn.inactive {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+  background: rgba(153, 0, 0, 0.1);
+}
+
+.costume-toggle-btn.inactive:hover {
+  background: rgba(153, 0, 0, 0.2);
+  box-shadow: 0 0 12px rgba(153, 0, 0, 0.3);
+}
+
+.costume-toggle-btn.in-store {
+  color: #FFC107;
+  border-color: #FFC107;
+  background: rgba(255, 193, 7, 0.1);
+}
+
+.costume-toggle-btn.in-store:hover {
+  background: rgba(255, 193, 7, 0.2);
+  box-shadow: 0 0 12px rgba(255, 193, 7, 0.3);
+}
+
+.costume-toggle-btn.not-in-store {
+  color: var(--text-secondary);
+  border-color: var(--text-secondary);
+  background: rgba(158, 158, 158, 0.1);
+}
+
+.costume-toggle-btn.not-in-store:hover {
+  background: rgba(158, 158, 158, 0.2);
+  box-shadow: 0 0 12px rgba(158, 158, 158, 0.3);
+}
+
+/* Action Buttons */
+.costume-action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.costume-action-btn {
+  padding: 8px;
+  border: 1.5px solid;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.costume-action-btn.edit {
+  color: #2196F3;
+  border-color: #2196F3;
+}
+
+.costume-action-btn.edit:hover {
+  background: rgba(33, 150, 243, 0.2);
+  box-shadow: 0 0 12px rgba(33, 150, 243, 0.3);
+}
+
+.costume-action-btn.delete {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.costume-action-btn.delete:hover {
+  background: rgba(153, 0, 0, 0.2);
+  box-shadow: 0 0 12px rgba(153, 0, 0, 0.3);
+}
+
+/* Error Message */
+.costume-error-message {
+  padding: 16px;
+  background: rgba(153, 0, 0, 0.15);
+  border: 1.5px solid var(--primary-color);
+  border-radius: 10px;
+  color: var(--primary-light);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 600;
+}
+
+/* Loading State */
+.costume-loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.costume-spinner {
+  color: var(--text-primary);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Empty State */
+.costume-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+}
+
+.costume-empty-state p {
+  font-size: 14px;
+  font-family: 'Courier New', Courier, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Pagination */
+.costume-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(26, 26, 26, 0.8) 0%, rgba(30, 30, 30, 0.6) 100%);
+  border: 1.5px solid rgba(181, 166, 66, 0.25);
+  border-radius: 12px;
+}
+
+.costume-pagination-btn {
+  padding: 10px 20px;
+  border: 1.5px solid var(--text-primary);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: 'Courier New', Courier, monospace;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.costume-pagination-btn:hover:not(:disabled) {
+  background: rgba(181, 166, 66, 0.2);
+  box-shadow: 0 0 16px rgba(181, 166, 66, 0.3);
+}
+
+.costume-pagination-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  border-color: var(--text-secondary);
+  color: var(--text-secondary);
+}
+
+.costume-pagination-info {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .costume-toolbar-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .costume-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .costume-table-wrapper {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .costume-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .costume-management-header h1 {
+    font-size: 18px;
+  }
+
+  .costume-table thead th {
+    font-size: 10px;
+    padding: 12px 8px;
+  }
+
+  .costume-table tbody td {
+    font-size: 11px;
+    padding: 10px 8px;
+  }
+}

@@ -109,8 +109,20 @@ export const config = {
 
   // File upload
   upload: {
-    maxSize: 5 * 1024 * 1024, // 5MB
-    allowedTypes: ["image/jpeg", "image/png", "image/gif"],
+    maxSize: 50 * 1024 * 1024, // 50MB
+    allowedTypes: [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "image/jpg",
+      "image/bmp",
+      "image/svg+xml",
+      "video/mp4",
+      "video/webm",
+      "video/quicktime",
+      "video/x-msvideo",
+    ],
   },
 
   // Pagination
@@ -126,6 +138,8 @@ export const config = {
     redirectUri:
       process.env.GOOGLE_REDIRECT_URI ||
       "http://localhost:5000/api/web/auth/google/callback",
+    gameRedirectUri:
+      process.env.GOOGLE_REDIRECT_URI_GAME || "http://localhost:8888/",
   },
 
   // Email (nodemailer)

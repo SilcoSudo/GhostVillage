@@ -30,8 +30,13 @@
   min-width: 200px;
 }
 
+.brand-name-link {
+  text-decoration: none;
+  display: inline-block;
+}
+
 .brand-name {
-  font-family: 'Courier New', Courier, monospace;
+  font-family: "Courier New", Courier, monospace;
   font-size: 26px;
   font-weight: bold;
   color: var(--accent-color);
@@ -42,7 +47,7 @@
   letter-spacing: 1px;
 }
 
-.brand-name:hover {
+.brand-name-link:hover .brand-name {
   color: var(--primary-light);
   text-shadow: 0 0 10px rgba(122, 0, 0, 0.5);
 }
@@ -93,6 +98,9 @@
 .header-profile {
   position: relative;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .profile-trigger {
@@ -115,7 +123,11 @@
 .profile-avatar {
   width: 36px;
   height: 36px;
-  background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+  background: linear-gradient(
+    135deg,
+    var(--primary-dark),
+    var(--primary-color)
+  );
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -173,7 +185,11 @@
 .profile-avatar-large {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+  background: linear-gradient(
+    135deg,
+    var(--primary-dark),
+    var(--primary-color)
+  );
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -233,12 +249,12 @@
 }
 
 .profile-menu-item.logout {
-  color: #D63031;
+  color: #d63031;
 }
 
 .profile-menu-item.logout:hover {
   background: rgba(214, 48, 49, 0.1);
-  color: #D63031;
+  color: #d63031;
 }
 
 /* Responsive Design */
@@ -318,4 +334,45 @@
 
 .language-toggle:active {
   transform: scale(0.98);
+}
+/* Friends Button */
+.friends-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9.2px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.friends-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--primary-color);
+  color: var(--primary-light);
+}
+
+.friends-btn:active {
+  transform: scale(0.98);
+}
+.friends-btn.active {
+  background: var(--bg-tertiary);
+  border-color: var(--primary-color);
+  color: var(--primary-light);
+}
+
+.friends-unread-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #dc3545;
+  box-shadow: 0 0 0 2px var(--bg-secondary);
 }

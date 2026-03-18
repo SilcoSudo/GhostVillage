@@ -9,6 +9,7 @@ import {
   changePasswordWeb,
   forgotPasswordWeb,
   resetPasswordWeb,
+  completeProfileWeb,
 } from "./authController.js";
 import { getGoogleAuthUrl, googleCallback } from "./googleAuthController.js";
 import { authMiddleware } from "../../../middlewares/auth.middleware.js";
@@ -35,6 +36,7 @@ router.get("/me", authMiddleware, getMeWeb);
 router.post("/change-password", authMiddleware, changePasswordWeb);
 router.post("/forgot-password", forgotPasswordWeb);
 router.post("/reset-password", resetPasswordWeb);
+router.post("/complete-profile", authMiddleware, completeProfileWeb);
 
 // Google OAuth routes
 router.get("/google", getGoogleAuthUrl);

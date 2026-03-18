@@ -10,21 +10,6 @@ export const registerWeb = async (req, res) => {
     const { email, fullName, password, confirmPassword, dateOfBirth } =
       req.body;
 
-    // Validation
-    if (!email || !fullName || !password || !confirmPassword || !dateOfBirth) {
-      return res.status(400).json({
-        success: false,
-        message: "All fields are required",
-      });
-    }
-
-    if (password !== confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "Passwords do not match",
-      });
-    }
-
     // Send verification email (no DB save yet)
     await AuthService.register(email, fullName, password, dateOfBirth);
 
@@ -40,16 +25,10 @@ export const registerWeb = async (req, res) => {
     });
   }
 };
+
 export const resendVerificationWeb = async (req, res) => {
   try {
     const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({
-        success: false,
-        message: "Email is required",
-      });
-    }
 
     await AuthService.resendVerification(email);
 
@@ -65,23 +44,16 @@ export const resendVerificationWeb = async (req, res) => {
     });
   }
 };
+
 export const verifyWeb = async (req, res) => {
   try {
     const token = req.query.token || req.body.token;
-    if (!token) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Token is required" });
-    }
+    const rememberMe =
+      req.query.rememberMe === "true" || req.body.rememberMe === true;
 
-    const result = await AuthService.completeRegistration(token);
+    const result = await AuthService.completeRegistration(token, rememberMe);
 
-    // Set auth cookie and return token + user
-    res.cookie("token", result.token, {
-      httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
+    // Return JWT token - frontend will handle localStorage and axios interceptor
     return res
       .status(200)
       .json({ success: true, token: result.token, user: result.user });
@@ -98,29 +70,13 @@ export const loginWeb = async (req, res) => {
   try {
     const { email, password, rememberMe } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "Email/username and password are required",
-      });
-    }
-
     const { token, user } = await AuthService.loginWeb(
       email,
       password,
       rememberMe,
     );
 
-    // Set cookie expiry based on rememberMe
-    const maxAge = rememberMe
-      ? 30 * 24 * 60 * 60 * 1000
-      : 1 * 24 * 60 * 60 * 1000; // 30 days or 1 day
-
-    res.cookie("token", token, {
-      httpOnly: true,
-      maxAge,
-    });
-
+    // Return JWT token - frontend will handle localStorage and axios interceptor
     return res.status(200).json({
       success: true,
       message: "Login successful",
@@ -137,7 +93,6 @@ export const loginWeb = async (req, res) => {
 };
 
 export const logoutWeb = (req, res) => {
-  res.clearCookie("token");
   return res.status(200).json({
     success: true,
     message: "Logout successful",
@@ -147,14 +102,6 @@ export const logoutWeb = (req, res) => {
 export const getMeWeb = async (req, res) => {
   try {
     const user = req.user;
-    
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized",
-      });
-    }
-
     // Return user in toJSON format (same as login) for consistency
     return res.status(200).json({
       success: true,
@@ -171,7 +118,7 @@ export const getMeWeb = async (req, res) => {
 
 export const changePasswordWeb = async (req, res) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?._id;
     const { currentPassword, newPassword } = req.body;
 
     if (!userId) {
@@ -247,6 +194,31 @@ export const resetPasswordWeb = async (req, res) => {
     return res.status(400).json({
       success: false,
       message: error.message || "Failed to reset password",
+    });
+  }
+};
+
+export const completeProfileWeb = async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    const { dateOfBirth, password } = req.body;
+
+    const user = await AuthService.completeProfile(
+      userId,
+      dateOfBirth,
+      password,
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile completed successfully",
+      user: user.toJSON(),
+    });
+  } catch (error) {
+    console.error("Complete Profile error:", error);
+    return res.status(error.message?.includes("not found") ? 404 : 400).json({
+      success: false,
+      message: error.message || "Failed to complete profile",
     });
   }
 };

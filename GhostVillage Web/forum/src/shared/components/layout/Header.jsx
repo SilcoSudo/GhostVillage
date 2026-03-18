@@ -1,14 +1,30 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Search, Globe } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import i18nConfig from '../../../i18n';
-import '../../assets/styles/Header.css';
+import React, { useState, useContext, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { Search, Globe, Users } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import i18nConfig from "../../../i18n";
+import { FriendSidebarContext } from "../../../app/context/FriendSidebarContext";
+import NotificationBell from "../NotificationBell";
+import "../../assets/styles/Header.css";
 
 const Header = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [hasUnreadFriendMessage, setHasUnreadFriendMessage] = useState(false);
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const { showFriendSidebar, toggleFriendSidebar } =
+    useContext(FriendSidebarContext);
+
+  useEffect(() => {
+    const handleNewMessage = () => {
+      setHasUnreadFriendMessage(true);
+    };
+
+    window.addEventListener("chat:new-message", handleNewMessage);
+    return () => {
+      window.removeEventListener("chat:new-message", handleNewMessage);
+    };
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -17,10 +33,15 @@ const Header = () => {
     }
   };
 
+  const handleFriendsClick = () => {
+    setHasUnreadFriendMessage(false);
+    toggleFriendSidebar();
+  };
+
   const toggleLanguage = () => {
     const currentLang = i18n.language || i18nConfig.language;
-    const newLang = currentLang === 'en' ? 'vi' : 'en';
-    
+    const newLang = currentLang === "en" ? "vi" : "en";
+
     if (i18n.changeLanguage) {
       i18n.changeLanguage(newLang);
     } else {
@@ -33,7 +54,9 @@ const Header = () => {
       <div className="header-container">
         {/* Logo/Brand */}
         <div className="header-brand">
-          <h1 className="brand-name">GhostVillage</h1>
+          <Link to="/" className="brand-name-link">
+            <h1 className="brand-name">GhostVillage</h1>
+          </Link>
         </div>
 
         {/* Search Bar */}
@@ -50,15 +73,26 @@ const Header = () => {
           </div>
         </form>
 
-        {/* Language Toggle */}
+        {/* Language Toggle & Friends & Notification */}
         <div className="header-profile">
-          <button 
+          <button
             className="language-toggle"
             onClick={toggleLanguage}
             title="Chuyển đổi ngôn ngữ"
           >
             <Globe size={20} />
-            <span>{i18n.language === 'en' ? 'EN' : 'VI'}</span>
+            <span>{i18n.language === "en" ? "EN" : "VI"}</span>
+          </button>
+          <NotificationBell />
+          <button
+            className={`friends-btn ${showFriendSidebar ? "active" : ""}`}
+            onClick={handleFriendsClick}
+            title="Danh sách bạn bè"
+          >
+            <Users size={20} />
+            {hasUnreadFriendMessage ? (
+              <span className="friends-unread-dot" aria-hidden="true" />
+            ) : null}
           </button>
         </div>
       </div>

@@ -11,46 +11,22 @@ const playerSchema = new mongoose.Schema(
     },
 
     // Player profile (Game-specific)
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: true },
     profile: {
-      displayName: {
-        type: String,
-        required: true,
-        trim: true
-      },
-      avatar: {
-        type: String,
-        default: 'avatar_default_01'
-      },
-      level: {
-        type: Number,
-        default: 1,
-        min: 1
-      },
-      exp: {
-        type: Number,
-        default: 0,
-        min: 0
-      },
-      coin: {
-        type: Number,
-        default: 1000,
-        min: 0
-      }
+      displayName: String,
+      level: { type: Number, default: 1 },
+      coin: { type: Number, default: 1000 },
+      avatar: String
     },
-
-    // Inventory (Game items)
-    inventory: {
-      unlockedSkins: {
-        type: [String],
-        default: ['skin_default']
-      },
-      unlockedPerks: {
-        type: [String],
-        default: []
-      }
-    }
-  },
-  { timestamps: true }
+    unlockedMedals: [String],
+    selectedMedals: { type: [String], default: [] },
+    // Sub-document để truy vấn tiến độ cực nhanh
+    achievementsProgress: [{
+      achievementCode: String,
+      current: { type: Number, default: 0 },
+      isClaimed: { type: Boolean, default: false }
+    }]
+  }, { timestamps: true }
 );
 
 // Populate User reference when returning JSON

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../app/hooks/useAuth';
-import api from '../../../shared/services/axios';
+import { authService } from '../services/authService';
 import LangmaText from '../../../shared/assets/images/logo.png';
 import FogEffect from '../components/FogEffect';
 import './Auth.css';
@@ -48,34 +48,30 @@ const VerifyEmailPage = () => {
     try {
       setVerificationStatus('loading');
 
-      const response = await api.get('/web/auth/verify', {
-        params: { token: verificationToken },
-      });
+      const result = await authService.verify(verificationToken);
 
-      if (response.data.success) {
-        const { token: accessToken, user } = response.data;
+      if (result.success) {
+        const { token: accessToken, user } = result;
         if (accessToken && user) {
-          setSession(accessToken, user);
-          // Save token to localStorage for persistence (verified email = auto-login)
-          localStorage.setItem('token', accessToken);
+          const sessionSet = setSession(accessToken, user);
+          if (!sessionSet) {
+            setVerificationStatus('error');
+            setMessage('Session setup failed. Please try again.');
+            return;
+          }
         }
 
         setVerificationStatus('success');
         setMessage('Email verified successfully! You are now logged in.');
 
         localStorage.removeItem('pendingVerificationEmail');
-
-        // TODO: Auto-redirect after user views (uncomment when ready)
-        // setTimeout(() => {
-        //   navigate('/');
-        // }, 3000);
+      } else {
+        setVerificationStatus('error');
+        setMessage(result.message || 'Email verification failed. The link may be expired or invalid.');
       }
     } catch (error) {
       setVerificationStatus('error');
-      setMessage(
-        error.response?.data?.message ||
-          'Email verification failed. The link may be expired or invalid.'
-      );
+      setMessage('Email verification failed. The link may be expired or invalid.');
     }
   };
 

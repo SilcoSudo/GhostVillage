@@ -4,12 +4,12 @@ using UnityEngine;
 using Game.Core.Network;
 using Game.Core.Scene;
 using Game.Core.Network.API;
-using Game.Domain.Maps;
 using Game.ScriptableObjects.GameConfig;
 using Game.Domain.Authentication;
 using Game.UI.Login;
 using Game.Script.UI;
 using Game.Core.ReactiveRepo;
+using Game.Domain.Map.Services;
 
 namespace Game.Core.DI
 {
@@ -43,7 +43,9 @@ namespace Game.Core.DI
             builder.Register<AuthService>(Lifetime.Singleton);
             builder.Register<PlayerDataStore>(Lifetime.Singleton);
             builder.Register<PlayerDataSyncService>(Lifetime.Singleton);
-
+            builder.Register<ProfileService>(Lifetime.Singleton);
+            builder.Register<ProfileController>(Lifetime.Singleton);
+            
             // 3. NETWORK (Sửa lại: Bắt buộc phải có Prefab)
             if (_photonPrefab != null)
             {

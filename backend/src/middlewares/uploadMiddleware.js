@@ -1,17 +1,31 @@
-import multer from 'multer';
-import { config } from '../config/env.js';
+import multer from "multer";
+import { config } from "../config/env.js";
 
 // Use memory storage - we'll upload to Cloudinary, not save locally
 const storage = multer.memoryStorage();
 
-// File filter for images only
+// File filter for images and videos
 const fileFilter = (req, file, cb) => {
-  const allowedMimes = config.upload.allowedTypes || ['image/jpeg', 'image/png', 'image/gif'];
-  
+  const allowedMimes = config.upload.allowedTypes || [
+    // Images
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    // Videos
+    "video/mp4",
+    "video/webm",
+    "video/quicktime",
+    "video/x-msvideo",
+  ];
+
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error(`Invalid file type. Allowed types: ${allowedMimes.join(', ')}`), false);
+    cb(
+      new Error(`Invalid file type. Allowed types: ${allowedMimes.join(", ")}`),
+      false,
+    );
   }
 };
 
@@ -20,29 +34,29 @@ const uploadMiddleware = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: config.upload.maxSize || 5 * 1024 * 1024, // 5MB default
+    fileSize: config.upload.maxSize || 50 * 1024 * 1024, // 50MB default
   },
 });
 
 /**
  * Middleware for single avatar upload
  */
-export const uploadAvatar = uploadMiddleware.single('avatar');
+export const uploadAvatar = uploadMiddleware.single("avatar");
 
 /**
  * Middleware for multiple image uploads
  */
-export const uploadMultiple = uploadMiddleware.array('images', 5);
+export const uploadMultiple = uploadMiddleware.array("images", 5);
 
 /**
  * Validate upload middleware
  */
 export const validateUpload = (req, res, next) => {
-  if (!req.file && req.method !== 'GET') {
-    if (req.path.includes('/upload') || req.path.includes('/avatar')) {
+  if (!req.file && req.method !== "GET") {
+    if (req.path.includes("/upload") || req.path.includes("/avatar")) {
       return res.status(400).json({
         success: false,
-        message: 'No file uploaded',
+        message: "No file uploaded",
       });
     }
   }

@@ -1,98 +1,170 @@
+using Game.Scripts.UI.Lobby;
 using Photon.Pun;
 using UnityEngine;
-using UnityEngine.InputSystem; // Import Input System
+using UnityEngine.InputSystem;
+using VContainer;
 
 public class FPSController : MonoBehaviourPun
 {
-    public float speed = 5f;
-    public float sensitivity = 2f;
+    [Header("Movement Settings")]
+    [SerializeField] private float _moveSpeed = 5f;
+    [SerializeField] private float _lookSensitivity = 2f;
 
-    private Camera playerCam;
-    private float rotX = 0f;
+    [Header("Internal References")]
+    [SerializeField] private Camera _playerCam;
 
-    private PlayerInputActions inputActions;
-    private bool canLook = true;   // <-- Thêm flag
+    private InventoryManager _inventoryManager;
 
-    void Awake()
+    [Inject] private LobbyUIManager _uiManager;
+    private GameplayUIManager _gameplayUI;
+
+    private PlayerInputActions _inputActions;
+    private float _verticalRotation = 0f;
+    private bool _isLookEnabled = true;
+
+    #region LifeCycle
+
+    private void Awake()
     {
-        inputActions = new PlayerInputActions();
+        _inputActions = new PlayerInputActions();
+        _inventoryManager = GetComponent<InventoryManager>();
     }
 
-    void OnEnable()
-    {
-        inputActions.Player.Enable();
-    }
-
-    void OnDisable()
-    {
-        inputActions.Player.Disable();
-    }
-
-    void Start()
-    {
-        if (!photonView.IsMine)
-        {
-            enabled = false;
-            return;
-        }
-
-        playerCam = GetComponentInChildren<Camera>();
-        Cursor.lockState = CursorLockMode.Locked;
-
-        // === BIND INVENTORY UI ===
-        var uiManager = FindFirstObjectByType<InventoryUIManager>();
-        if (uiManager != null)
-        {
-            var inv = GetComponent<InventoryManager>();
-            if (inv != null)
-            {
-                uiManager.BindInventory(inv);
-                Debug.Log($"[FPSController] Bound local player inventory to UI ({inv.gameObject.name})");
-            }
-            else
-            {
-                Debug.LogWarning("[FPSController] Player không có InventoryManager!");
-            }
-        }
-        else
-        {
-            Debug.LogWarning("[FPSController] Không tìm thấy InventoryUIManager trong scene!");
-        }
-    }
-
-
-
-    void Update()
+    private void OnEnable()
     {
         if (!photonView.IsMine) return;
 
-        // === Di chuyển (WASD) ===
-        Vector2 moveInput = inputActions.Player.Move.ReadValue<Vector2>();
-        Vector3 move = transform.right * moveInput.x + transform.forward * moveInput.y;
-        transform.position += move * speed * Time.deltaTime;
+        _inputActions.Player.Enable();
 
-        // === Xoay chuột ===
-        Vector2 lookInput = inputActions.Player.Look.ReadValue<Vector2>();
-        float mouseX = lookInput.x * sensitivity * Time.deltaTime * 100f;
-        float mouseY = lookInput.y * sensitivity * Time.deltaTime * 100f;
+        // 1. Drop Item (Q)
+        _inputActions.Player.DropItem.performed += OnDropItem;
 
-        rotX -= mouseY;
-        rotX = Mathf.Clamp(rotX, -80f, 80f);
+        // 2. Use Item (E)
+        _inputActions.Player.UseItem.performed += OnUseItem;
 
-        playerCam.transform.localRotation = Quaternion.Euler(rotX, 0f, 0f);
-        transform.Rotate(Vector3.up * mouseX);
+        // 3. Slot Input (1, 2, 3) - Dùng 3 Action riêng biệt cho rõ ràng
+        // Đảm bảo trong Input Asset bạn đã tạo 3 Action: Item_Slot1 (Key 1), Item_Slot2 (Key 2), Item_Slot3 (Key 3)
+        _inputActions.Player.Item_Slot1.performed += ctx => _inventoryManager.SelectSlot(0);
+        _inputActions.Player.Item_Slot2.performed += ctx => _inventoryManager.SelectSlot(1);
+        _inputActions.Player.Item_Slot3.performed += ctx => _inventoryManager.SelectSlot(2);
 
-        // === Tương tác (F) ===
-        if (inputActions.Player.Interact.triggered)
+        // ĐÃ XÓA DÒNG GÂY LỖI: _inputActions.Player.InventorySlot...
+    }
+
+    private void OnDisable()
+    {
+        if (!photonView.IsMine) return;
+
+        _inputActions.Player.Disable();
+
+        _inputActions.Player.DropItem.performed -= OnDropItem;
+        _inputActions.Player.UseItem.performed -= OnUseItem;
+    }
+
+    [System.Obsolete]
+    private void Start()
+    {
+        if (photonView.IsMine)
         {
-            Debug.Log("Interact pressed!");
-            // TODO: gọi hàm tương tác sau này
+            var allListeners = Object.FindObjectsByType<AudioListener>(FindObjectsSortMode.None);
+            foreach (var listener in allListeners)
+            {
+                if (listener.gameObject.transform.root != this.transform)
+                    listener.enabled = false;
+            }
+        }
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
+        BindInventoryUI();
+        _gameplayUI = FindObjectOfType<GameplayUIManager>(); // Cách đơn giản để tìm UI
+    }
+
+    private void Update()
+    {
+        if (!photonView.IsMine) return;
+
+        if (_uiManager != null && _uiManager.IsAnyUIOpen) return;
+
+        if (!_isLookEnabled) return;
+
+        HandleMovement();
+        HandleRotation();
+        HandleInteraction();
+
+        if (UnityEngine.InputSystem.Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            if (_gameplayUI != null)
+            {
+                _gameplayUI.ToggleEscMenu();
+            }
         }
     }
 
-    // Gọi từ UI
-    public void SetLookEnabled(bool enabled)
+    #endregion
+
+    #region Input Callbacks
+
+    private void OnDropItem(InputAction.CallbackContext context)
     {
-        canLook = enabled;
+        if (_inventoryManager != null) _inventoryManager.DropCurrentItem();
     }
+
+    private void OnUseItem(InputAction.CallbackContext context)
+    {
+        if (_inventoryManager != null) _inventoryManager.UseCurrentItem();
+    }
+
+    #endregion
+
+    #region Logic Handlers
+
+    private void HandleMovement()
+    {
+        Vector2 moveInput = _inputActions.Player.Move.ReadValue<Vector2>();
+        Vector3 direction = transform.right * moveInput.x + transform.forward * moveInput.y;
+        transform.position += direction * _moveSpeed * Time.deltaTime;
+    }
+
+    private void HandleRotation()
+    {
+        Vector2 lookInput = _inputActions.Player.Look.ReadValue<Vector2>();
+        float mouseX = lookInput.x * _lookSensitivity * Time.deltaTime * 100f;
+        float mouseY = lookInput.y * _lookSensitivity * Time.deltaTime * 100f;
+
+        _verticalRotation -= mouseY;
+        _verticalRotation = Mathf.Clamp(_verticalRotation, -80f, 80f);
+
+        _playerCam.transform.localRotation = Quaternion.Euler(_verticalRotation, 0f, 0f);
+        transform.Rotate(Vector3.up * mouseX);
+    }
+
+    private void HandleInteraction()
+    {
+        if (_inputActions.Player.Interact.triggered)
+        {
+            // Logic tương tác
+        }
+    }
+
+    #endregion
+
+    #region Public Helpers
+
+    public void SetLookEnabled(bool isEnabled) => _isLookEnabled = isEnabled;
+
+    private void BindInventoryUI()
+    {
+        var invUI = Object.FindFirstObjectByType<InventoryUIManager>();
+        var invManager = GetComponent<InventoryManager>();
+
+        if (invUI != null && invManager != null)
+        {
+            invUI.BindInventory(invManager);
+            Debug.Log("✅ [FPS] Đã kết nối túi đồ với UI HUD.");
+        }
+    }
+
+    #endregion
 }

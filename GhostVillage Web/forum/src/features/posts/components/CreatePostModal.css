@@ -145,36 +145,149 @@
   color: #000000 !important;
 }
 
-/* Category Select Styling */
-.category-select {
-  background: var(--bg-primary) !important;
-  border: 1px solid var(--border-color) !important;
-  color: var(--text-primary) !important;
-  border-radius: 8px !important;
-  padding: 12px !important;
-  font-size: 16px !important;
-  font-weight: 500 !important;
-  height: 48px !important;
-  transition: all 0.2s ease !important;
+/* Category Dropdown - Custom component matching PostCard dropdown styling */
+.category-dropdown {
+  position: relative;
+  width: 100%;
+}
+
+.category-dropdown-toggle {
+  width: 100%;
+  height: 48px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 12px 12px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-align: left;
   cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  position: relative;
 }
 
-.category-select:focus {
-  background: var(--bg-primary) !important;
-  border-color: var(--accent-color) !important;
-  color: var(--text-primary) !important;
-  box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.1) !important;
-  outline: none !important;
+.category-dropdown-toggle:hover {
+  border-color: var(--border-hover);
 }
 
-.category-select:hover {
-  border-color: var(--border-hover) !important;
+.category-dropdown-toggle.active,
+.category-dropdown-toggle:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.1);
+  outline: none;
 }
 
-.category-select option {
-  background: var(--bg-primary) !important;
-  color: var(--text-primary) !important;
-  padding: 10px;
+.category-dropdown-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-dropdown-arrow {
+  color: #b5a642;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.category-dropdown-arrow.rotate {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+/* Dropdown Menu - Matching PostCard .dropdown-menu styling */
+.category-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  min-width: 160px;
+  background: var(--card-bg);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.8),
+    0 0 15px rgba(122, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  overflow: hidden;
+  animation: dropdownFadeIn 0.15s ease;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Modal Loading Overlay */
+.modal-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  z-index: 1000;
+}
+
+.modal-loading-overlay p {
+  margin-top: 16px;
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* Dropdown Item - Matching PostCard .dropdown-item styling */
+.category-dropdown-item {
+  padding: 10px 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+  background: transparent;
+}
+
+.category-dropdown-item:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-left-color: var(--accent-color);
+  padding-left: 20px;
+}
+
+.category-dropdown-item.active {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.category-dropdown-item:first-child {
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+}
+
+.category-dropdown-item:last-child {
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
 }
 
 /* Video popover (theme-aware) */
@@ -182,10 +295,10 @@
   position: absolute;
   background: var(--card-bg, #fff);
   color: var(--text-primary, #222);
-  border: 1px solid var(--border-color, rgba(0,0,0,0.08));
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
   padding: 10px;
   border-radius: 6px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
   z-index: 2000;
 }
 .video-popover .form-label {
@@ -195,17 +308,17 @@
 .video-popover .form-control {
   background: var(--bg-primary, #fff);
   color: var(--text-primary, #222);
-  border: 1px solid var(--border-color, rgba(0,0,0,0.12));
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.12));
   box-shadow: none;
 }
 .video-popover .form-control:focus {
   border-color: var(--accent-color, #0d6efd);
-  box-shadow: 0 0 0 0.12rem rgba(13,110,253,0.15);
+  box-shadow: 0 0 0 0.12rem rgba(13, 110, 253, 0.15);
 }
 .video-popover .btn-secondary {
   background: transparent;
   color: var(--text-primary, #222);
-  border: 1px solid var(--border-color, rgba(0,0,0,0.12));
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.12));
 }
 .video-popover .btn-primary {
   background: var(--accent-color, #0d6efd);
@@ -223,7 +336,6 @@
   }
 }
 
-
 .ql-snow .ql-tooltip a.ql-action::after {
   margin-left: 0 !important;
 }
@@ -237,7 +349,7 @@
 }
 
 .ql-snow .ql-tooltip a.ql-remove::before {
-    margin-left: 0px !important;
+  margin-left: 0px !important;
 }
 
 .ql-snow .ql-tooltip a.ql-action:hover {
@@ -258,7 +370,7 @@
   display: inline-block !important;
   margin-left: 8px !important;
   vertical-align: middle !important;
-  border: 1px solid var(--border-color, rgba(0,0,0,0.08)) !important;
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08)) !important;
 }
 
 .ql-snow .ql-tooltip a.ql-remove:hover {
@@ -477,8 +589,14 @@
   color: var(--text-primary);
 }
 .create-post-modal .btn-close {
-  filter: var(--bs-btn-close-white-filter);
-  opacity: 0.6;
+  filter: brightness(0) saturate(100%) invert(77%) sepia(12%) saturate(1567%)
+    hue-rotate(13deg) brightness(95%) contrast(89%);
+  opacity: 1;
+}
+
+.create-post-modal .btn-close:hover {
+  filter: brightness(0) saturate(100%) invert(15%) sepia(85%) saturate(3000%)
+    hue-rotate(355deg) brightness(80%) contrast(110%);
 }
 .create-post-modal .modal-body {
   padding: 20px;
@@ -519,7 +637,115 @@
 }
 
 .ql-snow .ql-tooltip a.ql-action::after {
-    border-right: 0;
-    padding-right: 0;
+  border-right: 0;
+  padding-right: 0;
 }
 
+/* Character Counter */
+.char-counter {
+  color: var(--text-secondary) !important;
+  font-size: 13px;
+  margin-left: 4px !important;
+}
+
+/* Media Upload Section */
+.media-upload-section {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.media-upload-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.media-upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.media-upload-btn:hover {
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+.media-upload-btn:active {
+  transform: scale(0.95);
+}
+
+/* Media Preview */
+.uploaded-media-preview {
+  margin-top: 12px;
+}
+
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.media-preview-item {
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+  aspect-ratio: 1;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+}
+
+.media-preview-item img,
+.media-preview-item video,
+.media-preview-item iframe {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.remove-media-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+.media-preview-item:hover .remove-media-btn {
+  opacity: 1;
+}
+
+.remove-media-btn:hover {
+  background: rgba(255, 0, 0, 0.8);
+}
+.upload-spinner-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+}

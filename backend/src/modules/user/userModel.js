@@ -70,6 +70,14 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    resetPasswordTokenHash: {
+      type: String,
+      default: null,
+    },
+    resetPasswordExpires: {
+      type: Date,
+      default: null,
+    },
     emailVisibility: {
       type: Boolean,
       default: true,
@@ -119,10 +127,5 @@ userSchema.methods.toJSON = function () {
 };
 
 const User = mongoose.model("User", userSchema);
-
-// Drop old username index if it exists (migration from old schema)
-User.collection.dropIndex("username_1").catch(() => {
-  // Index doesn't exist, that's fine
-});
 
 export default User;

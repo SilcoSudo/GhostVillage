@@ -14,7 +14,9 @@ namespace Game.Script.UI
         [SerializeField] private TMP_Text _txtMessage;
 
         [SerializeField] private GameObject _loadingPanel;
+        [SerializeField] private TMP_Text _txtLoadingMessage; // Kéo Text của Loading vào đây
         private const float LOADING_TIMEOUT = 30f;
+        private CancellationTokenSource _cts;
 
         private void Awake()
         {
@@ -27,18 +29,23 @@ namespace Game.Script.UI
         }
 
         // Hàm ShowLoading chuẩn chỉnh
-        public void ShowLoading(bool show)
+        public void ShowLoading(bool show, string msg = "Loading...")
         {
             if (_loadingPanel == null) return;
 
-            Debug.Log($"GlobalUIManager: ShowLoading {show}");
             _loadingPanel.SetActive(show);
 
             if (show)
             {
-                // Truyền CancellationToken của chính Object này vào Task
-                // Nếu GlobalUIManager bị hủy, Task sẽ tự động dừng lại
-                LoadingTimeoutTask(this.GetCancellationTokenOnDestroy()).Forget();
+                if (_txtLoadingMessage != null) _txtLoadingMessage.text = msg;
+
+                if (_cts != null) { _cts.Cancel(); _cts.Dispose(); }
+                _cts = new CancellationTokenSource();
+                LoadingTimeoutTask(_cts.Token).Forget();
+            }
+            else
+            {
+                if (_cts != null) { _cts.Cancel(); _cts.Dispose(); _cts = null; }
             }
         }
 
