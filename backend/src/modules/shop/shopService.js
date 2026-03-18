@@ -1,5 +1,5 @@
 import CosmeticItem from './cosmeticItemModel.js';
-import Perk from './perkModel.js';
+import Perk from '../perk/perkModel.js';
 import ShopPool from './shopPoolModel.js';
 import Player from '../player/playerModel.js';
 

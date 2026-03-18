@@ -4,16 +4,13 @@ import User from "./src/modules/user/userModel.js";
 import Player from "./src/modules/player/playerModel.js";
 import Achievement from "./src/modules/achievement/achievementModel.js"; // Model Định nghĩa
 import GameResult from "./src/modules/profile/gameResultModel.js"; // Model Trận đấu toàn cục
-// import PlayerMatchHistory from "./src/modules/profile/playerMatchHistoryModel.js"; // Model Lịch sử cá nhân
 import { config } from "./src/config/env.js";
-// import UserMatchHistory from "./src/modules/profile/playerMatchHistoryModel.js";
 import UserAchievement from "./src/modules/profile/playerAchievementModel.js";
 import MapConfig from "./src/modules/map/mapConfigModel.js";
 import MatchResult from "./src/modules/match/matchModel.js";
 import CosmeticItem from "./src/modules/shop/cosmeticItemModel.js";
-import Perk from "./src/modules/shop/perkModel.js";
+import Perk from "./src/modules/perk/perkModel.js";
 import ShopPool from "./src/modules/shop/shopPoolModel.js";
-import { config } from "./src/config/env.js";
 dotenv.config();
 
 const seedData = async () => {
@@ -120,30 +117,119 @@ const seedData = async () => {
   ]);
 
   const perkData = [
-    // --- COMMON PERKS (9) ---
-    { name: "Runner I", rarity: "COMMON", price: 100, prefabId: "PERK_Runner_1" },
-    { name: "Runner II", rarity: "COMMON", price: 120, prefabId: "PERK_Runner_2" },
-    { name: "Runner III", rarity: "COMMON", price: 140, prefabId: "PERK_Runner_3" },
-    { name: "Stamina I", rarity: "COMMON", price: 150, prefabId: "PERK_Stam_1" },
-    { name: "Stamina II", rarity: "COMMON", price: 170, prefabId: "PERK_Stam_2" },
-    { name: "Stamina III", rarity: "COMMON", price: 190, prefabId: "PERK_Stam_3" },
-    { name: "Battery I", rarity: "COMMON", price: 100, prefabId: "PERK_Bat_1" },
-    { name: "Battery II", rarity: "COMMON", price: 120, prefabId: "PERK_Bat_2" },
-    { name: "Battery III", rarity: "COMMON", price: 140, prefabId: "PERK_Bat_3" },
+  // --- EPIC PERKS ---
+  {
+    perkId: "PERK_EPIC_SPECTRAL_REFLEX",
+    perkName: "Spectral Reflection",
+    description: "When knocked down, automatically revive with 100% Stamina after 3 seconds. (Once per match)",
+    rarity: "EPIC",
+    price: 2000,
+    prefabId: "PERK_Epic_AutoRevive",
+    modifiers: { 
+      autoReviveCount: 1, 
+      reviveDelay: 3, 
+      reviveStaminaPercent: 1.0 
+    }
+  },
+  {
+    perkId: "PERK_EPIC_PROPHETIC_SIGHT",
+    perkName: "Prophetic Sight",
+    description: "Whenever a teammate completes a puzzle, reveal the Boss and all allies' outlines through walls for 7 seconds.",
+    rarity: "EPIC",
+    price: 2000,
+    prefabId: "PERK_Epic_Wallhack",
+    modifiers: { 
+      revealDuration: 7, 
+      revealOutline: true 
+    }
+  },
 
-    // --- RARE PERKS (6) ---
-    { name: "Luck I", rarity: "RARE", price: 400, prefabId: "PERK_Luck_1" },
-    { name: "Luck II", rarity: "RARE", price: 450, prefabId: "PERK_Luck_2" },
-    { name: "Luck III", rarity: "RARE", price: 500, prefabId: "PERK_Luck_3" },
-    { name: "Luck IV", rarity: "RARE", price: 550, prefabId: "PERK_Luck_4" },
-    { name: "Luck V", rarity: "RARE", price: 600, prefabId: "PERK_Luck_5" },
-    { name: "Luck VI", rarity: "RARE", price: 650, prefabId: "PERK_Luck_6" },
+  // --- RARE PERKS ---
+  {
+    perkId: "PERK_RARE_RELIC_BEARER",
+    perkName: "Relic Bearer",
+    description: "Rescue speed increased by 15%. After a successful rescue, both you and the rescued ally gain 15% Move Speed for 5 seconds.",
+    rarity: "RARE",
+    price: 800,
+    prefabId: "PERK_Rare_RescueBoost",
+    modifiers: { 
+      reviveSpeedMult: 1.15, 
+      postReviveSpeedBoost: 0.15, 
+      boostDuration: 5 
+    }
+  },
+  {
+    perkId: "PERK_RARE_AGARWOOD_BEADS",
+    perkName: "Agarwood Beads",
+    description: "The Boss's detection range against you is reduced by 15%.",
+    rarity: "RARE",
+    price: 800,
+    prefabId: "PERK_Rare_StealthBeads",
+    modifiers: { 
+      bossDetectionRangeMult: 0.85 
+    }
+  },
+  {
+    perkId: "PERK_RARE_ANCESTRAL_VOW",
+    perkName: "Ancestral Vow",
+    description: "Gain permanent buffs for each teammate eliminated (stacks up to 3 times): +5% Move Speed and -10% Stamina consumption.",
+    rarity: "RARE",
+    price: 1000,
+    prefabId: "PERK_Rare_DeathStack",
+    modifiers: { 
+      speedBoostPerDeath: 0.05, 
+      staminaSavePerDeath: 0.10, 
+      maxStacks: 3 
+    }
+  },
 
-    // --- EPIC PERKS (3) ---
-    { name: "Zenith I", rarity: "EPIC", price: 1000, prefabId: "PERK_Zen_1" },
-    { name: "Zenith II", rarity: "EPIC", price: 1200, prefabId: "PERK_Zen_2" },
-    { name: "Zenith III", rarity: "EPIC", price: 1500, prefabId: "PERK_Zen_3" }
-  ];
+  // --- COMMON PERKS ---
+  {
+    perkId: "PERK_COM_BRAIDED_BELT",
+    perkName: "Braided Grass Belt",
+    description: "Increases Max Stamina by 15% and increases Stamina regeneration speed by 10%.",
+    rarity: "COMMON",
+    price: 200,
+    prefabId: "PERK_Common_StaminaBase",
+    modifiers: { 
+      maxStaminaMult: 1.15, 
+      staminaRegenMult: 1.10 
+    }
+  },
+  {
+    perkId: "PERK_COM_GLOOM_EYE",
+    perkName: "Gloom Eye",
+    description: "Reduces Flashlight battery consumption rate by 15%.",
+    rarity: "COMMON",
+    price: 150,
+    prefabId: "PERK_Common_BatterySave",
+    modifiers: { 
+      batteryDrainMult: 0.85 
+    }
+  },
+  {
+    perkId: "PERK_COM_TIRE_SANDALS",
+    perkName: "Tire Tread Sandals",
+    description: "Reduces Stamina consumption while sprinting by 15%.",
+    rarity: "COMMON",
+    price: 250,
+    prefabId: "PERK_Common_Sprinting",
+    modifiers: { 
+      sprintStaminaDrainMult: 0.85 
+    }
+  },
+  {
+    perkId: "PERK_COM_INDIGO_POUCH",
+    perkName: "Indigo Cloth Pouch",
+    description: "Has a 10% chance to not consume Med-kits or Batteries upon use.",
+    rarity: "COMMON",
+    price: 300,
+    prefabId: "PERK_Common_ItemLuck",
+    modifiers: { 
+      preserveItemChance: 0.10 
+    }
+  }
+];
   const createdPerks = await Perk.create(perkData);
 
     // --- TẠO USER 1: Web Auth User (Email-only) ---
