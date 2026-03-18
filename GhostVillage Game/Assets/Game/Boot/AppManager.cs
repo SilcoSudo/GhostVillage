@@ -3,48 +3,56 @@ using VContainer.Unity;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 using Game.Core.Scene;
-using Game.Core.ReactiveRepo;
 using Game.Core.Network;
 using Game.Script.UI;
+using Game.Domain.Settings.Controllers;
 
 namespace Game.Boot
 {
     public class AppManager : IStartable
     {
         private readonly ISceneLoaderService _sceneLoader;
-        private readonly PlayerDataStore _store;
         private readonly INetworkService _network;
         private readonly GlobalUIManager _globalUI;
+        private readonly GameSession _session;
+        private readonly SettingsController _settingsController;
 
-        // [SỬA] Inject thêm Network và GlobalUI
-        public AppManager(ISceneLoaderService sceneLoader, PlayerDataStore store, INetworkService network, GlobalUIManager globalUI)
+
+        public AppManager(
+            ISceneLoaderService sceneLoader,
+            INetworkService network,
+            GlobalUIManager globalUI,
+            GameSession session,
+            SettingsController settingsController)
         {
             _sceneLoader = sceneLoader;
-            _store = store;
             _network = network;
             _globalUI = globalUI;
+            _session = session;
+            _settingsController = settingsController;
         }
 
         public void Start() => RunFlow().Forget();
 
         private async UniTaskVoid RunFlow()
         {
-            await UniTask.Delay(1000);
+            _settingsController.Initialize();
 
-            if (_store.IsLoggedIn)
+            if (_session.IsLoggedIn)
             {
                 _globalUI.ShowLoading(true, "Đang kết nối Máy Chủ...");
 
-                // ✅ KẾT NỐI PHOTON VỚI TOKEN TỬ STORE
-                bool connected = await _network.ConnectAsync(_store.DisplayName.Value, _store.AuthToken.Value);
+                bool connected = await _network.ConnectAsync(_session.DisplayName, _session.Token);
 
                 if (connected)
                 {
+                    //MainMenu
                     await _sceneLoader.LoadSceneAsync("MainMenu");
-                    _globalUI.ShowLoading(false); // Xong hết mới tắt
+                    _globalUI.ShowLoading(false);
                 }
                 else
                 {
+                    //LoginScene
                     _globalUI.ShowLoading(false);
                     _globalUI.ShowError("Lỗi Mạng", "Không thể kết nối đến máy chủ trò chơi.");
                     await _sceneLoader.LoadSceneAsync("LoginScene");

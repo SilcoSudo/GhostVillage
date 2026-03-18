@@ -1,4 +1,5 @@
 import * as announcementService from "../announcementService.js";
+import { logActivity } from "../../../activityLog/activityLogController.js";
 
 const serializeAnnouncement = (doc) => {
     const announcement = doc?.toObject ? doc.toObject() : doc;
@@ -98,6 +99,20 @@ export const createAnnouncement = async (req, res, next) => {
 
         const created = await announcementService.createAnnouncement(announcementData);
 
+        // Log activity
+        await logActivity({
+            userId: effectiveAuthor,
+            username: req.user?.username || req.user?.email,
+            action: "CREATE",
+            entityType: "ANNOUNCEMENT",
+            entityId: created._id,
+            entityName: created.title,
+            description: `Tạo announcement: ${created.title}`,
+            severity: "LOW",
+            metadata: { isPinned, isActive },
+            req,
+        });
+
         return res.status(201).json({
             success: true,
             data: serializeAnnouncement(created),
@@ -146,6 +161,20 @@ export const updateAnnouncement = async (req, res, next) => {
             });
         }
 
+        // Log activity
+        await logActivity({
+            userId: userId,
+            username: req.user?.username || req.user?.email,
+            action: "UPDATE",
+            entityType: "ANNOUNCEMENT",
+            entityId: updated._id,
+            entityName: updated.title,
+            description: `Cập nhật announcement: ${updated.title}`,
+            severity: "LOW",
+            metadata: { updateData },
+            req,
+        });
+
         return res.status(200).json({
             success: true,
             data: serializeAnnouncement(updated),
@@ -161,6 +190,7 @@ export const updateAnnouncement = async (req, res, next) => {
  */
 export const deleteAnnouncement = async (req, res, next) => {
     try {
+        const announcement = await announcementService.getAnnouncementById(req.params.id);
         const deleted = await announcementService.deleteAnnouncement(req.params.id);
 
         if (!deleted) {
@@ -169,6 +199,20 @@ export const deleteAnnouncement = async (req, res, next) => {
                 message: "Announcement not found",
             });
         }
+
+        // Log activity
+        await logActivity({
+            userId: req.user?._id,
+            username: req.user?.username || req.user?.email,
+            action: "DELETE",
+            entityType: "ANNOUNCEMENT",
+            entityId: announcement._id,
+            entityName: announcement.title,
+            description: `Xóa announcement: ${announcement.title}`,
+            severity: "MEDIUM",
+            metadata: { deletedAnnouncement: announcement },
+            req,
+        });
 
         return res.status(200).json({
             success: true,

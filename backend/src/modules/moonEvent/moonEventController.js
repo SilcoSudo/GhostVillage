@@ -1,116 +1,195 @@
 import { MoonEventService } from "./moonEventService.js";
+import { logActivity } from "../activityLog/activityLogController.js";
 
+/**
+ * Moon Event Controller
+ * Xử lý các request liên quan đến sự kiện mặt trăng
+ */
 export const MoonEventController = {
-  /**
-   * GET /api/web/moon-events - Get all moon events (Admin)
-   */
-  getAllEvents: async (req, res, next) => {
+  getAllEvents: async (req, res) => {
     try {
-      const { category, status, search } = req.query;
-      const events = await MoonEventService.getAllEvents({
-        category,
-        status,
-        search,
-      });
-      res.json({
+      const result = await MoonEventService.getAllEvents(req.query);
+      return res.status(200).json({
         success: true,
-        data: events,
+        message: "Lấy danh sách Moon Event thành công",
+        ...result,
       });
     } catch (error) {
-      next(error);
+      console.error("❌ Error in MoonEventController.getAllEvents:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi hệ thống",
+        error: error.message,
+      });
     }
   },
 
-  /**
-   * GET /api/game/moon-events/active - Get active events (Game Server)
-   */
-  getActiveEvents: async (req, res, next) => {
-    try {
-      const events = await MoonEventService.getActiveEvents();
-      res.json({
-        success: true,
-        data: events,
-      });
-    } catch (error) {
-      next(error);
-    }
-  },
-
-  /**
-   * GET /api/web/moon-events/:id - Get single event
-   */
-  getEventById: async (req, res, next) => {
+  getEventById: async (req, res) => {
     try {
       const event = await MoonEventService.getEventById(req.params.id);
-      res.json({
-        success: true,
-        data: event,
-      });
+      if (!event)
+        return res
+          .status(404)
+          .json({ success: false, message: "Không tìm thấy Moon Event" });
+
+      return res
+        .status(200)
+        .json({ success: true, message: "Thành công", data: event });
     } catch (error) {
-      next(error);
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi hệ thống",
+        error: error.message,
+      });
     }
   },
 
-  /**
-   * POST /api/web/moon-events - Create new event
-   */
-  createEvent: async (req, res, next) => {
+  createEvent: async (req, res) => {
     try {
-      const event = await MoonEventService.createEvent(req.body);
-      res.status(201).json({
+      const { eventId, eventName } = req.body;
+
+      if (!eventId || !eventName) {
+        return res.status(400).json({
+          success: false,
+          message: "Thiếu thông tin bắt buộc (eventId, eventName)",
+        });
+      }
+
+      const newEvent = await MoonEventService.createEvent(req.body);
+
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "CREATE",
+        entityType: "MOON_EVENT",
+        entityId: newEvent._id,
+        entityName: newEvent.eventId,
+        description: `Tạo Moon Event: ${newEvent.eventName}`,
+        severity: "LOW",
+        metadata: { eventId: newEvent.eventId },
+        req,
+      });
+
+      return res.status(201).json({
         success: true,
-        data: event,
-        message: "Moon Event created successfully",
+        message: "Tạo Moon Event thành công",
+        data: newEvent,
       });
     } catch (error) {
-      next(error);
+      if (error.message.includes("đã tồn tại")) {
+        return res.status(409).json({ success: false, message: error.message });
+      }
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi tạo Moon Event",
+        error: error.message,
+      });
     }
   },
 
-  /**
-   * PUT /api/web/moon-events/:id - Update event
-   */
-  updateEvent: async (req, res, next) => {
+  updateEvent: async (req, res) => {
     try {
       const event = await MoonEventService.updateEvent(req.params.id, req.body);
-      res.json({
-        success: true,
-        data: event,
-        message: "Moon Event updated successfully",
+      if (!event)
+        return res
+          .status(404)
+          .json({ success: false, message: "Không tìm thấy Moon Event" });
+
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "UPDATE",
+        entityType: "MOON_EVENT",
+        entityId: event._id,
+        entityName: event.eventId,
+        description: `Cập nhật Moon Event: ${event.eventName}`,
+        severity: "LOW",
+        req,
       });
+
+      return res
+        .status(200)
+        .json({ success: true, message: "Cập nhật thành công", data: event });
     } catch (error) {
-      next(error);
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi cập nhật",
+        error: error.message,
+      });
     }
   },
 
-  /**
-   * PATCH /api/web/moon-events/:id/toggle-active - Toggle active status
-   */
-  toggleActive: async (req, res, next) => {
+  toggleEventStatus: async (req, res) => {
     try {
-      const event = await MoonEventService.toggleActive(req.params.id);
-      res.json({
+      const { isActive } = req.body;
+      if (typeof isActive !== "boolean") {
+        return res
+          .status(400)
+          .json({ success: false, message: "isActive phải là boolean" });
+      }
+
+      const event = await MoonEventService.toggleEventStatus(
+        req.params.id,
+        isActive,
+      );
+
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "TOGGLE_STATUS",
+        entityType: "MOON_EVENT",
+        entityId: event._id,
+        entityName: event.eventId,
+        description: `${isActive ? "Kích hoạt" : "Vô hiệu hóa"} Moon Event: ${event.eventName}`,
+        severity: "LOW",
+        req,
+      });
+
+      return res.status(200).json({
         success: true,
+        message: "Đổi trạng thái thành công",
         data: event,
-        message: `Moon Event ${event.isActive ? "activated" : "deactivated"}`,
       });
     } catch (error) {
-      next(error);
+      if (error.message === "Không tìm thấy Moon Event")
+        return res.status(404).json({ success: false, message: error.message });
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi hệ thống",
+        error: error.message,
+      });
     }
   },
 
-  /**
-   * DELETE /api/web/moon-events/:id - Delete event
-   */
-  deleteEvent: async (req, res, next) => {
+  deleteEvent: async (req, res) => {
     try {
-      await MoonEventService.deleteEvent(req.params.id);
-      res.json({
+      const event = await MoonEventService.deleteEvent(req.params.id);
+
+      await logActivity({
+        userId: req.user?._id,
+        username: req.user?.username || req.user?.email,
+        action: "DELETE",
+        entityType: "MOON_EVENT",
+        entityId: event._id,
+        entityName: event.eventId,
+        description: `Xóa (ẩn) Moon Event: ${event.eventName}`,
+        severity: "MEDIUM",
+        req,
+      });
+
+      return res.status(200).json({
         success: true,
-        message: "Moon Event deleted successfully",
+        message: "Xóa Moon Event thành công",
+        data: event,
       });
     } catch (error) {
-      next(error);
+      if (error.message === "Không tìm thấy Moon Event")
+        return res.status(404).json({ success: false, message: error.message });
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi hệ thống",
+        error: error.message,
+      });
     }
   },
 };

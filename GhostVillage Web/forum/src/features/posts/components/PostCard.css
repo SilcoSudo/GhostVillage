@@ -442,7 +442,8 @@
   background: #000;
 }
 
-.post-videos .video-wrapper iframe {
+.post-videos .video-wrapper iframe,
+.post-videos .video-wrapper video {
   position: absolute;
   top: 0;
   left: 0;

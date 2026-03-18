@@ -2,7 +2,7 @@
 
 .reported-posts-container {
   padding: 16px;
-  background: linear-gradient(135deg, #0D0D0D 0%, #121212 100%);
+  background: linear-gradient(135deg, #0d0d0d 0%, #121212 100%);
   min-height: 100vh;
 }
 
@@ -15,7 +15,7 @@
   font-weight: 900;
   color: var(--text-primary);
   margin: 0 0 8px 0;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: "Courier New", Courier, monospace;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   letter-spacing: 1px;
 }
@@ -40,7 +40,7 @@
   background: rgba(30, 30, 30, 0.6);
   color: var(--text-primary);
   font-size: 13px;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: "Courier New", Courier, monospace;
   transition: all 0.3s ease;
 }
 
@@ -57,32 +57,40 @@
 
 /* Table Wrapper */
 .reported-posts-table-wrapper {
-  background: linear-gradient(135deg, rgba(30, 30, 30, 0.5) 0%, rgba(24, 24, 24, 0.4) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(30, 30, 30, 0.5) 0%,
+    rgba(24, 24, 24, 0.4) 100%
+  );
   border: 1.5px solid rgba(153, 0, 0, 0.2);
   border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(153, 0, 0, 0.1);
+  overflow-x: auto;
+  overflow-y: hidden;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 20px rgba(153, 0, 0, 0.1);
   backdrop-filter: blur(8px);
 }
 
 .reported-posts-table {
   width: 100%;
+  min-width: 900px;
   border-collapse: collapse;
   font-size: 12px;
 }
 
 /* Table Header */
 .reported-posts-table thead {
-  background: linear-gradient(90deg, #990000 0%, #CC0000 50%, #990000 100%);
+  background: linear-gradient(90deg, #990000 0%, #cc0000 50%, #990000 100%);
   border-bottom: 3px solid #990000;
 }
 
 .reported-posts-table thead th {
   padding: 14px 12px;
   text-align: left;
-  color: #FFF;
+  color: #fff;
   font-weight: 800;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: "Courier New", Courier, monospace;
   letter-spacing: 0.8px;
   text-transform: uppercase;
   font-size: 11px;
@@ -97,19 +105,27 @@
 }
 
 .reported-posts-table thead th.sortable:hover {
-  background: linear-gradient(90deg, #BB0000 0%, #FF0000 50%, #BB0000 100%);
+  background: linear-gradient(90deg, #bb0000 0%, #ff0000 50%, #bb0000 100%);
   text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
 }
 
 /* Table Body */
 .reported-posts-table tbody tr {
   border-bottom: 1px solid rgba(181, 166, 66, 0.1);
-  background: linear-gradient(90deg, rgba(18, 18, 18, 0.6) 0%, rgba(20, 20, 20, 0.4) 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(18, 18, 18, 0.6) 0%,
+    rgba(20, 20, 20, 0.4) 100%
+  );
   transition: all 0.3s ease;
 }
 
 .reported-posts-table tbody tr:hover {
-  background: linear-gradient(90deg, rgba(30, 30, 30, 0.8) 0%, rgba(32, 32, 32, 0.6) 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(30, 30, 30, 0.8) 0%,
+    rgba(32, 32, 32, 0.6) 100%
+  );
   box-shadow: inset 0 0 12px rgba(153, 0, 0, 0.1);
 }
 
@@ -117,7 +133,7 @@
   padding: 14px 12px;
   color: var(--text-secondary);
   border-right: 1px solid rgba(181, 166, 66, 0.05);
-  font-family: 'Courier New', Courier, monospace;
+  font-family: "Courier New", Courier, monospace;
   vertical-align: middle;
 }
 
@@ -144,10 +160,14 @@
 .reason-badge {
   display: inline-block;
   padding: 6px 10px;
-  background: linear-gradient(135deg, rgba(255, 107, 107, 0.2) 0%, rgba(255, 107, 107, 0.1) 100%);
-  border: 1px solid #FF6B6B;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 107, 107, 0.2) 0%,
+    rgba(255, 107, 107, 0.1) 100%
+  );
+  border: 1px solid #ff6b6b;
   border-radius: 6px;
-  color: #FF8A80;
+  color: #ff8a80;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -163,7 +183,11 @@
   min-width: 28px;
   height: 28px;
   padding: 0 8px;
-  background: linear-gradient(135deg, rgba(181, 166, 66, 0.2) 0%, rgba(181, 166, 66, 0.1) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(181, 166, 66, 0.2) 0%,
+    rgba(181, 166, 66, 0.1) 100%
+  );
   border: 1.5px solid var(--text-primary);
   border-radius: 6px;
   color: var(--text-primary);
@@ -182,7 +206,9 @@
   display: flex;
   gap: 6px;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
+  white-space: nowrap;
+  min-width: 138px;
 }
 
 .action-btn {
@@ -196,19 +222,8 @@
   justify-content: center;
   transition: all 0.3s ease;
   font-size: 0;
-  font-family: 'Courier New', Courier, monospace;
-  color: #FFF;
-}
-
-.detail-btn {
-  background: linear-gradient(135deg, #1E90FF 0%, #1E90FF 100%);
-  box-shadow: 0 0 0 1px rgba(30, 144, 255, 0.3);
-}
-
-.detail-btn:hover {
-  background: linear-gradient(135deg, #42A5FF 0%, #42A5FF 100%);
-  box-shadow: 0 0 16px rgba(30, 144, 255, 0.4), inset 0 0 8px rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
+  font-family: "Courier New", Courier, monospace;
+  color: #fff;
 }
 
 .restore-btn {
@@ -216,20 +231,37 @@
   box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.3);
 }
 
+.view-btn {
+  background: linear-gradient(135deg, #2563eb 0%, #60a5fa 100%);
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.3);
+}
+
+.view-btn:hover {
+  background: linear-gradient(135deg, #3b82f6 0%, #93c5fd 100%);
+  box-shadow:
+    0 0 16px rgba(59, 130, 246, 0.35),
+    inset 0 0 8px rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
 .restore-btn:hover {
   background: linear-gradient(135deg, #4ade80 0%, #86efac 100%);
-  box-shadow: 0 0 16px rgba(34, 197, 94, 0.4), inset 0 0 8px rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 0 16px rgba(34, 197, 94, 0.4),
+    inset 0 0 8px rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
 }
 
 .delete-btn {
-  background: linear-gradient(135deg, #990000 0%, #CC0000 100%);
+  background: linear-gradient(135deg, #990000 0%, #cc0000 100%);
   box-shadow: 0 0 0 1px rgba(153, 0, 0, 0.3);
 }
 
 .delete-btn:hover {
-  background: linear-gradient(135deg, #BB0000 0%, #FF0000 100%);
-  box-shadow: 0 0 16px rgba(204, 0, 0, 0.4), inset 0 0 8px rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #bb0000 0%, #ff0000 100%);
+  box-shadow:
+    0 0 16px rgba(204, 0, 0, 0.4),
+    inset 0 0 8px rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
 }
 
@@ -259,6 +291,14 @@
 
   .search-input {
     max-width: 400px;
+  }
+
+  .search-and-filter {
+    max-width: 420px;
+  }
+
+  .search-and-filter .search-input {
+    max-width: none;
   }
 
   .reported-posts-table {

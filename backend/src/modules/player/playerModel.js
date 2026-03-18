@@ -1,13 +1,22 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const playerSchema = new mongoose.Schema(
   {
     // Reference to User (Web account)
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
-      unique: true
+      unique: true,
+    },
+
+    // MỚI THÊM: UID 8 chữ số để kết bạn/tìm kiếm trong game
+    uid: {
+      type: String,
+      required: true,
+      unique: true,
+      minlength: 8,
+      maxlength: 8,
     },
 
     // Player profile (Game-specific)
@@ -29,12 +38,15 @@ const playerSchema = new mongoose.Schema(
     unlockedMedals: [String],
     selectedMedals: { type: [String], default: [] },
     // Sub-document để truy vấn tiến độ cực nhanh
-    achievementsProgress: [{
-      achievementCode: String,
-      current: { type: Number, default: 0 },
-      isClaimed: { type: Boolean, default: false }
-    }]
-  }, { timestamps: true }
+    achievementsProgress: [
+      {
+        achievementCode: String,
+        current: { type: Number, default: 0 },
+        isClaimed: { type: Boolean, default: false },
+      },
+    ],
+  },
+  { timestamps: true },
 );
 
 // Populate User reference when returning JSON
@@ -43,10 +55,10 @@ playerSchema.methods.toJSON = function () {
   return obj;
 };
 
-const Player = mongoose.model('Player', playerSchema);
+const Player = mongoose.model("Player", playerSchema);
 
 // Drop old email/username indexes if they exist (migration from old schema)
-Player.collection.dropIndex('email_1').catch(() => {});
-Player.collection.dropIndex('username_1').catch(() => {});
+Player.collection.dropIndex("email_1").catch(() => {});
+Player.collection.dropIndex("username_1").catch(() => {});
 
 export default Player;

@@ -1,16 +1,50 @@
-import { PlayerService } from './playerService.js';
+import { PlayerService } from "./playerService.js";
 
-export const getProfile = async (req, res) => {
-  try {
-    const userId = req.user.id; // Lấy từ authMiddleware
-    const data = await PlayerService.getFullProfileData(userId);
-    res.status(200).json({ success: true, data });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
+export const PlayerController = {
+  // Hàm lấy Profile
+  getProfile: async (req, res) => {
+    try {
+      // Dùng req.user._id hoặc req.user.id tùy thuộc vào cách bạn gán trong authMiddleware
+      const userId = req.user._id || req.user.id;
+      const data = await PlayerService.getFullProfileData(userId);
+      res.status(200).json({ success: true, data });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  },
 
-export const equipSkin = async (req, res) => {
+  // THÊM MỚI: Hàm tìm kiếm người chơi bằng UID
+  searchPlayer: async (req, res) => {
+    try {
+      const { uid } = req.params;
+      const currentUserId = req.user._id || req.user.id;
+
+      // Không cho phép user tự tìm chính mình
+      if (currentUserId.toString() === uid) {
+        return res.status(400).json({
+          success: false,
+          message: "Không thể tự tìm kiếm chính mình.",
+        });
+      }
+
+      const playerData = await PlayerService.searchPlayerByUID(uid);
+
+      return res.status(200).json({
+        success: true,
+        message: "Tìm thấy người chơi",
+        data: playerData,
+      });
+    } catch (error) {
+      console.error("Search player error:", error.message);
+      // Trả về mã 404 nếu lỗi chứa từ "Không tìm thấy"
+      const statusCode = error.message.includes("Không tìm thấy") ? 404 : 500;
+      return res.status(statusCode).json({
+        success: false,
+        message: error.message || "Lỗi khi tìm kiếm người chơi",
+      });
+    }
+  },
+equipSkin = async (req, res) => {
   try {
     const userId = req.user.id;
     const { head, body } = req.body; 
@@ -20,9 +54,9 @@ export const equipSkin = async (req, res) => {
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
-};
+},
 
-export const equipPerks = async (req, res) => {
+equipPerks = async (req, res) => {
   try {
     const userId = req.user.id;
     const { perks } = req.body; // JSON: { "perks": ["PERK_Runner_1", "PERK_Stam_1"] }
@@ -32,4 +66,5 @@ export const equipPerks = async (req, res) => {
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
+},
 };

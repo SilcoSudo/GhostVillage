@@ -14,7 +14,11 @@ import AnnouncementPage from '../pages/AnnouncementPage';
 import WikiManagementPage from '../pages/WikiManagementPage';
 import MonsterManagementPage from '../pages/MonsterManagementPage';
 import MapManagementPage from '../pages/MapManagementPage';
+import QuestManagementPage from '../pages/QuestManagementPage';
+import ConsumableManagementPage from '../pages/ConsumableManagementPage';
+import CostumeManagementPage from '../pages/CostumeManagementPage';
 import MoonEventManagementPage from '../pages/MoonEventManagementPage';
+import ActivityLogPage from '../pages/ActivityLogPage';
 import ProtectedRoute from './router/ProtectedRoute';
 import '../shared/assets/styles/theme.css';
 
@@ -48,7 +52,11 @@ function AppContent() {
             <Route path="/wiki" element={<ProtectedRoute><WikiManagementPage /></ProtectedRoute>} />
             <Route path="/monsters" element={<ProtectedRoute><MonsterManagementPage /></ProtectedRoute>} />
             <Route path="/maps" element={<ProtectedRoute><MapManagementPage /></ProtectedRoute>} />
+            <Route path="/quests" element={<ProtectedRoute><QuestManagementPage /></ProtectedRoute>} />
+            <Route path="/consumables" element={<ProtectedRoute><ConsumableManagementPage /></ProtectedRoute>} />
+            <Route path="/costumes" element={<ProtectedRoute><CostumeManagementPage /></ProtectedRoute>} />
             <Route path="/moon-events" element={<ProtectedRoute><MoonEventManagementPage /></ProtectedRoute>} />
+            <Route path="/activity-log" element={<ProtectedRoute><ActivityLogPage /></ProtectedRoute>} />
             <Route path="/reports/posts" element={<ProtectedRoute><ReportedPostPage /></ProtectedRoute>} />
             <Route path="/reports/comments" element={<ProtectedRoute><ReportedCommentPage /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><div style={{ padding: '20px' }}><h1>Reports</h1></div></ProtectedRoute>} />

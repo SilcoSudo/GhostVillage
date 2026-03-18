@@ -90,6 +90,8 @@ namespace GhostVillage.Gameplay.Base
                 if (currentState.ShouldExit())
                 {
                     ExitCurrentState();
+                    // Không để currentState = null, mà phải set default state
+                    // Để tránh logic bị lẫn lộn ở controller (OngKeMonster, v.v.)
                 }
             }
         }
@@ -121,6 +123,19 @@ namespace GhostVillage.Gameplay.Base
             {
                 currentState.Exit();
                 currentState = null;
+            }
+        }
+
+        /// <summary>
+        /// Set default state (gọi khi currentState timeout)
+        /// Để tránh state null khi OngKeMonster logic kiểm tra
+        /// </summary>
+        public virtual void SetDefaultState(IMonsterState defaultState)
+        {
+            if (currentState == null)
+            {
+                currentState = defaultState;
+                currentState.Enter();
             }
         }
 
@@ -203,6 +218,22 @@ namespace GhostVillage.Gameplay.Base
         public virtual Vector3 GetPlayerPosition()
         {
             return playerDetector != null ? playerDetector.GetPlayerPosition() : Vector3.zero;
+        }
+
+        /// <summary>
+        /// Getter cho NavMeshAgent
+        /// </summary>
+        public NavMeshAgent GetNavMeshAgent()
+        {
+            return navMeshAgent;
+        }
+
+        /// <summary>
+        /// Getter cho PlayerDetector
+        /// </summary>
+        public GhostVillage.Gameplay.Shared.PlayerDetector GetPlayerDetector()
+        {
+            return playerDetector;
         }
 
         /// <summary>

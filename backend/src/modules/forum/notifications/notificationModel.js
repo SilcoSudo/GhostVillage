@@ -16,6 +16,7 @@ const notificationSchema = new mongoose.Schema(
         "post_liked",
         "post_commented",
         "comment_replied",
+        "report_processed",
         "ticket_replied",
         "announcement",
       ],
@@ -37,7 +38,7 @@ const notificationSchema = new mongoose.Schema(
     relatedEntity: {
       entityType: {
         type: String,
-        enum: ["post", "comment", "friend"],
+        enum: ["post", "comment", "friend", "ticket"],
         default: null,
       },
       entityId: {
@@ -59,7 +60,7 @@ const notificationSchema = new mongoose.Schema(
       default: null,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Index for faster queries

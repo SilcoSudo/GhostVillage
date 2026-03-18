@@ -1,3 +1,4 @@
+using Game.Script.UI;
 using Game.Scripts.UI.Lobby;
 using Photon.Pun;
 using UnityEngine;
@@ -15,50 +16,46 @@ public class FPSController : MonoBehaviourPun
 
     private InventoryManager _inventoryManager;
 
-    [Inject] private LobbyUIManager _uiManager;
-    private GameplayUIManager _gameplayUI;
+    private LobbyUIManager _uiManager;
 
-    private PlayerInputActions _inputActions;
+    // TIÊM ĐÚNG BỘ INPUT TỪ VCONTAINER (Để nhận được phím đã Rebind)
+    [Inject] private PlayerInputActions _inputActions;
+
+    private GlobalUIManager _globalUI; // Tự tìm cái này để gọi Menu ESC chung
     private float _verticalRotation = 0f;
     private bool _isLookEnabled = true;
+    private bool _isInputBound = false; // Cờ đánh dấu đã bind phím chưa
+
+    #region VContainer Injection
+
+    // Dùng Method Injection thay vì Field Injection. 
+    // Hàm này sẽ được _resolver.InjectGameObject() tự động gọi ngay sau khi bơm.
+    [Inject]
+    public void Construct(PlayerInputActions inputActions)
+    {
+        _inputActions = inputActions;
+        BindInputSystem();
+    }
+
+    #endregion
 
     #region LifeCycle
 
     private void Awake()
     {
-        _inputActions = new PlayerInputActions();
         _inventoryManager = GetComponent<InventoryManager>();
     }
 
-    private void OnEnable()
-    {
-        if (!photonView.IsMine) return;
-
-        _inputActions.Player.Enable();
-
-        // 1. Drop Item (Q)
-        _inputActions.Player.DropItem.performed += OnDropItem;
-
-        // 2. Use Item (E)
-        _inputActions.Player.UseItem.performed += OnUseItem;
-
-        // 3. Slot Input (1, 2, 3) - Dùng 3 Action riêng biệt cho rõ ràng
-        // Đảm bảo trong Input Asset bạn đã tạo 3 Action: Item_Slot1 (Key 1), Item_Slot2 (Key 2), Item_Slot3 (Key 3)
-        _inputActions.Player.Item_Slot1.performed += ctx => _inventoryManager.SelectSlot(0);
-        _inputActions.Player.Item_Slot2.performed += ctx => _inventoryManager.SelectSlot(1);
-        _inputActions.Player.Item_Slot3.performed += ctx => _inventoryManager.SelectSlot(2);
-
-        // ĐÃ XÓA DÒNG GÂY LỖI: _inputActions.Player.InventorySlot...
-    }
 
     private void OnDisable()
     {
-        if (!photonView.IsMine) return;
+        if (!photonView.IsMine || _inputActions == null) return;
 
         _inputActions.Player.Disable();
 
         _inputActions.Player.DropItem.performed -= OnDropItem;
         _inputActions.Player.UseItem.performed -= OnUseItem;
+        _inputActions.Player.Esc_Tab.performed -= OnEscapePressed;
     }
 
     [System.Obsolete]
@@ -72,39 +69,48 @@ public class FPSController : MonoBehaviourPun
                 if (listener.gameObject.transform.root != this.transform)
                     listener.enabled = false;
             }
+
+            // Tự tìm 2 cục UI cần thiết
+            _globalUI = FindObjectOfType<Game.Script.UI.GlobalUIManager>();
+            BindInventoryUI();
+
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
         }
-
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-
-        BindInventoryUI();
-        _gameplayUI = FindObjectOfType<GameplayUIManager>(); // Cách đơn giản để tìm UI
     }
 
     private void Update()
     {
-        if (!photonView.IsMine) return;
+        if (!photonView.IsMine || _inputActions == null) return;
 
-        if (_uiManager != null && _uiManager.IsAnyUIOpen) return;
+        if (_globalUI != null && _globalUI.IsEscMenuOpen()) return;
 
         if (!_isLookEnabled) return;
 
         HandleMovement();
         HandleRotation();
         HandleInteraction();
-
-        if (UnityEngine.InputSystem.Keyboard.current.escapeKey.wasPressedThisFrame)
-        {
-            if (_gameplayUI != null)
-            {
-                _gameplayUI.ToggleEscMenu();
-            }
-        }
     }
 
     #endregion
 
     #region Input Callbacks
+
+    private void OnEscapePressed(InputAction.CallbackContext context)
+    {
+        // GỌI THẲNG GLOBAL UI ĐỂ BẬT MENU ESC XỊN CỦA IN-GAME LÊN
+        if (_globalUI != null)
+        {
+            if (_globalUI.IsEscMenuOpen())
+            {
+                _globalUI.CloseEscMenu(true);
+            }
+            else
+            {
+                _globalUI.OpenEscMenu(Game.Script.UI.GlobalUIManager.EscMenuType.InGame, true);
+            }
+        }
+    }
 
     private void OnDropItem(InputAction.CallbackContext context)
     {
@@ -146,6 +152,30 @@ public class FPSController : MonoBehaviourPun
         {
             // Logic tương tác
         }
+    }
+
+    #endregion
+
+
+    #region Input Setup
+
+    private void BindInputSystem()
+    {
+        if (!photonView.IsMine || _inputActions == null || _isInputBound) return;
+
+        _inputActions.Player.Enable();
+
+        _inputActions.Player.DropItem.performed += OnDropItem;
+        _inputActions.Player.UseItem.performed += OnUseItem;
+
+        _inputActions.Player.Item_Slot1.performed += ctx => _inventoryManager.SelectSlot(0);
+        _inputActions.Player.Item_Slot2.performed += ctx => _inventoryManager.SelectSlot(1);
+        _inputActions.Player.Item_Slot3.performed += ctx => _inventoryManager.SelectSlot(2);
+
+        _inputActions.Player.Esc_Tab.performed += OnEscapePressed;
+
+        _isInputBound = true;
+        Debug.Log("🎮 [FPSController] Đã Bind thành công InputSystem từ VContainer!");
     }
 
     #endregion

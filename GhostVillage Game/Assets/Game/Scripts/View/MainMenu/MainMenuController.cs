@@ -1,12 +1,14 @@
 using UnityEngine;
 using VContainer;
-using Game.Core.Scene; // Namespace chứa ISceneLoaderService
+using Game.Core.Scene;
 using Game.Core.Network;
 using UnityEngine.UI;
 using TMPro;
-using Game.Core.ReactiveRepo;
 using R3;
 using Cysharp.Threading.Tasks;
+using Game.Domain.Authentication;
+using Game.Script.UI;
+using UnityEngine.InputSystem;
 
 namespace Game.UI.MainMenu
 {
@@ -32,39 +34,77 @@ namespace Game.UI.MainMenu
         [System.Serializable]
         private class AvatarEntry
         {
-            public string id;      // ví dụ: "avatar_default_02"
-            public Sprite sprite;  // sprite tương ứng
+            public string id;
+            public Sprite sprite;
         }
 
         [Header("Avatar Presets")]
         [SerializeField] private AvatarEntry[] avatarPresets;
         [SerializeField] private Sprite defaultAvatar;
 
-        // --- INJECTION ---
         [Inject] private INetworkService _network;
-        [Inject] private PlayerDataStore _store; // Inject Cục Data trung tâm
         [Inject] private ISceneLoaderService _sceneLoader;
+        [Inject] private GameSession _session;
+        [Inject] private AuthService _authService;
+        [Inject] private GlobalUIManager _globalUI;
 
-        // Quản lý các đăng ký để xóa khi tắt scene (tránh rò rỉ RAM)
-        private readonly CompositeDisposable _disposables = new();
+        [Header("Settings UI")]
+        [SerializeField] private Button _btnOpenEscMenu;
 
-        private void Start()
+        // Bổ sung biến để chứa Input
+        [Inject] private PlayerInputActions _inputActions; // Dùng Inject thay vì new
+
+        private void OnEnable()
         {
-            // 1. KẾT NỐI UI VỚI DATA STORE (REACTIVE BINDING)
-            BindUI();
+            // Bật action map và gắn sự kiện
+            _inputActions.Enable();
 
-            if (_network.IsConnected)
+            // Tìm Action "EscTab" (Tên phải giống y hệt trong ảnh bạn chụp)
+            var escAction = _inputActions.FindAction("Esc_Tab") ?? _inputActions.FindAction("EscapeTab");
+            if (escAction != null)
             {
-                HandleConnected();
+                escAction.performed += OnEscapePressed;
             }
             else
             {
-                // Nếu bị rớt mạng hoặc chưa kết nối (do lỗi nào đó), thử kết nối lại ngầm
-                Debug.Log("[MainMenu] Photon offline, đang kết nối lại...");
+                Debug.LogError("[MainMenu] Không tìm thấy Action có tên Esc_Tab hoặc EscapeTab trong PlayerInputActions!");
+            }
+        }
+
+        private void OnDisable()
+        {
+            // Gỡ sự kiện và tắt input
+            var escAction = _inputActions.FindAction("Esc_Tab") ?? _inputActions.FindAction("EscapeTab");
+            if (escAction != null)
+            {
+                escAction.performed -= OnEscapePressed;
+            }
+
+            _inputActions.Disable();
+        }
+
+        private void Start()
+        {
+            // CẮM ỐNG VÀO GLOBAL UI
+            _globalUI.OnLogoutClicked = OnLogoutAction;
+
+            if (_btnOpenEscMenu != null)
+            {
+                // Sửa thành OpenEscMenu thay vì Toggle
+                _btnOpenEscMenu.onClick.AddListener(() => _globalUI.OpenEscMenu(GlobalUIManager.EscMenuType.MainMenu, false));
+            }
+
+            FetchAndPopulateProfile().Forget();
+
+            if (_network.IsConnected)
+                HandleConnected();
+            else
+            {
                 _statusText.text = "Đang kết nối lại...";
                 _statusText.color = Color.yellow;
                 _lobbyListButton.interactable = false;
                 _debugHostButton.interactable = false;
+                _network.ConnectAsync(_session.DisplayName, _session.Token).Forget();
                 _shopButton.interactable = false;
                 _storageButton.interactable = false;
 
@@ -76,27 +116,41 @@ namespace Game.UI.MainMenu
             }
         }
 
-        private void BindUI()
+        private void OnEscapePressed(InputAction.CallbackContext context)
         {
-            // Mỗi khi Tên trong Store đổi -> Text tự đổi
-            _store.DisplayName
-                .Subscribe(val => txtPlayerName.text = val)
-                .AddTo(_disposables);
+            if (_globalUI.IsEscMenuOpen())
+            {
+                _globalUI.CloseEscMenu(false);
+            }
+            else
+            {
+                _globalUI.OpenEscMenu(GlobalUIManager.EscMenuType.MainMenu, false);
+            }
+        }
 
-            // Mỗi khi Level đổi -> Text tự nhảy
-            _store.Level
-                .Subscribe(val => txtPlayerLevel.text = val.ToString())
-                .AddTo(_disposables);
+        private void OnDestroy()
+        {
+            // RÚT ỐNG KHI THOÁT SCENE ĐỂ TRÁNH LỖI MEMORY LEAK
+            if (_globalUI != null) _globalUI.OnLogoutClicked -= OnLogoutAction;
+        }
 
-            // Mỗi khi Tiền đổi -> Text tự cập nhật định dạng số
-            _store.Coins
-                .Subscribe(val => txtCoin.text = val.ToString("N0"))
-                .AddTo(_disposables);
+        private void OnLogoutAction()
+        {
+            Debug.Log("[MainMenu] Thoát Game / Logout");
+            Application.Quit();
+        }
 
-            // Mỗi khi Avatar đổi -> Sprite tự load lại
-            _store.AvatarId
-                .Subscribe(id => imgPlayerAvatar.sprite = ResolveAvatarSprite(id))
-                .AddTo(_disposables);
+        private async UniTask FetchAndPopulateProfile()
+        {
+            var profileData = await _authService.FetchMyProfileAsync();
+
+            if (profileData != null && profileData.profile != null)
+            {
+                txtPlayerName.text = profileData.profile.displayName;
+                txtPlayerLevel.text = profileData.profile.level.ToString();
+                txtCoin.text = profileData.profile.coin.ToString("N0");
+                imgPlayerAvatar.sprite = ResolveAvatarSprite(profileData.profile.avatar);
+            }
         }
 
         private Sprite ResolveAvatarSprite(string avatarId)
@@ -105,32 +159,17 @@ namespace Game.UI.MainMenu
             {
                 for (int i = 0; i < avatarPresets.Length; i++)
                 {
-                    if (avatarPresets[i] != null &&
-                        avatarPresets[i].id == avatarId &&
-                        avatarPresets[i].sprite != null)
-                    {
+                    if (avatarPresets[i] != null && avatarPresets[i].id == avatarId && avatarPresets[i].sprite != null)
                         return avatarPresets[i].sprite;
-                    }
                 }
             }
-
             return defaultAvatar != null ? defaultAvatar : imgPlayerAvatar.sprite;
         }
 
-        private void OnDestroy()
-        {
-            _disposables.Dispose(); // Hủy toàn bộ lắng nghe khi thoát scene
-            if (_network != null) _network.OnPhotonConnected -= HandleConnected;
-        }
-
-        // --- EVENT HANDLERS ---
-
         private void HandleConnected()
         {
-            _statusText.text = $"Online: {_store.DisplayName.Value}";
+            _statusText.text = $"Online: {_session.DisplayName}";
             _statusText.color = Color.green;
-
-            // Mở khóa các nút chức năng
             _lobbyListButton.interactable = true;
             _debugHostButton.interactable = true;
             _shopButton.interactable = true;
@@ -168,14 +207,7 @@ namespace Game.UI.MainMenu
         public void OnDebugCreateRoomClick()
         {
             _statusText.text = "Creating Test Room...";
-            // Tạo nhanh phòng tên "Test_Room_01", pass rỗng, 4 người
             _network.CreateLobby("Test_Room_01", "", 4);
-        }
-
-        // Gắn vào nút Quit
-        public void OnQuitClick()
-        {
-            Application.Quit();
         }
     }
 }

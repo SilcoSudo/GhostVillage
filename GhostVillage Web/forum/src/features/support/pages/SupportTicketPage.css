@@ -1,0 +1,334 @@
+.support-page-wrapper {
+  background: var(--bg-secondary);
+  min-height: 100vh;
+  padding-top: 70px !important;
+}
+
+.support-ticket-page {
+  padding-top: 16px;
+  padding-bottom: 40px;
+}
+
+.support-main-row {
+  align-items: flex-start;
+}
+
+.support-form-column,
+.support-history-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.support-history-card {
+  position: static;
+}
+
+.support-card {
+  border: 1px solid var(--border-color) !important;
+  background: var(--card-bg) !important;
+}
+
+.support-card .card-body {
+  padding: 20px;
+}
+
+.support-ticket-page h2,
+.support-ticket-page .support-section-title {
+  color: var(--text-primary);
+}
+
+.support-page-title,
+.support-section-title {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+.support-subtitle {
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.support-ticket-page .text-muted {
+  color: var(--text-secondary) !important;
+}
+
+.support-form .form-control,
+.support-form .form-select {
+  background: var(--bg-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.support-form .form-control::placeholder {
+  color: var(--text-tertiary);
+}
+
+.support-form .form-control:focus,
+.support-form .form-select:focus {
+  background: var(--bg-primary) !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.2rem rgba(122, 0, 0, 0.2) !important;
+}
+
+.support-form .form-text {
+  color: var(--text-tertiary) !important;
+}
+
+.support-file-input-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.support-file-input-native {
+  display: none !important;
+}
+
+.support-file-picker-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.support-file-input-trigger {
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.support-file-input-trigger:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-color);
+  color: #fff;
+}
+
+.support-file-input-name {
+  color: var(--text-secondary);
+  font-size: 14px;
+  min-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.support-submit-btn {
+  min-width: 150px;
+}
+
+.support-submit-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.support-attachments-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.support-attachment-item {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-secondary);
+}
+
+.support-attachment-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.support-attachment-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  line-height: 1;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.support-ticket-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.support-history-group-title {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.support-ticket-history-item {
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 14px;
+  background: var(--bg-primary);
+}
+
+.support-ticket-history-item h6 {
+  color: var(--text-primary);
+}
+
+.support-ticket-history-item .small {
+  color: var(--text-secondary) !important;
+}
+
+.support-ticket-history-item .badge {
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.support-ticket-message {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.support-ticket-replies {
+  margin: 0 0 12px;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+}
+
+.support-ticket-replies-title {
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.support-ticket-replies-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.support-ticket-reply-item {
+  padding: 8px 10px;
+  border-left: 3px solid rgba(76, 175, 80, 0.55);
+  border-radius: 6px;
+  background: var(--bg-primary);
+}
+
+.support-ticket-reply-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.support-ticket-reply-author {
+  color: #86efac;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.support-ticket-reply-time {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.support-ticket-reply-content {
+  margin: 0;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+  font-size: 13px;
+}
+
+.support-ticket-history-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.support-ticket-history-attachment-link {
+  display: block;
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.support-ticket-history-attachment {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.support-history-accordion .accordion-item {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+}
+
+.support-history-accordion .accordion-button {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.support-history-accordion .accordion-button:not(.collapsed) {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.support-history-accordion .accordion-button:focus {
+  box-shadow: 0 0 0 0.15rem rgba(122, 0, 0, 0.25);
+}
+
+.support-history-accordion .accordion-body {
+  background: var(--bg-secondary);
+}
+
+@media (max-width: 768px) {
+  .support-page-wrapper {
+    padding-top: 60px;
+  }
+
+  .support-ticket-page {
+    padding-top: 12px;
+  }
+
+  .support-card .card-body {
+    padding: 16px;
+  }
+}

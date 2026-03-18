@@ -1,5 +1,10 @@
 import mongoose from "mongoose";
 
+const normalizeRecommendedAction = (label) => {
+  const normalizedLabel = String(label || "").toLowerCase();
+  return normalizedLabel === "no_violation" ? "keep" : "remove";
+};
+
 const PostSchema = new mongoose.Schema({
   // Basic required fields
   title: {
@@ -67,6 +72,62 @@ const PostSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  isTemporarilyHidden: {
+    type: Boolean,
+    default: false,
+  },
+
+  reports: [
+    {
+      reporter: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+      },
+      reason: {
+        type: String,
+        trim: true,
+        required: true,
+      },
+      aiModeration: {
+        isValidReport: {
+          type: Boolean,
+          default: false,
+        },
+        label: {
+          type: String,
+          enum: ["spam", "scam", "abuse", "adult", "misinfo", "no_violation"],
+          default: "no_violation",
+        },
+        confidence: {
+          type: Number,
+          default: 0,
+          min: 0,
+          max: 1,
+        },
+        reason: {
+          type: String,
+          default: "",
+        },
+        evidence: {
+          type: [String],
+          default: [],
+        },
+        recommendedAction: {
+          type: String,
+          enum: ["keep", "remove"],
+          default: "keep",
+          set: function () {
+            return normalizeRecommendedAction(this?.label);
+          },
+        },
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now,
+      },
+    },
+  ],
 
   // Timestamps
   editedAt: {
@@ -88,6 +149,22 @@ PostSchema.index({ createdAt: -1 });
 PostSchema.index({ category: 1 });
 PostSchema.index({ author: 1 });
 PostSchema.index({ title: "text", body: "text" }); // Text index for search
+
+PostSchema.pre("validate", function (next) {
+  if (!Array.isArray(this.reports)) {
+    next();
+    return;
+  }
+
+  this.reports.forEach((report) => {
+    if (!report?.aiModeration) return;
+    report.aiModeration.recommendedAction = normalizeRecommendedAction(
+      report.aiModeration.label,
+    );
+  });
+
+  next();
+});
 
 const Post = mongoose.model("Post", PostSchema);
 

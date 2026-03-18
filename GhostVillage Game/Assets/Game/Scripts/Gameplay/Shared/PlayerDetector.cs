@@ -35,6 +35,19 @@ namespace GhostVillage.Gameplay.Shared
         }
 
         /// <summary>
+        /// Xoay detection cone theo hướng di chuyển (LookForward)
+        /// </summary>
+        public void UpdateDetectionDirection(Vector3 movementDirection)
+        {
+            if (movementDirection.sqrMagnitude > 0.01f)
+            {
+                // Xoay transform để detection cone theo hướng di chuyển
+                Quaternion targetRot = Quaternion.LookRotation(movementDirection.normalized);
+                transform.rotation = Quaternion.Lerp(transform.rotation, targetRot, Time.deltaTime * 5f);
+            }
+        }
+
+        /// <summary>
         /// Cone casting để detect player (hình nón)
         /// </summary>
         private void DetectPlayerInCone()
@@ -98,6 +111,14 @@ namespace GhostVillage.Gameplay.Shared
         public Vector3 GetPlayerPosition()
         {
             return playerTransform != null ? playerTransform.position : Vector3.zero;
+        }
+
+        /// <summary>
+        /// Lấy Transform của player (dùng cho skill cần tham chiếu trực tiếp)
+        /// </summary>
+        public Transform GetPlayerTransform()
+        {
+            return playerTransform;
         }
 
         /// <summary>

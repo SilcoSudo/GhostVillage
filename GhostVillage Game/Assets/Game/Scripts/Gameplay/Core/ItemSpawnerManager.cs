@@ -3,7 +3,7 @@ using Photon.Pun;
 using Game.Domain.Map.DTOs;
 using System.Collections.Generic;
 using System.Linq;
-using Game.Core.Database; // Thêm namespace này
+using Game.Core.Database;
 
 public class ItemSpawnerManager : MonoBehaviour
 {
@@ -13,10 +13,10 @@ public class ItemSpawnerManager : MonoBehaviour
 
         Debug.Log("<color=green>[ItemSpawner]</color> Bắt đầu rải Item & Equipment...");
 
-        // --- 1. SPAWN MANDATORY CONSUMABLES ---
+        // --- 1. SPAWN MANDATORY CONSUMABLES (Dùng Tag SP_Item_Fix) ---
         if (config.consumableConfig?.mandatoryItems != null)
         {
-            List<string> shuffledPoints = config.consumableConfig.spawnPointIds.OrderBy(x => Random.value).ToList();
+            List<Transform> fixPoints = mapData.GetSpawnPointsByTag("SP_Item_Fix").OrderBy(x => Random.value).ToList();
             int pointIndex = 0;
 
             foreach (var item in config.consumableConfig.mandatoryItems)
@@ -24,17 +24,17 @@ public class ItemSpawnerManager : MonoBehaviour
                 int count = Random.Range(item.minCount, item.maxCount + 1);
                 for (int i = 0; i < count; i++)
                 {
-                    if (pointIndex >= shuffledPoints.Count) break;
-                    SpawnUnique(item.itemId, shuffledPoints[pointIndex], mapData, resourceDB);
+                    if (pointIndex >= fixPoints.Count) break;
+                    SpawnUnique(item.itemId, fixPoints[pointIndex], resourceDB);
                     pointIndex++;
                 }
             }
         }
 
-        // --- 2. SPAWN MANDATORY EQUIPMENT ---
+        // --- 2. SPAWN MANDATORY EQUIPMENT (Dùng Tag SP_Item_Equip) ---
         if (config.equipmentConfig?.mandatoryEquipment != null)
         {
-            List<string> shuffledEquipPoints = config.equipmentConfig.spawnPointIds.OrderBy(x => Random.value).ToList();
+            List<Transform> equipPoints = mapData.GetSpawnPointsByTag("SP_Item_Equip").OrderBy(x => Random.value).ToList();
             int equipPointIndex = 0;
 
             foreach (var equip in config.equipmentConfig.mandatoryEquipment)
@@ -42,8 +42,8 @@ public class ItemSpawnerManager : MonoBehaviour
                 int count = Random.Range(equip.minCount, equip.maxCount + 1);
                 for (int i = 0; i < count; i++)
                 {
-                    if (equipPointIndex >= shuffledEquipPoints.Count) break;
-                    SpawnUnique(equip.itemId, shuffledEquipPoints[equipPointIndex], mapData, resourceDB);
+                    if (equipPointIndex >= equipPoints.Count) break;
+                    SpawnUnique(equip.itemId, equipPoints[equipPointIndex], resourceDB);
                     equipPointIndex++;
                 }
             }
@@ -53,6 +53,7 @@ public class ItemSpawnerManager : MonoBehaviour
         SpawnRandomPool(config.consumableConfig?.randomPoolConfig, "SP_Item_Rand", mapData, resourceDB);
 
         // --- 4. SPAWN RANDOM EQUIPMENT (Vào Tag SP_Item_Equip) ---
+        // Có thể dùng chung tag SP_Item_Equip cho đồ rớt random
         SpawnRandomPool(config.equipmentConfig?.randomPoolConfig, "SP_Item_Equip", mapData, resourceDB);
     }
 
@@ -61,6 +62,8 @@ public class ItemSpawnerManager : MonoBehaviour
         if (randomConfig == null || randomConfig.pool.Count == 0) return;
 
         List<Transform> availablePoints = new List<Transform>(mapData.GetSpawnPointsByTag(tag));
+        if (availablePoints.Count == 0) return;
+
         int poolCount = Random.Range(randomConfig.minCount, randomConfig.maxCount + 1);
 
         for (int i = 0; i < poolCount; i++)
@@ -71,11 +74,9 @@ public class ItemSpawnerManager : MonoBehaviour
             int randIndex = Random.Range(0, availablePoints.Count);
             Transform targetPoint = availablePoints[randIndex];
 
-            // Tìm Prefab trong Database
             GameObject prefab = resourceDB.GetPrefabById(randomItemId);
             if (prefab != null)
             {
-                // Instantiate qua Photon bằng TÊN CỦA PREFAB (đã nằm trong thư mục Resources)
                 PhotonNetwork.InstantiateRoomObject(prefab.name, targetPoint.position, targetPoint.rotation);
                 Debug.Log($"---> Đã rải '{randomItemId}' ({prefab.name}) ngẫu nhiên tại '{targetPoint.name}'");
             }
@@ -83,15 +84,15 @@ public class ItemSpawnerManager : MonoBehaviour
         }
     }
 
-    private void SpawnUnique(string itemId, string pointId, MapDataManager mapData, GameResourceDatabaseSO resourceDB)
+    // Đã thay string pointId thành Transform targetPoint
+    private void SpawnUnique(string itemId, Transform targetPoint, GameResourceDatabaseSO resourceDB)
     {
-        Transform targetPoint = mapData.GetSpawnPointById(pointId);
         GameObject prefab = resourceDB.GetPrefabById(itemId);
 
         if (targetPoint != null && prefab != null)
         {
             PhotonNetwork.InstantiateRoomObject(prefab.name, targetPoint.position, targetPoint.rotation);
-            Debug.Log($"---> Đã spawn '{itemId}' tại '{pointId}'");
+            Debug.Log($"---> Đã spawn '{itemId}' tại '{targetPoint.name}'");
         }
     }
 

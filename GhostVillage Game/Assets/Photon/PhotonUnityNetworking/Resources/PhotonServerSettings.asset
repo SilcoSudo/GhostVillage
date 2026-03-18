@@ -52,6 +52,15 @@ MonoBehaviour:
   - UpdatePlayerStatusRPC
   - RpcShowGameResult
   - RPC_AddStat
+  - RPC_ChickenCaught
+  - RPC_LockPuzzle
+  - RPC_RingBell
+  - RPC_SetRealChickenIndex
+  - RPC_StickInteracted
+  - SetPlayingRPC
+  - StartKeoCoRPC
+  - VongNhiLoseRPC
+  - VongNhiWinRPC
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

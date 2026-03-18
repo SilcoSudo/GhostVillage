@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using Game.Core.Network;
 using Game.Core.Network.API;
 using Game.Domain.Authentication.DTOs;
 using System;
@@ -9,11 +10,16 @@ namespace Game.Domain.Authentication
     public class AuthService
     {
         private readonly APIClient _apiClient;
+        private readonly GameSession _session; // THÊM DÒNG NÀY
         private const int MIN_AGE = 13;
 
         private const string TOKEN_KEY = "AccessToken";
 
-        public AuthService(APIClient apiClient) => _apiClient = apiClient;
+        public AuthService(APIClient apiClient, GameSession session)
+        {
+            _apiClient = apiClient;
+            _session = session;
+        }
 
 
         public async UniTask<LoginResponseDTO> LoginAsync(string email, string password)
@@ -23,12 +29,30 @@ namespace Game.Domain.Authentication
 
             // Gọi API (Lưu ý: APIClient cần update để hỗ trợ POST, code ở dưới*)
             var response = await _apiClient.PostAsync<LoginResponseDTO>("/api/auth/login", jsonBody);
-            // TỰ ĐỘNG LƯU: Nếu login thành công
+
             if (response != null && !string.IsNullOrEmpty(response.token))
             {
+                _session.Token = response.token;
                 SaveToken(response.token);
             }
+
             return response; // Trả về DTO cho Controller xử lý tiếp
+        }
+
+        public async UniTask<MyProfileResponseDTO> FetchMyProfileAsync()
+        {
+            if (string.IsNullOrEmpty(_session.Token)) return null;
+
+            // Gọi API lấy profile bản thân (URL tùy thuộc BE của bạn, ví dụ: /api/game/player/profile)
+            var response = await _apiClient.GetAsyncWithAuth<MyProfileResponseDTO>("/api/game/player/profile", _session.Token);
+
+            if (response != null)
+            {
+                // Lưu tạm UID và Tên vào Session để Photon và hệ thống Bạn Bè xài
+                _session.UID = response.uid;
+                _session.DisplayName = response.profile.displayName;
+            }
+            return response;
         }
 
         // ===== GOOGLE OAUTH METHODS (NEW) =====
@@ -43,7 +67,7 @@ namespace Game.Domain.Authentication
             {
                 Debug.Log("[AuthService] Requesting Google OAuth URL...");
                 var response = await _apiClient.GetAsync<GoogleAuthUrlResponseDTO>("/api/game/auth/google");
-                
+
                 // Debug: Log the response details
                 if (response != null)
                 {
@@ -53,7 +77,7 @@ namespace Game.Domain.Authentication
                 {
                     Debug.LogError("[AuthService] Response is NULL!");
                 }
-                
+
                 if (response != null && !string.IsNullOrEmpty(response.authUrl))
                 {
                     Debug.Log("[AuthService] Google OAuth URL received");
