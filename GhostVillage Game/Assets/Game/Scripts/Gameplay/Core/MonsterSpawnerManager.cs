@@ -3,7 +3,7 @@ using Photon.Pun;
 using Game.Domain.Map.DTOs;
 using System.Collections;
 using System.Collections.Generic;
-using Game.Core.Database; // Thêm namespace này
+using Game.Core.Database;
 
 public class MonsterSpawnerManager : MonoBehaviour
 {
@@ -13,7 +13,7 @@ public class MonsterSpawnerManager : MonoBehaviour
 
     private MonsterSystemConfigDTO _currentConfig;
     private MapDataManager _mapData;
-    private GameResourceDatabaseSO _resourceDB; // Lưu Database
+    private GameResourceDatabaseSO _resourceDB;
 
     private List<int> _activeMinionIds = new List<int>();
 
@@ -33,27 +33,26 @@ public class MonsterSpawnerManager : MonoBehaviour
 
     private void SpawnBoss()
     {
-        // [FIX] Thêm lớp khiên bảo vệ Null Check cực mạnh
-        if (_currentConfig == null ||
-            _currentConfig.bossConfig == null ||
-            _currentConfig.bossConfig.spawnPointIds == null ||
-            _currentConfig.bossConfig.spawnPointIds.Count == 0)
-        {
-            Debug.LogWarning("⚠️ [MonsterSpawner] Bản đồ này không có cấu hình Boss hoặc thiếu điểm Spawn Boss!");
-            return;
-        }
-        string randomPointId = _currentConfig.bossConfig.spawnPointIds[Random.Range(0, _currentConfig.bossConfig.spawnPointIds.Count)];
-        Transform target = _mapData.GetSpawnPointById(randomPointId);
+        if (_currentConfig == null || _currentConfig.bossConfig == null) return;
 
         string bossId = _currentConfig.bossConfig.monsterId;
-        // Kiểm tra xem ID Boss có rỗng không
         if (string.IsNullOrEmpty(bossId)) return;
+
+        // BỐC ĐIỂM BOSS TỪ TAG
+        List<Transform> bossPoints = _mapData.GetSpawnPointsByTag("SP_Boss");
+        if (bossPoints.Count == 0)
+        {
+            Debug.LogWarning("⚠️ [MonsterSpawner] Map không có điểm nào gắn Tag 'SP_Boss'!");
+            return;
+        }
+
+        Transform target = bossPoints[Random.Range(0, bossPoints.Count)];
         GameObject prefab = _resourceDB.GetPrefabById(bossId);
 
-        if (target != null && prefab != null)
+        if (prefab != null)
         {
             PhotonNetwork.InstantiateRoomObject(prefab.name, target.position, target.rotation);
-            Debug.Log($"👹 [MonsterSpawner] Boss {bossId} đã xuất hiện tại {randomPointId}!");
+            Debug.Log($"👹 [MonsterSpawner] Boss {bossId} đã xuất hiện tại {target.name}!");
         }
     }
 
@@ -67,10 +66,7 @@ public class MonsterSpawnerManager : MonoBehaviour
             if (currentPopulation < maxActiveMinions)
             {
                 int needed = maxActiveMinions - currentPopulation;
-                for (int i = 0; i < needed; i++)
-                {
-                    SpawnSingleMinion();
-                }
+                for (int i = 0; i < needed; i++) SpawnSingleMinion();
             }
 
             yield return new WaitForSeconds(checkInterval);
@@ -79,26 +75,21 @@ public class MonsterSpawnerManager : MonoBehaviour
 
     private void SpawnSingleMinion()
     {
-        // [FIX] Khiên bảo vệ cho Minion
         if (_currentConfig == null || _currentConfig.minionConfig == null) return;
         var minionPool = _currentConfig.minionConfig.allowedMonsterIds;
-        var pointPool = _currentConfig.minionConfig.spawnPointIds;
+        if (minionPool == null || minionPool.Count == 0) return;
 
-        if (minionPool == null || minionPool.Count == 0 || pointPool == null || pointPool.Count == 0)
-        {
-            return;
-        }
+        // BỐC ĐIỂM MINION TỪ TAG
+        List<Transform> minionPoints = _mapData.GetSpawnPointsByTag("SP_Minion");
+        if (minionPoints.Count == 0) return;
 
         string randomMinionId = minionPool[Random.Range(0, minionPool.Count)];
-        string randomPointId = pointPool[Random.Range(0, pointPool.Count)];
-
-        Transform target = _mapData.GetSpawnPointById(randomPointId);
+        Transform target = minionPoints[Random.Range(0, minionPoints.Count)];
         GameObject prefab = _resourceDB.GetPrefabById(randomMinionId);
 
-        if (target != null && prefab != null)
+        if (prefab != null)
         {
             GameObject minion = PhotonNetwork.InstantiateRoomObject(prefab.name, target.position, target.rotation);
-
             PhotonView pv = minion.GetComponent<PhotonView>();
             if (pv != null) _activeMinionIds.Add(pv.ViewID);
         }

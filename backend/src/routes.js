@@ -23,7 +23,8 @@ import costumeRoutes from "./modules/costume/costumeRoutes.js";
 import consumableRoutes from "./modules/consumable/consumableRoutes.js";
 import activityLogRoutes from "./modules/activityLog/activityLogRoutes.js";
 import moonEventRoutes from "./modules/moonEvent/moonEventRoutes.js";
-import moonEventGameRoutes from "./modules/moonEvent/gameRoutes.js";
+import perkRoutes from "./modules/perk/perkRoutes.js";
+import itemRoutes from "./modules/item/itemRoutes.js";
 
 const router = express.Router();
 
@@ -31,6 +32,16 @@ const router = express.Router();
  * Central Route Loader
  * Mounts all feature routes
  */
+
+// Item Routes (mounted at /api/items)
+router.use("/items", itemRoutes);
+
+// MOON EVENT (mounted at /api/moon-events)
+router.use("/moon-events", moonEventRoutes);
+
+// Perk Routes (mounted at /api/perks)
+router.use("/perks", perkRoutes);
+// End of Perk Routes
 
 // Map Routes (mounted at /api/maps)
 router.use("/maps", mapRoute);
@@ -49,10 +60,6 @@ router.use("/quests", questRoutes);
 router.use("/costumes", costumeRoutes);
 // End of Costume Routes
 
-// Consumable Item Routes (mounted at /api/consumables)
-router.use("/consumables", consumableRoutes);
-// End of Consumable Item Routes
-
 // Activity Log Routes (mounted at /api/activity-logs)
 router.use("/activity-logs", activityLogRoutes);
 // End of Activity Log Routes
@@ -66,7 +73,6 @@ webRoutes.use("/forum", postRoutes);
 webRoutes.use("/wiki", wikiRoutes);
 webRoutes.use("/announcement", webAnnouncementRoutes);
 webRoutes.use("/search", searchRoutes);
-webRoutes.use("/moon-events", moonEventRoutes);
 webRoutes.use("/notifications", notificationRoutes);
 webRoutes.use("/support-tickets", supportTicketRoutes);
 webRoutes.use("/friend", friendRoutes);
@@ -91,7 +97,6 @@ router.use("/auth", legacyAuthRouter);
 // Game Routes (mounted at /api/game)
 const gameRoutes = express.Router();
 gameRoutes.use("/auth", gameAuthRoutes);
-gameRoutes.use("/moon-events", moonEventGameRoutes);
 gameRoutes.use("/player", playerRoutes);
 
 router.use("/game", gameRoutes);

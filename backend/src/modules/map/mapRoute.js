@@ -4,24 +4,16 @@ import { authMiddleware } from "../../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
-// Apply authentication middleware to all routes
 router.use(authMiddleware);
 
-/**
- * Map Routes
- * Định nghĩa các endpoint cho Map Management
- */
+// API MỚI: Gọi để lấy cục Data tổng cho Unity (ví dụ: /api/maps/MAP_01_ONG_KE/game-data)
+router.get("/:id/game-data", MapController.getAggregatedGameData);
 
-// GET /api/maps - Lấy danh sách maps (hỗ trợ filter isActive)
+// Các API quản lý Map của Admin
 router.get("/", MapController.getAllMaps);
-
-// GET /api/maps/:id - Lấy chi tiết một map
 router.get("/:id", MapController.getMapById);
-
-// PATCH /api/maps/:id/status - Bật/tắt trạng thái map
 router.patch("/:id/status", MapController.toggleMapStatus);
-
-// PUT /api/maps/:id - Cập nhật metadata của map
 router.put("/:id", MapController.updateMapMetadata);
+router.post("/", MapController.createMap);
 
 export default router;

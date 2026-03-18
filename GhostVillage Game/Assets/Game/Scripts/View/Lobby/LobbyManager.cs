@@ -232,7 +232,11 @@ namespace Game.Scripts.UI.Lobby
 
         public void OpenMapPicker()
         {
-            if (_cachedMaps.Count == 0) return;
+            if (_cachedMaps == null || _cachedMaps.Count == 0)
+            {
+                Debug.LogWarning("⚠️ [Lobby] Chưa tải được danh sách Map, không thể mở Picker!");
+                return;
+            }
             UpdatePickerUI();
             _uiManager.ShowMapPicker(true);
         }
@@ -294,7 +298,7 @@ namespace Game.Scripts.UI.Lobby
                     // Lưu Config vào Singleton để mang sang Scene Game
                     if (GameDataTransfer.Instance != null)
                     {
-                        GameDataTransfer.Instance.SetMapConfig(config);
+                        GameDataTransfer.Instance.SetMapId(config.identityConfig.mapId);
                     }
                     else
                     {

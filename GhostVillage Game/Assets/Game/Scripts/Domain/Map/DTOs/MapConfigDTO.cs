@@ -3,13 +3,61 @@ using System.Collections.Generic;
 
 namespace Game.Domain.Map.DTOs
 {
+    // --- LỚP VỎ BỌC NGOÀI CÙNG (Hứng từ /api/maps/:id/game-data) ---
+    [Serializable]
+    public class AggregatedGameDataDTO
+    {
+        public MapConfigDTO mapConfig;
+        public GameStatsDTO stats;
+    }
+
+    [Serializable]
+    public class GameStatsDTO
+    {
+        public List<MonsterStatDTO> monsters;
+        public List<ItemStatDTO> items;
+        public List<MoonEventGlobalDTO> moonEvents;
+    }
+
+    // --- CÁC CLASS HỨNG CHỈ SỐ ---
+    [Serializable]
+    public class MonsterStatDTO
+    {
+        public string monsterId;
+        public string monsterName;
+        public string monsterType;
+        public string prefabName;
+        // Bro có thể định nghĩa thêm MovementConfigDTO, CombatConfigDTO ở đây để lấy stats
+    }
+
+    [Serializable]
+    public class ItemStatDTO
+    {
+        public string itemId;
+        public string itemName;
+        public string itemType;
+        public string prefabName;
+        // Không còn maxStack nữa
+        // stats có thể để kiểu string (raw json) hoặc định nghĩa class cụ thể nếu bro muốn deserialize sâu
+    }
+
+    [Serializable]
+    public class MoonEventGlobalDTO
+    {
+        public string eventId;
+        public string eventName;
+        public string uiIcon;
+        public int weight;
+        // Thêm các ModifierDTO nếu cần
+    }
+
+    // --- MAP CONFIG (Đã ép cân sạch sẽ) ---
     [Serializable]
     public class MapConfigDTO
     {
         public IdentityConfigDTO identityConfig;
-        public EnvironmentConfigDTO environmentConfig;
         public ConsumableConfigDTO consumableConfig;
-        public EquipmentConfigDTO equipmentConfig; // <-- MỚI THÊM
+        public EquipmentConfigDTO equipmentConfig;
         public MonsterSystemConfigDTO monsterSystemConfig;
         public PuzzleConfigDTO puzzleConfig;
         public RewardConfigDTO rewardConfig;
@@ -27,39 +75,18 @@ namespace Game.Domain.Map.DTOs
     }
 
     [Serializable]
-    public class EnvironmentConfigDTO
-    {
-        public string baseLightingId;
-        public List<MoonEventDTO> moonEventPool;
-    }
-
-    [Serializable]
-    public class MoonEventDTO
-    {
-        public string eventId;
-        public int weight;
-        public string uiIcon;
-    }
-
-    [Serializable]
     public class ConsumableConfigDTO
     {
-        public List<string> spawnPointIds;
         public List<MandatoryItemDTO> mandatoryItems;
         public RandomPoolConfigDTO randomPoolConfig;
     }
 
-    // --- MỚI THÊM CLASS NÀY ---
     [Serializable]
     public class EquipmentConfigDTO
     {
-        public List<string> spawnPointIds;
-        // Tái sử dụng MandatoryItemDTO vì cấu trúc JSON giống hệt (itemId, min, max)
         public List<MandatoryItemDTO> mandatoryEquipment;
-        // Tái sử dụng RandomPoolConfigDTO vì cấu trúc JSON giống hệt
         public RandomPoolConfigDTO randomPoolConfig;
     }
-    // ---------------------------
 
     [Serializable]
     public class MandatoryItemDTO
@@ -95,20 +122,17 @@ namespace Game.Domain.Map.DTOs
     public class BossConfigDTO
     {
         public string monsterId;
-        public List<string> spawnPointIds;
     }
 
     [Serializable]
     public class MinionConfigDTO
     {
         public List<string> allowedMonsterIds;
-        public List<string> spawnPointIds;
     }
 
     [Serializable]
     public class PuzzleConfigDTO
     {
-        public List<string> spawnPointIds;
         public List<string> puzzlePoolIds;
     }
 
@@ -117,14 +141,5 @@ namespace Game.Domain.Map.DTOs
     {
         public int baseExp;
         public int baseCoin;
-        public List<EventMultiplierDTO> eventMultipliers;
-    }
-
-    [Serializable]
-    public class EventMultiplierDTO
-    {
-        public string eventId;
-        public float coinMultiplier;
-        public float expMultiplier;
     }
 }

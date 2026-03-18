@@ -4,12 +4,14 @@ using Game.Domain.Map.DTOs;
 
 public class MapDataManager : MonoBehaviour
 {
-    public MapConfigDTO CurrentMapConfig { get; private set; }
+    // BỌC LUÔN CỤC MEGA DTO
+    public AggregatedGameDataDTO CurrentGameData { get; private set; }
 
-    // Lưu trữ toàn bộ điểm spawn theo Tên (Ví dụ: "SP_Boss_Center" -> Transform)
-    private Dictionary<string, Transform> _spawnPointDict = new Dictionary<string, Transform>();
+    // Các Helper Properties cho code cũ khỏi lỗi
+    public MapConfigDTO CurrentMapConfig => CurrentGameData?.mapConfig;
+    public GameStatsDTO CurrentStats => CurrentGameData?.stats;
 
-    // Vẫn giữ dictionary Tag nếu cần dùng cho Item Random
+    // Chỉ giữ lại Dictionary gom theo Tag
     private Dictionary<string, List<Transform>> _tagGroups = new Dictionary<string, List<Transform>>();
 
     private readonly string[] _targetTags = {
@@ -17,21 +19,20 @@ public class MapDataManager : MonoBehaviour
         "SP_Item_Rand", "SP_Puzzle", "SP_Boss", "SP_Minion"
     };
 
-    public void InitializeMap(MapConfigDTO config)
+    public void InitializeMap(AggregatedGameDataDTO gameData)
     {
-        if (config == null)
+        if (gameData == null || gameData.mapConfig == null)
         {
-            Debug.LogError("❌ [MapData] Config truyền vào bị NULL!");
+            Debug.LogError("❌ [MapData] AggregatedGameData truyền vào bị NULL!");
             return;
         }
 
-        CurrentMapConfig = config;
-        Debug.Log($"[MapData] Đã nhận Config: {CurrentMapConfig.identityConfig.displayName}");
+        CurrentGameData = gameData;
+        Debug.Log($"[MapData] Đã nhận Full Game Data: {CurrentMapConfig.identityConfig.displayName}");
 
-        _spawnPointDict.Clear();
         _tagGroups.Clear();
 
-        // Quét toàn bộ điểm spawn (Tìm theo Tag để tối ưu hiệu suất, tránh FindObjectOfType toàn Scene)
+        // CHỈ QUÉT THEO TAG
         foreach (string tag in _targetTags)
         {
             GameObject[] objects = GameObject.FindGameObjectsWithTag(tag);
@@ -40,31 +41,16 @@ public class MapDataManager : MonoBehaviour
             foreach (var obj in objects)
             {
                 transforms.Add(obj.transform);
-
-                // Index luôn vào Dictionary theo tên để truy xuất nhanh bằng ID từ JSON
-                if (!_spawnPointDict.ContainsKey(obj.name))
-                {
-                    _spawnPointDict.Add(obj.name, obj.transform);
-                }
             }
 
             _tagGroups.Add(tag, transforms);
+            Debug.Log($"[MapData] Index thành công {transforms.Count} điểm spawn cho Tag: {tag}");
         }
-
-        Debug.Log($"[MapData] Index thành công {_spawnPointDict.Count} điểm spawn (đã gom theo Tên).");
     }
 
-    // Hàm lấy 1 điểm cụ thể bằng ID (VD: "SP_Boss_Center")
-    public Transform GetSpawnPointById(string pointId)
-    {
-        if (_spawnPointDict.TryGetValue(pointId, out Transform point))
-            return point;
+    // XÓA HÀM GetSpawnPointById (vì DB không còn gửi tên point xuống nữa)
 
-        Debug.LogWarning($"[MapData] Không tìm thấy điểm spawn nào có tên: '{pointId}' trên Scene!");
-        return null;
-    }
-
-    // Hàm xin nguyên 1 list (Cho fallback hoặc đồ Random)
+    // GIỮ LẠI HÀM XIN NGUYÊN LIST THEO TAG
     public List<Transform> GetSpawnPointsByTag(string tag)
     {
         if (_tagGroups.TryGetValue(tag, out List<Transform> points))
