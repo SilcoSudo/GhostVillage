@@ -18,6 +18,7 @@ namespace GhostVillage.Shop
         public List<CosmeticDTO> cosmetics;
         public List<PerkDTO> perks;
         public string expiresAt;
+        public int coin;
     }
 
     [Serializable]

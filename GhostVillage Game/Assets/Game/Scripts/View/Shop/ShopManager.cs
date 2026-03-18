@@ -20,6 +20,7 @@ namespace GhostVillage.Shop
 
         [Header("--- MAIN UI ---")]
         public GameObject skinScrollView; // Khu vực cuộn của Skin
+        public TextMeshProUGUI txtCoinCount; // Số xu hiện tại của người chơi
 
         [Header("--- SUB TABS (Hats / Bodies) ---")]
         public Button btnSubTabHats;
@@ -207,6 +208,14 @@ namespace GhostVillage.Shop
         {
             Debug.Log("👉 ĐÃ BẤM VÀO NÚT BUY! Đang chuẩn bị gọi Controller...");
             OnBuyItemRequest?.Invoke(currentlySelectedItem);
+        }
+
+        public void UpdateCoinUI(int amount)
+        {
+            if (txtCoinCount != null)
+            {
+                txtCoinCount.text = amount.ToString("N0"); 
+            }
         }
 
         private void EquipCurrentItem()

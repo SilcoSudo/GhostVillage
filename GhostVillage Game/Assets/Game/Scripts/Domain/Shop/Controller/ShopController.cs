@@ -83,6 +83,8 @@ namespace GhostVillage.Shop
                 _view.ownedItemIds = profile.storage.unlockedSkins;
                 // Đồng bộ cả Perk vào list owned chung để check isOwned
                 _view.ownedItemIds.AddRange(profile.storage.unlockedPerks);
+                // Hiển thị số dư hiện tại
+                _view.UpdateCoinUI(profile.profile.coin);
 
                 _view.PopulateShop();
                 Debug.Log($"[ShopController] Đã đồng bộ {profile.storage.unlockedSkins.Count} Skins và {profile.storage.unlockedPerks.Count} Perks.");
@@ -117,6 +119,7 @@ namespace GhostVillage.Shop
                 {
                     Debug.Log($"<color=green>[Success]</color> Mua thành công! Số dư: {result.newBalance}");
                     _view.MarkItemAsOwned(item.GetId());
+                    _view.UpdateCoinUI(result.newBalance); // Cập nhật UI số xu sau khi mua
                 }
             }
             catch (Exception ex)

@@ -1187,6 +1187,7 @@ MonoBehaviour:
   database: {fileID: 11400000, guid: 44513104477abe245a2873d82197b617, type: 2}
   ownedItemIds: []
   skinScrollView: {fileID: 728851286}
+  txtCoinCount: {fileID: 1432259182}
   btnSubTabHats: {fileID: 437239341}
   btnSubTabBodies: {fileID: 640164557}
   shopItemPrefab: {fileID: 1526620068818057012, guid: 419971364a50aec4bb2f7bdbf6744c8e, type: 3}
@@ -2096,11 +2097,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8947563834192243649, guid: 3105b3b6e59d47842ac491c73f37c5d3, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 293.19995
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8947563834192243649, guid: 3105b3b6e59d47842ac491c73f37c5d3, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -187.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8947563834192243649, guid: 3105b3b6e59d47842ac491c73f37c5d3, type: 3}
       propertyPath: m_LocalPosition.z
@@ -2935,7 +2936,7 @@ Transform:
   m_GameObject: {fileID: 1191060142}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalPosition: {x: 0, y: 1, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4694,7 +4695,7 @@ GameObject:
   - component: {fileID: 2023445578}
   - component: {fileID: 2023445577}
   m_Layer: 0
-  m_Name: ShopScope
+  m_Name: ShopLifetimeScope
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

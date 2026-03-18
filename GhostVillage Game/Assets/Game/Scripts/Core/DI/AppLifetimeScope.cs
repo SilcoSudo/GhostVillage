@@ -11,6 +11,7 @@ using Game.Script.UI;
 using Game.Core.ReactiveRepo;
 using Game.Domain.Map.Services;
 using GhostVillage.Shop;
+using GhostVillage.Storage;
 
 namespace Game.Core.DI
 {
@@ -49,6 +50,7 @@ namespace Game.Core.DI
             builder.Register<ProfileService>(Lifetime.Singleton);
             builder.Register<ProfileController>(Lifetime.Singleton);
             builder.Register<ShopService>(Lifetime.Singleton);
+            builder.Register<StorageService>(Lifetime.Singleton);
             
             // 3. NETWORK (Sửa lại: Bắt buộc phải có Prefab)
             if (_photonPrefab != null)

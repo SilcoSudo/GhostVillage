@@ -35,6 +35,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Game/Scenes/ProfileScene.unity
     guid: 800494a94d3153e40b4fe13bde363ebb
+  - enabled: 1
+    path: Assets/Game/Scenes/StorageScene.unity
+    guid: a42c8056da7cbc74b92f6f27ccfecd00
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 9f5a283fbbf7dd74bab1d4eb14eeb509, type: 3}
   m_UseUCBPForAssetBundles: 0

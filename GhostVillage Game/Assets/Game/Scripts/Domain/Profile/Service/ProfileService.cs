@@ -9,7 +9,7 @@ public class ProfileService {
     public ProfileService(APIClient apiClient) => _apiClient = apiClient;
 
     public async UniTask<FullProfileDTO> GetProfileAsync(string token) {
-        return await _apiClient.GetAsyncWithAuth<FullProfileDTO>("/api/game/profile/profile", token);
+        return await _apiClient.GetAsyncWithAuth<FullProfileDTO>("/api/game/profile", token);
     }
 
     public async UniTask<FullProfileDTO> GetHistoryAsync(string token) {
