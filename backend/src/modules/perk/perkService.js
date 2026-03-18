@@ -36,18 +36,19 @@ export const PerkService = {
   },
 
   createPerk: async (data) => {
-    const { perkId, perkName, description, playerModifiers } = data;
+    // Chỉ bóc perkId ra để kiểm tra
+    const { perkId } = data;
 
     const existingPerk = await Perk.findOne({ perkId: perkId.toUpperCase() });
     if (existingPerk) {
       throw new Error(`Perk ID "${perkId}" đã tồn tại`);
     }
 
+    // Đẩy nguyên cục data vào, Mongoose Schema sẽ tự lọc các trường hợp lệ
     const newPerk = new Perk({
+      ...data,
       perkId: perkId.toUpperCase(),
-      perkName,
-      description,
-      playerModifiers: playerModifiers || {},
+      modifiers: data.modifiers || {}, // Đổi tên playerModifiers -> modifiers cho gọn
     });
 
     return await newPerk.save();
