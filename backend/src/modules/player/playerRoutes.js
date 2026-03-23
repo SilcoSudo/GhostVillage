@@ -9,9 +9,11 @@ const router = express.Router();
 router.use(authMiddleware);
 
 // 2. SỬA DÒNG NÀY: Gọi thông qua object PlayerController
-router.get("/profile", PlayerController.getProfile);
+router.get("/", PlayerController.getProfile);
 
 // Route tìm kiếm người chơi
 router.get("/search/:uid", PlayerController.searchPlayer);
+router.put("/equip-skin", PlayerController.equipSkin);
+router.put("/equip-perk", PlayerController.equipPerks);
 
 export default router;

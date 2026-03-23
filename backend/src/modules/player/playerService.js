@@ -41,24 +41,16 @@ export const PlayerService = {
       selectedMedals: player.selectedMedals,
       achievements: mergedAchievements,
       history: matchHistory,
+      storage: {
+        unlockedSkins: player.unlockedSkins,
+        unlockedPerks: player.unlockedPerks
+      },
+      equipped: {
+        skins: player.equippedSkins,
+        perks: player.equippedPerks
+      }
     };
   },
-
-  // Thêm hàm Update Medal
-  updateSelectedMedals: async (userId, medalCodes) => {
-    // 1. Kiểm tra tối đa 3 huy chương
-    if (medalCodes.length > 3)
-      throw new Error("Can only equip up to 3 medals.");
-
-    // 2. Cập nhật Player
-    const player = await Player.findOneAndUpdate(
-      { userId },
-      { selectedMedals: medalCodes },
-      { new: true },
-    );
-    return player.selectedMedals;
-  },
-
   // Đã sửa lại chuẩn chỉ để tìm bằng UID 8 số
   searchPlayerByUID: async (targetUid) => {
     // 1. CHÚ Ý: Tìm bằng trường `uid`, không phải `userId`
@@ -79,4 +71,63 @@ export const PlayerService = {
       level: targetPlayer.profile.level,
     };
   },
+    // Thêm hàm Update Medal
+    updateSelectedMedals: async (userId, medalCodes) => {
+      // 1. Kiểm tra tối đa 3 huy chương
+      if (medalCodes.length > 3) throw new Error("Can only equip up to 3 medals.");
+
+      // 2. Cập nhật Player
+      const player = await Player.findOneAndUpdate(
+        { userId },
+        { selectedMedals: medalCodes },
+        { new: true }
+      );
+      return player.selectedMedals;
+    },
+
+    updateEquippedSkins: async (userId, headId, bodyId) => {
+    const player = await Player.findOne({ userId });
+    if (!player) throw new Error("Player not found");
+
+    // Kiểm tra sở hữu: Chỉ validate nếu id không phải chuỗi rỗng (tháo đồ)
+    if (headId && headId !== "" && !player.unlockedSkins.includes(headId)) {
+      throw new Error("You do not own this head skin.");
+    }
+    if (bodyId && bodyId !== "" && !player.unlockedSkins.includes(bodyId)) {
+      throw new Error("You do not own this body skin.");
+    }
+
+    if (headId !== undefined) player.equippedSkins.head = headId;
+    if (bodyId !== undefined) player.equippedSkins.body = bodyId;
+
+    await player.save();
+    return player.equippedSkins;
+  },
+
+  updateEquippedPerks: async (userId, perkIds) => {
+    const player = await Player.findOne({ userId });
+    if (!player) throw new Error("Player not found");
+
+    // MỞ KHÓA SLOT THEO LEVEL
+    let maxSlots = 1;
+    const playerLevel = player.profile.level || 1;
+
+    if (playerLevel >= 25) maxSlots = 3;
+    else if (playerLevel >= 10) maxSlots = 2;
+
+    if (perkIds.length > maxSlots) {
+        throw new Error(`Level ${playerLevel} chỉ được trang bị tối đa ${maxSlots} kỹ năng.`);
+    }
+
+    // Kiểm tra quyền sở hữu
+    for (const id of perkIds) {
+        if (id && !player.unlockedPerks.includes(id)) {
+            throw new Error(`Kỹ năng ${id} chưa được mở khóa.`);
+        }
+    }
+
+    player.equippedPerks = perkIds;
+    await player.save();
+    return player.equippedPerks;
+  }
 };
