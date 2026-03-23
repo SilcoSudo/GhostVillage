@@ -9,15 +9,15 @@ public class ProfileService {
     public ProfileService(APIClient apiClient) => _apiClient = apiClient;
 
     public async UniTask<FullProfileDTO> GetProfileAsync(string token) {
-        return await _apiClient.GetAsyncWithAuth<FullProfileDTO>("/api/game/player/profile", token);
+        return await _apiClient.GetAsyncWithAuth<FullProfileDTO>("/api/game/profile", token);
     }
 
     public async UniTask<FullProfileDTO> GetHistoryAsync(string token) {
-        return await _apiClient.GetAsyncWithAuth<FullProfileDTO>("/api/game/player/match-history", token);
+        return await _apiClient.GetAsyncWithAuth<FullProfileDTO>("/api/game/profile/match-history", token);
     }
 
     public async UniTask<FullProfileDTO> GetAchievementsAsync(string token) {
-        return await _apiClient.GetAsyncWithAuth<FullProfileDTO>("/api/game/player/achievements", token);
+        return await _apiClient.GetAsyncWithAuth<FullProfileDTO>("/api/game/profile/achievements", token);
     }
 
     public async UniTask<bool> UpdateMedalsAsync(List<string> medalIds, string token) 
@@ -28,7 +28,7 @@ public class ProfileService {
         // CHỈNH SỬA: Truyền List<string> trực tiếp. 
         // APIClient sẽ bóc trường 'data' từ Backend và trả về đúng List<string> này.
         var response = await _apiClient.PostAsyncWithAuth<List<string>>(
-            "/api/game/player/medals", 
+            "/api/game/profile/medals", 
             jsonBody, 
             token
         );
@@ -41,7 +41,7 @@ public class ProfileService {
     {
         string jsonBody = "{\"achievementId\":\"" + achievementId + "\"}";
         var response = await _apiClient.PostAsyncWithAuth<ClaimResultDTO>(
-            "/api/game/player/claim-achievement", 
+            "/api/game/profile/claim-achievement", 
             jsonBody, 
             token
         );

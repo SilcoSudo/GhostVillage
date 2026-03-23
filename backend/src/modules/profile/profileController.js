@@ -48,26 +48,7 @@ export const getAchievements = async (req, res, next) => {
     next(err);
   }
 };
-// export const updateMedals = async (req, res, next) => {
-//   try {
-//     const userId = req.user.id;
-//     // Kiểm tra kỹ key này có khớp với Unity gửi lên không (medalCodes hay medalIds)
-//     const { medalCodes, medalIds } = req.body; 
-//     const finalCodes = medalCodes || medalIds;
 
-//     if (!finalCodes) {
-//       return res.status(400).json({ success: false, message: "No medals provided" });
-//     }
-
-//     // PlayerService bây giờ đã khả dụng nhờ import đúng path
-//     const data = await PlayerService.updateSelectedMedals(userId, finalCodes); 
-    
-//     res.status(200).json({ success: true, data });
-//   } catch (err) {
-//     // Trả về lỗi 400 để Unity log được message cụ thể
-//     res.status(400).json({ success: false, message: err.message });
-//   }
-// };
 export const updateMedals = async (req, res, next) => {
   try {
     const userId = req.user.id;

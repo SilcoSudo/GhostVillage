@@ -13,7 +13,7 @@ import supportTicketRoutes from "./modules/forum/supportTickets/supportTicketRou
 import friendRoutes from "./modules/friend/web/friendRoutes.js";
 import messageRoutes from "./modules/message/web/messageRoutes.js";
 import playerRoutes from "./modules/player/playerRoutes.js";
-import profileRoutes from "./modules/profile/ProfileRoutes.js";
+import profileRoutes from "./modules/profile/profileRoutes.js";
 import { loginGame } from "./modules/auth/game/authController.js";
 import mapRoute from "./modules/map/mapRoute.js";
 import matchRoutes from "./modules/match/matchRoutes.js";
@@ -25,6 +25,7 @@ import activityLogRoutes from "./modules/activityLog/activityLogRoutes.js";
 import moonEventRoutes from "./modules/moonEvent/moonEventRoutes.js";
 import perkRoutes from "./modules/perk/perkRoutes.js";
 import itemRoutes from "./modules/item/itemRoutes.js";
+import shopRoutes from "./modules/shop/shopRoutes.js";
 
 const router = express.Router();
 
@@ -98,7 +99,8 @@ router.use("/auth", legacyAuthRouter);
 const gameRoutes = express.Router();
 gameRoutes.use("/auth", gameAuthRoutes);
 gameRoutes.use("/player", playerRoutes);
-
+gameRoutes.use("/profile", profileRoutes);
+gameRoutes.use("/shop", shopRoutes);
 router.use("/game", gameRoutes);
 
 export default router;

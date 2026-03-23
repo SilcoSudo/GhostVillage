@@ -252,5 +252,49 @@ namespace Game.Core.Network.API
                 return null;
             }
         }
+        /// <summary>
+        /// PUT request (Dùng để cập nhật dữ liệu như Trang bị đồ)
+        /// </summary>
+        public async UniTask<T> PutAsyncWithAuth<T>(string endpoint, string jsonBody, string token)
+        {
+            string url = $"{_baseUrl.TrimEnd('/')}/{endpoint.TrimStart('/')}";
+
+            if (_config.IsDebugMode)
+                Debug.Log($"[API] PUT (Auth) Request: {url} | Token: {token?.Substring(0, 10)}...");
+
+            using (var request = new UnityWebRequest(url, "PUT"))
+            {
+                byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonBody);
+                request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+                request.downloadHandler = new DownloadHandlerBuffer();
+                request.SetRequestHeader("Content-Type", "application/json");
+                request.SetRequestHeader("Authorization", $"Bearer {token}");
+
+                await request.SendWebRequest();
+
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogError($"[API] Error: {request.error} | Response: {request.downloadHandler.text}");
+                    return default;
+                }
+
+                string jsonResponse = request.downloadHandler.text;
+
+                try
+                {
+                    var wrapper = JsonUtility.FromJson<ResponseWrapper<T>>(jsonResponse);
+
+                    if (wrapper != null && wrapper.success) return wrapper.data;
+                    
+                    Debug.LogError($"[API] Server Logic Error: {wrapper?.error}");
+                    return default;
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[API] Parse JSON Error: {e.Message}");
+                    return default;
+                }
+            }
+        }
     }
 }

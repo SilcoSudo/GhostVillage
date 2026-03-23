@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using GhostVillage.Shop;
 
 namespace GhostVillage.Domain.Profile {
     [Serializable]
@@ -8,6 +9,8 @@ namespace GhostVillage.Domain.Profile {
         public List<string> selectedMedals;
         public List<AchievementItemDTO> achievements;
         public List<MatchHistoryItemDTO> history;
+        public StorageDTO storage;
+        public EquippedDTO equipped;
     }
 
     [Serializable]
@@ -62,5 +65,19 @@ namespace GhostVillage.Domain.Profile {
         public string mapId; 
         public string mapName;
         public string startTime; 
+    }
+
+    [Serializable]
+    public class StorageDTO 
+    {
+        public List<string> unlockedSkins;
+        public List<string> unlockedPerks;
+    }
+
+    [Serializable]
+    public class EquippedDTO 
+    {
+        public EquipDataDTO skins; 
+        public List<string> perks;
     }
 }
