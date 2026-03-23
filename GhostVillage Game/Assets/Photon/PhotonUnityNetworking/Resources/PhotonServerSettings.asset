@@ -61,6 +61,8 @@ MonoBehaviour:
   - StartKeoCoRPC
   - VongNhiLoseRPC
   - VongNhiWinRPC
+  - RpcSetKnockedState
+  - RpcUpdateReviveProgress
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

@@ -34,12 +34,15 @@ namespace Game.Core.Player.RayCast // namespace cũ của bạn là RayCast hay 
             if (!_pv.IsMine) return;
 
             CheckInteractable();
+        }
 
-            if (Keyboard.current.fKey.wasPressedThisFrame && _currentInteractable != null)
+        public void TryInteract()
+        {
+            if (_currentInteractable != null)
             {
                 Debug.Log($"<color=cyan>[PlayerInteract]</color> Đang tương tác với: {_currentInteractable.GetPromptMessage()}");
 
-                // Truyền chính mình (this.gameObject) vào để vật phẩm biết ai nhặt
+                // Truyền chính mình (this.gameObject) vào để vật phẩm/người gục biết ai đang bấm
                 _currentInteractable.Interact(this.gameObject);
             }
         }
@@ -66,11 +69,9 @@ namespace Game.Core.Player.RayCast // namespace cũ của bạn là RayCast hay 
         // --- HÀM KIỂM TRA TƯƠNG TÁC ---
         private void CheckInteractable()
         {
-            if (playerCamera == null) return; // Bỏ check _uiManager
+            if (playerCamera == null) return;
 
             Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-
-            // Debug.DrawRay(ray.origin, ray.direction * interactRange, Color.red);
 
             if (Physics.Raycast(ray, out RaycastHit hit, interactRange, interactLayer))
             {
@@ -81,7 +82,6 @@ namespace Game.Core.Player.RayCast // namespace cũ của bạn là RayCast hay 
                     if (_currentInteractable != interactable)
                     {
                         _currentInteractable = interactable;
-                        // GỬI SỰ KIỆN TOÀN CỤ: "Tao thấy cái này nè!"
                         InteractionEvents.TriggerHover(interactable.GetPromptMessage(), true);
                     }
                     return;
@@ -92,7 +92,6 @@ namespace Game.Core.Player.RayCast // namespace cũ của bạn là RayCast hay 
             if (_currentInteractable != null)
             {
                 _currentInteractable = null;
-                // GỬI SỰ KIỆN TOÀN CỤ: "Hết thấy rồi, tắt dùm cái UI"
                 InteractionEvents.TriggerHover("", false);
             }
         }

@@ -37,9 +37,8 @@ public class GameManager : MonoBehaviourPunCallbacks
     private MatchDataService _matchDataService;
     private GameplayUIManager _uiManager;
     private MatchStatisticManager _statisticManager;
-
-
     private MatchRoute _currentMatchRoute = MatchRoute.Lose; // Mặc định là thua
+    private bool _isLocalDataReady = false;
 
     // VContainer sẽ tự động điền các biến này vào khi Prefab GameContext được khởi tạo
     [Inject]
@@ -114,6 +113,8 @@ public class GameManager : MonoBehaviourPunCallbacks
             Debug.LogError("❌ [GameManager] MatchStatisticManager chưa được Inject!");
         }
 
+        _isLocalDataReady = true;
+
         // 2. Spawn World (Chỉ Master Client thực hiện để tránh trùng lặp)
         if (PhotonNetwork.IsMasterClient)
         {
@@ -169,6 +170,8 @@ public class GameManager : MonoBehaviourPunCallbacks
     // Callback từ Photon: Khi Room Properties thay đổi (Do Master update state)
     public override void OnRoomPropertiesUpdate(ExitGames.Client.Photon.Hashtable propertiesThatChanged)
     {
+        if (!_isLocalDataReady) return;
+
         if (propertiesThatChanged.ContainsKey(KEY_GAME_STATE))
         {
             // Ép kiểu int về Enum

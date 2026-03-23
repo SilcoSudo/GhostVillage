@@ -69,6 +69,12 @@ namespace Game.Scripts.UI.Lobby
 
         // [THÊM MỚI] Inject Global UI để bật Setting
         [Inject] private GlobalUIManager _globalUI;
+        [Header("Invite Modal")]
+        [SerializeField] private InviteFriendModalUI _inviteFriendModal;
+
+        // TIÊM RADAR VÀ CHAT VÀO ĐÂY ĐỂ TRUYỀN XUỐNG MODAL
+        [Inject] private Game.Domain.Friend.Controllers.FriendController _friendController;
+        [Inject] private Game.Core.Network.Chat.GlobalChatManager _chatManager;
 
         #endregion
 
@@ -94,6 +100,7 @@ namespace Game.Scripts.UI.Lobby
             if (_mapPickerModal) _mapPickerModal.SetActive(false);
             if (_grpMapInfo) _grpMapInfo.SetActive(false);
             if (_txtStartGamePrompt) _txtStartGamePrompt.gameObject.SetActive(false);
+            if (_inviteFriendModal != null) _inviteFriendModal.gameObject.SetActive(false);
 
             // Bind Button Events
             if (_btnNextMap) _btnNextMap.onClick.AddListener(() => OnNextMapClicked?.Invoke());
@@ -114,7 +121,10 @@ namespace Game.Scripts.UI.Lobby
 
         #region General Room UI
 
-        public bool IsAnyUIOpen => (_managementModal != null && _managementModal.activeSelf) || IsChatFocused();
+        public bool IsAnyUIOpen =>
+                    (_managementModal != null && _managementModal.activeSelf) ||
+                    (_mapPickerModal != null && _mapPickerModal.activeSelf) ||
+                    IsChatFocused();
 
         public void SetRoomInfo(string roomName, string hostName, string password)
         {
@@ -160,8 +170,21 @@ namespace Game.Scripts.UI.Lobby
             var players = PhotonNetwork.PlayerList;
             for (int i = 0; i < _playerSlots.Length; i++)
             {
-                if (i < players.Length) _playerSlots[i].Setup(players[i]);
-                else _playerSlots[i].SetEmpty();
+                if (i < players.Length)
+                {
+                    _playerSlots[i].Setup(players[i]);
+                }
+                else
+                {
+                    // LỖ THỔNG TRỐNG -> TRUYỀN HÀM MỞ BẢNG MỜI VÀO ĐÂY
+                    _playerSlots[i].SetEmpty(() =>
+                    {
+                        if (_inviteFriendModal != null)
+                        {
+                            _inviteFriendModal.OpenModal(_friendController, _chatManager);
+                        }
+                    });
+                }
             }
         }
 
@@ -296,7 +319,13 @@ namespace Game.Scripts.UI.Lobby
             Cursor.lockState = show ? CursorLockMode.None : CursorLockMode.Locked;
             Cursor.visible = show;
 
-            if (show) RefreshManagementList();
+            if (show)
+            {
+
+                if (_inviteFriendModal != null) _inviteFriendModal.gameObject.SetActive(false);
+
+                RefreshManagementList();
+            }
         }
 
         public void AddMission(string description, bool isDone)
@@ -320,13 +349,13 @@ namespace Game.Scripts.UI.Lobby
         public override void OnEnable()
         {
             base.OnEnable(); // Nếu có
-            // InteractionEvents.OnInteractHover += HandleInteractHover; // Bỏ comment nếu có InteractionEvents
+            InteractionEvents.OnInteractHover += HandleInteractHover;
         }
 
         public override void OnDisable()
         {
             base.OnDisable();
-            // InteractionEvents.OnInteractHover -= HandleInteractHover; // Bỏ comment nếu có InteractionEvents
+            InteractionEvents.OnInteractHover -= HandleInteractHover;
         }
 
         private void HandleInteractHover(string msg, bool isVisible)

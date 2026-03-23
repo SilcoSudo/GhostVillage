@@ -1,3 +1,4 @@
+using Game.Core.Player.RayCast;
 using Game.Script.UI;
 using Game.Scripts.UI.Lobby;
 using Photon.Pun;
@@ -5,38 +6,35 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using VContainer;
 
+[RequireComponent(typeof(PlayerStatsManager))] // MỚI: Bắt buộc phải có cục Stats đi kèm
 public class FPSController : MonoBehaviourPun
 {
-    [Header("Movement Settings")]
-    [SerializeField] private float _moveSpeed = 5f;
-    [SerializeField] private float _lookSensitivity = 2f;
-
     [Header("Internal References")]
     [SerializeField] private Camera _playerCam;
 
+    private PlayerStatsManager _stats; // MỚI: Sếp quản lý chỉ số
     private InventoryManager _inventoryManager;
-
     private LobbyUIManager _uiManager;
+    private PlayerKnockedState _knockedState;
+    private PlayerInteract _playerInteract;
 
-    // TIÊM ĐÚNG BỘ INPUT TỪ VCONTAINER (Để nhận được phím đã Rebind)
     [Inject] private PlayerInputActions _inputActions;
 
-    private GlobalUIManager _globalUI; // Tự tìm cái này để gọi Menu ESC chung
+    private GlobalUIManager _globalUI;
     private float _verticalRotation = 0f;
     private bool _isLookEnabled = true;
-    private bool _isInputBound = false; // Cờ đánh dấu đã bind phím chưa
+    private bool _isInputBound = false;
+
+    private bool _isSprinting = false;
+    [HideInInspector] public bool isPlayingMinigame = false;
 
     #region VContainer Injection
-
-    // Dùng Method Injection thay vì Field Injection. 
-    // Hàm này sẽ được _resolver.InjectGameObject() tự động gọi ngay sau khi bơm.
     [Inject]
     public void Construct(PlayerInputActions inputActions)
     {
         _inputActions = inputActions;
         BindInputSystem();
     }
-
     #endregion
 
     #region LifeCycle
@@ -44,8 +42,10 @@ public class FPSController : MonoBehaviourPun
     private void Awake()
     {
         _inventoryManager = GetComponent<InventoryManager>();
+        _knockedState = GetComponent<PlayerKnockedState>();
+        _stats = GetComponent<PlayerStatsManager>();
+        _playerInteract = GetComponent<PlayerInteract>();
     }
-
 
     private void OnDisable()
     {
@@ -70,8 +70,8 @@ public class FPSController : MonoBehaviourPun
                     listener.enabled = false;
             }
 
-            // Tự tìm 2 cục UI cần thiết
             _globalUI = FindObjectOfType<Game.Script.UI.GlobalUIManager>();
+            _uiManager = FindObjectOfType<LobbyUIManager>();
             BindInventoryUI();
 
             Cursor.lockState = CursorLockMode.Locked;
@@ -85,8 +85,15 @@ public class FPSController : MonoBehaviourPun
 
         if (_globalUI != null && _globalUI.IsEscMenuOpen()) return;
 
+        if (_uiManager != null && _uiManager.IsAnyUIOpen) return;
+
+        if (_knockedState != null && _knockedState.isKnocked) return;
+
+        if (isPlayingMinigame) return;
+
         if (!_isLookEnabled) return;
 
+        HandleStateInput();
         HandleMovement();
         HandleRotation();
         HandleInteraction();
@@ -95,20 +102,14 @@ public class FPSController : MonoBehaviourPun
     #endregion
 
     #region Input Callbacks
-
     private void OnEscapePressed(InputAction.CallbackContext context)
     {
-        // GỌI THẲNG GLOBAL UI ĐỂ BẬT MENU ESC XỊN CỦA IN-GAME LÊN
         if (_globalUI != null)
         {
             if (_globalUI.IsEscMenuOpen())
-            {
-                _globalUI.CloseEscMenu(true);
-            }
+                _globalUI.CloseEscMenu();
             else
-            {
                 _globalUI.OpenEscMenu(Game.Script.UI.GlobalUIManager.EscMenuType.InGame, true);
-            }
         }
     }
 
@@ -121,23 +122,36 @@ public class FPSController : MonoBehaviourPun
     {
         if (_inventoryManager != null) _inventoryManager.UseCurrentItem();
     }
-
     #endregion
 
     #region Logic Handlers
+
+    private void HandleStateInput()
+    {
+        // MỚI: Đọc Input chạy nhanh. (Bro nhớ cài nút Sprint trong Input Actions nhé)
+        _isSprinting = _inputActions.Player.Sprint.IsPressed();
+    }
 
     private void HandleMovement()
     {
         Vector2 moveInput = _inputActions.Player.Move.ReadValue<Vector2>();
         Vector3 direction = transform.right * moveInput.x + transform.forward * moveInput.y;
-        transform.position += direction * _moveSpeed * Time.deltaTime;
+
+        // MỚI: Hỏi sếp Stats lấy tốc độ. Nếu đang bấm Sprint thì lấy tốc chạy nhanh.
+        float currentSpeed = _isSprinting ? _stats.CurrentSprintSpeed : _stats.CurrentMoveSpeed;
+
+        transform.position += direction * currentSpeed * Time.deltaTime;
     }
 
     private void HandleRotation()
     {
         Vector2 lookInput = _inputActions.Player.Look.ReadValue<Vector2>();
-        float mouseX = lookInput.x * _lookSensitivity * Time.deltaTime * 100f;
-        float mouseY = lookInput.y * _lookSensitivity * Time.deltaTime * 100f;
+
+        // MỚI: Hỏi sếp Stats lấy độ nhạy chuột
+        float currentSensitivity = _stats.lookSensitivity;
+
+        float mouseX = lookInput.x * currentSensitivity * Time.deltaTime * 100f;
+        float mouseY = lookInput.y * currentSensitivity * Time.deltaTime * 100f;
 
         _verticalRotation -= mouseY;
         _verticalRotation = Mathf.Clamp(_verticalRotation, -80f, 80f);
@@ -148,17 +162,19 @@ public class FPSController : MonoBehaviourPun
 
     private void HandleInteraction()
     {
+        // MỚI: Bắt nút Interact (F) từ InputSystem và ra lệnh cho PlayerInteract
         if (_inputActions.Player.Interact.triggered)
         {
-            // Logic tương tác
+            if (_playerInteract != null)
+            {
+                _playerInteract.TryInteract();
+            }
         }
     }
 
     #endregion
 
-
     #region Input Setup
-
     private void BindInputSystem()
     {
         if (!photonView.IsMine || _inputActions == null || _isInputBound) return;
@@ -177,11 +193,9 @@ public class FPSController : MonoBehaviourPun
         _isInputBound = true;
         Debug.Log("🎮 [FPSController] Đã Bind thành công InputSystem từ VContainer!");
     }
-
     #endregion
 
     #region Public Helpers
-
     public void SetLookEnabled(bool isEnabled) => _isLookEnabled = isEnabled;
 
     private void BindInventoryUI()
@@ -195,6 +209,5 @@ public class FPSController : MonoBehaviourPun
             Debug.Log("✅ [FPS] Đã kết nối túi đồ với UI HUD.");
         }
     }
-
     #endregion
 }

@@ -130,7 +130,7 @@ namespace Game.Scripts.UI.Lobby
                 {
                     if (_globalUI.IsEscMenuOpen())
                     {
-                        _globalUI.CloseEscMenu(true); // Lobby khóa chuột khi đóng ESC
+                        _globalUI.CloseEscMenu(); // Lobby khóa chuột khi đóng ESC
                     }
                     else
                     {
