@@ -77,8 +77,8 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
     [Header("--- Balance ---")]
     [Tooltip("Số phím mũi tên phải bấm đúng trong một lần kéo co")]
     [SerializeField] private int sequenceLength = 5;
-    [Tooltip("Thời gian tối đa của một trận kéo co (giây)")]
-    [SerializeField] private float matchDuration = 30f;
+    [Tooltip("Thời gian tối đa của một hiệp kéo co (giây)")]
+    [SerializeField] private float roundDuration = 30f;
     [Tooltip("Lực kéo thụ động của Vòng Nhi mỗi giây (kéo mốc về phía 0)")]
     [SerializeField] private float vongNhiPullPerSecond = 0.08f;
     [Tooltip("Lực kéo khi người chơi bấm đúng phím")]
@@ -89,18 +89,25 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
     [SerializeField] private float playerWinLine = 0.82f;
     [Tooltip("Vị trí vạch thắng của Vòng Nhi trên slider (0-1)")]
     [SerializeField] private float vongNhiWinLine = 0.18f;
-    [Tooltip("Thời gian hiển thị màn hình kết quả trước khi đóng UI (giây)")]
-    [SerializeField] private float resultDisplayTime = 2f;
+    [Tooltip("Số hiệp thắng liên tiếp để thắng trận")]
+    [SerializeField] private int winStreakTarget = 3;
+    [Tooltip("Số điểm mục tiêu để thắng trận")]
+    [SerializeField] private int pointTarget = 5;
+    [Tooltip("Thời gian hiển thị kết quả của 1 hiệp trước khi sang hiệp tiếp theo")]
+    [SerializeField] private float roundResultDisplayTime = 1.1f;
+    [Tooltip("Thời gian hiển thị màn hình kết quả cuối cùng trước khi đóng UI (giây)")]
+    [SerializeField] private float finalResultDisplayTime = 2f;
 
     // ─── Runtime ──────────────────────────────────────────────
-    private bool _isSolved = false;          // puzzle đã bị ai đó giải (sau khi thắng)
+    private bool _isSolved = false;          // puzzle đã bị ai đó giải (sau khi thắng trận)
     private bool _isMinigamePlaying = false; // local: đang trong minigame
     private bool _isAnyonePlaying = false;   // synced: đang có người kéo
     private float _ropeValue = 0.5f;
     private float _sequenceTimer = 0f;
     private float _resultTimer = 0f;
-    private float _matchTimer = 0f;
+    private float _roundTimer = 0f;
     private bool _showingResult = false;
+    private bool _pendingNextRound = false;
     private GameObject _localActor = null;   // người chơi local đang kéo
     private FPSController _cachedFpsController = null;
     private PlayerInteract _cachedPlayerInteract = null;
@@ -109,6 +116,10 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
     private TugArrow[] _arrowSequence = null;
     private int _currentInputIndex = 0;
     private bool _waitingForArrowInput = false;
+    private int _playerScore = 0;
+    private int _vongNhiScore = 0;
+    private int _playerWinStreak = 0;
+    private int _currentRound = 1;
     private string _overlayHint = string.Empty;
     private string _overlayResult = string.Empty;
 
@@ -158,7 +169,7 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         _localActor = actor;
         ResetMatchState();
         _cancelInputLockTimer = cancelInputDelay;
-        _overlayHint = "Kéo mốc giữa dây qua vạch bên bạn để thắng!";
+        _overlayHint = "Thắng 3 hiệp liên tiếp hoặc đạt 5 điểm để thắng trận!";
         _overlayResult = string.Empty;
 
         if (keoCoCanvas != null)
@@ -174,9 +185,9 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
             ForceShowUIElement(resultPanel);
         }
 
-        StartMatch();
+        StartNextRound();
 
-        Debug.Log($"[KeoCoP] UI start => Canvas:{keoCoCanvas != null}, Overlay:{useRuntimeOverlayUI}, SeqLen:{sequenceLength}, MatchTime:{_matchTimer:F1}s");
+        Debug.Log($"[KeoCoP] UI start => Canvas:{keoCoCanvas != null}, Overlay:{useRuntimeOverlayUI}, SeqLen:{sequenceLength}, RoundTime:{_roundTimer:F1}s");
 
         SnapPlayerToPullPoint(actor);
         LockPlayerControls(actor);
@@ -209,13 +220,16 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
             }
         }
 
-        // Hiển thị kết quả xong → đóng UI
+        // Hiển thị kết quả xong → sang hiệp tiếp hoặc đóng UI
         if (_showingResult)
         {
             _resultTimer -= Time.deltaTime;
             if (_resultTimer <= 0f)
             {
-                CloseUI();
+                if (_pendingNextRound)
+                    StartNextRound();
+                else
+                    CloseUI();
             }
             return;
         }
@@ -223,7 +237,7 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         if (!_waitingForArrowInput)
             return;
 
-        _matchTimer -= Time.deltaTime;
+        _roundTimer -= Time.deltaTime;
         _ropeValue -= vongNhiPullPerSecond * Time.deltaTime;
         _ropeValue = Mathf.Clamp01(_ropeValue);
         UpdateWorldMarkerVisual();
@@ -255,7 +269,7 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
             return;
         }
 
-        if (_matchTimer <= 0f)
+        if (_roundTimer <= 0f)
         {
             HandleLose("Hết thời gian, Vòng Nhi kéo thắng.");
             return;
@@ -273,7 +287,7 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         {
             BuildArrowSequence();
             _currentInputIndex = 0;
-            _sequenceTimer = Mathf.Max(1.2f, Mathf.Min(3.5f, matchDuration * 0.1f));
+            _sequenceTimer = Mathf.Max(1.2f, Mathf.Min(3.5f, roundDuration * 0.1f));
             UpdateSequenceStatus("Vòng Nhi kéo mạnh, chuỗi mới!");
         }
     }
@@ -283,7 +297,19 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
     {
         _isMinigamePlaying = false;
         _waitingForArrowInput = false;
-        ShowResult(true, "THẮNG! Bạn đã kéo mốc giữa dây qua vạch của mình.");
+        _playerScore += 1;
+        _playerWinStreak += 1;
+
+        bool playerWonMatch = _playerWinStreak >= winStreakTarget || _playerScore >= pointTarget;
+        if (!playerWonMatch)
+        {
+            _currentRound += 1;
+            ShowResult(true, false, $"Thắng hiệp! Điểm: {_playerScore}-{_vongNhiScore}. Chuỗi thắng: {_playerWinStreak}/{winStreakTarget}");
+            _pendingNextRound = true;
+            return;
+        }
+
+        ShowResult(true, true, $"THẮNG TRẬN! Điểm: {_playerScore}-{_vongNhiScore}");
 
         // 1. Khóa puzzle với tất cả client (buffered) nếu online, còn offline thì local
         if (PhotonNetwork.IsConnectedAndReady)
@@ -310,15 +336,27 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
             photonView.RPC(nameof(VongNhiLoseRPC), RpcTarget.MasterClient);
         else
             VongNhiLoseRPC();
-        Debug.Log("[KeoCoP] Người chơi THẮNG! Nhận Chỉ đỏ.");
+        Debug.Log($"[KeoCoP] Người chơi THẮNG TRẬN! Final score {_playerScore}-{_vongNhiScore}. Nhận Chỉ đỏ.");
     }
 
     private void HandleLose(string reason = null)
     {
         _isMinigamePlaying = false;
         _waitingForArrowInput = false;
-        string loseMessage = string.IsNullOrEmpty(reason) ? "THUA! Vòng Nhi kéo mốc qua vạch của bạn." : reason;
-        ShowResult(false, loseMessage);
+        _vongNhiScore += 1;
+        _playerWinStreak = 0;
+
+        bool vongNhiWonMatch = _vongNhiScore >= pointTarget;
+        if (!vongNhiWonMatch)
+        {
+            _currentRound += 1;
+            string roundReason = string.IsNullOrEmpty(reason) ? "Thua hiệp." : reason;
+            ShowResult(false, false, $"{roundReason} Điểm: {_playerScore}-{_vongNhiScore}");
+            _pendingNextRound = true;
+            return;
+        }
+
+        ShowResult(false, true, $"THUA TRẬN! Điểm: {_playerScore}-{_vongNhiScore}");
 
         // Vòng Nhi thắng → báo Ông Kẹ + bỏ chạy (online/offline)
         if (PhotonNetwork.IsConnectedAndReady)
@@ -332,13 +370,14 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         else
             SetPlayingRPC(false);
 
-        Debug.Log("[KeoCoP] Người chơi THUA! Vòng Nhi báo Ông Kẹ...");
+        Debug.Log($"[KeoCoP] Người chơi THUA TRẬN! Final score {_playerScore}-{_vongNhiScore}. Vòng Nhi báo Ông Kẹ...");
     }
 
-    private void ShowResult(bool won, string message)
+    private void ShowResult(bool won, bool isFinalResult, string message)
     {
         _showingResult = true;
-        _resultTimer = resultDisplayTime;
+        _pendingNextRound = !isFinalResult;
+        _resultTimer = isFinalResult ? finalResultDisplayTime : roundResultDisplayTime;
         _overlayResult = message;
 
         if (resultPanel != null) resultPanel.SetActive(true);
@@ -348,7 +387,7 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
             resultText.text = $"<color={color}>{message}</color>";
         }
         if (statusText != null)
-            statusText.text = string.Empty;
+            statusText.text = isFinalResult ? string.Empty : $"<color=yellow>Hiệp kế tiếp bắt đầu ngay...</color>";
         if (timerText != null)
             timerText.text = string.Empty;
     }
@@ -371,6 +410,7 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         _isMinigamePlaying = false;
         _showingResult = false;
         _waitingForArrowInput = false;
+        _pendingNextRound = false;
         CancelInvoke();
         _overlayResult = string.Empty;
 
@@ -658,7 +698,7 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
             UpdateSliderColor();
 
             _currentInputIndex = 0;
-            _sequenceTimer = Mathf.Max(1.2f, Mathf.Min(3.5f, matchDuration * 0.1f));
+            _sequenceTimer = Mathf.Max(1.2f, Mathf.Min(3.5f, roundDuration * 0.1f));
             UpdateSequenceStatus($"Sai phím! Cần {GetArrowMarkup(expectedArrow)} - mất nhịp.");
             return;
         }
@@ -683,7 +723,7 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         {
             BuildArrowSequence();
             _currentInputIndex = 0;
-            _sequenceTimer = Mathf.Max(1.2f, Mathf.Min(3.5f, matchDuration * 0.1f));
+            _sequenceTimer = Mathf.Max(1.2f, Mathf.Min(3.5f, roundDuration * 0.1f));
             UpdateSequenceStatus("Kéo tốt! Chuỗi mới...");
             return;
         }
@@ -696,7 +736,7 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         if (timerText == null) return;
 
         if (_waitingForArrowInput)
-            timerText.text = $"Trận: {Mathf.CeilToInt(Mathf.Max(0f, _matchTimer))}s | Chuỗi: {Mathf.CeilToInt(Mathf.Max(0f, _sequenceTimer))}s";
+            timerText.text = $"{Mathf.CeilToInt(Mathf.Max(0f, _roundTimer))}s";
         else
             timerText.text = string.Empty;
     }
@@ -729,7 +769,7 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         }
 
         statusText.text =
-            $"Mốc dây: {_ropeValue:0.00} | Vạch người chơi >= {playerWinLine:0.00} | Vạch Vòng Nhi <= {vongNhiWinLine:0.00}\n" +
+            $"Hiệp {_currentRound} | Điểm {_playerScore}-{_vongNhiScore} | Chuỗi thắng {_playerWinStreak}/{winStreakTarget}\n" +
             $"{prefix}\n{sequenceText}\n<color=yellow>{_currentInputIndex}/{sequenceLength} đúng</color>";
     }
 
@@ -759,7 +799,7 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
             fontSize = 18,
             normal = { textColor = Color.cyan },
         };
-        GUI.Label(new Rect(panel.x + 20f, panel.y + 60f, panel.width - 40f, 24f), $"Moc day {_ropeValue:0.00} | Thang >= {playerWinLine:0.00} | Thua <= {vongNhiWinLine:0.00}", scoreStyle);
+        GUI.Label(new Rect(panel.x + 20f, panel.y + 60f, panel.width - 40f, 24f), $"Hiep {_currentRound} | Diem {_playerScore}-{_vongNhiScore} | Chuoi thang {_playerWinStreak}/{winStreakTarget}", scoreStyle);
 
         if (_isMinigamePlaying && _arrowSequence != null)
         {
@@ -797,27 +837,31 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
 
     private void ResetMatchState()
     {
-        _ropeValue = 0.5f;
-        _matchTimer = Mathf.Max(5f, matchDuration);
+        _playerScore = 0;
+        _vongNhiScore = 0;
+        _playerWinStreak = 0;
+        _currentRound = 1;
         _showingResult = false;
-        _currentInputIndex = 0;
-        _waitingForArrowInput = false;
-        UpdateWorldMarkerVisual();
+        _pendingNextRound = false;
     }
 
-    private void StartMatch()
+    private void StartNextRound()
     {
         _isMinigamePlaying = true;
         _showingResult = false;
+        _pendingNextRound = false;
         _waitingForArrowInput = true;
         _currentInputIndex = 0;
-        _matchTimer = Mathf.Max(5f, matchDuration);
+        _ropeValue = 0.5f;
         _overlayResult = string.Empty;
 
         if (sequenceLength <= 0)
             sequenceLength = 5;
 
-        _sequenceTimer = Mathf.Max(1.2f, Mathf.Min(3.5f, _matchTimer * 0.1f));
+        float effectiveDuration = roundDuration;
+        if (effectiveDuration <= 0f)
+            effectiveDuration = 5f;
+        _roundTimer = Mathf.Max(5f, effectiveDuration);
 
         BuildArrowSequence();
         UpdateWorldMarkerVisual();
@@ -828,7 +872,8 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         if (resultPanel != null)
             resultPanel.SetActive(false);
 
-        UpdateSequenceStatus("Bắt đầu kéo! Đưa mốc qua vạch của bạn.");
+        string roundPrefix = $"Bắt đầu hiệp {_currentRound}!";
+        UpdateSequenceStatus(roundPrefix);
         UpdateTimerLabel();
     }
 
@@ -1003,8 +1048,17 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         if (sequenceLength <= 0)
             sequenceLength = 1;
 
-        if (matchDuration <= 0f)
-            matchDuration = 5f;
+        if (roundDuration <= 0f)
+            roundDuration = 5f;
+
+        if (winStreakTarget <= 0)
+            winStreakTarget = 1;
+
+        if (pointTarget <= 0)
+            pointTarget = 1;
+
+        if (roundResultDisplayTime < 0.1f)
+            roundResultDisplayTime = 0.1f;
 
         playerWinLine = Mathf.Clamp(playerWinLine, 0.55f, 0.98f);
         vongNhiWinLine = Mathf.Clamp(vongNhiWinLine, 0.02f, 0.45f);
