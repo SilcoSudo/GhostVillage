@@ -29,11 +29,36 @@ public class PlayerSpawner : MonoBehaviour
                 point.rotation
             );
 
-            // 4. TIÊM VCONTAINER NGAY LẬP TỨC VÀO PLAYER
-            if (playerObj != null && _resolver != null)
+            // 4. KIỂM TRA & CÀI ĐẶT CHO LOCAL PLAYER
+            if (playerObj != null)
             {
-                _resolver.InjectGameObject(playerObj);
-                Debug.Log($"<color=green>[Spawner]</color> Đã spawn & Inject Player tại: {point.name}");
+                PhotonView pv = playerObj.GetComponent<PhotonView>();
+
+                // Tiêm VContainer cho TẤT CẢ các bản sao (để tụi nó nhận Dependencies nếu cần)
+                if (_resolver != null)
+                {
+                    _resolver.InjectGameObject(playerObj);
+                    Debug.Log($"<color=green>[Spawner]</color> Đã spawn & Inject Player tại: {point.name}");
+                }
+
+                // NHƯNG CHỈ BƠM DATA (Settings/Perks) VÀO NHÂN VẬT CỦA MÌNH (Local Player)
+                if (pv.IsMine)
+                {
+                    PlayerStatsManager stats = playerObj.GetComponent<PlayerStatsManager>();
+                    if (stats != null)
+                    {
+                        // A. Cài đặt Settings (Ví dụ: Độ nhạy chuột lưu từ Menu)
+                        float savedSens = PlayerPrefs.GetFloat("MouseSensitivity", 2f);
+                        stats.SetLookSensitivity(savedSens);
+
+                        // B. Nơi này chuẩn bị gọi API Fetch Loadout/Perk để đè vào
+                        // Ví dụ: Nhận được perk Thắt Lưng Cỏ Bện từ Backend
+                        // stats.maxStaminaMultiplier = 1.15f;
+                        // stats.staminaRegenMultiplier = 1.10f;
+
+                        Debug.Log("<color=yellow>[Spawner]</color> Đã nạp thành công Base Settings & Perks cho Local Player.");
+                    }
+                }
             }
         }
         else

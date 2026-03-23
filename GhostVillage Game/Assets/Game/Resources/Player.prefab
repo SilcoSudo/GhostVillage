@@ -293,7 +293,9 @@ GameObject:
   - component: {fileID: 6696425490218086896}
   - component: {fileID: 8530409233292497577}
   - component: {fileID: 1132204408446782942}
-  m_Layer: 0
+  - component: {fileID: 8595451694438320336}
+  - component: {fileID: 4587723652741117715}
+  m_Layer: 6
   m_Name: Player
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -509,9 +511,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 84dedaf8d5654c543b38e73c10389e62, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _moveSpeed: 5
-  _lookSensitivity: 1
   _playerCam: {fileID: 6152550223428560476}
+  isPlayingMinigame: 0
 --- !u!114 &8530409233292497577
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -547,6 +548,51 @@ MonoBehaviour:
   dropForce: 2
   items: []
   currentSlotIndex: 0
+--- !u!114 &8595451694438320336
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6408451038521496733}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e40ab5c48e539384583cded1d03ceda3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerStatsManager
+  lookSensitivity: 2
+  baseMoveSpeed: 4
+  baseSprintSpeed: 6
+  baseMaxStamina: 100
+  baseStaminaDrainRate: 15
+  baseStaminaRegenRate: 10
+  baseBatteryDrainRate: 1
+  baseReviveSpeed: 1
+  speedMultiplier: 1
+  maxStaminaMultiplier: 1
+  staminaDrainMultiplier: 1
+  staminaRegenMultiplier: 1
+  batteryDrainMultiplier: 1
+  reviveSpeedMultiplier: 1
+  medkitEffectivenessMultiplier: 1
+  freeConsumableChance: 0
+  detectionVisibilityMultiplier: 1
+--- !u!114 &4587723652741117715
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6408451038521496733}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d9843bf97eab7f47a338df429ff4cf4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerKnockedState
+  isKnocked: 0
+  maxProgress: 25
+  startingProgress: 12.5
+  currentProgress: 0
 --- !u!1 &6908262245944130188
 GameObject:
   m_ObjectHideFlags: 0

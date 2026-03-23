@@ -72,6 +72,51 @@ public class InventoryManager : MonoBehaviourPun
     #region Public Inventory API
 
     /// <summary>
+    /// Bắn toàn bộ đồ trong túi ra xung quanh (Dùng khi bị Gục hoặc Chết)
+    /// </summary>
+    public void DropAllItemsScattered()
+    {
+        if (!photonView.IsMine) return;
+        if (items.Count == 0) return;
+
+        Debug.Log($"<color=red>[Inventory]</color> Oạch! {photonView.Owner.NickName} rớt sạch đồ ra đất!");
+
+        for (int i = items.Count - 1; i >= 0; i--)
+        {
+            ItemDataSO itemToDrop = items[i];
+
+            // Nếu là đồ thoát hiểm (Con Gà) thì không cho rớt
+            if (itemToDrop.itemType == ItemType.EscapeTool) continue;
+
+            if (itemToDrop.itemWorldPrefab != null)
+            {
+                // 1. Tính toán vị trí ngẫu nhiên xung quanh (bán kính 1.5m)
+                Vector2 randomCircle = UnityEngine.Random.insideUnitCircle * 1.5f;
+                // Cộng offset vào vị trí dropPosition hiện tại, nhích lên cao 0.5m để không xuyên đất
+                Vector3 scatterPos = dropPosition.position + new Vector3(randomCircle.x, 0.5f, randomCircle.y);
+
+                // 2. Spawn qua mạng
+                GameObject droppedItem = PhotonNetwork.Instantiate(
+                    itemToDrop.itemWorldPrefab.name,
+                    scatterPos,
+                    UnityEngine.Random.rotation // Cho nó rớt lăn lóc ngẫu nhiên
+                );
+
+                // 3. Thêm lực nẩy nhẹ lên trên và tủa ra ngoài
+                Rigidbody rb = droppedItem.GetComponent<Rigidbody>();
+                if (rb != null)
+                {
+                    Vector3 popForce = (Vector3.up * 3f) + (new Vector3(randomCircle.x, 0, randomCircle.y).normalized * 2f);
+                    rb.AddForce(popForce, ForceMode.Impulse);
+                }
+            }
+        }
+
+        // 4. Xóa sạch túi đồ ảo
+        ClearInventoryAndLock();
+    }
+
+    /// <summary>
     /// Thêm vật phẩm vào túi. Trả về true nếu thành công.
     /// </summary>
     public bool AddItem(ItemDataSO newItem)

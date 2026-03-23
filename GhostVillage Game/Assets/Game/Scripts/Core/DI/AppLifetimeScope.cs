@@ -66,6 +66,12 @@ namespace Game.Core.DI
                 Debug.LogError("❌ LỖI: Chưa kéo Photon Prefab vào AppLifetimeScope!");
             }
 
+            // ==========================================
+            // [THÊM MỚI] 3.5 TẠO VÀ ĐĂNG KÝ GLOBAL CHAT MANAGER
+            // ==========================================
+            builder.RegisterComponentOnNewGameObject<Game.Core.Network.Chat.GlobalChatManager>(Lifetime.Singleton, "GlobalChatManager_Auto");
+            // ==========================================
+
             // 4. UI (Tự Instantiate và đăng ký)
             if (_globalUIPrefab != null)
             {

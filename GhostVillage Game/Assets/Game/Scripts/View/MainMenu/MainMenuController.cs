@@ -45,6 +45,8 @@ namespace Game.UI.MainMenu
         [Inject] private AuthService _authService;
         [Inject] private GlobalUIManager _globalUI;
 
+        [Inject] private Game.Domain.Friend.Controllers.FriendController _friendController;
+
         [Header("Settings UI")]
         [SerializeField] private Button _btnOpenEscMenu;
 
@@ -82,16 +84,15 @@ namespace Game.UI.MainMenu
 
         private void Start()
         {
-            // CẮM ỐNG VÀO GLOBAL UI
             _globalUI.OnLogoutClicked = OnLogoutAction;
 
             if (_btnOpenEscMenu != null)
             {
-                // Sửa thành OpenEscMenu thay vì Toggle
                 _btnOpenEscMenu.onClick.AddListener(() => _globalUI.OpenEscMenu(GlobalUIManager.EscMenuType.MainMenu, false));
             }
 
             FetchAndPopulateProfile().Forget();
+            _friendController.InitializeDataAsync().Forget();
 
             if (_network.IsConnected)
                 HandleConnected();
@@ -109,7 +110,7 @@ namespace Game.UI.MainMenu
         {
             if (_globalUI.IsEscMenuOpen())
             {
-                _globalUI.CloseEscMenu(false);
+                _globalUI.CloseEscMenu();
             }
             else
             {
