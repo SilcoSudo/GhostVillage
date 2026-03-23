@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using System.Collections; // Cần dòng này để xài Coroutine
+using System.Collections;
 
 public class TestMovement : MonoBehaviour
 {
@@ -17,6 +17,7 @@ public class TestMovement : MonoBehaviour
 
     private PlayerInputActions _inputActions;
     private Rigidbody _rb;
+    private CapsuleCollider _col; // Thêm collider để tắt/mở
     private float _verticalRotation = 0f;
     private MovementState _currentState = MovementState.Idle;
     private bool _isDead = false;
@@ -29,6 +30,7 @@ public class TestMovement : MonoBehaviour
     {
         _inputActions = new PlayerInputActions();
         _rb = GetComponent<Rigidbody>();
+        _col = GetComponent<CapsuleCollider>();
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
@@ -42,7 +44,7 @@ public class TestMovement : MonoBehaviour
         {
             if (Keyboard.current.fKey.wasPressedThisFrame)
             {
-                StartCoroutine(ReviveRoutine()); // Dùng Coroutine để hồi sinh từ từ
+                StartCoroutine(ReviveRoutine()); 
             }
             return; 
         }
@@ -71,7 +73,12 @@ public class TestMovement : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("TestMonster") && !_isDead)
         {
+            Vector3 pushDir = (collision.transform.position - transform.position).normalized;
+            pushDir.y = 0;
+            collision.transform.position += pushDir * 4f;
+
             Die();
+            Debug.Log("💥 Đã đẩy quái ra xa để lấy chỗ diễn Dying!");
         }
     }
 
@@ -87,30 +94,36 @@ public class TestMovement : MonoBehaviour
             _rb.isKinematic = true; 
         }
 
+        // 1. TẮT COLLIDER: Trị dứt điểm lỗi "thụt xuống đất"
+        if (_col != null) _col.enabled = false;
+
         animator.SetTrigger(DieHash);
         Debug.Log("💀 ĐÃ CHẾT! Bấm F để đứng dậy.");
     }
 
-    // COROUTINE HỒI SINH AN TOÀN
     private IEnumerator ReviveRoutine()
     {
-        _isDead = false; // Mở khóa logic trước
+        _isDead = false; 
+
+        // 1. Kích hoạt animation đứng dậy
         animator.SetTrigger(GetUpHash);
 
-        // 1. Nhích nhân vật ra sau 0.5m để tránh dính vào quái/vật cản gây bay
-        transform.position -= transform.forward * 0.5f;
+        // 2. Tạm thời tắt vật lý để animation diễn ra mượt (không bị lún sàn do va chạm)
+        if (_rb != null) _rb.isKinematic = true;
+        if (_col != null) _col.enabled = false;
 
-        // 2. Chờ một khoảng thời gian ngắn (ví dụ 1.5 giây) cho animation đứng dậy diễn ra
-        yield return new WaitForSeconds(1.5f);
+        // 3. Đợi cho đến khi đứng dậy xong (ví dụ clip dài 2 giây)
+        yield return new WaitForSeconds(2.0f);
 
-        // 3. Lúc này mới bật lại vật lý
+        // 4. Bật lại mọi thứ để chơi tiếp
         if (_rb != null) 
         {
             _rb.isKinematic = false;
-            _rb.linearVelocity = Vector3.zero; // Reset vận tốc lần nữa cho chắc
+            _rb.linearVelocity = Vector3.zero;
         }
-        
-        Debug.Log("🛡️ ĐÃ HỒI SINH AN TOÀN!");
+        if (_col != null) _col.enabled = true;
+
+        Debug.Log("🛡️ Đã đứng dậy xong!");
     }
 
     private void HandleRotation()

@@ -35,7 +35,7 @@ const uploadMiddleware = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: config.upload.maxSize || 50 * 1024 * 1024, // 50MB default
+    fileSize: config.upload.maxSize || 20 * 1024 * 1024, // 20MB default
   },
 });
 
@@ -43,6 +43,9 @@ const uploadMiddleware = multer({
  * Middleware for single avatar upload
  */
 export const uploadAvatar = uploadMiddleware.single("avatar");
+
+// Alias for post media uploads (field name = "media")
+export const uploadMedia = uploadMiddleware.single("media");
 
 /**
  * Middleware for multiple image uploads
