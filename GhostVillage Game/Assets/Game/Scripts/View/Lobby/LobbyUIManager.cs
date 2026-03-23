@@ -72,6 +72,10 @@ namespace Game.Scripts.UI.Lobby
         [Header("Invite Modal")]
         [SerializeField] private InviteFriendModalUI _inviteFriendModal;
 
+        // BỔ SUNG BIẾN CHO TUTORIAL
+        [Header("Tutorial Modal")]
+        [SerializeField] private TutorialModalUI _tutorialModal;
+
         // TIÊM RADAR VÀ CHAT VÀO ĐÂY ĐỂ TRUYỀN XUỐNG MODAL
         [Inject] private Game.Domain.Friend.Controllers.FriendController _friendController;
         [Inject] private Game.Core.Network.Chat.GlobalChatManager _chatManager;
@@ -102,6 +106,11 @@ namespace Game.Scripts.UI.Lobby
             if (_txtStartGamePrompt) _txtStartGamePrompt.gameObject.SetActive(false);
             if (_inviteFriendModal != null) _inviteFriendModal.gameObject.SetActive(false);
 
+            if (_tutorialModal != null && _tutorialModal.BtnClose != null)
+            {
+                _tutorialModal.BtnClose.onClick.AddListener(() => ShowTutorialModal(false));
+            }
+
             // Bind Button Events
             if (_btnNextMap) _btnNextMap.onClick.AddListener(() => OnNextMapClicked?.Invoke());
             if (_btnPrevMap) _btnPrevMap.onClick.AddListener(() => OnPrevMapClicked?.Invoke());
@@ -124,12 +133,33 @@ namespace Game.Scripts.UI.Lobby
         public bool IsAnyUIOpen =>
                     (_managementModal != null && _managementModal.activeSelf) ||
                     (_mapPickerModal != null && _mapPickerModal.activeSelf) ||
-                    IsChatFocused();
+                    (_tutorialModal != null && _tutorialModal.gameObject.activeSelf) ||
+                    IsChatFocused() ||
+                    (_inviteFriendModal != null && _inviteFriendModal.gameObject.activeSelf);
 
         public void SetRoomInfo(string roomName, string hostName, string password)
         {
             _txtRoomInfo.text = $"Room: {roomName} - Host: {hostName}";
             _txtRoomPassword.text = string.IsNullOrEmpty(password) ? "Public Room" : $"Pass: {password}";
+        }
+
+        #endregion
+
+
+        #region Tutorial Modal Logic
+
+        // HÀM MỚI CHUYÊN DÙNG ĐỂ BẬT TẮT HƯỚNG DẪN + XỬ LÝ CHUỘT
+        public void ShowTutorialModal(bool show)
+        {
+            if (_tutorialModal == null) return;
+
+            if (show) _tutorialModal.OpenModal();
+            else _tutorialModal.CloseModal();
+
+            if (_imgDimBG) _imgDimBG.SetActive(show);
+
+            Cursor.lockState = show ? CursorLockMode.None : CursorLockMode.Locked;
+            Cursor.visible = show;
         }
 
         #endregion
