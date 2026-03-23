@@ -5,7 +5,7 @@ import { useCreatePost, useUpdatePost } from "../hooks/usePosts";
 import { toast } from "react-hot-toast";
 import { X } from "lucide-react";
 import TiptapEditor from "./TiptapEditor";
-import { uploadImage } from "../services/uploadService";
+import { uploadMedia } from "../services/uploadService";
 import "./CreatePostModal.css";
 
 const MAX_POST_IMAGES = 10;
@@ -136,7 +136,7 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
         if (media.file) {
           // Upload to Cloudinary
           try {
-            const result = await uploadImage(media.file);
+            const result = await uploadMedia(media.file);
             uploadedMedia.push({
               url: result.url,
               type: media.type,

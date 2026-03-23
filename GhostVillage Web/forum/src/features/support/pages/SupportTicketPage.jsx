@@ -14,7 +14,7 @@ import {
 } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../app/hooks/useAuth";
-import { uploadImage } from "../../posts/services/uploadService";
+import { uploadMedia } from "../../posts/services/uploadService";
 import {
   useCreateSupportTicket,
   useMySupportTickets,
@@ -177,7 +177,7 @@ const SupportTicketPage = () => {
         setIsUploadingImages(true);
         uploadedAttachments = await Promise.all(
           attachedImages.map(async (item) => {
-            const uploadResult = await uploadImage(item.file);
+            const uploadResult = await uploadMedia(item.file);
             return {
               url: uploadResult?.url,
               publicId: uploadResult?.publicId || null,

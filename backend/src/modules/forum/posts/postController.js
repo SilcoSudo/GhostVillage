@@ -384,7 +384,7 @@ export const lockPost = async (req, res, next) => {
   }
 };
 
-export const uploadPostImage = async (req, res, next) => {
+export const uploadPostMedia = async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -436,7 +436,7 @@ export const uploadPostImage = async (req, res, next) => {
       },
     });
   } catch (err) {
-    console.error("Upload post image error:", err);
+    console.error("Upload post media error:", err);
     const message = err?.message || "Upload failed";
     if (message.includes("status 429") || message.includes("429")) {
       return res.status(429).json({
