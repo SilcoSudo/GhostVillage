@@ -15,9 +15,12 @@ namespace Game.UI.MainMenu
     public class MainMenuController : MonoBehaviour
     {
         [Header("UI References")]
-        [SerializeField] private Button _lobbyListButton;
-        [SerializeField] private Button _debugHostButton;
-        [SerializeField] private TextMeshProUGUI _statusText;
+        [SerializeField] private Button _lobbyListButton; // Nút vào xem danh sách
+        [SerializeField] private Button _debugHostButton; // Nút test tạo nhanh phòng
+        [SerializeField] private Button _shopButton; // Nút vào cửa hàng
+        [SerializeField] private Button _storageButton; // Nút vào kho đồ
+
+        [SerializeField] private TextMeshProUGUI _statusText; // Hiện trạng thái kết nối
 
         [Header("Profile Text")]
         [SerializeField] private TMP_Text txtPlayerName;
@@ -44,6 +47,8 @@ namespace Game.UI.MainMenu
         [Inject] private GameSession _session;
         [Inject] private AuthService _authService;
         [Inject] private GlobalUIManager _globalUI;
+
+        [Inject] private Game.Domain.Friend.Controllers.FriendController _friendController;
 
         [Header("Settings UI")]
         [SerializeField] private Button _btnOpenEscMenu;
@@ -82,16 +87,15 @@ namespace Game.UI.MainMenu
 
         private void Start()
         {
-            // CẮM ỐNG VÀO GLOBAL UI
             _globalUI.OnLogoutClicked = OnLogoutAction;
 
             if (_btnOpenEscMenu != null)
             {
-                // Sửa thành OpenEscMenu thay vì Toggle
                 _btnOpenEscMenu.onClick.AddListener(() => _globalUI.OpenEscMenu(GlobalUIManager.EscMenuType.MainMenu, false));
             }
 
             FetchAndPopulateProfile().Forget();
+            _friendController.InitializeDataAsync().Forget();
 
             if (_network.IsConnected)
                 HandleConnected();
@@ -101,6 +105,8 @@ namespace Game.UI.MainMenu
                 _statusText.color = Color.yellow;
                 _lobbyListButton.interactable = false;
                 _debugHostButton.interactable = false;
+                _shopButton.interactable = false;
+                _storageButton.interactable = false;
                 _network.ConnectAsync(_session.DisplayName, _session.Token).Forget();
             }
         }
@@ -109,7 +115,7 @@ namespace Game.UI.MainMenu
         {
             if (_globalUI.IsEscMenuOpen())
             {
-                _globalUI.CloseEscMenu(false);
+                _globalUI.CloseEscMenu();
             }
             else
             {
@@ -161,10 +167,38 @@ namespace Game.UI.MainMenu
             _statusText.color = Color.green;
             _lobbyListButton.interactable = true;
             _debugHostButton.interactable = true;
+            _shopButton.interactable = true;
+            _storageButton.interactable = true;
         }
 
-        public void OnLobbyListClick() => _sceneLoader.LoadSceneAsync("LobbyListScene");
-        public void OpenProfileScene() => _sceneLoader.LoadSceneAsync("ProfileScene");
+        // Gắn vào nút "Lobby List"
+        public void OnLobbyListClick()
+        {
+            // Chuyển sang scene xem danh sách
+            _sceneLoader.LoadSceneAsync("LobbyListScene");
+        }
+        
+        // Gắn vào Profile
+        public void OpenProfileScene() 
+        {
+            // Chuyển sang scene Profile
+            _sceneLoader.LoadSceneAsync("ProfileScene");
+        }
+
+        // Gắn vào nút "Shop"
+        public void OpenShopScene() 
+        {
+            // Chuyển sang scene Shop
+            _sceneLoader.LoadSceneAsync("ShopScene");
+        }
+
+        public void OpenStorageScene() 
+        {
+            // Chuyển sang scene Storage
+            _sceneLoader.LoadSceneAsync("StorageScene");
+        }
+        
+        // Gắn vào nút "Test Host" (Nút ảo để test)
         public void OnDebugCreateRoomClick()
         {
             _statusText.text = "Creating Test Room...";

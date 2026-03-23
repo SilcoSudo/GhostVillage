@@ -11,37 +11,38 @@ public class PuzzleSpawnerManager : MonoBehaviour
     {
         if (!PhotonNetwork.IsMasterClient) return;
 
-        // [FIX CHÍNH LÀ Ở ĐÂY]: Kiểm tra cả trường hợp config bị null và các List bên trong bị null
-        if (config == null ||
-            config.puzzlePoolIds == null || config.puzzlePoolIds.Count == 0 ||
-            config.spawnPointIds == null || config.spawnPointIds.Count == 0)
+        if (config == null || config.puzzlePoolIds == null || config.puzzlePoolIds.Count == 0)
         {
             Debug.LogWarning("⚠️ [PuzzleSpawner] Map này không có Puzzle hoặc thiếu config Puzzle.");
             return;
         }
 
+        // BỐC LIST ĐIỂM TỪ TAG SP_Puzzle
+        List<Transform> availablePoints = mapData.GetSpawnPointsByTag("SP_Puzzle");
+        if (availablePoints.Count == 0)
+        {
+            Debug.LogWarning("⚠️ [PuzzleSpawner] Map không có điểm nào gắn Tag 'SP_Puzzle'!");
+            return;
+        }
+
         Debug.Log($"[PuzzleSpawner] Đang setup {config.puzzlePoolIds.Count} câu đố...");
 
-        List<string> shuffledPoints = config.spawnPointIds.OrderBy(x => Random.value).ToList();
+        List<Transform> shuffledPoints = availablePoints.OrderBy(x => Random.value).ToList();
         int spawnCount = Mathf.Min(config.puzzlePoolIds.Count, shuffledPoints.Count);
 
         for (int i = 0; i < spawnCount; i++)
         {
             string puzzlePrefabId = config.puzzlePoolIds[i];
-            string pointId = shuffledPoints[i];
+            Transform targetPoint = shuffledPoints[i];
 
-            Transform targetPoint = mapData.GetSpawnPointById(pointId);
-
-            // Check nếu ID rỗng thì bỏ qua
             if (string.IsNullOrEmpty(puzzlePrefabId)) continue;
 
             GameObject prefab = resourceDB.GetPrefabById(puzzlePrefabId);
 
-            if (targetPoint != null && prefab != null)
+            if (prefab != null)
             {
-                // Truyền tên Prefab vào cho Photon
                 PhotonNetwork.InstantiateRoomObject(prefab.name, targetPoint.position, targetPoint.rotation);
-                Debug.Log($"✅ [PuzzleSpawner] Spawn {puzzlePrefabId} ({prefab.name}) tại {pointId}");
+                Debug.Log($"✅ [PuzzleSpawner] Spawn {puzzlePrefabId} ({prefab.name}) tại {targetPoint.name}");
             }
         }
     }

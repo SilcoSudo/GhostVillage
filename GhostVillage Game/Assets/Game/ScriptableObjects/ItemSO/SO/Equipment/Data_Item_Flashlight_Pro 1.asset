@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e85ed012c9a4de47820e11107806a98, type: 3}
+  m_Name: Data_Item_Flashlight_Pro 1
+  m_EditorClassIdentifier: Assembly-CSharp::EquipmentItemSO
+  itemId: ITEM_FLASHLIGHT
+  itemName: "\u0110\xE8n Pin Qu\xE2n D\u1EE5ng"
+  description: 
+  itemType: 2
+  itemIcon: {fileID: 21300000, guid: a7d910fbcd9ea2844a35d775dfb93eae, type: 3}
+  itemWorldPrefab: {fileID: 7723053562602984848, guid: 50b849f38cc225a44ba541096021650f, type: 3}
+  itemHandModel: {fileID: 7024614330379377522, guid: 1b117bcded2c1474b92c35134ab8145c, type: 3}

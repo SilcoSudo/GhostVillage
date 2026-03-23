@@ -83,7 +83,7 @@ namespace Game.Core.Network.API
                 }
             }
         }
-        
+
         /// <summary>
         /// Thực hiện gửi yêu cầu GET kèm mã xác thực (JWT Token).
         /// Thường dùng cho các API lấy dữ liệu cá nhân như Profile, Lịch sử đấu, Thành tựu.
@@ -98,7 +98,7 @@ namespace Game.Core.Network.API
             using var request = UnityWebRequest.Get(url);
             request.SetRequestHeader("Authorization", $"Bearer {token.Trim()}");
 
-            try 
+            try
             {
                 await request.SendWebRequest();
                 string jsonResponse = request.downloadHandler.text;
@@ -109,10 +109,11 @@ namespace Game.Core.Network.API
 
                 // BƯỚC 2: "Bóc" lấy nội dung bên trong trường 'data' và parse riêng
                 // Vì JsonUtility yếu với Generics, ta cần parse thẳng vào kiểu T
-                string dataJson = ExtractDataField(jsonResponse); 
+                string dataJson = ExtractDataField(jsonResponse);
                 return JsonUtility.FromJson<T>(dataJson);
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 Debug.LogError($"[API Error] {e.Message}");
                 return default;
             }
@@ -124,12 +125,12 @@ namespace Game.Core.Network.API
             // Tìm vị trí của "data": và bóc nội dung sau đó
             int dataIdx = json.IndexOf("\"data\":");
             if (dataIdx == -1) return "{}";
-            
+
             int start = dataIdx + 7;
-            int end = json.LastIndexOf("}") ;
+            int end = json.LastIndexOf("}");
             return json.Substring(start, end - start);
         }
-        
+
         // Hàm POST Generic (Thêm đoạn này vào)
         public async UniTask<T> PostAsync<T>(string endpoint, string jsonBody)
         {
@@ -220,6 +221,73 @@ namespace Game.Core.Network.API
                         Debug.LogError($"[API] Server Logic Error: {wrapper?.error}");
                         return default;
                     }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[API] Parse JSON Error: {e.Message}");
+                    return default;
+                }
+            }
+        }
+
+        public async UniTask<string> GetRawJsonWithAuth(string endpoint, string token)
+        {
+            string url = $"{_baseUrl.TrimEnd('/')}/{endpoint.TrimStart('/')}";
+            using var request = UnityWebRequest.Get(url);
+            request.SetRequestHeader("Authorization", $"Bearer {token.Trim()}");
+
+            try
+            {
+                await request.SendWebRequest();
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogError($"[API] Error: {request.error}");
+                    return null;
+                }
+                return request.downloadHandler.text;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[API Error] {e.Message}");
+                return null;
+            }
+        }
+        /// <summary>
+        /// PUT request (Dùng để cập nhật dữ liệu như Trang bị đồ)
+        /// </summary>
+        public async UniTask<T> PutAsyncWithAuth<T>(string endpoint, string jsonBody, string token)
+        {
+            string url = $"{_baseUrl.TrimEnd('/')}/{endpoint.TrimStart('/')}";
+
+            if (_config.IsDebugMode)
+                Debug.Log($"[API] PUT (Auth) Request: {url} | Token: {token?.Substring(0, 10)}...");
+
+            using (var request = new UnityWebRequest(url, "PUT"))
+            {
+                byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonBody);
+                request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+                request.downloadHandler = new DownloadHandlerBuffer();
+                request.SetRequestHeader("Content-Type", "application/json");
+                request.SetRequestHeader("Authorization", $"Bearer {token}");
+
+                await request.SendWebRequest();
+
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogError($"[API] Error: {request.error} | Response: {request.downloadHandler.text}");
+                    return default;
+                }
+
+                string jsonResponse = request.downloadHandler.text;
+
+                try
+                {
+                    var wrapper = JsonUtility.FromJson<ResponseWrapper<T>>(jsonResponse);
+
+                    if (wrapper != null && wrapper.success) return wrapper.data;
+                    
+                    Debug.LogError($"[API] Server Logic Error: {wrapper?.error}");
+                    return default;
                 }
                 catch (Exception e)
                 {

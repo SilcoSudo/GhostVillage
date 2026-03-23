@@ -9,13 +9,13 @@ import {
   likePost,
   bookmarkPost,
   lockPost,
-  uploadPostImage,
+  uploadPostMedia,
   deletePostMedia,
   reportPost,
 } from "./postController.js";
 import { authMiddleware } from "../../../middlewares/auth.middleware.js";
 import { authorize } from "../../../middlewares/auth.middleware.js";
-import { uploadAvatar } from "../../../middlewares/uploadMiddleware.js";
+import { uploadMedia } from "../../../middlewares/uploadMiddleware.js";
 import commentRoutes from "../comments/commentRoutes.js";
 import { listReportedCommentsForAdmin } from "../comments/commentController.js";
 
@@ -31,7 +31,8 @@ router.get(
 
 // Delete media from Cloudinary - MUST BE BEFORE /:id routes
 router.delete("/delete-media", authMiddleware, deletePostMedia);
-router.post("/upload-image", authMiddleware, uploadAvatar, uploadPostImage);
+// Upload endpoint for post media (images/videos)
+router.post("/upload-media", authMiddleware, uploadMedia, uploadPostMedia);
 
 router.get("/:id", getPost);
 router.post("/", authMiddleware, createPost);

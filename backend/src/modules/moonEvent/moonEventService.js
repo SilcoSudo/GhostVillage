@@ -1,146 +1,118 @@
 import MoonEvent from "./moonEventModel.js";
 
 export const MoonEventService = {
-  /**
-   * Get all moon events with filters
-   */
-  getAllEvents: async (filters = {}) => {
-    const query = {};
+  getAllEvents: async (query) => {
+    const { page = 1, limit = 20, isActive = "all", search } = query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    // Filter by category
-    if (filters.category && filters.category !== "all") {
-      query.category = filters.category;
-    }
+    const filter = {};
+    if (isActive !== "all") filter.isActive = isActive === "true";
 
-    // Filter by active status
-    if (filters.status) {
-      if (filters.status === "active") {
-        query.isActive = true;
-      } else if (filters.status === "inactive") {
-        query.isActive = false;
-      }
-    }
-
-    // Search by eventId or displayName
-    if (filters.search) {
-      query.$or = [
-        { eventId: { $regex: filters.search, $options: "i" } },
-        { displayName: { $regex: filters.search, $options: "i" } },
+    // Tìm kiếm theo tên hoặc mã sự kiện
+    if (search) {
+      filter.$or = [
+        { eventName: { $regex: search, $options: "i" } },
+        { eventId: { $regex: search, $options: "i" } },
       ];
     }
 
-    const events = await MoonEvent.find(query).sort({ createdAt: -1 });
-    return events;
+    const events = await MoonEvent.find(filter)
+      .select("-__v")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await MoonEvent.countDocuments(filter);
+
+    return {
+      data: events,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / parseInt(limit)),
+      },
+    };
   },
 
-  /**
-   * Get active events (for Game Server)
-   */
-  getActiveEvents: async () => {
-    const now = new Date();
-    const events = await MoonEvent.find({
-      isActive: true,
-      $or: [
-        { scheduleType: "ALWAYS" },
-        { scheduleType: "MANUAL" },
-        {
-          scheduleType: "SCHEDULED",
-          activeFrom: { $lte: now },
-          activeTo: { $gte: now },
-        },
-      ],
-    });
-    return events;
-  },
-
-  /**
-   * Get event by ID
-   */
   getEventById: async (id) => {
-    const event = await MoonEvent.findById(id);
-    if (!event) {
-      throw new Error("Moon Event not found");
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      return await MoonEvent.findById(id).select("-__v");
     }
-    return event;
+    return await MoonEvent.findOne({ eventId: id.toUpperCase() }).select(
+      "-__v",
+    );
   },
 
-  /**
-   * Get event by eventId (string identifier)
-   */
-  getEventByEventId: async (eventId) => {
-    const event = await MoonEvent.findOne({ eventId: eventId.toUpperCase() });
-    if (!event) {
-      throw new Error("Moon Event not found");
-    }
-    return event;
-  },
+  createEvent: async (data) => {
+    const {
+      eventId,
+      eventName,
+      description,
+      uiIcon,
+      weight,
+      environmentModifiers,
+      monsterBuffMultipliers,
+      rewardMultipliers, // <-- BỔ SUNG 1
+    } = data;
 
-  /**
-   * Create new moon event
-   */
-  createEvent: async (eventData) => {
-    // Check if eventId already exists
-    const existing = await MoonEvent.findOne({
-      eventId: eventData.eventId.toUpperCase(),
+    const existingEvent = await MoonEvent.findOne({
+      eventId: eventId.toUpperCase(),
     });
-    if (existing) {
-      throw new Error("Event ID already exists");
+    if (existingEvent) {
+      throw new Error(`Event ID "${eventId}" đã tồn tại`);
     }
 
-    const event = new MoonEvent(eventData);
-    await event.save();
-    return event;
+    const newEvent = new MoonEvent({
+      eventId: eventId.toUpperCase(),
+      eventName,
+      description,
+      uiIcon,
+      weight: weight || 10,
+      environmentModifiers: environmentModifiers || {},
+      monsterBuffMultipliers: monsterBuffMultipliers || {},
+      rewardMultipliers: rewardMultipliers || {}, // <-- BỔ SUNG 2
+    });
+
+    return await newEvent.save();
   },
 
-  /**
-   * Update moon event
-   */
   updateEvent: async (id, updateData) => {
-    // If eventId is being changed, check for duplicates
-    if (updateData.eventId) {
-      const existing = await MoonEvent.findOne({
-        eventId: updateData.eventId.toUpperCase(),
-        _id: { $ne: id },
-      });
-      if (existing) {
-        throw new Error("Event ID already exists");
-      }
+    if (updateData.eventId) delete updateData.eventId; // Không cho phép sửa eventId
+
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      return await MoonEvent.findByIdAndUpdate(
+        id,
+        { $set: updateData },
+        { new: true, runValidators: true },
+      );
     }
-
-    const event = await MoonEvent.findByIdAndUpdate(id, updateData, {
-      new: true,
-      runValidators: true,
-    });
-
-    if (!event) {
-      throw new Error("Moon Event not found");
-    }
-
-    return event;
+    return await MoonEvent.findOneAndUpdate(
+      { eventId: id.toUpperCase() },
+      { $set: updateData },
+      { new: true, runValidators: true },
+    );
   },
 
-  /**
-   * Toggle active status
-   */
-  toggleActive: async (id) => {
-    const event = await MoonEvent.findById(id);
-    if (!event) {
-      throw new Error("Moon Event not found");
-    }
+  toggleEventStatus: async (id, isActive) => {
+    let event = id.match(/^[0-9a-fA-F]{24}$/)
+      ? await MoonEvent.findById(id)
+      : await MoonEvent.findOne({ eventId: id.toUpperCase() });
 
-    event.isActive = !event.isActive;
-    await event.save();
-    return event;
+    if (!event) throw new Error("Không tìm thấy Moon Event");
+
+    event.isActive = isActive;
+    return await event.save();
   },
 
-  /**
-   * Delete moon event
-   */
   deleteEvent: async (id) => {
-    const event = await MoonEvent.findByIdAndDelete(id);
-    if (!event) {
-      throw new Error("Moon Event not found");
-    }
-    return event;
+    let event = id.match(/^[0-9a-fA-F]{24}$/)
+      ? await MoonEvent.findById(id)
+      : await MoonEvent.findOne({ eventId: id.toUpperCase() });
+
+    if (!event) throw new Error("Không tìm thấy Moon Event");
+
+    event.isActive = false; // Soft Delete chuẩn bài
+    return await event.save();
   },
 };

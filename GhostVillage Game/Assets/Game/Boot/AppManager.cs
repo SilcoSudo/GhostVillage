@@ -47,7 +47,7 @@ namespace Game.Boot
                 if (connected)
                 {
                     //MainMenu
-                    await _sceneLoader.LoadSceneAsync("AnimationPlayer");
+                    await _sceneLoader.LoadSceneAsync("MainMenu");
                     _globalUI.ShowLoading(false);
                 }
                 else
@@ -55,12 +55,12 @@ namespace Game.Boot
                     //LoginScene
                     _globalUI.ShowLoading(false);
                     _globalUI.ShowError("Lỗi Mạng", "Không thể kết nối đến máy chủ trò chơi.");
-                    await _sceneLoader.LoadSceneAsync("AnimationPlayer");
+                    await _sceneLoader.LoadSceneAsync("LoginScene");
                 }
             }
             else
             {
-                await _sceneLoader.LoadSceneAsync("Map_1");
+                await _sceneLoader.LoadSceneAsync("LoginScene");
             }
         }
     }

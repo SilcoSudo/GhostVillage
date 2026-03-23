@@ -69,16 +69,31 @@ namespace Game.Scripts.UI.Lobby
                 _btnMute.image.color = _isMuted ? Color.red : Color.white;
                 SetLocalVolume(_isMuted ? 0f : _sldVolume.value);
             });
+
+            if (_btnAddFriend != null)
+            {
+                _btnAddFriend.gameObject.SetActive(!player.IsLocal);
+            }
         }
 
         /// <summary>
         /// Chuyển slot về trạng thái trống khi không có người chơi.
         /// </summary>
-        public void SetEmpty()
+        public void SetEmpty(System.Action onInviteClicked = null) // Sửa tham số truyền vào
         {
             _targetPlayer = null;
             _grpActive.SetActive(false);
             _grpEmpty.SetActive(true);
+
+            // MÓC NÚT INVITE
+            if (_btnInvite != null)
+            {
+                _btnInvite.onClick.RemoveAllListeners();
+                if (onInviteClicked != null)
+                {
+                    _btnInvite.onClick.AddListener(() => onInviteClicked.Invoke());
+                }
+            }
         }
 
         /// <summary>

@@ -7,13 +7,15 @@ using Game.Domain.Friend.DTOs;
 using System.Collections.Generic;
 using Game.Script.UI; // Thêm GlobalUIManager
 using System;
+using Game.Core.Network.Chat;
 
 namespace Game.Domain.Friend.Controllers
 {
     public class FriendController
     {
         private readonly FriendService _friendService;
-        private readonly GlobalUIManager _globalUI; // Bơm UI vào
+        private readonly GlobalUIManager _globalUI;
+        private readonly GlobalChatManager _chatManager;
 
         public ReactiveProperty<bool> IsLoading { get; } = new(false);
         public ReactiveProperty<List<FriendProfileDTO>> FriendList { get; } = new(new List<FriendProfileDTO>());
@@ -22,16 +24,32 @@ namespace Game.Domain.Friend.Controllers
         public ReactiveProperty<PlayerSearchDTO> CurrentSearchResult { get; } = new(null);
         public ReactiveProperty<string> SearchError { get; } = new(string.Empty);
 
+        // 0 = Offline, 2 = Online, v.v..
+        public ReactiveProperty<Dictionary<string, int>> FriendStatuses { get; } = new(new Dictionary<string, int>());
+
         [Inject]
-        public FriendController(FriendService friendService, GlobalUIManager globalUI)
+        public FriendController(FriendService friendService, GlobalUIManager globalUI, GlobalChatManager chatManager)
         {
             _friendService = friendService;
             _globalUI = globalUI;
+            _chatManager = chatManager;
+
+            // BẮT SỰ KIỆN KHI PHOTON CHAT BÁO CÓ BẠN BÈ ĐỔI TRẠNG THÁI
+            _chatManager.OnFriendStatusUpdated += HandleFriendStatusUpdated;
+        }
+
+        private void HandleFriendStatusUpdated(string userId, int status)
+        {
+            // Cập nhật lại Dictionary và kích R3 để UI tự render lại
+            var currentDict = new Dictionary<string, int>(FriendStatuses.Value);
+            currentDict[userId] = status;
+            FriendStatuses.Value = currentDict;
         }
 
         public async UniTask InitializeDataAsync()
         {
             IsLoading.Value = true;
+            _chatManager.Connect();
             await UniTask.WhenAll(FetchFriendListAsync(), FetchPendingRequestsAsync(), FetchSentRequestsAsync());
             IsLoading.Value = false;
         }
@@ -40,6 +58,17 @@ namespace Game.Domain.Friend.Controllers
         {
             var list = await _friendService.GetFriendListAsync();
             FriendList.Value = list;
+
+            // NÉM DANH SÁCH USER ID CHO PHOTON CHAT THEO DÕI
+            if (list != null && list.Count > 0)
+            {
+                string[] friendIds = new string[list.Count];
+                for (int i = 0; i < list.Count; i++)
+                {
+                    friendIds[i] = list[i].GetUserId();
+                }
+                _chatManager.TrackFriends(friendIds);
+            }
         }
 
         public async UniTask FetchPendingRequestsAsync()

@@ -294,20 +294,25 @@ namespace Game.Core.Network
         /// </summary>
         public override void OnJoinedRoom()
         {
+
             var room = PhotonNetwork.CurrentRoom;
             string correctPass = room.CustomProperties.ContainsKey("pw") ? (string)room.CustomProperties["pw"] : "";
 
             // 1. KIỂM TRA MẬT KHẨU
-            if (!PhotonNetwork.IsMasterClient && !string.IsNullOrEmpty(correctPass))
+            if (!Game.Script.UI.GlobalUIManager.IsBypassPassword && !PhotonNetwork.IsMasterClient && !string.IsNullOrEmpty(correctPass))
             {
                 if (_tempInputPass != correctPass)
                 {
                     Debug.LogError("[Photon] SAI PASS! Đang rút lui...");
-                    // Vẫn giữ AutomaticallySyncScene = false để đứng yên tại Scene cũ
                     PhotonNetwork.LeaveRoom();
                     OnJoinLobbyFailed?.Invoke("Wrong Password!");
                     return;
                 }
+            }
+
+            if (Game.Script.UI.GlobalUIManager.IsBypassPassword)
+            {
+                Debug.Log("<color=green>Dùng thẻ VIP Bypass Password thành công!</color>");
             }
 
             // Nếu đúng pass, bật lại tính năng sync scene
@@ -319,6 +324,8 @@ namespace Game.Core.Network
             {
                 PhotonNetwork.LoadLevel("LobbyGameScene");
             }
+
+            Game.Script.UI.GlobalUIManager.IsBypassPassword = false; // Xong việc thì thu thẻ
         }
 
         /// <summary>

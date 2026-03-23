@@ -13,6 +13,8 @@ using Game.Domain.Friend.Services;
 using Game.Domain.Friend.Controllers;
 using Game.Domain.Settings.Services;
 using Game.Domain.Settings.Controllers;
+using GhostVillage.Shop;
+using GhostVillage.Storage;
 
 namespace Game.Core.DI
 {
@@ -20,6 +22,7 @@ namespace Game.Core.DI
     {
         [Header("Global Settings")]
         [SerializeField] private GameConfigSO _gameConfig; // Kéo thả ScriptableObject config chung vào đây
+        [SerializeField] private ItemDatabaseSO _shopItemDatabase; // Thêm Database cửa hàng vào đây
 
         [Header("Network Prefabs")]
         // Kéo Prefab chứa script PhotonNetworkManager vào đây
@@ -37,6 +40,7 @@ namespace Game.Core.DI
         {
             // 1. Config & Data
             builder.RegisterInstance(_gameConfig);
+            builder.RegisterInstance(_shopItemDatabase);
             builder.Register<APIClient>(Lifetime.Singleton);
             builder.Register<MapDataService>(Lifetime.Singleton).As<IMapDataService>();
 
@@ -55,6 +59,9 @@ namespace Game.Core.DI
             builder.Register<PlayerInputActions>(Lifetime.Singleton);
             builder.Register<InputRebindService>(Lifetime.Singleton);
 
+            builder.Register<ShopService>(Lifetime.Singleton);
+            builder.Register<StorageService>(Lifetime.Singleton);
+            
             // 3. NETWORK (Sửa lại: Bắt buộc phải có Prefab)
             if (_photonPrefab != null)
             {
@@ -65,6 +72,12 @@ namespace Game.Core.DI
             {
                 Debug.LogError("❌ LỖI: Chưa kéo Photon Prefab vào AppLifetimeScope!");
             }
+
+            // ==========================================
+            // [THÊM MỚI] 3.5 TẠO VÀ ĐĂNG KÝ GLOBAL CHAT MANAGER
+            // ==========================================
+            builder.RegisterComponentOnNewGameObject<Game.Core.Network.Chat.GlobalChatManager>(Lifetime.Singleton, "GlobalChatManager_Auto");
+            // ==========================================
 
             // 4. UI (Tự Instantiate và đăng ký)
             if (_globalUIPrefab != null)

@@ -11,6 +11,7 @@ using Game.Domain.Match.DTO;
 using Cysharp.Threading.Tasks;
 using System.Collections;
 using Game.Scripts.Gameplay.Result;
+using Game.Domain.Map.Services;
 
 // Lưu ý: Đảm bảo bạn đã có các Enum và file GameplayEvents.cs như đã bàn trước đó
 public class GameManager : MonoBehaviourPunCallbacks
@@ -27,6 +28,7 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     // --- DEPENDENCY INJECTION (VContainer) ---
     private MapDataManager _mapData;
+    private IMapDataService _mapDataService;
     private ItemSpawnerManager _itemSpawner;
     private MonsterSpawnerManager _monsterSpawner;
     private PuzzleSpawnerManager _puzzleSpawner;
@@ -35,14 +37,14 @@ public class GameManager : MonoBehaviourPunCallbacks
     private MatchDataService _matchDataService;
     private GameplayUIManager _uiManager;
     private MatchStatisticManager _statisticManager;
-
-
     private MatchRoute _currentMatchRoute = MatchRoute.Lose; // Mặc định là thua
+    private bool _isLocalDataReady = false;
 
     // VContainer sẽ tự động điền các biến này vào khi Prefab GameContext được khởi tạo
     [Inject]
     public void Construct(
         MapDataManager mapData,
+        IMapDataService mapDataService,
         ItemSpawnerManager itemSpawner,
         MonsterSpawnerManager monsterSpawner,
         PuzzleSpawnerManager puzzleSpawner,
@@ -54,6 +56,7 @@ public class GameManager : MonoBehaviourPunCallbacks
     )
     {
         _mapData = mapData;
+        _mapDataService = mapDataService;
         _itemSpawner = itemSpawner;
         _monsterSpawner = monsterSpawner;
         _puzzleSpawner = puzzleSpawner;
@@ -66,35 +69,38 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     // --- UNITY LIFECYCLE ---
 
-    private void Start()
+    // Thay void Start bằng async void Start
+    private async void Start()
     {
         Debug.Log("<color=cyan>[GameManager]</color> Khởi động vòng lặp Game...");
 
         // 1. Initializing (Chạy cục bộ trên mỗi máy)
         SetLocalState(GameState.Initializing);
 
-        MapConfigDTO configToLoad = null;
+        string mapIdToLoad = "MAP_01_ONG_KE"; // ID dự phòng nếu test offline
 
-        // 1. Ưu tiên lấy từ Lobby (GameDataTransfer)
-        if (GameDataTransfer.Instance != null)
+        // Lấy VÉ TÀU từ Lobby
+        if (GameDataTransfer.Instance != null && !string.IsNullOrEmpty(GameDataTransfer.Instance.SelectedMapId))
         {
-            configToLoad = GameDataTransfer.Instance.SelectedMapConfig;
+            mapIdToLoad = GameDataTransfer.Instance.SelectedMapId;
         }
         else
         {
-            // 2. Fallback: Nếu debug trực tiếp scene này, tạo Mock Data hoặc Load Default
             Debug.LogWarning("⚠️ Không tìm thấy GameDataTransfer (Chạy trực tiếp?). Dùng Config Mặc định/Mock.");
-            // configToLoad = LoadDefaultConfig(); // Tự viết hàm này nếu cần test nhanh
         }
 
-        // --- GỌI MAP DATA (TRUYỀN THAM SỐ) ---
-        if (_mapData != null)
+        // --- GỌI MAP DATA SERVER CHỞ CỤC MEGA DTO VỀ ---
+        Debug.Log($"[GameManager] Đang tải Mega Game Data cho map: {mapIdToLoad}");
+        AggregatedGameDataDTO dataToLoad = await _mapDataService.FetchGameData(mapIdToLoad);
+
+        // Nhét cục Data to vào MapDataManager
+        if (_mapData != null && dataToLoad != null)
         {
-            _mapData.InitializeMap(configToLoad);
+            _mapData.InitializeMap(dataToLoad);
         }
         else
         {
-            Debug.LogError("❌ [GameManager] MapData chưa được Inject!");
+            Debug.LogError("❌ [GameManager] MapData hoặc Data API chưa được Inject!");
         }
 
         // [FIX QUAN TRỌNG] TẤT CẢ MỌI NGƯỜI ĐỀU PHẢI BẬT TRACKER
@@ -107,6 +113,8 @@ public class GameManager : MonoBehaviourPunCallbacks
             Debug.LogError("❌ [GameManager] MatchStatisticManager chưa được Inject!");
         }
 
+        _isLocalDataReady = true;
+
         // 2. Spawn World (Chỉ Master Client thực hiện để tránh trùng lặp)
         if (PhotonNetwork.IsMasterClient)
         {
@@ -117,6 +125,7 @@ public class GameManager : MonoBehaviourPunCallbacks
                 _playerStatuses[p.ActorNumber] = PlayerMatchStatus.Playing;
             }
 
+            // Lấy riêng cái MapConfig ra để chạy Spawner
             var config = _mapData.CurrentMapConfig;
             if (config != null)
             {
@@ -124,8 +133,8 @@ public class GameManager : MonoBehaviourPunCallbacks
 
                 // --- TRUYỀN DB VÀO CÁC HÀM SPAWN ---
                 if (_itemSpawner != null) _itemSpawner.SpawnItems(config, _mapData, _resourceDB);
-                _monsterSpawner.SpawnMonsters(config.monsterSystemConfig, _mapData, _resourceDB);
-                _puzzleSpawner.SpawnPuzzles(config.puzzleConfig, _mapData, _resourceDB);
+                if (_monsterSpawner != null) _monsterSpawner.SpawnMonsters(config.monsterSystemConfig, _mapData, _resourceDB);
+                if (_puzzleSpawner != null) _puzzleSpawner.SpawnPuzzles(config.puzzleConfig, _mapData, _resourceDB);
 
                 _objectiveManager.Initialize();
             }
@@ -161,6 +170,8 @@ public class GameManager : MonoBehaviourPunCallbacks
     // Callback từ Photon: Khi Room Properties thay đổi (Do Master update state)
     public override void OnRoomPropertiesUpdate(ExitGames.Client.Photon.Hashtable propertiesThatChanged)
     {
+        if (!_isLocalDataReady) return;
+
         if (propertiesThatChanged.ContainsKey(KEY_GAME_STATE))
         {
             // Ép kiểu int về Enum

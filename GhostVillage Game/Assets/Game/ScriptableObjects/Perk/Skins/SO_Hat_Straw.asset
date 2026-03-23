@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1b58e007d66af74bb582a51edd4c475, type: 3}
+  m_Name: SO_Hat_Straw
+  m_EditorClassIdentifier: Assembly-CSharp::GhostVillage.Shop.CosmeticSO
+  prefabId: SO_Hat_Straw
+  itemName: Straw Hat
+  description: Luffy
+  icon: {fileID: 0}
+  rarity: 0
+  cosmeticType: 0
+  modelGameObjectName: 
+  hatPrefab: {fileID: 0}
