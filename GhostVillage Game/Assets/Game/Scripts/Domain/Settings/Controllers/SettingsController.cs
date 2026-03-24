@@ -16,36 +16,38 @@ namespace Game.Domain.Settings.Controllers
 
         private GameSettingsData _currentData;
 
-        // --- R3 REACTIVE PROPERTIES (Cho UI cắm vào) ---
-        // Graphics
+        // Báo cho UI biết tao vừa reset data nè!
+        public event Action OnSettingsRestored;
+
+        // --- R3 REACTIVE PROPERTIES ---
         public ReactiveProperty<bool> Is1080p { get; } = new(true);
         public ReactiveProperty<bool> IsFullscreen { get; } = new(true);
         public ReactiveProperty<int> QualityPreset { get; } = new(2);
 
-        // Audio
         public ReactiveProperty<float> MasterVolume { get; } = new(1f);
         public ReactiveProperty<float> SFXVolume { get; } = new(1f);
         public ReactiveProperty<float> MusicVolume { get; } = new(1f);
+
+        // THÊM ĐỘ NHẠY CHUỘT
+        public ReactiveProperty<float> MouseSensitivity { get; } = new(1f);
 
         [Inject]
         public SettingsController(
         SettingsSaveLoadService saveLoadService,
         GraphicsSettingService graphicsService,
         AudioSettingService audioService,
-        InputRebindService inputService) // Thêm dòng này
+        InputRebindService inputService)
         {
             _saveLoadService = saveLoadService;
             _graphicsService = graphicsService;
             _audioService = audioService;
-            _inputService = inputService; // Thêm dòng này
+            _inputService = inputService;
         }
 
-        // HÀM KHỞI TẠO: Gọi 1 lần lúc bật game
         public void Initialize()
         {
             _currentData = _saveLoadService.LoadSettings();
 
-            // Nạp data vào R3 Properties
             Is1080p.Value = _currentData.Graphics.Is1080p;
             IsFullscreen.Value = _currentData.Graphics.IsFullscreen;
             QualityPreset.Value = _currentData.Graphics.QualityPreset;
@@ -53,8 +55,11 @@ namespace Game.Domain.Settings.Controllers
             MasterVolume.Value = _currentData.Audio.MasterVolume;
             SFXVolume.Value = _currentData.Audio.SFXVolume;
             MusicVolume.Value = _currentData.Audio.MusicVolume;
-            ApplyAllToEngine();
 
+            // Lấy độ nhạy chuột từ DB (Giả sử mặc định là 1.0f)
+            MouseSensitivity.Value = _currentData.Gameplay.MouseSensitivity;
+
+            ApplyAllToEngine();
             _inputService.ApplyOverrides(_currentData.Gameplay.KeyBindings);
         }
 
@@ -62,7 +67,6 @@ namespace Game.Domain.Settings.Controllers
         {
             _inputService.StartRebind(actionName, bindingIndex, (newPath, displayStr) =>
             {
-                // 1. Lưu data vào bộ nhớ
                 var overrideData = _currentData.Gameplay.KeyBindings.Find(x => x.ActionName == actionName && x.BindingIndex == bindingIndex);
                 if (overrideData == null)
                 {
@@ -71,30 +75,26 @@ namespace Game.Domain.Settings.Controllers
                 }
                 overrideData.OverridePath = newPath;
 
-                // 2. Ghi ra JSON ngay lập tức
                 _saveLoadService.SaveSettings(_currentData);
-
-                // 3. Cập nhật chữ trên nút UI
                 onUIUpdate?.Invoke(displayStr);
             });
         }
 
-        // Lấy chữ hiển thị cho UI lúc mới bật
         public string GetBindingName(string actionName, int bindingIndex)
         {
             return _inputService.GetDisplayString(actionName, bindingIndex);
         }
 
-        // 5. Cập nhật hàm RestoreDefault
         public void RestoreDefault()
         {
             _saveLoadService.DeleteSettings();
-            _inputService.ResetAllBindings(); // Reset Input System về gốc
-            Initialize();
+            _inputService.ResetAllBindings();
+            Initialize(); // Nạp lại data gốc
             Debug.Log("[SettingsController] Đã khôi phục cài đặt gốc toàn bộ hệ thống!");
-        }
 
-        // --- CÁC HÀM UPDATE CHO UI GỌI VÀO ---
+            // HÚ LÊN CHO UI CHẠY LẠI CHỮ (Sửa lỗi bấm Restore mà chữ vẫn y xì)
+            OnSettingsRestored?.Invoke();
+        }
 
         public void UpdateGraphics(bool is1080p, bool isFullscreen, int qualityPreset)
         {
@@ -122,6 +122,17 @@ namespace Game.Domain.Settings.Controllers
 
             _audioService.ApplyAudio(_currentData.Audio);
             _saveLoadService.SaveSettings(_currentData);
+        }
+
+        // HÀM MỚI: CẬP NHẬT ĐỘ NHẠY CHUỘT
+        public void UpdateGameplay(float sensitivity)
+        {
+            MouseSensitivity.Value = sensitivity;
+            _currentData.Gameplay.MouseSensitivity = sensitivity;
+
+            // XONG THÌ LƯU LẠI
+            _saveLoadService.SaveSettings(_currentData);
+            // (Thằng Camera của Sếp tự Get biến này để quay, ko cần ApplyToEngine ở đây)
         }
 
         private void ApplyAllToEngine()

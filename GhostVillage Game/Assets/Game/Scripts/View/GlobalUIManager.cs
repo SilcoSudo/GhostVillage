@@ -76,7 +76,14 @@ namespace Game.Script.UI
         [Inject]
         public void Construct(SettingsController settingsController, GlobalChatManager chatManager, ISceneLoaderService sceneLoader)
         {
-            if (_settingsUI != null) _settingsUI.Init(settingsController);
+
+            if (_settingsUI != null)
+            {
+                _settingsUI.Init(settingsController);
+
+                // THÊM DÒNG NÀY: Khi Sếp bấm [X] ở Settings, gọi hàm CloseSettings của Global!
+                _settingsUI.OnCloseRequested += CloseSettings;
+            }
             else Debug.LogError("[GlobalUIManager] Chưa gán _settingsUI trên Inspector!");
 
             _chatManager = chatManager;
