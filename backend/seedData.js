@@ -258,7 +258,7 @@ const seedData = async () => {
       _id: user2_Id,
       email: "belan.support@gmail.com",
       fullname: "Bé Lan Support",
-      password: "belan.support@gmail.com",
+      password: "12345678",
       dateOfBirth: new Date("2000-02-02"),
       avatar: "avatar_default_01",
       bio: "Bé Lan Support",
