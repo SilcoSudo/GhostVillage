@@ -2,6 +2,7 @@ using Cysharp.Threading.Tasks;
 using Game.Core.Network.API;
 using UnityEngine;
 using System.Collections.Generic;
+using GhostVillage.Domain.Profile;
 
 namespace GhostVillage.Storage
 {
@@ -25,7 +26,14 @@ namespace GhostVillage.Storage
         {
             var body = new EquipPerkRequest { perks = perkIds };
             string json = JsonUtility.ToJson(body);
-            return await _apiClient.PutAsyncWithAuth<List<string>>("/api/game/player/equip-perk", json, GetToken());
+            
+            var response = await _apiClient.PutAsyncWithAuth<EquipPerkResponse>("/api/game/player/equip-perk", json, GetToken());
+            
+            if (response != null && response.success)
+            {
+                return response.data;
+            }
+            return null;
         }
     }
 }

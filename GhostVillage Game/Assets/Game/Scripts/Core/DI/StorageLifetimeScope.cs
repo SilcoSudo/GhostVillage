@@ -2,6 +2,7 @@ using VContainer;
 using VContainer.Unity;
 using UnityEngine;
 using GhostVillage.Storage; // Namespace chứa StorageController
+using Game.Core.Scene;
 
 namespace GhostVillage.Domain.Storage.DI
 {
@@ -13,6 +14,7 @@ namespace GhostVillage.Domain.Storage.DI
         {
             builder.RegisterComponent(_storageManager);
             builder.RegisterEntryPoint<StorageController>(Lifetime.Scoped);
+            builder.Register<SceneLoaderService>(Lifetime.Singleton);
         }
     }
 }

@@ -13,7 +13,6 @@ router.get("/", PlayerController.getProfile);
 
 // Route tìm kiếm người chơi
 router.get("/search/:uid", PlayerController.searchPlayer);
-router.put("/equip-skin", PlayerController.equipSkin);
 router.put("/equip-perk", PlayerController.equipPerks);
 
 export default router;

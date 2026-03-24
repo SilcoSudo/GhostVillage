@@ -8,7 +8,6 @@ import { config } from "./src/config/env.js";
 import UserAchievement from "./src/modules/profile/playerAchievementModel.js";
 import MapConfig from "./src/modules/map/mapConfigModel.js";
 import MatchResult from "./src/modules/match/matchModel.js";
-import CosmeticItem from "./src/modules/shop/cosmeticItemModel.js";
 import Perk from "./src/modules/perk/perkModel.js";
 import ShopPool from "./src/modules/shop/shopPoolModel.js";
 dotenv.config();
@@ -29,7 +28,6 @@ const seedData = async () => {
     await GameResult.deleteMany({});
     await UserAchievement.deleteMany({});
     // await PlayerMatchHistory.deleteMany({})
-    await CosmeticItem.deleteMany({});
     await Perk.deleteMany({});
     await ShopPool.deleteMany({});
     console.log(
@@ -108,14 +106,7 @@ const seedData = async () => {
       },
     ]);
 
-  //Shop (Skin & Perk)
-  const cosmeticItems = await CosmeticItem.create([
-    { name: "Straw Hat", type: "Hat", price: 100, rarity: "COMMON", prefabId: "SO_Hat_Straw" },
-    { name: "Officer Cap", type: "Hat", price: 500, rarity: "RARE", prefabId: "SO_Hat_Officer" },
-    { name: "Villager Shirt", type: "Body", price: 200, rarity: "COMMON", prefabId: "SO_Body_Villager" },
-    { name: "Dark Armor", type: "Body", price: 2000, rarity: "EPIC", prefabId: "SO_Body_Armor" }
-  ]);
-
+  //Shop (Perk)
   const perkData = [
   // --- EPIC PERKS ---
   {
@@ -124,7 +115,7 @@ const seedData = async () => {
     description: "When knocked down, automatically revive with 100% Stamina after 3 seconds. (Once per match)",
     rarity: "EPIC",
     price: 2000,
-    prefabId: "PERK_Epic_AutoRevive",
+    prefabId: "PERK_EPIC_SPECTRAL_REFLEX",
     modifiers: { 
       autoReviveCount: 1, 
       reviveDelay: 3, 
@@ -137,7 +128,7 @@ const seedData = async () => {
     description: "Whenever a teammate completes a puzzle, reveal the Boss and all allies' outlines through walls for 7 seconds.",
     rarity: "EPIC",
     price: 2000,
-    prefabId: "PERK_Epic_Wallhack",
+    prefabId: "PERK_EPIC_PROPHETIC_SIGHT",
     modifiers: { 
       revealDuration: 7, 
       revealOutline: true 
@@ -151,7 +142,7 @@ const seedData = async () => {
     description: "Rescue speed increased by 15%. After a successful rescue, both you and the rescued ally gain 15% Move Speed for 5 seconds.",
     rarity: "RARE",
     price: 800,
-    prefabId: "PERK_Rare_RescueBoost",
+    prefabId: "PERK_RARE_RELIC_BEARER",
     modifiers: { 
       reviveSpeedMult: 1.15, 
       postReviveSpeedBoost: 0.15, 
@@ -164,7 +155,7 @@ const seedData = async () => {
     description: "The Boss's detection range against you is reduced by 15%.",
     rarity: "RARE",
     price: 800,
-    prefabId: "PERK_Rare_StealthBeads",
+    prefabId: "PERK_RARE_AGARWOOD_BEADS",
     modifiers: { 
       bossDetectionRangeMult: 0.85 
     }
@@ -175,7 +166,7 @@ const seedData = async () => {
     description: "Gain permanent buffs for each teammate eliminated (stacks up to 3 times): +5% Move Speed and -10% Stamina consumption.",
     rarity: "RARE",
     price: 1000,
-    prefabId: "PERK_Rare_DeathStack",
+    prefabId: "PERK_RARE_ANCESTRAL_VOW",
     modifiers: { 
       speedBoostPerDeath: 0.05, 
       staminaSavePerDeath: 0.10, 
@@ -190,7 +181,7 @@ const seedData = async () => {
     description: "Increases Max Stamina by 15% and increases Stamina regeneration speed by 10%.",
     rarity: "COMMON",
     price: 200,
-    prefabId: "PERK_Common_StaminaBase",
+    prefabId: "PERK_COM_BRAIDED_BELT",
     modifiers: { 
       maxStaminaMult: 1.15, 
       staminaRegenMult: 1.10 
@@ -202,7 +193,7 @@ const seedData = async () => {
     description: "Reduces Flashlight battery consumption rate by 15%.",
     rarity: "COMMON",
     price: 150,
-    prefabId: "PERK_Common_BatterySave",
+    prefabId: "PERK_COM_GLOOM_EYE",
     modifiers: { 
       batteryDrainMult: 0.85 
     }
@@ -213,7 +204,7 @@ const seedData = async () => {
     description: "Reduces Stamina consumption while sprinting by 15%.",
     rarity: "COMMON",
     price: 250,
-    prefabId: "PERK_Common_Sprinting",
+    prefabId: "PERK_COM_TIRE_SANDALS",
     modifiers: { 
       sprintStaminaDrainMult: 0.85 
     }
@@ -224,7 +215,7 @@ const seedData = async () => {
     description: "Has a 10% chance to not consume Med-kits or Batteries upon use.",
     rarity: "COMMON",
     price: 300,
-    prefabId: "PERK_Common_ItemLuck",
+    prefabId: "PERK_COM_INDIGO_POUCH",
     modifiers: { 
       preserveItemChance: 0.10 
     }
@@ -301,7 +292,6 @@ const seedData = async () => {
         coin: 1000,
       },
       storage: {
-        unlockedSkins: ["skin_default"],
         unlockedPerks: [],
       },
     };
@@ -317,7 +307,6 @@ const seedData = async () => {
         coin: 1000,
       },
       storage: {
-        unlockedSkins: ["skin_default"],
         unlockedPerks: [],
       },
     };
@@ -332,13 +321,8 @@ const seedData = async () => {
         exp: 450,
         coin: 5000,
       },
-      unlockedSkins: ["SO_Hat_Straw", "SO_Body_Villager"], 
-      unlockedPerks: ["PERK_Runner_1"],
-      equippedSkins: {
-        head: "SO_Hat_Straw",     // Đang đội Nón rơm
-        body: "SO_Body_Villager"  // Đang mặc áo dân làng
-      },
-      equippedPerks: ["PERK_Runner_1"],
+      unlockedPerks: ["PERK_COM_INDIGO_POUCH"],
+      equippedPerks: ["PERK_COM_INDIGO_POUCH"],
       selectedMedals: ["FIRST_CLEAR", "KILL_500"],
       achievementsProgress: [
         { achievementCode: "FIRST_CLEAR", current: 1, isClaimed: true },

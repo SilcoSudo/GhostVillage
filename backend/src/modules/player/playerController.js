@@ -44,22 +44,12 @@ export const PlayerController = {
       });
     }
   },
-  equipSkin: async (req, res) => {
-    try {
-      const userId = req.user.id;
-      const { head, body } = req.body; 
-      const updatedEquipped = await PlayerService.updateEquippedSkins(userId, head, body);
-      
-      res.status(200).json({ success: true, data: updatedEquipped });
-    } catch (error) {
-      res.status(400).json({ success: false, message: error.message });
-    }
-  },
 
   equipPerks: async (req, res) => {
     try {
-      const userId = req.user.id;
-      const { perks } = req.body; // JSON: { "perks": ["PERK_Runner_1", "PERK_Stam_1"] }
+      const userId = req.user._id || req.user.id; 
+      const { perks } = req.body; 
+      
       const updatedPerks = await PlayerService.updateEquippedPerks(userId, perks);
       
       res.status(200).json({ success: true, data: updatedPerks });

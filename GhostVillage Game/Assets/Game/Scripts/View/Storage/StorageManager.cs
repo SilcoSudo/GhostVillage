@@ -11,6 +11,10 @@ namespace GhostVillage.Storage
     {
         public Action<List<string>> OnEquipPerkRequested;
 
+        [Header("--- NAVIGATION ---")]
+        public Button btnBack;
+        public Action OnBackRequested;
+
         [Header("--- PERK INVENTORY ---")]
         public Transform gridOwnedPerks;
         public GameObject slotPrefab;
@@ -31,6 +35,11 @@ namespace GhostVillage.Storage
 
         private void Start()
         {
+            if (btnBack != null)
+            {
+                btnBack.onClick.AddListener(() => OnBackRequested?.Invoke());
+            }
+            
             btnEquipPerk.onClick.AddListener(HandlePerkEquipBtn);
             // Ẩn detail mặc định nếu chưa chọn gì
             imgSelectedPerkIcon.gameObject.SetActive(false);
@@ -106,15 +115,27 @@ namespace GhostVillage.Storage
             else
                 btnEquipPerk.interactable = true;
         }
-
         private void HandlePerkEquipBtn()
         {
             if (_selectedPerk == null) return;
 
-            if (_currentEquippedPerks.Contains(_selectedPerk.prefabId))
+            bool isCurrentlyEquipped = _currentEquippedPerks.Contains(_selectedPerk.prefabId);
+
+            if (isCurrentlyEquipped)
+            {
+                // Nếu đang mặc thì cho phép tháo ra thoải mái
                 _currentEquippedPerks.Remove(_selectedPerk.prefabId);
+            }
             else
+            {
+                // Nếu đang định mặc thêm, phải kiểm tra xem còn slot trống không
+                if (_currentEquippedPerks.Count >= _maxPerkSlots)
+                {
+                    Debug.LogWarning("Đã hết ô trống kỹ năng!");
+                    return; 
+                }
                 _currentEquippedPerks.Add(_selectedPerk.prefabId);
+            }
 
             OnEquipPerkRequested?.Invoke(_currentEquippedPerks);
         }

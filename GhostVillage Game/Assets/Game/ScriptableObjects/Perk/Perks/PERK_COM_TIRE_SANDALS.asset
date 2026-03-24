@@ -10,12 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 919b50bec6e70ef45a45ef069258b22f, type: 3}
-  m_Name: PERK_Stam_2
+  m_Name: PERK_COM_TIRE_SANDALS
   m_EditorClassIdentifier: Assembly-CSharp::GhostVillage.Shop.PerkSO
-  prefabId: PERK_Stam_2
-  itemName: Stamina II
-  description: Increase stamina
+  prefabId: PERK_COM_TIRE_SANDALS
+  itemName: Tire Tread Sandals
+  description: Reduces Stamina consumption while sprinting by 15%.
   icon: {fileID: 0}
   rarity: 0
-  price: 170
-  value: 0
+  price: 250
