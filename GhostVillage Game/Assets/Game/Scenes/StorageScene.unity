@@ -3450,6 +3450,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d6b5bfe332b88d47bf049a90e65d4d7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GhostVillage.Storage.StorageManager
+  btnBack: {fileID: 1471593315}
   gridOwnedPerks: {fileID: 1809844109}
   slotPrefab: {fileID: 372019580682353941, guid: 3d9d75ec7dae9014a8ebc6bacf1a4996, type: 3}
   equippedPerkSlots:

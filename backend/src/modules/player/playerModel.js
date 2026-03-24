@@ -28,12 +28,7 @@ const playerSchema = new mongoose.Schema(
       exp: { type: Number, default: 0 },
       coin: { type: Number, default: 1000 }
     },
-    unlockedSkins: { type: [String], default: [] }, 
     unlockedPerks: { type: [String], default: [] },
-    equippedSkins: {
-      head: { type: String, default: "" }, // Lưu prefabId của head
-      body: { type: String, default: "" }  // Lưu prefabId của body
-    },
     equippedPerks: { type: [String], default: [] },
     unlockedMedals: [String],
     selectedMedals: { type: [String], default: [] },

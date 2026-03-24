@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using GhostVillage.Shop;
 
 namespace GhostVillage.Domain.Profile {
-    [Serializable]
+    
+[Serializable]
     public class FullProfileDTO {
         public PlayerProfile profile;
         public List<string> selectedMedals;
@@ -12,7 +12,7 @@ namespace GhostVillage.Domain.Profile {
         public StorageDTO storage;
         public EquippedDTO equipped;
     }
-
+    
     [Serializable]
     public class PlayerProfile {
         public string displayName;
@@ -70,14 +70,12 @@ namespace GhostVillage.Domain.Profile {
     [Serializable]
     public class StorageDTO 
     {
-        public List<string> unlockedSkins;
         public List<string> unlockedPerks;
     }
 
     [Serializable]
     public class EquippedDTO 
     {
-        public EquipDataDTO skins; 
         public List<string> perks;
     }
 }

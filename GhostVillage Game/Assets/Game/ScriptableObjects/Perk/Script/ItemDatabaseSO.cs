@@ -12,7 +12,7 @@ namespace GhostVillage.Shop
             return allItems.Find(item => item.prefabId == id);
         }
 
-        // Hàm tiện ích: Lấy riêng danh sách Perk hoặc Skin từ kho chung
+        // Hàm tiện ích: Lấy riêng danh sách Perk từ kho chung
         public List<T> GetItemsByType<T>() where T : ShopItemSO {
             List<T> results = new List<T>();
             foreach (var item in allItems) {

@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 919b50bec6e70ef45a45ef069258b22f, type: 3}
-  m_Name: PERK_Luck_5
+  m_Name: PERK_EPIC_PROPHETIC_SIGHT
   m_EditorClassIdentifier: Assembly-CSharp::GhostVillage.Shop.PerkSO
-  prefabId: PERK_Luck_5
-  itemName: Luck V
-  description: Luckkkk
+  prefabId: PERK_EPIC_PROPHETIC_SIGHT
+  itemName: Prophetic Sight
+  description: Whenever a teammate completes a puzzle, reveal the Boss and all allies'
+    outlines through walls for 7 seconds.
   icon: {fileID: 0}
-  rarity: 1
-  price: 600
-  value: 0
+  rarity: 2
+  price: 2000

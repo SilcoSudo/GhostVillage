@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace GhostVillage.Shop
 {
-    // 1. DTO CHO GET /shop (Load danh sách cửa hàng)
+    // 1. DTO CHO GET /shop
     [Serializable]
     public class ShopApiResponse
     {
@@ -15,22 +15,9 @@ namespace GhostVillage.Shop
     [Serializable]
     public class ShopDataDTO
     {
-        public List<CosmeticDTO> cosmetics;
         public List<PerkDTO> perks;
         public string expiresAt;
         public int coin;
-    }
-
-    [Serializable]
-    public class CosmeticDTO
-    {
-        public string _id;
-        public string name;
-        public string description;
-        public string type;
-        public int price;
-        public string rarity;
-        public string prefabId;
     }
 
     [Serializable]
@@ -44,7 +31,7 @@ namespace GhostVillage.Shop
         public string prefabId;
     }
 
-    // 2. DTO CHO POST /buy (Mua vật phẩm)
+    // 2. DTO CHO POST /buy (Mua Perk)
     [Serializable]
     public class BuyApiResponse
     {
@@ -57,23 +44,7 @@ namespace GhostVillage.Shop
     public class BuyDataDTO
     {
         public int newBalance;
-        public List<string> unlockedItems;
-    }
-
-    // 3. DTO CHO PUT /player/equip-skin (Mặc đồ)
-    [Serializable]
-    public class EquipApiResponse
-    {
-        public bool success;
-        public EquipDataDTO data; 
-        public string message;
-    }
-
-    [Serializable]
-    public class EquipDataDTO
-    {
-        public string head;
-        public string body;
+        public List<string> unlockedItems; // Danh sách ID đã mở khóa sau khi mua
     }
 
     [Serializable]
@@ -81,12 +52,5 @@ namespace GhostVillage.Shop
     {
         public string itemId;
         public string itemType;
-    }
-
-    [Serializable]
-    public class EquipRequestDTO 
-    {
-        public string head;
-        public string body;
     }
 }
