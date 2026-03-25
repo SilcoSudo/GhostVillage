@@ -2,6 +2,8 @@ using UnityEngine;
 using TMPro;
 using Photon.Pun;
 using Game.Domain.Match.DTO;
+using UnityEngine.InputSystem; // THÊM DÒNG NÀY ĐỂ BẮT PHÍM ESC
+using Game.Script.UI; // THÊM DÒNG NÀY ĐỂ GỌI GLOBAL UI
 
 public class GameplayUIManager : MonoBehaviourPunCallbacks
 {
@@ -13,13 +15,63 @@ public class GameplayUIManager : MonoBehaviourPunCallbacks
     [SerializeField] private GameObject interactPanel;
     [SerializeField] private TextMeshProUGUI interactText;
 
-    // ĐÃ XÓA KHÚC CODE CỦA ESC MENU CŨ
+    private GlobalUIManager _globalUI; // Biến giữ liên lạc với Sếp tổng UI
 
     private void Awake()
     {
         // Ẩn UI phụ
         if (interactPanel) interactPanel.SetActive(false);
         if (_resultUI) _resultUI.gameObject.SetActive(false);
+    }
+
+    [System.Obsolete]
+    private void Start()
+    {
+        // Tìm sếp tổng GlobalUI để sai vặt
+        _globalUI = FindObjectOfType<GlobalUIManager>();
+        if (_globalUI != null)
+        {
+            _globalUI.OnGameExitClicked += HandleExitMatch;
+        }
+
+    }
+
+    private void Update()
+    {
+        // ==========================================
+        // GÁNH TRỌNG TRÁCH MỞ MENU ESC IN-GAME TẠI ĐÂY
+        // ==========================================
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            if (_globalUI != null)
+            {
+                if (_globalUI.IsEscMenuOpen())
+                {
+                    _globalUI.CloseEscMenu();
+                }
+                else
+                {
+                    // LƯU Ý: Chuyền đúng tham số InGame
+                    _globalUI.OpenEscMenu(GlobalUIManager.EscMenuType.InGame, true);
+                }
+            }
+        }
+    }
+
+    // --- LOGIC THOÁT GAME ---
+    private void HandleExitMatch()
+    {
+        Debug.Log("[Gameplay] Nhận lệnh thoát từ ESC Modal! Đang rút lui...");
+        if (_globalUI != null) _globalUI.ShowLoading(true, "Đang rút lui...");
+
+        PhotonNetwork.LeaveRoom(); // Sút ra khỏi phòng
+    }
+
+    // Photon tự gọi hàm này khi đã LeaveRoom xong 100%
+    public override void OnLeftRoom()
+    {
+        Debug.Log("[Gameplay] Đã rời phòng an toàn. Trở về sảnh!");
+        UnityEngine.SceneManagement.SceneManager.LoadScene("LobbyListScene"); // Quăng về sảnh ngoài
     }
 
     // --- EXTERNAL CALLS (GameManager gọi cái này) ---

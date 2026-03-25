@@ -43,12 +43,12 @@ export const PlayerService = {
       history: matchHistory,
       storage: {
         unlockedSkins: player.unlockedSkins,
-        unlockedPerks: player.unlockedPerks
+        unlockedPerks: player.unlockedPerks,
       },
       equipped: {
         skins: player.equippedSkins,
-        perks: player.equippedPerks
-      }
+        perks: player.equippedPerks,
+      },
     };
   },
   // Đã sửa lại chuẩn chỉ để tìm bằng UID 8 số
@@ -71,21 +71,22 @@ export const PlayerService = {
       level: targetPlayer.profile.level,
     };
   },
-    // Thêm hàm Update Medal
-    updateSelectedMedals: async (userId, medalCodes) => {
-      // 1. Kiểm tra tối đa 3 huy chương
-      if (medalCodes.length > 3) throw new Error("Can only equip up to 3 medals.");
+  // Thêm hàm Update Medal
+  updateSelectedMedals: async (userId, medalCodes) => {
+    // 1. Kiểm tra tối đa 3 huy chương
+    if (medalCodes.length > 3)
+      throw new Error("Can only equip up to 3 medals.");
 
-      // 2. Cập nhật Player
-      const player = await Player.findOneAndUpdate(
-        { userId },
-        { selectedMedals: medalCodes },
-        { new: true }
-      );
-      return player.selectedMedals;
-    },
+    // 2. Cập nhật Player
+    const player = await Player.findOneAndUpdate(
+      { userId },
+      { selectedMedals: medalCodes },
+      { new: true },
+    );
+    return player.selectedMedals;
+  },
 
-    updateEquippedSkins: async (userId, headId, bodyId) => {
+  updateEquippedSkins: async (userId, headId, bodyId) => {
     const player = await Player.findOne({ userId });
     if (!player) throw new Error("Player not found");
 
@@ -116,18 +117,20 @@ export const PlayerService = {
     else if (playerLevel >= 10) maxSlots = 2;
 
     if (perkIds.length > maxSlots) {
-        throw new Error(`Level ${playerLevel} chỉ được trang bị tối đa ${maxSlots} kỹ năng.`);
+      throw new Error(
+        `Level ${playerLevel} chỉ được trang bị tối đa ${maxSlots} kỹ năng.`,
+      );
     }
 
     // Kiểm tra quyền sở hữu
     for (const id of perkIds) {
-        if (id && !player.unlockedPerks.includes(id)) {
-            throw new Error(`Kỹ năng ${id} chưa được mở khóa.`);
-        }
+      if (id && !player.unlockedPerks.includes(id)) {
+        throw new Error(`Kỹ năng ${id} chưa được mở khóa.`);
+      }
     }
 
     player.equippedPerks = perkIds;
     await player.save();
     return player.equippedPerks;
-  }
+  },
 };

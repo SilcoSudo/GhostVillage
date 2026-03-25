@@ -249,12 +249,12 @@ namespace Game.Script.UI
 
             _escMenuModal.SetActive(false);
 
-            if (_currentEscType == EscMenuType.InGame)
+            if (_currentEscType == EscMenuType.InGame || _currentEscType == EscMenuType.Lobby)
             {
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
             }
-            else if (_currentEscType == EscMenuType.MainMenu || _currentEscType == EscMenuType.Lobby)
+            else if (_currentEscType == EscMenuType.MainMenu)
             {
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
