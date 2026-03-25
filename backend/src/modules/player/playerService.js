@@ -42,13 +42,11 @@ export const PlayerService = {
       achievements: mergedAchievements,
       history: matchHistory,
       storage: {
-        unlockedSkins: player.unlockedSkins,
-        unlockedPerks: player.unlockedPerks,
+        unlockedPerks: player.unlockedPerks
       },
       equipped: {
-        skins: player.equippedSkins,
-        perks: player.equippedPerks,
-      },
+        perks: player.equippedPerks
+      }
     };
   },
   // Đã sửa lại chuẩn chỉ để tìm bằng UID 8 số
@@ -84,25 +82,6 @@ export const PlayerService = {
       { new: true },
     );
     return player.selectedMedals;
-  },
-
-  updateEquippedSkins: async (userId, headId, bodyId) => {
-    const player = await Player.findOne({ userId });
-    if (!player) throw new Error("Player not found");
-
-    // Kiểm tra sở hữu: Chỉ validate nếu id không phải chuỗi rỗng (tháo đồ)
-    if (headId && headId !== "" && !player.unlockedSkins.includes(headId)) {
-      throw new Error("You do not own this head skin.");
-    }
-    if (bodyId && bodyId !== "" && !player.unlockedSkins.includes(bodyId)) {
-      throw new Error("You do not own this body skin.");
-    }
-
-    if (headId !== undefined) player.equippedSkins.head = headId;
-    if (bodyId !== undefined) player.equippedSkins.body = bodyId;
-
-    await player.save();
-    return player.equippedSkins;
   },
 
   updateEquippedPerks: async (userId, perkIds) => {

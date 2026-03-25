@@ -10,12 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 919b50bec6e70ef45a45ef069258b22f, type: 3}
-  m_Name: PERK_Stam_3
+  m_Name: PERK_RARE_RELIC_BEARER
   m_EditorClassIdentifier: Assembly-CSharp::GhostVillage.Shop.PerkSO
-  prefabId: PERK_Stam_3
-  itemName: Stamina III
-  description: Increase stamina
+  prefabId: PERK_RARE_RELIC_BEARER
+  itemName: Relic Bearer
+  description: 'Rescue speed increased by 15%. After a successful rescue, both you
+    and the rescued ally gain 15% Move Speed for 5 seconds.
+
+'
   icon: {fileID: 0}
-  rarity: 0
-  price: 190
-  value: 0
+  rarity: 1
+  price: 800

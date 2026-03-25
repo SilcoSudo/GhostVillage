@@ -10,12 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 919b50bec6e70ef45a45ef069258b22f, type: 3}
-  m_Name: PERK_Luck_2
+  m_Name: PERK_COM_INDIGO_POUCH
   m_EditorClassIdentifier: Assembly-CSharp::GhostVillage.Shop.PerkSO
-  prefabId: PERK_Luck_2
-  itemName: Luck II
-  description: Luckkkk
+  prefabId: PERK_COM_INDIGO_POUCH
+  itemName: Indigo Cloth Pouch
+  description: Has a 10% chance to not consume Med-kits or Batteries upon use.
   icon: {fileID: 0}
-  rarity: 1
-  price: 450
-  value: 0
+  rarity: 0
+  price: 300

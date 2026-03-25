@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 919b50bec6e70ef45a45ef069258b22f, type: 3}
-  m_Name: PERK_Bat_3
+  m_Name: PERK_COM_BRAIDED_BELT
   m_EditorClassIdentifier: Assembly-CSharp::GhostVillage.Shop.PerkSO
-  prefabId: PERK_Bat_3
-  itemName: Battery III
-  description: 
+  prefabId: PERK_COM_BRAIDED_BELT
+  itemName: Braided Grass Belt
+  description: Increases Max Stamina by 15% and increases Stamina regeneration speed
+    by 10%.
   icon: {fileID: 0}
   rarity: 0
-  price: 140
-  value: 0
+  price: 200
