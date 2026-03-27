@@ -91,8 +91,8 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
     [SerializeField] private float vongNhiWinLine = 0.18f;
     [Tooltip("Số hiệp thắng liên tiếp để thắng trận")]
     [SerializeField] private int winStreakTarget = 3;
-    [Tooltip("Số điểm mục tiêu để thắng trận")]
-    [SerializeField] private int pointTarget = 5;
+    [Tooltip("Cách biệt điểm tối thiểu để thắng trận")]
+    [SerializeField] private int scoreLeadTarget = 3;
     [Tooltip("Thời gian hiển thị kết quả của 1 hiệp trước khi sang hiệp tiếp theo")]
     [SerializeField] private float roundResultDisplayTime = 1.1f;
     [Tooltip("Thời gian hiển thị màn hình kết quả cuối cùng trước khi đóng UI (giây)")]
@@ -169,7 +169,7 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         _localActor = actor;
         ResetMatchState();
         _cancelInputLockTimer = cancelInputDelay;
-        _overlayHint = "Thắng 3 hiệp liên tiếp hoặc đạt 5 điểm để thắng trận!";
+        _overlayHint = "Thắng khi: cách biệt ≥ 3 điểm!";
         _overlayResult = string.Empty;
 
         if (keoCoCanvas != null)
@@ -300,7 +300,7 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         _playerScore += 1;
         _playerWinStreak += 1;
 
-        bool playerWonMatch = _playerWinStreak >= winStreakTarget || _playerScore >= pointTarget;
+        bool playerWonMatch = _playerScore - _vongNhiScore >= scoreLeadTarget;
         if (!playerWonMatch)
         {
             _currentRound += 1;
@@ -346,7 +346,7 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         _vongNhiScore += 1;
         _playerWinStreak = 0;
 
-        bool vongNhiWonMatch = _vongNhiScore >= pointTarget;
+        bool vongNhiWonMatch = _vongNhiScore - _playerScore >= scoreLeadTarget;
         if (!vongNhiWonMatch)
         {
             _currentRound += 1;
@@ -1054,8 +1054,8 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         if (winStreakTarget <= 0)
             winStreakTarget = 1;
 
-        if (pointTarget <= 0)
-            pointTarget = 1;
+        if (scoreLeadTarget <= 0)
+            scoreLeadTarget = 1;
 
         if (roundResultDisplayTime < 0.1f)
             roundResultDisplayTime = 0.1f;

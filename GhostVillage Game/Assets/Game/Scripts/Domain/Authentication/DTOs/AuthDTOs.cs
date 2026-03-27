@@ -84,7 +84,8 @@ namespace Game.Domain.Authentication.DTOs
     [Serializable]
     public class CompleteProfileResponseDTO
     {
-        public LoginResponseDTO data;
+        public string token;
+        public UserDTO user;
     }
 
 }
