@@ -76,7 +76,14 @@ namespace Game.Script.UI
         [Inject]
         public void Construct(SettingsController settingsController, GlobalChatManager chatManager, ISceneLoaderService sceneLoader)
         {
-            if (_settingsUI != null) _settingsUI.Init(settingsController);
+
+            if (_settingsUI != null)
+            {
+                _settingsUI.Init(settingsController);
+
+                // THÊM DÒNG NÀY: Khi Sếp bấm [X] ở Settings, gọi hàm CloseSettings của Global!
+                _settingsUI.OnCloseRequested += CloseSettings;
+            }
             else Debug.LogError("[GlobalUIManager] Chưa gán _settingsUI trên Inspector!");
 
             _chatManager = chatManager;
@@ -242,12 +249,12 @@ namespace Game.Script.UI
 
             _escMenuModal.SetActive(false);
 
-            if (_currentEscType == EscMenuType.InGame)
+            if (_currentEscType == EscMenuType.InGame || _currentEscType == EscMenuType.Lobby)
             {
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
             }
-            else if (_currentEscType == EscMenuType.MainMenu || _currentEscType == EscMenuType.Lobby)
+            else if (_currentEscType == EscMenuType.MainMenu)
             {
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;

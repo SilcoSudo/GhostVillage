@@ -55,7 +55,6 @@ public class FPSController : MonoBehaviourPun
 
         _inputActions.Player.DropItem.performed -= OnDropItem;
         _inputActions.Player.UseItem.performed -= OnUseItem;
-        _inputActions.Player.Esc_Tab.performed -= OnEscapePressed;
     }
 
     [System.Obsolete]
@@ -102,16 +101,6 @@ public class FPSController : MonoBehaviourPun
     #endregion
 
     #region Input Callbacks
-    private void OnEscapePressed(InputAction.CallbackContext context)
-    {
-        if (_globalUI != null)
-        {
-            if (_globalUI.IsEscMenuOpen())
-                _globalUI.CloseEscMenu();
-            else
-                _globalUI.OpenEscMenu(Game.Script.UI.GlobalUIManager.EscMenuType.InGame, true);
-        }
-    }
 
     private void OnDropItem(InputAction.CallbackContext context)
     {
@@ -187,8 +176,6 @@ public class FPSController : MonoBehaviourPun
         _inputActions.Player.Item_Slot1.performed += ctx => _inventoryManager.SelectSlot(0);
         _inputActions.Player.Item_Slot2.performed += ctx => _inventoryManager.SelectSlot(1);
         _inputActions.Player.Item_Slot3.performed += ctx => _inventoryManager.SelectSlot(2);
-
-        _inputActions.Player.Esc_Tab.performed += OnEscapePressed;
 
         _isInputBound = true;
         Debug.Log("🎮 [FPSController] Đã Bind thành công InputSystem từ VContainer!");

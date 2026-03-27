@@ -69,19 +69,20 @@ export const PlayerService = {
       level: targetPlayer.profile.level,
     };
   },
-    // Thêm hàm Update Medal
-    updateSelectedMedals: async (userId, medalCodes) => {
-      // 1. Kiểm tra tối đa 3 huy chương
-      if (medalCodes.length > 3) throw new Error("Can only equip up to 3 medals.");
+  // Thêm hàm Update Medal
+  updateSelectedMedals: async (userId, medalCodes) => {
+    // 1. Kiểm tra tối đa 3 huy chương
+    if (medalCodes.length > 3)
+      throw new Error("Can only equip up to 3 medals.");
 
-      // 2. Cập nhật Player
-      const player = await Player.findOneAndUpdate(
-        { userId },
-        { selectedMedals: medalCodes },
-        { new: true }
-      );
-      return player.selectedMedals;
-    },
+    // 2. Cập nhật Player
+    const player = await Player.findOneAndUpdate(
+      { userId },
+      { selectedMedals: medalCodes },
+      { new: true },
+    );
+    return player.selectedMedals;
+  },
 
   updateEquippedPerks: async (userId, perkIds) => {
     const player = await Player.findOne({ userId });
@@ -95,18 +96,20 @@ export const PlayerService = {
     else if (playerLevel >= 10) maxSlots = 2;
 
     if (perkIds.length > maxSlots) {
-        throw new Error(`Level ${playerLevel} chỉ được trang bị tối đa ${maxSlots} kỹ năng.`);
+      throw new Error(
+        `Level ${playerLevel} chỉ được trang bị tối đa ${maxSlots} kỹ năng.`,
+      );
     }
 
     // Kiểm tra quyền sở hữu
     for (const id of perkIds) {
-        if (id && !player.unlockedPerks.includes(id)) {
-            throw new Error(`Kỹ năng ${id} chưa được mở khóa.`);
-        }
+      if (id && !player.unlockedPerks.includes(id)) {
+        throw new Error(`Kỹ năng ${id} chưa được mở khóa.`);
+      }
     }
 
     player.equippedPerks = perkIds;
     await player.save();
     return player.equippedPerks;
-  }
+  },
 };

@@ -43,7 +43,32 @@ namespace Game.Domain.Settings.Services
 
             // Bắt đầu quá trình chờ người chơi bấm phím
             action.PerformInteractiveRebinding(bindingIndex)
-                .WithControlsExcluding("Mouse") // Bỏ qua nhấp chuột nếu không muốn gắn vào chuột
+                .WithControlsExcluding("Mouse") // Bỏ qua nhấp chuột
+                .WithCancelingThrough("<Keyboard>/escape") // Hủy thao tác nếu bấm nút ESC
+                .OnMatchWaitForAnother(0.1f) // Chờ 0.1s để tránh nhận tín hiệu đúp
+                .OnApplyBinding((operation, path) =>
+                {
+                    // ĐI THEO DÕI XEM PHÍM VỪA BẤM CÓ BỊ TRÙNG VỚI AI KHÔNG
+                    bool isDuplicate = false;
+                    foreach (var b in action.actionMap.bindings)
+                    {
+                        // Nếu là chính cái nút đang được gán thì bỏ qua
+                        if (b.action == action.name && action.bindings[bindingIndex].id == b.id) continue;
+
+                        // Nếu phím vừa bấm trùng với một phím đã có trong hệ thống
+                        if (b.effectivePath == path)
+                        {
+                            isDuplicate = true;
+                            break;
+                        }
+                    }
+
+                    if (isDuplicate)
+                    {
+                        Debug.LogWarning($"[InputRebind] Phím '{path}' đã bị trùng với chức năng khác!");
+                        operation.Cancel(); // Phím trùng -> Hủy luôn thao tác gán
+                    }
+                })
                 .OnComplete(operation =>
                 {
                     operation.Dispose();
@@ -59,6 +84,13 @@ namespace Game.Domain.Settings.Services
                 {
                     operation.Dispose();
                     action.Enable();
+
+                    // TRƯỜNG HỢP HỦY (Bấm ESC hoặc bị trùng phím):
+                    // Trả lại tên phím CŨ để UI không bị kẹt ở chữ "..."
+                    string overridePath = action.bindings[bindingIndex].overridePath ?? action.bindings[bindingIndex].path;
+                    string displayString = action.GetBindingDisplayString(bindingIndex);
+
+                    onComplete?.Invoke(overridePath, displayString);
                 })
                 .Start();
         }
