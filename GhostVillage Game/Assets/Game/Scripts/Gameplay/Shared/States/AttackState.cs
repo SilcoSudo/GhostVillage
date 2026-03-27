@@ -102,27 +102,35 @@ namespace GhostVillage.Gameplay.Shared
         }
 
         /// <summary>
-        /// Thực hiện tấn công
+        /// Thực hiện tấn công - OngKe knock player thay vì damage
         /// </summary>
         private void PerformAttack()
         {
             Vector3 playerPos = monster.GetPlayerPosition();
             float distanceToPlayer = Vector3.Distance(monster.transform.position, playerPos);
 
-            // Check khoảng cách tấn công
-            if (distanceToPlayer <= attackRange)
-            {
-                Debug.Log($"💥 AttackState: ĐÃ ĐÁNH TRÚNG PLAYER! Damage: {attackDamage}");
-
-                // TODO: Damage player (implement sau)
-                // player.TakeDamage(attackDamage);
-
-                hasAttackedThisFrame = true;
-            }
-            else
+            if (distanceToPlayer > attackRange)
             {
                 Debug.Log($"⚠️ AttackState: Tấn công nhưng không trúng (Distance: {distanceToPlayer:F1}m > {attackRange}m)");
+                return;
             }
+
+            Debug.Log("💥 AttackState: ĐÃ HIT PLAYER! -> Knock state");
+
+            RaycastHit hit;
+            Vector3 dirToPlayer = (playerPos - monster.transform.position).normalized;
+
+            if (Physics.Raycast(monster.transform.position, dirToPlayer, out hit, attackRange + 0.5f))
+            {
+                PlayerKnockedState knockedState = hit.collider.GetComponentInParent<PlayerKnockedState>();
+                if (knockedState != null && !knockedState.isKnocked)
+                {
+                    knockedState.GetKnocked();
+                    Debug.Log($"✓ Player knocked: {hit.collider.name}");
+                }
+            }
+
+            hasAttackedThisFrame = true;
         }
 
         /// <summary>

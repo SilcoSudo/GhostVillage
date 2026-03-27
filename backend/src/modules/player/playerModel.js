@@ -49,6 +49,25 @@ const playerSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+playerSchema.pre("validate", async function (next) {
+  try {
+    if (this.uid) return next();
+
+    for (let i = 0; i < 20; i++) {
+      const candidate = Math.floor(10000000 + Math.random() * 90000000).toString();
+      const exists = await mongoose.models.Player.exists({ uid: candidate });
+      if (!exists) {
+        this.uid = candidate;
+        return next();
+      }
+    }
+
+    return next(new Error("Unable to generate unique player uid"));
+  } catch (error) {
+    return next(error);
+  }
+});
+
 // Populate User reference when returning JSON
 playerSchema.methods.toJSON = function () {
   const obj = this.toObject();
