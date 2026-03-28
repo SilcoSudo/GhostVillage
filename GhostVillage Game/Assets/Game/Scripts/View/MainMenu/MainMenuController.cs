@@ -9,6 +9,8 @@ using Cysharp.Threading.Tasks;
 using Game.Domain.Authentication;
 using Game.Script.UI;
 using UnityEngine.InputSystem;
+using GhostVillage.Domain.Profile;
+using System.Collections.Generic;
 
 namespace Game.UI.MainMenu
 {
@@ -30,6 +32,12 @@ namespace Game.UI.MainMenu
         [Header("Profile Images")]
         [SerializeField] private Image imgPlayerAvatar;
         [SerializeField] private Image imgAvatarNotification;
+
+        [Header("Daily Quests UI")]
+        [SerializeField] private Transform _dailyQuestContent; // Nơi chứa Item
+        [SerializeField] private GameObject _dailyQuestPrefab; // Prefab Item_DailyQuestUI
+
+        [Inject] private ProfileService _profileService; // Lấy service để fetch & claim quest
 
         [System.Serializable]
         private class AvatarEntry
@@ -95,6 +103,7 @@ namespace Game.UI.MainMenu
             }
 
             FetchAndPopulateProfile().Forget();
+            FetchAndRenderDailyQuests().Forget();
             _friendController.InitializeDataAsync().Forget();
 
             if (_network.IsConnected)
@@ -177,32 +186,90 @@ namespace Game.UI.MainMenu
             // Chuyển sang scene xem danh sách
             _sceneLoader.LoadSceneAsync("LobbyListScene");
         }
-        
+
         // Gắn vào Profile
-        public void OpenProfileScene() 
+        public void OpenProfileScene()
         {
             // Chuyển sang scene Profile
             _sceneLoader.LoadSceneAsync("ProfileScene");
         }
 
         // Gắn vào nút "Shop"
-        public void OpenShopScene() 
+        public void OpenShopScene()
         {
             // Chuyển sang scene Shop
             _sceneLoader.LoadSceneAsync("ShopScene");
         }
 
-        public void OpenStorageScene() 
+        public void OpenStorageScene()
         {
             // Chuyển sang scene Storage
             _sceneLoader.LoadSceneAsync("StorageScene");
         }
-        
+
         // Gắn vào nút "Test Host" (Nút ảo để test)
         public void OnDebugCreateRoomClick()
         {
             _statusText.text = "Creating Test Room...";
             _network.CreateLobby("Test_Room_01", "", 4);
+        }
+
+        // =========================================================
+        // VÙNG LOGIC DAILY QUEST TRONG MAIN MENU
+        // =========================================================
+
+        private async UniTask FetchAndRenderDailyQuests()
+        {
+            if (_profileService == null) return;
+
+            // Gọi API GetAchievementsAsync vì bên BE mình đã gộp trả về cả dailyQuests
+            var profileData = await _profileService.GetAchievementsAsync(_session.Token);
+
+            if (profileData != null && profileData.dailyQuests != null)
+            {
+                RenderDailyQuests(profileData.dailyQuests);
+            }
+        }
+
+        private void RenderDailyQuests(List<QuestItemDTO> dailyQuests)
+        {
+            // 1. Dọn rác UI cũ
+            foreach (Transform child in _dailyQuestContent) Destroy(child.gameObject);
+
+            // 2. Sinh item mới
+            foreach (var quest in dailyQuests)
+            {
+                var itemGo = Instantiate(_dailyQuestPrefab, _dailyQuestContent);
+
+                if (itemGo.TryGetComponent<RectTransform>(out var rect))
+                    rect.localScale = Vector3.one;
+
+                // Lưu ý namespace của Item_DailyQuestUI đang nằm ở Lobby
+                if (itemGo.TryGetComponent<Game.Scripts.UI.Lobby.Item_DailyQuestUI>(out var ui))
+                {
+                    ui.Setup(quest, () => ClaimQuest(quest.id).Forget());
+                }
+            }
+        }
+
+        private async UniTaskVoid ClaimQuest(string questId)
+        {
+            _globalUI.ShowLoading(true);
+            bool success = await _profileService.ClaimQuestAsync(questId, _session.Token);
+            _globalUI.ShowLoading(false);
+
+            if (success)
+            {
+                Debug.Log($"<color=green>[MainMenu] Nhận thưởng nhiệm vụ {questId} thành công!</color>");
+
+                // Refresh lại cả 2 thứ: Profile (để tiền/exp nảy số) và Daily List (để nút biến thành ĐÃ NHẬN)
+                FetchAndPopulateProfile().Forget();
+                FetchAndRenderDailyQuests().Forget();
+            }
+            else
+            {
+                Debug.LogError($"<color=red>[MainMenu] Nhận thưởng {questId} thất bại!</color>");
+            }
         }
     }
 }

@@ -118,4 +118,110 @@ export const QuestService = {
 
     return { total, active, inactive, byQuestType };
   },
+
+  checkAndResetDaily: async (player) => {
+    const now = new Date();
+    const lastReset = new Date(player.lastDailyReset || 0);
+
+    if (now.toDateString() !== lastReset.toDateString()) {
+      player.dailyProgress = []; // Xóa sạch tiến độ Daily
+      player.lastDailyReset = now;
+      return true;
+    }
+    return false;
+  },
+
+  // --- 2. CỘNG DỒN TIẾN ĐỘ TỪ BẢNG THỐNG KÊ ---
+  updateProgressFromStats: async (userId, rawStats) => {
+    const player = await Player.findOne({ userId });
+    if (!player) throw new Error("Không tìm thấy Player");
+
+    await QuestService.checkAndResetDaily(player);
+
+    const activeQuests = await Quest.find({ isActive: true });
+    let isUpdated = false;
+
+    activeQuests.forEach((quest) => {
+      const statAmount = rawStats[quest.actionType]; // VD: rawStats["KILL_SMALL_MONSTER"]
+
+      if (statAmount && statAmount > 0) {
+        const progressArray =
+          quest.questType === "DAILY"
+            ? player.dailyProgress
+            : player.achievementsProgress;
+        let progressObj = progressArray.find(
+          (p) => p.questId === quest.questId,
+        );
+
+        if (!progressObj) {
+          progressObj = {
+            questId: quest.questId,
+            current: 0,
+            isClaimed: false,
+          };
+          progressArray.push(progressObj);
+        }
+
+        if (!progressObj.isClaimed && progressObj.current < quest.targetCount) {
+          progressObj.current += statAmount;
+          if (progressObj.current > quest.targetCount)
+            progressObj.current = quest.targetCount;
+          isUpdated = true;
+        }
+      }
+    });
+
+    if (isUpdated) await player.save();
+    return {
+      daily: player.dailyProgress,
+      achievements: player.achievementsProgress,
+    };
+  },
+
+  // Đặt bên dưới hàm updateProgressFromStats của sếp
+  claimQuestReward: async (userId, questId) => {
+    const player = await Player.findOne({ userId });
+    const quest = await Quest.findOne({ questId });
+
+    if (!player || !quest) throw new Error("Dữ liệu không hợp lệ");
+
+    // Tìm trong cả 2 mảng xem tiến độ nằm ở đâu
+    const progressArray =
+      quest.questType === "DAILY"
+        ? player.dailyProgress
+        : player.achievementsProgress;
+    const progressObj = progressArray.find((p) => p.questId === questId);
+
+    if (!progressObj) throw new Error("Chưa có tiến độ cho nhiệm vụ này");
+    if (progressObj.current < quest.targetCount)
+      throw new Error("Chưa hoàn thành nhiệm vụ");
+    if (progressObj.isClaimed)
+      throw new Error("Nhiệm vụ này đã được nhận quà rồi");
+
+    // 1. Đánh dấu đã nhận
+    progressObj.isClaimed = true;
+
+    // 2. Trao quà (Coin, Exp)
+    player.profile.coin += quest.reward.coin || 0;
+    player.profile.exp += quest.reward.exp || 0;
+
+    // Nếu có danh hiệu tặng kèm thì add vào list Unlocked
+    if (
+      quest.reward.titleId &&
+      !player.unlockedMedals.includes(quest.reward.titleId)
+    ) {
+      player.unlockedMedals.push(quest.reward.titleId);
+    }
+
+    // [Bí Thuật Mongoose]: Ép nó lưu mảng
+    player.markModified("dailyProgress");
+    player.markModified("achievementsProgress");
+    await player.save();
+
+    return {
+      message: "Nhận thưởng thành công",
+      newCoin: player.profile.coin,
+      newExp: player.profile.exp,
+    };
+  },
 };

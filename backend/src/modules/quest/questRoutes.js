@@ -27,4 +27,8 @@ router.patch("/:id/status", QuestController.toggleQuestStatus);
 // DELETE /api/quests/:id
 router.delete("/:id", QuestController.deleteQuest);
 
+// Thêm 2 dòng này vô questRoutes.js
+router.post("/update-progress", QuestController.updateProgress);
+router.post("/claim", QuestController.claimReward); // Cho GĐ 3
+
 export default router;

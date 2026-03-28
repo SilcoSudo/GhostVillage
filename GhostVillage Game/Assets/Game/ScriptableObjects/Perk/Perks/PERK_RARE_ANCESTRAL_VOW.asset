@@ -16,6 +16,6 @@ MonoBehaviour:
   itemName: 'Ancestral Vow  '
   description: 'Gain permanent buffs for each teammate eliminated (stacks up to 3
     times): +5% Move Speed and -10% Stamina consumption.'
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: ed8b51e481478744c8bef8067a9faa14, type: 3}
   rarity: 1
   price: 1000

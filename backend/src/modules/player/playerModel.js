@@ -26,20 +26,31 @@ const playerSchema = new mongoose.Schema(
       avatar: { type: String, default: "avatar_default_01" },
       level: { type: Number, default: 1 },
       exp: { type: Number, default: 0 },
-      coin: { type: Number, default: 1000 }
+      coin: { type: Number, default: 1000 },
     },
     unlockedPerks: { type: [String], default: [] },
     equippedPerks: { type: [String], default: [] },
-    unlockedMedals: [String],
-    selectedMedals: { type: [String], default: [] },
-    // Sub-document để truy vấn tiến độ cực nhanh
+
+    // TIẾN ĐỘ THÀNH TỰU (Lưu vĩnh viễn không bao giờ xóa)
     achievementsProgress: [
       {
-        achievementCode: String,
+        questId: String, // ID của Quest (Loại ACHIEVEMENT)
         current: { type: Number, default: 0 },
         isClaimed: { type: Boolean, default: false },
       },
     ],
+
+    // TIẾN ĐỘ NHIỆM VỤ NGÀY (Sẽ bị xóa đè khi sang ngày mới)
+    dailyProgress: [
+      {
+        questId: String, // ID của Quest (Loại DAILY)
+        current: { type: Number, default: 0 },
+        isClaimed: { type: Boolean, default: false },
+      },
+    ],
+
+    // THỜI GIAN RESET LƯỜI (Kiểm tra xem đã qua 0h00 chưa)
+    lastDailyReset: { type: Date, default: Date.now },
   },
   { timestamps: true },
 );

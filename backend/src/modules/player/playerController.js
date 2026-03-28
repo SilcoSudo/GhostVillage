@@ -47,14 +47,30 @@ export const PlayerController = {
 
   equipPerks: async (req, res) => {
     try {
-      const userId = req.user._id || req.user.id; 
-      const { perks } = req.body; 
-      
-      const updatedPerks = await PlayerService.updateEquippedPerks(userId, perks);
-      
-      res.status(200).json({ success: true, data: updatedPerks });
+      const userId = req.user._id || req.user.id;
+      const { perks } = req.body;
+
+      const updatedPerks = await PlayerService.updateEquippedPerks(
+        userId,
+        perks,
+      );
+
+      res
+        .status(200)
+        .json({ success: true, data: { equippedPerks: updatedPerks } });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
+  // Lấy dữ liệu Perk cho Lobby Modal
+  getPlayerPerks: async (req, res) => {
+    try {
+      const userId = req.user._id || req.user.id;
+      const data = await PlayerService.getPlayerPerksData(userId);
+      res.status(200).json({ success: true, data });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
     }
   },
 };

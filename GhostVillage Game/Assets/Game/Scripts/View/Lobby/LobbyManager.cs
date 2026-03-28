@@ -14,6 +14,7 @@ using Game.Scripts.View.Lobby.Session;
 using Game.Core.Scene;
 using Game.Core.Network;
 using VContainer.Unity;
+using Game.Domain.Perk.Controllers;
 
 namespace Game.Scripts.UI.Lobby
 {
@@ -31,8 +32,10 @@ namespace Game.Scripts.UI.Lobby
         [Inject] private IMapDataService _mapService;
         [Inject] private INetworkService _network;
         [Inject] private ISceneLoaderService _sceneLoader;
-
         [Inject] private IObjectResolver _resolver;
+        [Inject] private PerkController _perkController;
+        [Inject] private ProfileService _profileService;
+        [Inject] private GameSession _session;
 
         private List<MapConfigDTO> _cachedMaps = new List<MapConfigDTO>();
         private int _currentMapIndex = 0;
@@ -53,9 +56,12 @@ namespace Game.Scripts.UI.Lobby
             try
             {
                 // Wait for room connection and map data fetch
-                await UniTask.WhenAll(WaitForInRoom(), FetchLobbyResources());
-
-
+                await UniTask.WhenAll(
+                    WaitForInRoom(),
+                    FetchLobbyResources(),
+                    FetchAndLoadPerksToPhoton(),
+                    FetchAndRenderDailyQuests()
+                );
 
                 // --- [LOGIC RESET] ---
                 if (PhotonNetwork.IsMasterClient)
@@ -182,6 +188,55 @@ namespace Game.Scripts.UI.Lobby
             base.OnDisable();
             // RÚT ỐNG RA KHI RỜI SCENE
             if (_globalUI != null) _globalUI.OnLobbyExitClicked -= HandleExitLobby;
+        }
+
+        #endregion
+
+        #region Perk Logic (Chạy Ngầm)
+
+        // HÀM MỚI: TẢI PERK VÀ ĐÓNG GÓI VÀO PHOTON
+        private async UniTask FetchAndLoadPerksToPhoton()
+        {
+            if (_perkController == null) return;
+
+            await _perkController.FetchPerkDataAsync();
+            var data = _perkController.PerkData.Value;
+
+            if (data == null || data.equippedPerks == null || data.equippedPerks.Count == 0)
+            {
+                Debug.Log("<color=yellow>[LobbyManager]</color> Người chơi này không mặc Perk nào.");
+                return;
+            }
+
+            float maxStaminaMult = 1f;
+            float staminaRegenMult = 1f;
+            float preserveItemChance = 0f;
+            float reviveSpeedMult = 1f;
+
+            foreach (var perkId in data.equippedPerks)
+            {
+                var perkDetail = data.unlockedPerksDetails.Find(p => p.perkId == perkId);
+                if (perkDetail != null && perkDetail.modifiers != null)
+                {
+                    var mod = perkDetail.modifiers;
+                    if (mod.maxStaminaMult > 0) maxStaminaMult *= mod.maxStaminaMult;
+                    if (mod.staminaRegenMult > 0) staminaRegenMult *= mod.staminaRegenMult;
+                    if (mod.preserveItemChance > 0) preserveItemChance += mod.preserveItemChance;
+                    if (mod.reviveSpeedMult > 0) reviveSpeedMult *= mod.reviveSpeedMult;
+                }
+            }
+
+            var props = new Hashtable
+            {
+                { "Perk_IDs", data.equippedPerks.ToArray() },
+                { "Perk_MaxStamina", maxStaminaMult },
+                { "Perk_StaminaRegen", staminaRegenMult },
+                { "Perk_PreserveItem", preserveItemChance },
+                { "Perk_ReviveSpeed", reviveSpeedMult }
+            };
+
+            PhotonNetwork.LocalPlayer.SetCustomProperties(props);
+            Debug.Log($"<color=green>[LobbyManager]</color> Đã tự động nạp {data.equippedPerks.Count} Perks vào túi đồ mạng!");
         }
 
         #endregion
@@ -390,7 +445,6 @@ namespace Game.Scripts.UI.Lobby
                 _cachedMaps = maps;
                 Debug.Log($"Loaded {_cachedMaps.Count} maps.");
             }
-            _uiManager.AddMission("Sống sót qua đêm đầu tiên", false);
         }
 
         private void SetupRoomUI()
@@ -470,6 +524,30 @@ namespace Game.Scripts.UI.Lobby
 
             // Chuyển cảnh về danh sách phòng
             _sceneLoader.LoadSceneAsync("LobbyListScene");
+        }
+
+        // =========================================================
+        // [MỚI] LOGIC KÉO DAILY QUEST VỀ LOBBY ĐỂ LÀM TO-DO LIST
+        // =========================================================
+        private async UniTask FetchAndRenderDailyQuests()
+        {
+            if (_profileService == null || _uiManager == null) return;
+
+            try
+            {
+                // Gọi API lấy Data. Có Inject GameSession rồi nên móc Token ra xài thoải mái!
+                var profileData = await _profileService.GetAchievementsAsync(_session.Token);
+
+                if (profileData != null && profileData.dailyQuests != null)
+                {
+                    _uiManager.RenderDailyQuests(profileData.dailyQuests);
+                    Debug.Log($"<color=cyan>[LobbyManager]</color> Đã kéo thành công {profileData.dailyQuests.Count} nhiệm vụ dán lên bảng To-Do!");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"<color=orange>[LobbyManager]</color> Lỗi nạp bảng nhiệm vụ: {e.Message}");
+            }
         }
 
         #endregion

@@ -15,6 +15,6 @@ MonoBehaviour:
   prefabId: PERK_RARE_AGARWOOD_BEADS
   itemName: Agarwood Beads
   description: The Boss's detection range against you is reduced by 15%.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: b62f75f635f06a64583cda68ad229b9f, type: 3}
   rarity: 1
   price: 800

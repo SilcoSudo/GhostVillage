@@ -4,13 +4,63 @@ using System.Collections.Generic;
 using System.Linq;
 using Game.Domain.Match.DTO;
 using Game.Scripts.Gameplay.Result;
+// [THÊM CÁI NÀY ĐỂ PARSE DICTIONARY THÀNH JSON CHUẨN]
+using Newtonsoft.Json;
 
 namespace Game.Scripts.Gameplay.Core
 {
-    // [FIX 1] Bắt buộc phải có PhotonView để gọi RPC
-    [RequireComponent(typeof(PhotonView))]
-    public class MatchStatisticManager : MonoBehaviourPun // Thêm Pun để dùng photonView.RPC
+    // KHAI BÁO BỘ TỪ ĐIỂN CHUẨN ĐỂ UNITY VÀ BACKEND KHỚP NHAU
+    public static class MatchActions
     {
+        public const string PLAY_MATCH = "PLAY_MATCH";
+        public const string WIN_MATCH = "WIN_MATCH";
+        public const string KILL_SMALL_MONSTER = "KILL_SMALL_MONSTER";
+        public const string RESCUE_TEAMMATE = "RESCUE_TEAMMATE";
+        public const string USE_SIREN = "USE_SIREN";
+        public const string SCREAM = "SCREAM";
+        public const string GET_KNOCKED = "GET_KNOCKED";
+        public const string BOSS_TARGET = "BOSS_TARGET";
+        public const string GATHER_ITEM = "GATHER_ITEM";
+    }
+
+    [RequireComponent(typeof(PhotonView))]
+    public class MatchStatisticManager : MonoBehaviourPun
+    {
+        // Class bọc Data cho từng người chơi
+        public class MatchPlayerStats
+        {
+            public int ActorNumber;
+            public List<string> EarnedTitles = new List<string>();
+
+            // BÍ THUẬT: Từ điển lưu Action. Thêm tỷ cái Quest cũng không sợ!
+            public Dictionary<string, int> RawActions = new Dictionary<string, int>();
+
+            public void AddAction(string actionType, int amount = 1)
+            {
+                if (!RawActions.ContainsKey(actionType)) RawActions[actionType] = 0;
+                RawActions[actionType] += amount;
+            }
+
+            public int GetActionCount(string actionType)
+            {
+                return RawActions.ContainsKey(actionType) ? RawActions[actionType] : 0;
+            }
+
+            // Giữ lại hàm tính phần thưởng cũ của sếp
+            public (int exp, int coin) CalculateRewards(MatchRoute route)
+            {
+                int exp = 100;
+                int coin = 50;
+                if (route == MatchRoute.Escape) { exp += 500; coin += 200; }
+
+                // Thưởng thêm dựa trên số liệu thô
+                exp += GetActionCount(MatchActions.KILL_SMALL_MONSTER) * 10;
+                coin += GetActionCount(MatchActions.RESCUE_TEAMMATE) * 20;
+
+                return (exp, coin);
+            }
+        }
+
         private Dictionary<int, MatchPlayerStats> _stats = new Dictionary<int, MatchPlayerStats>();
         private bool _isInitialized = false;
 
@@ -24,112 +74,72 @@ namespace Game.Scripts.Gameplay.Core
                 _stats[p.ActorNumber] = new MatchPlayerStats { ActorNumber = p.ActorNumber };
             }
 
-            // Đăng ký Event Local
-            GameplayEvents.OnPlayerRescued += HandlePlayerRescued;
-            GameplayEvents.OnPlayerKnocked += RecordKnockdown;
-            GameplayEvents.OnSmallMonsterKilled += RecordSmallMonsterKill;
-            GameplayEvents.OnBossTargetedPlayer += RecordBossTarget;
-            GameplayEvents.OnPlayerScreamed += RecordScream;
-            GameplayEvents.OnKeyItemGathered += RecordKeyItemGathered;
+            // ĐĂNG KÝ EVENT BẰNG CHUỖI ACTION CHUẨN
+            GameplayEvents.OnPlayerRescued += (healer, target) => ReportAction(healer, MatchActions.RESCUE_TEAMMATE);
+            GameplayEvents.OnPlayerKnocked += (actor) => ReportAction(actor, MatchActions.GET_KNOCKED);
+            GameplayEvents.OnSmallMonsterKilled += (actor) => ReportAction(actor, MatchActions.KILL_SMALL_MONSTER);
+            GameplayEvents.OnBossTargetedPlayer += (actor) => ReportAction(actor, MatchActions.BOSS_TARGET);
+            GameplayEvents.OnPlayerScreamed += (actor) => ReportAction(actor, MatchActions.SCREAM);
+            GameplayEvents.OnKeyItemGathered += (actor) => ReportAction(actor, MatchActions.GATHER_ITEM);
 
             _isInitialized = true;
-            Debug.Log("📊 [Statistic] Bắt đầu ghi chép dữ liệu người chơi!");
+            Debug.Log("📊 [Statistic] Bắt đầu ghi chép dữ liệu người chơi (Chuẩn SOLID)!");
         }
 
         private void OnDestroy()
         {
-            if (_isInitialized)
-            {
-                GameplayEvents.OnPlayerRescued -= HandlePlayerRescued;
-                GameplayEvents.OnPlayerKnocked -= RecordKnockdown;
-                GameplayEvents.OnSmallMonsterKilled -= RecordSmallMonsterKill;
-                GameplayEvents.OnBossTargetedPlayer -= RecordBossTarget;
-                GameplayEvents.OnPlayerScreamed -= RecordScream;
-                GameplayEvents.OnKeyItemGathered -= RecordKeyItemGathered;
-                _isInitialized = false;
-            }
+            _isInitialized = false;
         }
 
-        private void LogStat(int actorNumber, string statName)
+        private void LogStat(int actorNumber, string statName, int amount)
         {
-            if (_stats.TryGetValue(actorNumber, out var stat))
-            {
-                Debug.Log($"<color=yellow>➕ [MatchStats]</color> Player {actorNumber} vừa được cộng điểm {statName}.");
-            }
+            Debug.Log($"<color=yellow>➕ [MatchStats]</color> Player {actorNumber} thực hiện [{statName}] +{amount}.");
         }
 
         // ==========================================
-        // [FIX 2] GỬI LỆNH QUA MẠNG KHI CÓ EVENT LOCAL
-        // Khi Event ở máy nào nổ, máy đó sẽ kêu Master ghi sổ.
+        // GỬI LỆNH QUA MẠNG
         // ==========================================
-
-        private void HandlePlayerRescued(int healer, int target)
+        private void ReportAction(int actorNumber, string actionType, int amount = 1)
         {
-            photonView.RPC(nameof(RPC_AddStat), RpcTarget.All, healer, "Rescue");
-        }
-        private void RecordKnockdown(int actorNumber)
-        {
-            photonView.RPC(nameof(RPC_AddStat), RpcTarget.All, actorNumber, "Knock");
-        }
-        private void RecordSmallMonsterKill(int actorNumber)
-        {
-            photonView.RPC(nameof(RPC_AddStat), RpcTarget.All, actorNumber, "Kill");
-        }
-        private void RecordBossTarget(int actorNumber)
-        {
-            photonView.RPC(nameof(RPC_AddStat), RpcTarget.All, actorNumber, "Target");
-        }
-        private void RecordScream(int actorNumber)
-        {
-            photonView.RPC(nameof(RPC_AddStat), RpcTarget.All, actorNumber, "Scream");
-        }
-        private void RecordKeyItemGathered(int actorNumber)
-        {
-            photonView.RPC(nameof(RPC_AddStat), RpcTarget.All, actorNumber, "Item");
+            photonView.RPC(nameof(RPC_AddStat), RpcTarget.All, actorNumber, actionType, amount);
         }
 
-        // ==========================================
-        // [FIX 3] RPC NHẬN VÀ CỘNG ĐIỂM TRÊN TẤT CẢ CÁC MÁY
-        // ==========================================
         [PunRPC]
-        private void RPC_AddStat(int actorNumber, string statType)
+        private void RPC_AddStat(int actorNumber, string actionType, int amount)
         {
             if (!_stats.ContainsKey(actorNumber)) return;
 
-            switch (statType)
-            {
-                case "Rescue": _stats[actorNumber].TeammatesRescued++; LogStat(actorNumber, "Cứu người"); break;
-                case "Knock": _stats[actorNumber].TimesKnocked++; LogStat(actorNumber, "Bị Knock"); break;
-                case "Kill": _stats[actorNumber].SmallMonstersKilled++; LogStat(actorNumber, "Giết quái"); break;
-                case "Target": _stats[actorNumber].BossTargetCount++; LogStat(actorNumber, "Bị Boss dí"); break;
-                case "Scream": _stats[actorNumber].ScreamCount++; LogStat(actorNumber, "Hét"); break;
-                case "Item": _stats[actorNumber].KeyItemsGathered++; LogStat(actorNumber, "Nhặt đồ"); break;
-            }
+            _stats[actorNumber].AddAction(actionType, amount);
+            LogStat(actorNumber, actionType, amount);
         }
 
-
-        // --- HÀM TÍNH TOÁN CUỐI TRẬN ---
+        // ==========================================
+        // TÍNH TOÁN TITLE CUỐI TRẬN (LƯU HISTORY)
+        // ==========================================
         public void CalculateFinalTitles()
         {
             if (_stats.Count == 0) return;
 
-            int maxKills = _stats.Values.Max(x => x.SmallMonstersKilled);
-            int maxTargets = _stats.Values.Max(x => x.BossTargetCount);
-            int maxRescues = _stats.Values.Max(x => x.TeammatesRescued);
-            int maxKnocks = _stats.Values.Max(x => x.TimesKnocked);
-            int maxScreams = _stats.Values.Max(x => x.ScreamCount);
+            int maxKills = _stats.Values.Max(x => x.GetActionCount(MatchActions.KILL_SMALL_MONSTER));
+            int maxTargets = _stats.Values.Max(x => x.GetActionCount(MatchActions.BOSS_TARGET));
+            int maxRescues = _stats.Values.Max(x => x.GetActionCount(MatchActions.RESCUE_TEAMMATE));
+            int maxKnocks = _stats.Values.Max(x => x.GetActionCount(MatchActions.GET_KNOCKED));
+            int maxScreams = _stats.Values.Max(x => x.GetActionCount(MatchActions.SCREAM));
 
             foreach (var stat in _stats.Values)
             {
                 stat.EarnedTitles.Clear();
-                if (stat.SmallMonstersKilled == maxKills && maxKills > 0) stat.EarnedTitles.Add(TitleNames.GRIM_REAPER);
-                if (stat.BossTargetCount == maxTargets && maxTargets > 0) stat.EarnedTitles.Add(TitleNames.PRIME_TARGET);
-                if (stat.TeammatesRescued == maxRescues && maxRescues > 0) stat.EarnedTitles.Add(TitleNames.WALKING_HOSPITAL);
-                if (stat.TimesKnocked == maxKnocks && maxKnocks > 0) stat.EarnedTitles.Add(TitleNames.PUNCHING_BAG);
-                if (stat.ScreamCount == maxScreams && maxScreams > 0) stat.EarnedTitles.Add(TitleNames.HUMAN_SIREN);
+                if (stat.GetActionCount(MatchActions.KILL_SMALL_MONSTER) == maxKills && maxKills > 0) stat.EarnedTitles.Add(TitleNames.GRIM_REAPER);
+                if (stat.GetActionCount(MatchActions.BOSS_TARGET) == maxTargets && maxTargets > 0) stat.EarnedTitles.Add(TitleNames.PRIME_TARGET);
+                if (stat.GetActionCount(MatchActions.RESCUE_TEAMMATE) == maxRescues && maxRescues > 0) stat.EarnedTitles.Add(TitleNames.WALKING_HOSPITAL);
+                if (stat.GetActionCount(MatchActions.GET_KNOCKED) == maxKnocks && maxKnocks > 0) stat.EarnedTitles.Add(TitleNames.PUNCHING_BAG);
+                if (stat.GetActionCount(MatchActions.SCREAM) == maxScreams && maxScreams > 0) stat.EarnedTitles.Add(TitleNames.HUMAN_SIREN);
             }
         }
 
+        // ==========================================
+        // ĐÓNG GÓI CHO GAME MANAGER
+        // ==========================================
         public PlayerResultRequestDTO GetFinalResultForPlayer(Photon.Realtime.Player player, string mongoUserId, bool isWin, string outcome, MatchRoute route)
         {
             if (!_stats.TryGetValue(player.ActorNumber, out var stat))
@@ -146,6 +156,29 @@ namespace Game.Scripts.Gameplay.Core
                 rewards = new MatchRewardDTO { exp = exp, coin = coin },
                 titles = new List<string>(stat.EarnedTitles)
             };
+        }
+
+        // ==========================================
+        // [FIX]: RÚT RAW DATA TRẢ VỀ DẠNG CHUỖI JSON
+        // Tên hàm sửa lại đúng với GameManager gọi: GetRawStatsPayloadForQuestAPI
+        // ==========================================
+        public string GetRawStatsPayloadForQuestAPI(bool isWin)
+        {
+            int myActorNum = PhotonNetwork.LocalPlayer.ActorNumber;
+            if (!_stats.TryGetValue(myActorNum, out var myStats))
+                myStats = new MatchPlayerStats(); // Tránh null ref nếu văng sớm
+
+            // Tự động chèn thêm hành động kết thúc game
+            myStats.AddAction(MatchActions.PLAY_MATCH, 1);
+            if (isWin) myStats.AddAction(MatchActions.WIN_MATCH, 1);
+
+            // BỌC RAW STATS VÀO ĐÚNG FORMAT CỦA BACKEND YÊU CẦU: { "rawStats": { ... } }
+            var payloadObj = new { rawStats = myStats.RawActions };
+
+            // BẮT BUỘC PHẢI DÙNG Newtonsoft.Json (JsonUtility của Unity không hỗ trợ Dictionary)
+            string jsonPayload = JsonConvert.SerializeObject(payloadObj);
+
+            return jsonPayload;
         }
     }
 }
