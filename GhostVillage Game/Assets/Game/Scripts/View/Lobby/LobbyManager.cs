@@ -429,8 +429,33 @@ namespace Game.Scripts.UI.Lobby
             string mapId = (string)PhotonNetwork.CurrentRoom.CustomProperties[MAP_KEY];
             var config = _cachedMaps.First(m => m.identityConfig.mapId == mapId);
 
-            Debug.Log($"Loading Scene: {config.identityConfig.sceneName}");
-            PhotonNetwork.LoadLevel(config.identityConfig.sceneName);
+            string requestedScene = config.identityConfig.sceneName;
+            string playableScene = ResolvePlayableSceneName(requestedScene);
+
+            if (!Application.CanStreamedLevelBeLoaded(playableScene))
+            {
+                Debug.LogError($"[LobbyManager] Scene not found in Build Profiles: requested='{requestedScene}', resolved='{playableScene}'. Add scene to Build Profiles.");
+                _globalUI.ShowError("Scene Not Found", $"Scene '{playableScene}' chưa có trong Build Profiles. Vào File > Build Profiles để thêm scene.");
+                return;
+            }
+
+            Debug.Log($"Loading Scene: {playableScene} (requested: {requestedScene})");
+            PhotonNetwork.LoadLevel(playableScene);
+        }
+
+        private string ResolvePlayableSceneName(string sceneName)
+        {
+            if (string.IsNullOrWhiteSpace(sceneName))
+                return sceneName;
+
+            if (Application.CanStreamedLevelBeLoaded(sceneName))
+                return sceneName;
+
+            // Backward-compat aliases from older map config values.
+            if (sceneName == "Map_Ong_Ke")
+                return "Scene_Game_OngKe";
+
+            return sceneName;
         }
 
         #endregion

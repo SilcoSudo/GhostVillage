@@ -60,9 +60,11 @@ namespace Game.UI.Login
                 // Submit date of birth to backend
                 var response = await _authService.CompleteDateOfBirthAsync(_token, dateOfBirth);
 
-                if (response != null && response.data != null)
+                if (response != null && !string.IsNullOrEmpty(response.token))
                 {
                     view.SetStatus("✓ Profile updated! Loading game...");
+
+                    _session.Token = response.token;
 
                     // Get updated player data
                     await _authService.FetchMyProfileAsync();
@@ -75,9 +77,10 @@ namespace Game.UI.Login
                 }
                 else
                 {
-                    // Server validation error (e.g., user too young)
+                    // Keep message generic because this branch can be any server-side failure,
+                    // not just age validation.
                     Debug.LogWarning("[ProfileCompletionController] Server rejected profile");
-                    view.SetStatus("<color=red>❌ This date of birth cannot be used.\nPlease try again with a valid age (13+).</color>");
+                    view.SetStatus("<color=red>❌ Profile update failed. Please try again.</color>");
                     view.SetInteractable(true);
                 }
             }
