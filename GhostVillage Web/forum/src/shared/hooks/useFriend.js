@@ -6,13 +6,14 @@ import FriendAPI from "../services/friendApi.js";
  * useFriendList Hook
  * Fetch all accepted friends
  */
-export const useFriendList = () => {
+export const useFriendList = (options = {}) => {
   return useQuery({
     queryKey: ["friends", "list"],
     queryFn: async () => {
       const response = await FriendAPI.getFriendList();
       return response.data.data;
     },
+    ...options,
   });
 };
 

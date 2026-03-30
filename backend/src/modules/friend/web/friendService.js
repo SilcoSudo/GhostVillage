@@ -4,6 +4,15 @@ import NotificationService from "../../forum/notifications/notificationService.j
 import mongoose from "mongoose";
 
 class FriendService {
+  static async getAcceptedFriendCount(userId) {
+    return Friend.countDocuments({
+      $or: [
+        { userId: userId, status: "accepted" },
+        { friendId: userId, status: "accepted" },
+      ],
+    });
+  }
+
   /**
    * Get friend list (accepted friendships)
    * Returns user objects for all accepted friends
@@ -96,6 +105,21 @@ class FriendService {
         throw new Error("Cannot add yourself as a friend");
       }
 
+      const [userAFriendCount, userBFriendCount] = await Promise.all([
+        FriendService.getAcceptedFriendCount(userAId),
+        FriendService.getAcceptedFriendCount(userBId),
+      ]);
+
+      if (userAFriendCount >= 20) {
+        throw new Error(
+          "Friend limit reached. You can have at most 20 friends",
+        );
+      }
+
+      if (userBFriendCount >= 20) {
+        throw new Error("This user already has the maximum number of friends");
+      }
+
       // Check if friendship already exists
       const existingFriendship = await Friend.findOne({
         $or: [
@@ -155,6 +179,21 @@ class FriendService {
         throw new Error("Only pending requests can be accepted");
       }
 
+      const [requesterFriendCount, targetFriendCount] = await Promise.all([
+        FriendService.getAcceptedFriendCount(friendship.userId._id),
+        FriendService.getAcceptedFriendCount(friendship.friendId._id),
+      ]);
+
+      if (requesterFriendCount >= 20) {
+        throw new Error(
+          "Friend limit reached. You can have at most 20 friends",
+        );
+      }
+
+      if (targetFriendCount >= 20) {
+        throw new Error("This user already has the maximum number of friends");
+      }
+
       // Update status
       friendship.status = "accepted";
       friendship.acceptedAt = new Date();
@@ -204,6 +243,21 @@ class FriendService {
 
       if (friendship.status !== "pending") {
         throw new Error("Only pending requests can be accepted");
+      }
+
+      const [requesterFriendCount, targetFriendCount] = await Promise.all([
+        FriendService.getAcceptedFriendCount(friendship.userId._id),
+        FriendService.getAcceptedFriendCount(friendship.friendId._id),
+      ]);
+
+      if (requesterFriendCount >= 20) {
+        throw new Error(
+          "Friend limit reached. You can have at most 20 friends",
+        );
+      }
+
+      if (targetFriendCount >= 20) {
+        throw new Error("This user already has the maximum number of friends");
       }
 
       // Update status
