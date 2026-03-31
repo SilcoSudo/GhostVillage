@@ -1,4 +1,5 @@
 import Quest from "./questModel.js";
+import Player from "../player/playerModel.js"; // <-- Chỉnh lại đường dẫn cho đúng
 
 export const QuestService = {
   getAllQuests: async (query) => {
@@ -198,19 +199,22 @@ export const QuestService = {
     if (progressObj.isClaimed)
       throw new Error("Nhiệm vụ này đã được nhận quà rồi");
 
-    // 1. Đánh dấu đã nhận
     progressObj.isClaimed = true;
 
-    // 2. Trao quà (Coin, Exp)
-    player.profile.coin += quest.reward.coin || 0;
-    player.profile.exp += quest.reward.exp || 0;
+    const bonusCoin = quest.rewardCoin || quest.reward?.coin || 0;
+    const bonusExp = quest.rewardExp || quest.reward?.exp || 0;
+
+    player.profile.coin += bonusCoin;
+    player.profile.exp += bonusExp;
+
+    console.log(
+      `[QuestService] Player ${userId} nhận thưởng Quest ${questId}. +${bonusCoin} Coin, +${bonusExp} Exp. Tổng: ${player.profile.coin}`,
+    );
 
     // Nếu có danh hiệu tặng kèm thì add vào list Unlocked
-    if (
-      quest.reward.titleId &&
-      !player.unlockedMedals.includes(quest.reward.titleId)
-    ) {
-      player.unlockedMedals.push(quest.reward.titleId);
+    const titleReward = quest.rewardTitleId || quest.reward?.titleId;
+    if (titleReward && !player.unlockedMedals.includes(titleReward)) {
+      player.unlockedMedals.push(titleReward);
     }
 
     // [Bí Thuật Mongoose]: Ép nó lưu mảng

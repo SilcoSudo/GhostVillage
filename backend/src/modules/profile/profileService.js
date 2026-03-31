@@ -2,7 +2,8 @@ import mongoose from "mongoose";
 import Player from "../player/playerModel.js";
 import PlayerMatchHistory from "./playerMatchHistoryModel.js";
 import GameResult from "./gameResultModel.js";
-import Quest from "../quest/questModel.js"; // Đảm bảo đường dẫn đúng tới model Quest
+import Quest from "../quest/questModel.js";
+import { QuestService } from "../quest/questService.js";
 
 class ProfileService {
   /**
@@ -61,7 +62,6 @@ class ProfileService {
       })),
     };
   }
-
   /**
    * Tab 3: Lấy gộp cả Thành tựu (Achievements) và Nhiệm vụ (Daily)
    */
@@ -70,11 +70,20 @@ class ProfileService {
 
     // 1. Lấy Player + TOÀN BỘ Quest đang Active
     const [player, activeQuests] = await Promise.all([
-      Player.findOne({ userId: objId }).lean(),
+      Player.findOne({ userId: objId }), // Bỏ .lean() đi để còn save() được
       Quest.find({ isActive: true }).lean(),
     ]);
 
     if (!player) return { achievements: [], dailyQuests: [] };
+
+    // ==============================================================
+    // [FIX LỖI]: KIỂM TRA VÀ RESET DAILY NGAY LÚC LẤY DATA SHOW LÊN UI
+    // ==============================================================
+    const isReset = await QuestService.checkAndResetDaily(player);
+    if (isReset) {
+      await player.save(); // Nếu qua ngày mới, lưu lại mảng rỗng vào DB luôn
+      console.log(`[ProfileService] Đã reset Daily Quest cho Player ${userId}`);
+    }
 
     // 2. Hàm gom tiến độ (Map Progress)
     const mapQuestProgress = (quest, progressArray) => {
@@ -103,34 +112,27 @@ class ProfileService {
     // ====================================================
     // 4. BÍ THUẬT DAILY POOL: RANDOM THEO NGÀY HIỆN TẠI
     // ====================================================
-    // 4a. Lọc ra toàn bộ Quest là DAILY
     const allDailyQuests = activeQuests.filter((q) => q.questType === "DAILY");
 
-    // 4b. Tạo Hạt Giống (Seed) dựa trên ngày tháng năm (Múi giờ UTC cho chuẩn server)
     const today = new Date();
     const seedString = `${today.getUTCFullYear()}${today.getUTCMonth()}${today.getUTCDate()}`;
 
-    // Thuật toán băm chuỗi thành 1 số Seed
     let seed = 0;
     for (let i = 0; i < seedString.length; i++) {
       seed = seedString.charCodeAt(i) + ((seed << 5) - seed);
     }
 
-    // 4c. Trộn mảng (Shuffle) bằng thuật toán Pseudo-Random dựa vào Seed
     const shuffledDailies = [...allDailyQuests].sort(() => {
       const x = Math.sin(seed++) * 10000;
-      return x - Math.floor(x) - 0.5; // Trả về số từ -0.5 đến 0.5
+      return x - Math.floor(x) - 0.5;
     });
 
-    // 4d. Bốc 3 cái đầu tiên sau khi đã trộn
     const todaysDailyQuests = shuffledDailies.slice(0, 3);
 
-    // 4e. Map tiến độ của Player vào 3 cái Quest này
     const finalDailyQuests = todaysDailyQuests.map((q) =>
       mapQuestProgress(q, player.dailyProgress),
     );
 
-    // 5. Trả về đúng format DTO của Unity
     return {
       achievements: achievements,
       dailyQuests: finalDailyQuests,

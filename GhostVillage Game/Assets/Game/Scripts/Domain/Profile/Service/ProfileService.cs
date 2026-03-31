@@ -53,4 +53,16 @@ public class ProfileService
         );
         return response != null;
     }
+
+    // Gửi cục JSON rawStats lên Backend để cộng điểm Quest/Achievement
+    public async UniTask<bool> UpdateQuestProgressAsync(string jsonPayload, string token)
+    {
+        // Tái sử dụng ClaimResultDTO để hứng message trả về cho lẹ (nếu cần)
+        var response = await _apiClient.PostAsyncWithAuth<ClaimResultDTO>(
+            "/api/quests/update-progress",
+            jsonPayload,
+            token
+        );
+        return response != null;
+    }
 }

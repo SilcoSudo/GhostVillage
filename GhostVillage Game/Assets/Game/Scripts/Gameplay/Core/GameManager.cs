@@ -12,6 +12,7 @@ using Cysharp.Threading.Tasks;
 using System.Collections;
 using Game.Scripts.Gameplay.Result;
 using Game.Domain.Map.Services;
+using Game.Core.Network;
 
 // Lưu ý: Đảm bảo bạn đã có các Enum và file GameplayEvents.cs như đã bàn trước đó
 public class GameManager : MonoBehaviourPunCallbacks
@@ -40,6 +41,9 @@ public class GameManager : MonoBehaviourPunCallbacks
     private MatchRoute _currentMatchRoute = MatchRoute.Lose; // Mặc định là thua
     private bool _isLocalDataReady = false;
 
+    private GameSession _session;
+    private ProfileService _profileService;
+
     // VContainer sẽ tự động điền các biến này vào khi Prefab GameContext được khởi tạo
     [Inject]
     public void Construct(
@@ -52,7 +56,9 @@ public class GameManager : MonoBehaviourPunCallbacks
         ObjectiveManager objectiveManager,
         MatchDataService matchDataService,
         GameplayUIManager uiManager,
-        MatchStatisticManager statisticManager
+        MatchStatisticManager statisticManager,
+        GameSession session,
+        ProfileService profileService
     )
     {
         _mapData = mapData;
@@ -65,6 +71,8 @@ public class GameManager : MonoBehaviourPunCallbacks
         _matchDataService = matchDataService;
         _uiManager = uiManager;
         _statisticManager = statisticManager;
+        _session = session;
+        _profileService = profileService;
     }
 
     // --- UNITY LIFECYCLE ---
@@ -158,11 +166,11 @@ public class GameManager : MonoBehaviourPunCallbacks
         GameplayEvents.OnAltarActivated += HandleEscapePhaseTrigger;
         GameplayEvents.OnLocalPlayerRequestEscape += HandleLocalPlayerEscapeRequest;
     }
-
     public override void OnDisable()
     {
         base.OnDisable();
         GameplayEvents.OnAltarActivated -= HandleEscapePhaseTrigger;
+        GameplayEvents.OnLocalPlayerRequestEscape -= HandleLocalPlayerEscapeRequest;
     }
 
     // --- NETWORK STATE SYNCHRONIZATION ---
@@ -206,25 +214,54 @@ public class GameManager : MonoBehaviourPunCallbacks
             case GameState.Ending:
                 Debug.Log("[GameManager] MATCH ENDED.");
 
-                Debug.Log("[GameManager] MATCH ENDED.");
-
                 if (PhotonNetwork.IsMasterClient)
                 {
-                    // 1. Tạo Data (Mock hoặc thật)
+                    // 1. Tạo Data Match History
                     var dto = CreateMatchResultData();
 
-                    // 2. Gửi API lưu DB (Fire & Forget)
+                    // 2. Gửi API lưu Lịch sử (Chỉ Master gửi)
                     _matchDataService.ReportMatchResultAsync(dto).Forget();
 
                     // 3. Bắn RPC hiện UI cho tất cả mọi người
                     string jsonDTO = JsonUtility.ToJson(dto);
                     photonView.RPC(nameof(RpcShowGameResult), RpcTarget.All, jsonDTO);
                 }
+
+                // AI CŨNG PHẢI TỰ GỬI TIẾN ĐỘ NHIỆM VỤ CỦA MÌNH LÊN SERVER
+                SendQuestProgressAPIAsync().Forget();
+
                 break;
         }
     }
 
     // Test stuffs ======================
+
+    // Hàm đóng gói số liệu và gọi Service gửi lên Backend
+    private async UniTaskVoid SendQuestProgressAPIAsync()
+    {
+        if (_statisticManager == null || _profileService == null || _session == null) return;
+
+        // Xử lý xác định Win hay Lose của máy cục bộ
+        int myActorNum = PhotonNetwork.LocalPlayer.ActorNumber;
+        PlayerMatchStatus myStatus = _playerStatuses.ContainsKey(myActorNum) ? _playerStatuses[myActorNum] : PlayerMatchStatus.Eliminated;
+        bool isWin = myStatus == PlayerMatchStatus.Escaped;
+
+        // Rút Raw Data JSON từ Statistic Manager
+        string questPayloadJson = _statisticManager.GetRawStatsPayloadForQuestAPI(isWin);
+        Debug.Log($"[GameManager] Dang gui Quest Payload: {questPayloadJson}");
+
+        // Gọi qua lớp Service chuẩn SOLID
+        bool success = await _profileService.UpdateQuestProgressAsync(questPayloadJson, _session.Token);
+
+        if (success)
+        {
+            Debug.Log("[GameManager] Cap nhat tien do Quest thanh cong!");
+        }
+        else
+        {
+            Debug.LogError("[GameManager] Loi khi cap nhat tien do Quest!");
+        }
+    }
 
     [PunRPC]
     private void RpcShowGameResult(string jsonDTO)
