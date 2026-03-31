@@ -15,6 +15,6 @@ MonoBehaviour:
   prefabId: PERK_COM_GLOOM_EYE
   itemName: Gloom Eye
   description: Reduces Flashlight battery consumption rate by 15%.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: dd5679257dec5dd48af9e4842fce851a, type: 3}
   rarity: 0
   price: 150

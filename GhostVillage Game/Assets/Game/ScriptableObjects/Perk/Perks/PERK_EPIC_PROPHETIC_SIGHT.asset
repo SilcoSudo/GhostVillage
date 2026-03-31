@@ -16,6 +16,6 @@ MonoBehaviour:
   itemName: Prophetic Sight
   description: Whenever a teammate completes a puzzle, reveal the Boss and all allies'
     outlines through walls for 7 seconds.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 528744dee0606ca4cb0105fddcc6941e, type: 3}
   rarity: 2
   price: 2000

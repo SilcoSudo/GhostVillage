@@ -15,6 +15,6 @@ MonoBehaviour:
   prefabId: PERK_COM_TIRE_SANDALS
   itemName: Tire Tread Sandals
   description: Reduces Stamina consumption while sprinting by 15%.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 7bc5608bc2a655a48acbd2ccfa27b887, type: 3}
   rarity: 0
   price: 250

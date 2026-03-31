@@ -1,17 +1,20 @@
-namespace GhostVillage.Shop 
+namespace GhostVillage.Shop
 {
-    public enum ItemRarity {
+    public enum ItemRarity
+    {
         COMMON,
         RARE,
         EPIC
     }
 
-    public enum CosmeticType {
+    public enum CosmeticType
+    {
         Hat,
         Body
     }
 
-    public enum ItemType {
+    public enum ItemType
+    {
         COSMETIC,
         PERK
     }

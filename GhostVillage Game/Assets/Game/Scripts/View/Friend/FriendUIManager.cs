@@ -91,6 +91,34 @@ namespace Game.UI.Friend
             _btnSearchSubmit.onClick.AddListener(() =>
             {
                 string uid = _inputSearchUID.text.Trim();
+
+                if (string.IsNullOrEmpty(uid)) return;
+
+                // ========================================================
+                // LOGIC: IT'S YOU !!
+                // ========================================================
+                // Lấy UID của chính mình (Cắt chữ "UID: " ra)
+                string myUid = _txtMyUID.text.Replace("UID: ", "").Trim();
+
+                if (uid == myUid)
+                {
+                    // Nếu gõ đúng UID của mình
+                    Debug.Log("<color=yellow>[Friend] It's you!! Gõ UID của chính mình rồi!</color>");
+
+                    // Hiển thị lỗi ra UI (Sếp có cái _txtSearchError sẵn nè)
+                    _txtSearchError.text = "It's you!!";
+                    _txtSearchError.gameObject.SetActive(true);
+
+                    // Ẩn nội dung List đi (để đéo hiện gì cả)
+                    ClearContent();
+
+                    return; // Dừng lại ở đây, ĐÉO ĐƯỢC CHẠY TIẾP XUỐNG DƯỚI
+                }
+
+                // Nếu không phải mình thì xóa lỗi và chạy tìm kiếm bình thường
+                _txtSearchError.text = "";
+                _txtSearchError.gameObject.SetActive(false);
+
                 _friendController.SearchByUID(uid).Forget();
             });
         }
@@ -100,10 +128,10 @@ namespace Game.UI.Friend
             // --- Bind My Profile Data ---
             _txtMyDisplayName.text = _session.DisplayName;
 
-            // 🎯 [TEMPORARY MOCK DATA] Gắn cứng UID ảo để test UI chạy lên trước
+            // 🎯 [ĐÃ SỬA UID ẢO] Lấy đúng UID thật
             if (_txtMyUID != null)
             {
-                _txtMyUID.text = "UID: 10000001"; // Gắn đại một số nào đó cho nó hiện lên UI
+                _txtMyUID.text = $"UID: {_session.UID}"; // Thay biến Uid tùy theo tên sếp khai báo trong GameSession
             }
 
             // Assuming UID is stored in PlayerDataStore or derived. 
@@ -259,7 +287,37 @@ namespace Game.UI.Friend
         private void SetupFriendItem(GameObject obj, FriendProfileDTO data)
         {
             SetText(obj, "Txt_DisplayName", data.GetDisplayName());
-            SetText(obj, "Txt_Status", "Online"); // Mặc định hiển thị, update sau với Photon
+
+            // ========================================================
+            // [FIX]: LOGIC XỬ LÝ TRẠNG THÁI (STATUS) VÀ MÀU SẮC (COLOR)
+            // ========================================================
+            string userId = data.GetUserId();
+            string statusText = "Offline";
+            Color statusColor = Color.gray; // Mặc định Xám (Offline)
+
+            // Kiểm tra xem Photon Chat có báo trạng thái của đứa này không
+            if (_friendController.FriendStatuses.Value.TryGetValue(userId, out int chatStatus))
+            {
+                if (chatStatus == 2) // ChatUserStatus.Online = 2
+                {
+                    statusText = "Online";
+                    statusColor = Color.green; // Xanh lá
+                }
+                else if (chatStatus == 3) // ChatUserStatus.Playing = 3
+                {
+                    statusText = "In-Game";
+                    statusColor = Color.red; // Đỏ (Đang chơi / Ở trong Lobby)
+                }
+            }
+
+            SetText(obj, "Txt_Status", statusText);
+
+            // Tìm cái chấm tròn (hoặc Image) đại diện cho trạng thái và đổi màu
+            var imgStatus = obj.transform.Find("Img_StatusPoint")?.GetComponent<Image>();
+            if (imgStatus != null)
+            {
+                imgStatus.color = statusColor;
+            }
 
             var btnUnfriend = obj.transform.Find("Btn_Unfriend")?.GetComponent<Button>();
             if (btnUnfriend != null)
@@ -271,7 +329,6 @@ namespace Game.UI.Friend
                     if (isSuccess)
                     {
                         if (_globalUI != null) _globalUI.ShowError("Thành công", "Đã xóa khỏi danh sách bạn bè.");
-                        // BẮT BUỘC RENDER LẠI UI NGAY LẬP TỨC
                         SwitchTab(_currentTab);
                     }
                     else

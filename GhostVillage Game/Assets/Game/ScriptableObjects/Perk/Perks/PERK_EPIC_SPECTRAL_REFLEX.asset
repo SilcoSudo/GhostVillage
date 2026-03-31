@@ -16,6 +16,6 @@ MonoBehaviour:
   itemName: Spectral Reflection
   description: When knocked down, automatically revive with 100% Stamina after 3
     seconds. (Once per match)
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: ea40e203e35d1f94280069b56ee24e11, type: 3}
   rarity: 2
   price: 2000

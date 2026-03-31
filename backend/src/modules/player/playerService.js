@@ -1,6 +1,7 @@
 import Player from "./playerModel.js";
 import Achievement from "../achievement/achievementModel.js";
 import PlayerMatchHistory from "../profile/playerMatchHistoryModel.js";
+import Perk from "../perk/perkModel.js";
 
 export const PlayerService = {
   // Hàm lấy trọn bộ Profile cho UI
@@ -42,11 +43,11 @@ export const PlayerService = {
       achievements: mergedAchievements,
       history: matchHistory,
       storage: {
-        unlockedPerks: player.unlockedPerks
+        unlockedPerks: player.unlockedPerks,
       },
       equipped: {
-        perks: player.equippedPerks
-      }
+        perks: player.equippedPerks,
+      },
     };
   },
   // Đã sửa lại chuẩn chỉ để tìm bằng UID 8 số
@@ -111,5 +112,44 @@ export const PlayerService = {
     player.equippedPerks = perkIds;
     await player.save();
     return player.equippedPerks;
+  },
+
+  // ==========================================
+  // [MỚI] API CHUYÊN DỤNG CHO BẢNG PERK LOBBY
+  // ==========================================
+  getPlayerPerksData: async (userId) => {
+    const player = await Player.findOne({ userId }).lean();
+    if (!player) throw new Error("Player not found");
+
+    // Lấy thông tin chi tiết của NHỮNG PERK MÀ PLAYER ĐANG SỞ HỮU
+    // Dùng $in để query một phát lấy luôn cho lẹ
+    const ownedPerksDetails = await Perk.find({
+      perkId: { $in: player.unlockedPerks },
+      isActive: true,
+    }).lean();
+
+    // Map lại data cho sạch đẹp để gởi xuống Unity
+    const mergedUnlockedPerks = ownedPerksDetails.map((p) => ({
+      perkId: p.perkId,
+      perkName: p.perkName,
+      description: p.description,
+      rarity: p.rarity,
+      prefabId: p.prefabId,
+      modifiers: p.modifiers,
+      isEquipped: player.equippedPerks.includes(p.perkId),
+    }));
+
+    // Tính toán số lượng Slot được phép dùng
+    let maxSlots = 1;
+    const playerLevel = player.profile.level || 1;
+    if (playerLevel >= 25) maxSlots = 3;
+    else if (playerLevel >= 10) maxSlots = 2;
+
+    return {
+      playerLevel: playerLevel,
+      maxPerkSlots: maxSlots,
+      equippedPerks: player.equippedPerks, // Mảng ID các perk đang trang bị
+      unlockedPerksDetails: mergedUnlockedPerks, // Mảng chứa full Info để vẽ UI
+    };
   },
 };

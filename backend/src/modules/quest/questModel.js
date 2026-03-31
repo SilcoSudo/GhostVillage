@@ -12,8 +12,11 @@ const questSchema = new mongoose.Schema(
     actionType: { type: String, required: true },
     targetCount: { type: Number, required: true, default: 1 },
 
-    rewardCoin: { type: Number, default: 0 },
-    rewardExp: { type: Number, default: 0 },
+    reward: {
+      coin: { type: Number, default: 0 },
+      exp: { type: Number, default: 0 },
+      titleId: { type: String, default: null }, // Danh hiệu nếu có
+    },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true },

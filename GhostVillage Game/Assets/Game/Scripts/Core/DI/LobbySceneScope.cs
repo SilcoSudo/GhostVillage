@@ -3,6 +3,8 @@ using VContainer.Unity;
 using UnityEngine;
 using Game.Scripts.UI.Lobby;
 using Game.Scripts.View.Lobby;
+using Game.Domain.Perk.Services;
+using Game.Domain.Perk.Controllers;
 
 namespace Game.Core.DI
 {
@@ -19,6 +21,10 @@ namespace Game.Core.DI
             if (_lobbyManager != null) builder.RegisterComponent(_lobbyManager);
 
             builder.RegisterComponentInHierarchy<FriendBoardInteract>();
+            builder.RegisterComponentInHierarchy<PerkBoardInteract>();
+            builder.Register<PerkService>(Lifetime.Scoped);
+            builder.Register<PerkController>(Lifetime.Scoped);
+
         }
     }
 }

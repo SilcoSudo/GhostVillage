@@ -97,8 +97,8 @@ public class ReviveQTEManager : MonoBehaviour
             // Nếu nạn nhân bỗng dưng biến mất (thoát game, chết)
             if (!_targetVictim.isKnocked)
             {
-                 StopQTE();
-                 return;
+                StopQTE();
+                return;
             }
         }
 
@@ -154,10 +154,10 @@ public class ReviveQTEManager : MonoBehaviour
             }
 
             Debug.Log($"<color=green>[QTE] Hit! (+{actualHeal} máu)</color>");
-            
+
             // Gửi RPC sang để cộng máu thực tế
             _targetVictim.photonView.RPC("RpcUpdateReviveProgress", RpcTarget.All, actualHeal);
-            
+
             // CỘNG MÁU ẢO NGAY LẬP TỨC TRÊN MÁY MÌNH ĐỂ TRÁNH LAG (Dự đoán Client)
             _targetVictim.currentProgress += actualHeal;
 
@@ -198,6 +198,20 @@ public class ReviveQTEManager : MonoBehaviour
     public void OnReviveSuccess()
     {
         Debug.Log("<color=yellow>[QTE] CỨU SỐNG THÀNH CÔNG!</color>");
+
+        if (_saviorFPS != null && _targetVictim != null)
+        {
+            // Lấy ID thằng cứu
+            int saviorId = _saviorFPS.GetComponent<PhotonView>().OwnerActorNr;
+
+            // Lấy ID thằng bị nạn
+            int victimId = _targetVictim.GetComponent<PhotonView>().OwnerActorNr;
+
+            // Bắn loa phát thanh báo hiệu!
+            Game.Scripts.Gameplay.Core.GameplayEvents.OnPlayerRescued?.Invoke(saviorId, victimId);
+
+            Debug.Log($"<color=cyan>[Tracker] Đã gửi thông báo cứu người lên Server: {saviorId} cứu {victimId}</color>");
+        }
 
         if (_saviorFPS != null)
         {
