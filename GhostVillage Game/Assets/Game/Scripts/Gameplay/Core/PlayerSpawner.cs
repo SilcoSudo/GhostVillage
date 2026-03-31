@@ -16,17 +16,37 @@ public class PlayerSpawner : MonoBehaviour
         // 1. Xin danh sách điểm spawn người chơi từ MapData
         List<Transform> spawnPoints = mapData.GetSpawnPointsByTag("SP_Player");
 
-        if (PhotonNetwork.IsConnectedAndReady && spawnPoints.Count > 0)
+        if (!PhotonNetwork.IsConnectedAndReady)
+        {
+            Debug.LogError("[Spawner] Không thể spawn! Photon chưa sẵn sàng.");
+            return;
+        }
+
+        Vector3 spawnPosition;
+        Quaternion spawnRotation;
+
+        if (spawnPoints.Count > 0)
         {
             // 2. Chia vị trí dựa trên ActorNumber (Tránh đè lên nhau)
             int spawnIndex = (PhotonNetwork.LocalPlayer.ActorNumber - 1) % spawnPoints.Count;
             Transform point = spawnPoints[spawnIndex];
 
+            spawnPosition = point.position;
+            spawnRotation = point.rotation;
+        }
+        else
+        {
+            // Fallback để tránh game không thể bắt đầu nếu map thiếu tag SP_Player.
+            spawnPosition = transform.position;
+            spawnRotation = transform.rotation;
+            Debug.LogWarning("[Spawner] Không tìm thấy điểm SP_Player. Dùng fallback tại vị trí PlayerSpawner.");
+        }
+
             // 3. Instantiate qua mạng (Hứng lấy GameObject trả về)
             GameObject playerObj = PhotonNetwork.Instantiate(
                 playerPrefabName,
-                point.position,
-                point.rotation
+                spawnPosition,
+                spawnRotation
             );
 
             // 4. KIỂM TRA & CÀI ĐẶT CHO LOCAL PLAYER
@@ -60,10 +80,5 @@ public class PlayerSpawner : MonoBehaviour
                     }
                 }
             }
-        }
-        else
-        {
-            Debug.LogError("[Spawner] Không thể spawn! Kiểm tra kết nối Photon hoặc Tag 'SP_Player'");
-        }
     }
 }

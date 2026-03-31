@@ -155,7 +155,13 @@ namespace Game.UI.Login
                     return;
                 }
 
-                if (response.data != null)
+                string authToken = !string.IsNullOrEmpty(response.token)
+                    ? response.token
+                    : (!string.IsNullOrEmpty(response.playerData?.token)
+                        ? response.playerData.token
+                        : response.data?.token);
+
+                if (!string.IsNullOrEmpty(authToken))
                 {
                     // Che màn hình lại
                     if (view != null) view.gameObject.SetActive(false);
@@ -164,7 +170,7 @@ namespace Game.UI.Login
                     _globalUI.ShowLoading(true, "Đang tải dữ liệu nhân vật...");
 
                     // Lưu token vào session trước để hàm Fetch có thể dùng
-                    _session.Token = response.data.token;
+                    _session.Token = authToken;
 
                     var profileResponse = await _authService.FetchMyProfileAsync();
 
@@ -176,7 +182,7 @@ namespace Game.UI.Login
                                       : "Player_" + UnityEngine.Random.Range(1000, 9999);
 
                     // Connect Photon
-                    bool connected = await _network.ConnectAsync(nickName, response.data.token);
+                    bool connected = await _network.ConnectAsync(nickName, authToken);
 
                     if (connected)
                     {
@@ -193,6 +199,11 @@ namespace Game.UI.Login
                             view.SetInteractable(true);
                         }
                     }
+                }
+                else if (view != null)
+                {
+                    view.SetStatus("<color=red>❌ Google login response missing token</color>");
+                    view.SetInteractable(true);
                 }
             }
             else
