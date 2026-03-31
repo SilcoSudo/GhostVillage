@@ -15,6 +15,6 @@ MonoBehaviour:
   prefabId: PERK_COM_INDIGO_POUCH
   itemName: Indigo Cloth Pouch
   description: Has a 10% chance to not consume Med-kits or Batteries upon use.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 1d50814686d4bf64184fa479d981ae41, type: 3}
   rarity: 0
   price: 300

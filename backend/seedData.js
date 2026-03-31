@@ -30,9 +30,7 @@ const seedData = async () => {
     // await PlayerMatchHistory.deleteMany({})
     await Perk.deleteMany({});
     await ShopPool.deleteMany({});
-    console.log(
-      "🗑️  Đã xóa dữ liệu cũ.",
-    );
+    console.log("🗑️  Đã xóa dữ liệu cũ.");
     await MapConfig.deleteMany({});
     await MatchResult.deleteMany({});
     await UserAchievement.deleteMany({}); // <-- Bê lên đây là hết bị lỗi duplicate key
@@ -106,122 +104,129 @@ const seedData = async () => {
       },
     ]);
 
-  //Shop (Perk)
-  const perkData = [
-  // --- EPIC PERKS ---
-  {
-    perkId: "PERK_EPIC_SPECTRAL_REFLEX",
-    perkName: "Spectral Reflection",
-    description: "When knocked down, automatically revive with 100% Stamina after 3 seconds. (Once per match)",
-    rarity: "EPIC",
-    price: 2000,
-    prefabId: "PERK_EPIC_SPECTRAL_REFLEX",
-    modifiers: { 
-      autoReviveCount: 1, 
-      reviveDelay: 3, 
-      reviveStaminaPercent: 1.0 
-    }
-  },
-  {
-    perkId: "PERK_EPIC_PROPHETIC_SIGHT",
-    perkName: "Prophetic Sight",
-    description: "Whenever a teammate completes a puzzle, reveal the Boss and all allies' outlines through walls for 7 seconds.",
-    rarity: "EPIC",
-    price: 2000,
-    prefabId: "PERK_EPIC_PROPHETIC_SIGHT",
-    modifiers: { 
-      revealDuration: 7, 
-      revealOutline: true 
-    }
-  },
+    //Shop (Perk)
+    const perkData = [
+      // --- EPIC PERKS ---
+      {
+        perkId: "PERK_EPIC_SPECTRAL_REFLEX",
+        perkName: "Spectral Reflection",
+        description:
+          "When knocked down, automatically revive with 100% Stamina after 3 seconds. (Once per match)",
+        rarity: "EPIC",
+        price: 2000,
+        prefabId: "PERK_EPIC_SPECTRAL_REFLEX",
+        modifiers: {
+          autoReviveCount: 1,
+          reviveDelay: 3,
+          reviveStaminaPercent: 1.0,
+        },
+      },
+      {
+        perkId: "PERK_EPIC_PROPHETIC_SIGHT",
+        perkName: "Prophetic Sight",
+        description:
+          "Whenever a teammate completes a puzzle, reveal the Boss and all allies' outlines through walls for 7 seconds.",
+        rarity: "EPIC",
+        price: 2000,
+        prefabId: "PERK_EPIC_PROPHETIC_SIGHT",
+        modifiers: {
+          revealDuration: 7,
+          revealOutline: true,
+        },
+      },
 
-  // --- RARE PERKS ---
-  {
-    perkId: "PERK_RARE_RELIC_BEARER",
-    perkName: "Relic Bearer",
-    description: "Rescue speed increased by 15%. After a successful rescue, both you and the rescued ally gain 15% Move Speed for 5 seconds.",
-    rarity: "RARE",
-    price: 800,
-    prefabId: "PERK_RARE_RELIC_BEARER",
-    modifiers: { 
-      reviveSpeedMult: 1.15, 
-      postReviveSpeedBoost: 0.15, 
-      boostDuration: 5 
-    }
-  },
-  {
-    perkId: "PERK_RARE_AGARWOOD_BEADS",
-    perkName: "Agarwood Beads",
-    description: "The Boss's detection range against you is reduced by 15%.",
-    rarity: "RARE",
-    price: 800,
-    prefabId: "PERK_RARE_AGARWOOD_BEADS",
-    modifiers: { 
-      bossDetectionRangeMult: 0.85 
-    }
-  },
-  {
-    perkId: "PERK_RARE_ANCESTRAL_VOW",
-    perkName: "Ancestral Vow",
-    description: "Gain permanent buffs for each teammate eliminated (stacks up to 3 times): +5% Move Speed and -10% Stamina consumption.",
-    rarity: "RARE",
-    price: 1000,
-    prefabId: "PERK_RARE_ANCESTRAL_VOW",
-    modifiers: { 
-      speedBoostPerDeath: 0.05, 
-      staminaSavePerDeath: 0.10, 
-      maxStacks: 3 
-    }
-  },
+      // --- RARE PERKS ---
+      {
+        perkId: "PERK_RARE_RELIC_BEARER",
+        perkName: "Relic Bearer",
+        description:
+          "Rescue speed increased by 15%. After a successful rescue, both you and the rescued ally gain 15% Move Speed for 5 seconds.",
+        rarity: "RARE",
+        price: 800,
+        prefabId: "PERK_RARE_RELIC_BEARER",
+        modifiers: {
+          reviveSpeedMult: 1.15,
+          postReviveSpeedBoost: 0.15,
+          boostDuration: 5,
+        },
+      },
+      {
+        perkId: "PERK_RARE_AGARWOOD_BEADS",
+        perkName: "Agarwood Beads",
+        description:
+          "The Boss's detection range against you is reduced by 15%.",
+        rarity: "RARE",
+        price: 800,
+        prefabId: "PERK_RARE_AGARWOOD_BEADS",
+        modifiers: {
+          bossDetectionRangeMult: 0.85,
+        },
+      },
+      {
+        perkId: "PERK_RARE_ANCESTRAL_VOW",
+        perkName: "Ancestral Vow",
+        description:
+          "Gain permanent buffs for each teammate eliminated (stacks up to 3 times): +5% Move Speed and -10% Stamina consumption.",
+        rarity: "RARE",
+        price: 1000,
+        prefabId: "PERK_RARE_ANCESTRAL_VOW",
+        modifiers: {
+          speedBoostPerDeath: 0.05,
+          staminaSavePerDeath: 0.1,
+          maxStacks: 3,
+        },
+      },
 
-  // --- COMMON PERKS ---
-  {
-    perkId: "PERK_COM_BRAIDED_BELT",
-    perkName: "Braided Grass Belt",
-    description: "Increases Max Stamina by 15% and increases Stamina regeneration speed by 10%.",
-    rarity: "COMMON",
-    price: 200,
-    prefabId: "PERK_COM_BRAIDED_BELT",
-    modifiers: { 
-      maxStaminaMult: 1.15, 
-      staminaRegenMult: 1.10 
-    }
-  },
-  {
-    perkId: "PERK_COM_GLOOM_EYE",
-    perkName: "Gloom Eye",
-    description: "Reduces Flashlight battery consumption rate by 15%.",
-    rarity: "COMMON",
-    price: 150,
-    prefabId: "PERK_COM_GLOOM_EYE",
-    modifiers: { 
-      batteryDrainMult: 0.85 
-    }
-  },
-  {
-    perkId: "PERK_COM_TIRE_SANDALS",
-    perkName: "Tire Tread Sandals",
-    description: "Reduces Stamina consumption while sprinting by 15%.",
-    rarity: "COMMON",
-    price: 250,
-    prefabId: "PERK_COM_TIRE_SANDALS",
-    modifiers: { 
-      sprintStaminaDrainMult: 0.85 
-    }
-  },
-  {
-    perkId: "PERK_COM_INDIGO_POUCH",
-    perkName: "Indigo Cloth Pouch",
-    description: "Has a 10% chance to not consume Med-kits or Batteries upon use.",
-    rarity: "COMMON",
-    price: 300,
-    prefabId: "PERK_COM_INDIGO_POUCH",
-    modifiers: { 
-      preserveItemChance: 0.10 
-    }
-  }
-];
-  const createdPerks = await Perk.create(perkData);
+      // --- COMMON PERKS ---
+      {
+        perkId: "PERK_COM_BRAIDED_BELT",
+        perkName: "Braided Grass Belt",
+        description:
+          "Increases Max Stamina by 15% and increases Stamina regeneration speed by 10%.",
+        rarity: "COMMON",
+        price: 200,
+        prefabId: "PERK_COM_BRAIDED_BELT",
+        modifiers: {
+          maxStaminaMult: 1.15,
+          staminaRegenMult: 1.1,
+        },
+      },
+      {
+        perkId: "PERK_COM_GLOOM_EYE",
+        perkName: "Gloom Eye",
+        description: "Reduces Flashlight battery consumption rate by 15%.",
+        rarity: "COMMON",
+        price: 150,
+        prefabId: "PERK_COM_GLOOM_EYE",
+        modifiers: {
+          batteryDrainMult: 0.85,
+        },
+      },
+      {
+        perkId: "PERK_COM_TIRE_SANDALS",
+        perkName: "Tire Tread Sandals",
+        description: "Reduces Stamina consumption while sprinting by 15%.",
+        rarity: "COMMON",
+        price: 250,
+        prefabId: "PERK_COM_TIRE_SANDALS",
+        modifiers: {
+          sprintStaminaDrainMult: 0.85,
+        },
+      },
+      {
+        perkId: "PERK_COM_INDIGO_POUCH",
+        perkName: "Indigo Cloth Pouch",
+        description:
+          "Has a 10% chance to not consume Med-kits or Batteries upon use.",
+        rarity: "COMMON",
+        price: 300,
+        prefabId: "PERK_COM_INDIGO_POUCH",
+        modifiers: {
+          preserveItemChance: 0.1,
+        },
+      },
+    ];
+    const createdPerks = await Perk.create(perkData);
 
     // --- TẠO USER 1: Web Auth User (Email-only) ---
     // Role: user | admin

@@ -1,80 +1,92 @@
 using System;
 using System.Collections.Generic;
 
-namespace GhostVillage.Domain.Profile {
-    
-[Serializable]
-    public class FullProfileDTO {
+namespace GhostVillage.Domain.Profile
+{
+    [Serializable]
+    public class FullProfileDTO
+    {
         public PlayerProfile profile;
         public List<string> selectedMedals;
-        public List<AchievementItemDTO> achievements;
+
+        // [CẬP NHẬT] Đổi kiểu dữ liệu và thêm list Daily
+        public List<QuestItemDTO> achievements;
+        public List<QuestItemDTO> dailyQuests;
+
         public List<MatchHistoryItemDTO> history;
         public StorageDTO storage;
         public EquippedDTO equipped;
     }
-    
+
     [Serializable]
-    public class PlayerProfile {
+    public class PlayerProfile
+    {
         public string displayName;
         public int level;
-        public int exp = 0;           // Gán mặc định là 0 nếu JSON thiếu
-        public int nextLevelExp = 100; // Tránh Slider bị chia cho 0
+        public int exp = 0;
+        public int nextLevelExp = 100;
         public int coin;
         public string avatar;
-        public string userId = "N/A"; // Gán mặc định nếu không có UID
+        public string userId = "N/A";
         public int totalMatches;
     }
 
+    // [ĐỔI TÊN] Thành QuestItemDTO để xài chung cho Daily và Achievement
     [Serializable]
-    public class AchievementItemDTO {
-        public string id;
-        public string title;
-        public string desc;
+    public class QuestItemDTO
+    {
+        public string id;       // Khớp với questId
+        public string title;    // Khớp với questName
+        public string desc;     // Khớp với description
         public int current;
-        public int target;
+        public int target;      // Khớp với targetCount
         public bool isClaimed;
         public bool isEquipped;
         public RewardDTO reward;
     }
 
     [Serializable]
-    public class RewardDTO { 
-        public int coin; 
+    public class RewardDTO
+    {
+        public int coin;
         public int exp;
-        public string titleId; 
+        public string titleId;
     }
 
     [Serializable]
-    public class ClaimResultDTO {
-        public string message; // Hứng message "Reward claimed!" từ server
+    public class ClaimResultDTO
+    {
+        public string message;
     }
 
     [Serializable]
-    public class MatchHistoryItemDTO {
+    public class MatchHistoryItemDTO
+    {
         public bool isWin;
         public int expGained;
         public int coinGained;
         public int durationSec;
         public List<string> rankTitles;
         public string resultStatus;
-        public MatchDetail matchId; 
+        public MatchDetail matchId;
     }
 
     [Serializable]
-    public class MatchDetail { 
-        public string mapId; 
+    public class MatchDetail
+    {
+        public string mapId;
         public string mapName;
-        public string startTime; 
+        public string startTime;
     }
 
     [Serializable]
-    public class StorageDTO 
+    public class StorageDTO
     {
         public List<string> unlockedPerks;
     }
 
     [Serializable]
-    public class EquippedDTO 
+    public class EquippedDTO
     {
         public List<string> perks;
     }

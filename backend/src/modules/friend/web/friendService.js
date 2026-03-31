@@ -10,7 +10,6 @@ class FriendService {
    */
   static async getFriendList(userId) {
     try {
-      // Find all friendships where status is 'accepted' and userId can be either userId or friendId
       const friendships = await Friend.find({
         $or: [
           { userId: userId, status: "accepted" },
@@ -18,8 +17,12 @@ class FriendService {
         ],
       }).populate("userId friendId", "fullname email avatar bio");
 
-      // Map results to get the friend, not the requester
-      const friends = friendships.map((friendship) => {
+      // [BỌC GIÁP]: Lọc bỏ những record mà user đã bị xóa khỏi DB
+      const validFriendships = friendships.filter(
+        (f) => f.userId != null && f.friendId != null,
+      );
+
+      const friends = validFriendships.map((friendship) => {
         const friend =
           friendship.userId._id.toString() === userId.toString()
             ? friendship.friendId
@@ -48,7 +51,10 @@ class FriendService {
         status: "pending",
       }).populate("userId", "fullname email avatar bio");
 
-      return requests.map((request) => ({
+      // [BỌC GIÁP]: Lọc bỏ bóng ma
+      const validRequests = requests.filter((r) => r.userId != null);
+
+      return validRequests.map((request) => ({
         ...request.toObject(),
         requester: request.userId,
       }));
@@ -68,7 +74,10 @@ class FriendService {
         status: "pending",
       }).populate("friendId", "fullname email avatar bio");
 
-      return requests.map((request) => ({
+      // [BỌC GIÁP]: Lọc bỏ bóng ma
+      const validRequests = requests.filter((r) => r.friendId != null);
+
+      return validRequests.map((request) => ({
         ...request.toObject(),
         targetUser: request.friendId,
       }));
@@ -95,6 +104,15 @@ class FriendService {
       if (userAId.toString() === userBId.toString()) {
         throw new Error("Cannot add yourself as a friend");
       }
+
+      // ========================================================
+      // [FIX]: CHECK GIỚI HẠN 20 BẠN TRƯỚC KHI GỬI LỜI MỜI
+      // ========================================================
+      const countA = await this.getFriendCount(userAId);
+      if (countA >= 20) throw new Error("Bạn đã đạt giới hạn 20 người bạn");
+
+      const countB = await this.getFriendCount(userBId);
+      if (countB >= 20) throw new Error("Đối phương đã đầy danh sách bạn bè");
 
       // Check if friendship already exists
       const existingFriendship = await Friend.findOne({
@@ -140,6 +158,9 @@ class FriendService {
   /**
    * Accept friend request
    */
+  /**
+   * Accept friend request
+   */
   static async acceptFriendRequest(friendshipId, io) {
     try {
       const friendship = await Friend.findById(friendshipId).populate(
@@ -153,6 +174,18 @@ class FriendService {
 
       if (friendship.status !== "pending") {
         throw new Error("Only pending requests can be accepted");
+      }
+
+      // ========================================================
+      // [FIX]: CHECK GIỚI HẠN 20 BẠN TRƯỚC KHI CHẤP NHẬN
+      // ========================================================
+      const countA = await this.getFriendCount(friendship.userId._id);
+      const countB = await this.getFriendCount(friendship.friendId._id);
+
+      if (countA >= 20 || countB >= 20) {
+        throw new Error(
+          "Không thể chấp nhận vì một trong hai người đã đạt giới hạn 20 bạn bè",
+        );
       }
 
       // Update status
@@ -176,8 +209,6 @@ class FriendService {
 
   /**
    * Accept friend request by relatedUserId (alternative method)
-   * Used when friendshipId is not available in notification
-   * This tries to find the friendship using the relatedUserId
    */
   static async acceptFriendRequestByUserId(currentUserId, relatedUserId, io) {
     try {
@@ -189,8 +220,6 @@ class FriendService {
       }).populate("userId friendId", "fullname email avatar bio");
 
       if (!friendship) {
-        // If friendship ID passed might actually be a user ID from old notification
-        // Try to use it as relatedUserId
         friendship = await Friend.findOne({
           userId: relatedUserId,
           friendId: currentUserId,
@@ -204,6 +233,18 @@ class FriendService {
 
       if (friendship.status !== "pending") {
         throw new Error("Only pending requests can be accepted");
+      }
+
+      // ========================================================
+      // [FIX]: CHECK GIỚI HẠN 20 BẠN TRƯỚC KHI CHẤP NHẬN
+      // ========================================================
+      const countA = await this.getFriendCount(friendship.userId._id);
+      const countB = await this.getFriendCount(friendship.friendId._id);
+
+      if (countA >= 20 || countB >= 20) {
+        throw new Error(
+          "Không thể chấp nhận vì một trong hai người đã đạt giới hạn 20 bạn bè",
+        );
       }
 
       // Update status
@@ -310,6 +351,18 @@ class FriendService {
       console.error("Error checking friendship:", error);
       throw error;
     }
+  }
+
+  /**
+   * [HELPER] Đếm số lượng bạn bè hiện tại đã kết bạn thành công
+   */
+  static async getFriendCount(targetId) {
+    return await Friend.countDocuments({
+      $or: [
+        { userId: targetId, status: "accepted" },
+        { friendId: targetId, status: "accepted" },
+      ],
+    });
   }
 
   /**

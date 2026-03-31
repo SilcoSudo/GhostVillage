@@ -7,7 +7,8 @@ using Cysharp.Threading.Tasks;
 using Photon.Pun;
 using Photon.Realtime;
 using Game.Script.UI; // Thêm thư viện GlobalUIManager
-using VContainer;     // Thêm thư viện Inject
+using VContainer;
+using GhostVillage.Domain.Profile;     // Thêm thư viện Inject
 
 namespace Game.Scripts.UI.Lobby
 {
@@ -62,6 +63,11 @@ namespace Game.Scripts.UI.Lobby
         [Header("Game Control")]
         [SerializeField] private TextMeshProUGUI _txtStartGamePrompt;
 
+        [Header("Perk Modal")]
+        [SerializeField] private ManagePerkModalUI _managePerkModal;
+        [Inject] private Game.Domain.Perk.Controllers.PerkController _perkController; // Tiêm ông cố nội này vào
+
+
 
         #endregion
 
@@ -110,6 +116,10 @@ namespace Game.Scripts.UI.Lobby
             {
                 _tutorialModal.BtnClose.onClick.AddListener(() => ShowTutorialModal(false));
             }
+            if (_managePerkModal != null && _managePerkModal.BtnClose != null)
+            {
+                _managePerkModal.BtnClose.onClick.AddListener(() => ShowManagePerkModal(false));
+            }
 
             // Bind Button Events
             if (_btnNextMap) _btnNextMap.onClick.AddListener(() => OnNextMapClicked?.Invoke());
@@ -133,6 +143,7 @@ namespace Game.Scripts.UI.Lobby
         public bool IsAnyUIOpen =>
                     (_managementModal != null && _managementModal.activeSelf) ||
                     (_mapPickerModal != null && _mapPickerModal.activeSelf) ||
+                    (_managePerkModal != null && _managePerkModal.gameObject.activeSelf) ||
                     (_tutorialModal != null && _tutorialModal.gameObject.activeSelf) ||
                     IsChatFocused() ||
                     (_inviteFriendModal != null && _inviteFriendModal.gameObject.activeSelf);
@@ -330,6 +341,27 @@ namespace Game.Scripts.UI.Lobby
 
         #region Interaction & Utils
 
+        // Truyền Controller vào cho Modal lúc bật lên luôn
+        public void ShowManagePerkModal(bool show)
+        {
+            if (_managePerkModal == null) return;
+
+            if (show)
+            {
+                _managePerkModal.Init(_perkController);
+                _managePerkModal.OpenModal();
+            }
+            else
+            {
+                _managePerkModal.CloseModal();
+            }
+
+            if (_imgDimBG) _imgDimBG.SetActive(show);
+
+            Cursor.lockState = show ? CursorLockMode.None : CursorLockMode.Locked;
+            Cursor.visible = show;
+        }
+
         public void SetInteractPrompt(string message, bool visible)
         {
             if (_interactPromptGo)
@@ -358,14 +390,31 @@ namespace Game.Scripts.UI.Lobby
             }
         }
 
-        public void AddMission(string description, bool isDone)
+        // Thay thế hàm AddMission cũ bằng hàm này
+        // Cập nhật lại hàm Render ở LobbyUIManager
+        public void RenderDailyQuests(List<QuestItemDTO> dailyQuests)
         {
-            var item = Instantiate(_missionItemPrefab, _missionListContent);
-            var texts = item.GetComponentsInChildren<TextMeshProUGUI>();
-            if (texts.Length >= 2)
+            // Dọn dẹp content cũ
+            foreach (Transform child in _missionListContent) Destroy(child.gameObject);
+
+            if (dailyQuests == null || dailyQuests.Count == 0) return;
+
+            foreach (var quest in dailyQuests)
             {
-                texts[0].text = description;
-                texts[1].text = isDone ? "<color=green>Done</color>" : "In Progress";
+                var itemGo = Instantiate(_missionItemPrefab, _missionListContent);
+
+                // Reset scale để UI không bị vỡ (bệnh nan y của ScrollView Unity)
+                if (itemGo.TryGetComponent<RectTransform>(out var rect))
+                {
+                    rect.localScale = Vector3.one;
+                }
+
+                // Trỏ tới đúng cái Script mới tui vừa viết
+                if (itemGo.TryGetComponent<Item_LobbyDailyQuestUI>(out var ui))
+                {
+                    // Truyền data vào, đéo cần truyền sự kiện bấm nút nữa
+                    ui.Setup(quest);
+                }
             }
         }
 

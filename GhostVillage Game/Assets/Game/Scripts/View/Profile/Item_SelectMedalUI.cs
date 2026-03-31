@@ -3,17 +3,20 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class Item_SelectMedalUI : MonoBehaviour {
+public class Item_SelectMedalUI : MonoBehaviour
+{
     [SerializeField] private Image _imgMedal;
     [SerializeField] private TextMeshProUGUI _txtName;
     [SerializeField] private GameObject _imgCheckmark;
     [SerializeField] private Button _btnClick;
 
-    public void Setup(AchievementItemDTO data, bool isSelected, Sprite medalSprite, System.Action onToggle) {
+    public void Setup(QuestItemDTO data, bool isSelected, Sprite medalSprite, System.Action onToggle)
+    {
         _txtName.text = data.title;
-        
+
         // Gán Sprite đã được tìm thấy từ thư viện
-        if (_imgMedal != null && medalSprite != null) {
+        if (_imgMedal != null && medalSprite != null)
+        {
             _imgMedal.sprite = medalSprite;
         }
 
