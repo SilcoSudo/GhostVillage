@@ -267,6 +267,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6f41e47840b9854d8331e677cc8b580, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Test.MockStatTrigger
+  triggerType: 0
 --- !u!65 &127433147
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -457,6 +458,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6f41e47840b9854d8331e677cc8b580, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Test.MockStatTrigger
+  triggerType: 0
 --- !u!65 &176413684
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1239,6 +1241,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6f41e47840b9854d8331e677cc8b580, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Test.MockStatTrigger
+  triggerType: 0
 --- !u!65 &550069950
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1676,6 +1679,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cc03b79868c6d84193b10c6fda5de26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PuzzleSimpleTrigger
+  keyItemReward: {fileID: 0}
 --- !u!114 &717988256
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1824,6 +1828,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cc03b79868c6d84193b10c6fda5de26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PuzzleSimpleTrigger
+  keyItemReward: {fileID: 0}
 --- !u!114 &759098785
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2313,6 +2318,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6f41e47840b9854d8331e677cc8b580, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Test.MockStatTrigger
+  triggerType: 0
 --- !u!65 &862473468
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2994,11 +3000,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6367754334477897474, guid: a644b119331bf31408b642d606bf0d53, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.516
+      value: 1.541
       objectReference: {fileID: 0}
     - target: {fileID: 6367754334477897474, guid: a644b119331bf31408b642d606bf0d53, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.162
+      value: 0.034
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3207,6 +3213,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6f41e47840b9854d8331e677cc8b580, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Test.MockStatTrigger
+  triggerType: 0
 --- !u!65 &1484719606
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4041,6 +4048,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6f41e47840b9854d8331e677cc8b580, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Test.MockStatTrigger
+  triggerType: 0
 --- !u!65 &2004465304
 BoxCollider:
   m_ObjectHideFlags: 0
