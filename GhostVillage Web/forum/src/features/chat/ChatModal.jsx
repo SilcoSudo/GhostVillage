@@ -10,6 +10,8 @@ import { getAvatarUrl } from "../../shared/utils/avatarCache";
 import { io } from "socket.io-client";
 import "./ChatModal.css";
 
+const MAX_MESSAGE_LENGTH = 2000;
+
 const ChatModal = () => {
   const { user } = useContext(AuthContext);
   const { token } = useContext(AuthContext);
@@ -111,6 +113,7 @@ const ChatModal = () => {
     if (!messageInput.trim() || !selectedFriend) return;
 
     const content = messageInput.trim();
+    if (content.length > MAX_MESSAGE_LENGTH) return;
     setMessageInput("");
     setIsSending(true);
 
@@ -221,10 +224,14 @@ const ChatModal = () => {
           placeholder="Aa"
           value={messageInput}
           onChange={(e) => setMessageInput(e.target.value)}
+          maxLength={MAX_MESSAGE_LENGTH}
           onKeyPress={handleKeyPress}
           disabled={isSending}
           rows="1"
         />
+        <span className="chat-character-count">
+          {messageInput.length}/{MAX_MESSAGE_LENGTH}
+        </span>
         <button
           className="chat-floating-send-btn"
           onClick={handleSendMessage}
