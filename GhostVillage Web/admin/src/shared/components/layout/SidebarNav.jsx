@@ -24,6 +24,7 @@ import {
   Scroll,
   Shirt,
   Pill,
+  Sparkles,
 } from 'lucide-react';
 import "../../assets/styles/SidebarNav.css";
 
@@ -77,6 +78,7 @@ const SidebarNav = () => {
     { icon: Scroll, label: 'Quest Management', path: '/quests', color: 'purple' },
     { icon: Pill, label: 'Consumable Items', path: '/consumables', color: 'green' },
     { icon: Shirt, label: 'Costume Management', path: '/costumes', color: 'cyan' },
+    { icon: Sparkles, label: 'Perk Management', path: '/perks', color: 'indigo' },
     { icon: Moon, label: 'Moon Event Management', path: '/moon-events', color: 'yellow' },
     { icon: Activity, label: t('dashboard.activityLog'), path: '/activity-log', color: 'gray' },
     { icon: Package, label: t('dashboard.gameVersion'), path: '/game-versions', color: 'indigo' },
