@@ -9,11 +9,29 @@ import "../assets/styles/Modal.css";
  */
 const CreateMonsterModal = ({ onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
-    name: "",
-    hp: 100,
-    atk: 10,
-    def: 5,
-    spawnRate: 50,
+    monsterId: "",
+    monsterName: "",
+    monsterType: "MINION",
+    prefabName: "",
+    movementConfig: {
+      moveSpeed: 3.5,
+      stoppingDistance: 0.5,
+      patrolRadius: 25,
+    },
+    combatConfig: {
+      chaseRange: 25,
+      attackRange: 1.5,
+      attackCooldown: 1,
+    },
+    detectionConfig: {
+      detectionRange: 15,
+      detectionAngle: 120,
+    },
+    specialSkillConfig: {
+      skillName: "",
+      pullMaxForce: 12,
+      pullCooldown: 32,
+    },
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -23,9 +41,23 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
    */
   const handleChange = (e) => {
     const { name, value, type } = e.target;
+    const normalizedValue = type === "number" ? parseFloat(value) || 0 : value;
+
+    if (name.includes(".")) {
+      const [group, field] = name.split(".");
+      setFormData((prev) => ({
+        ...prev,
+        [group]: {
+          ...prev[group],
+          [field]: normalizedValue,
+        },
+      }));
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "number" ? parseFloat(value) || 0 : value,
+      [name]: normalizedValue,
     }));
   };
 
@@ -36,28 +68,18 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
     e.preventDefault();
     
     // Validation
-    if (!formData.name.trim()) {
+    if (!formData.monsterId.trim()) {
+      setError("Monster ID không được để trống");
+      return;
+    }
+
+    if (!formData.monsterName.trim()) {
       setError("Tên quái vật không được để trống");
       return;
     }
 
-    if (formData.hp < 1) {
-      setError("HP phải lớn hơn 0");
-      return;
-    }
-
-    if (formData.atk < 0) {
-      setError("ATK không được âm");
-      return;
-    }
-
-    if (formData.def < 0) {
-      setError("DEF không được âm");
-      return;
-    }
-
-    if (formData.spawnRate < 0 || formData.spawnRate > 100) {
-      setError("Spawn Rate phải nằm trong khoảng 0-100");
+    if (!formData.prefabName.trim()) {
+      setError("Prefab Name không được để trống");
       return;
     }
 
@@ -80,7 +102,7 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-container">
+      <div className="modal-container" style={{ maxWidth: "760px" }}>
         {/* Header */}
         <div className="modal-header">
           <h2>Tạo quái vật mới</h2>
@@ -96,86 +118,212 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
             <div className="modal-error">{error}</div>
           )}
 
-          {/* Name */}
           <div className="form-group">
             <label className="form-label">
-              Tên quái vật <span className="required">*</span>
+              Monster ID <span className="required">*</span>
             </label>
             <input
               type="text"
-              name="name"
-              value={formData.name}
+              name="monsterId"
+              value={formData.monsterId}
               onChange={handleChange}
               className="form-input"
-              placeholder="Nhập tên quái vật"
+              placeholder="BOSS_ONG_KE"
               required
             />
           </div>
 
-          {/* Stats Grid */}
+          <div className="form-group">
+            <label className="form-label">
+              Tên quái <span className="required">*</span>
+            </label>
+            <input
+              type="text"
+              name="monsterName"
+              value={formData.monsterName}
+              onChange={handleChange}
+              className="form-input"
+              placeholder="Ông Kẹ"
+              required
+            />
+          </div>
+
           <div className="stats-grid">
-            {/* HP */}
+            <div className="form-group">
+              <label className="form-label">Monster Type</label>
+              <select
+                name="monsterType"
+                value={formData.monsterType}
+                onChange={handleChange}
+                className="form-select"
+              >
+                <option value="MINION">MINION</option>
+                <option value="BOSS">BOSS</option>
+              </select>
+            </div>
+
             <div className="form-group">
               <label className="form-label">
-                HP (Health Points) <span className="required">*</span>
+                Prefab Name <span className="required">*</span>
               </label>
               <input
-                type="number"
-                name="hp"
-                value={formData.hp}
+                type="text"
+                name="prefabName"
+                value={formData.prefabName}
                 onChange={handleChange}
-                min="1"
                 className="form-input"
+                placeholder="Prefab_Boss_OngKe"
                 required
               />
             </div>
+          </div>
 
-            {/* ATK */}
+          {/* Movement Config */}
+          <div className="form-group">
+            <label className="form-label">Movement Config</label>
+          </div>
+          <div className="form-group">
+            <div className="stats-grid">
+              <div className="form-group">
+                <label className="form-label">Move Speed</label>
+                <input
+                  type="number"
+                  name="movementConfig.moveSpeed"
+                  value={formData.movementConfig.moveSpeed}
+                  onChange={handleChange}
+                  step="0.1"
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Stopping Distance</label>
+                <input
+                  type="number"
+                  name="movementConfig.stoppingDistance"
+                  value={formData.movementConfig.stoppingDistance}
+                  onChange={handleChange}
+                  step="0.1"
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Patrol Radius</label>
+                <input
+                  type="number"
+                  name="movementConfig.patrolRadius"
+                  value={formData.movementConfig.patrolRadius}
+                  onChange={handleChange}
+                  step="0.1"
+                  className="form-input"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Combat Config</label>
+          </div>
+          <div className="stats-grid">
             <div className="form-group">
-              <label className="form-label">
-                ATK (Attack) <span className="required">*</span>
-              </label>
+              <label className="form-label">Chase Range</label>
               <input
                 type="number"
-                name="atk"
-                value={formData.atk}
+                name="combatConfig.chaseRange"
+                value={formData.combatConfig.chaseRange}
                 onChange={handleChange}
-                min="0"
+                step="0.1"
                 className="form-input"
-                required
               />
             </div>
 
-            {/* DEF */}
             <div className="form-group">
-              <label className="form-label">
-                DEF (Defense) <span className="required">*</span>
-              </label>
+              <label className="form-label">Attack Range</label>
               <input
                 type="number"
-                name="def"
-                value={formData.def}
+                name="combatConfig.attackRange"
+                value={formData.combatConfig.attackRange}
                 onChange={handleChange}
-                min="0"
+                step="0.1"
                 className="form-input"
-                required
               />
             </div>
 
-            {/* Spawn Rate */}
             <div className="form-group">
-              <label className="form-label">
-                Spawn Rate (0-100%) <span className="required">*</span>
-              </label>
+              <label className="form-label">Attack Cooldown</label>
               <input
                 type="number"
-                name="spawnRate"
-                value={formData.spawnRate}
+                name="combatConfig.attackCooldown"
+                value={formData.combatConfig.attackCooldown}
                 onChange={handleChange}
-                min="0"
-                max="100"
+                step="0.1"
                 className="form-input"
-                required
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Detection Config</label>
+          </div>
+          <div className="stats-grid">
+            <div className="form-group">
+              <label className="form-label">Detection Range</label>
+              <input
+                type="number"
+                name="detectionConfig.detectionRange"
+                value={formData.detectionConfig.detectionRange}
+                onChange={handleChange}
+                step="0.1"
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Detection Angle</label>
+              <input
+                type="number"
+                name="detectionConfig.detectionAngle"
+                value={formData.detectionConfig.detectionAngle}
+                onChange={handleChange}
+                step="0.1"
+                className="form-input"
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Special Skill Config</label>
+          </div>
+          <div className="stats-grid">
+            <div className="form-group">
+              <label className="form-label">Skill Name</label>
+              <input
+                type="text"
+                name="specialSkillConfig.skillName"
+                value={formData.specialSkillConfig.skillName}
+                onChange={handleChange}
+                className="form-input"
+                placeholder="Pull"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Pull Max Force</label>
+              <input
+                type="number"
+                name="specialSkillConfig.pullMaxForce"
+                value={formData.specialSkillConfig.pullMaxForce}
+                onChange={handleChange}
+                step="0.1"
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Pull Cooldown</label>
+              <input
+                type="number"
+                name="specialSkillConfig.pullCooldown"
+                value={formData.specialSkillConfig.pullCooldown}
+                onChange={handleChange}
+                step="0.1"
+                className="form-input"
               />
             </div>
           </div>
