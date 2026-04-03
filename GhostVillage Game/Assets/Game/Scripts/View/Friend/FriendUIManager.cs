@@ -125,20 +125,6 @@ namespace Game.UI.Friend
 
         private void BindReactiveData()
         {
-            // --- Bind My Profile Data ---
-            _txtMyDisplayName.text = _session.DisplayName;
-
-            // 🎯 [ĐÃ SỬA UID ẢO] Lấy đúng UID thật
-            if (_txtMyUID != null)
-            {
-                _txtMyUID.text = $"UID: {_session.UID}"; // Thay biến Uid tùy theo tên sếp khai báo trong GameSession
-            }
-
-            // Assuming UID is stored in PlayerDataStore or derived. 
-            // If it's not in the store, you might need to fetch it or pass it differently.
-            // For now, I'll assume you add a UID property to PlayerDataStore.
-            // _playerDataStore.UID.Subscribe(val => _txtMyUID.text = $"UID: {val}").AddTo(_disposables);
-
             if (defaultAvatar != null) _imgMyAvatar.sprite = defaultAvatar;
 
             // --- Bind Friend System State ---
@@ -187,6 +173,15 @@ namespace Game.UI.Friend
                 _txtSearchError.text = errorMsg;
                 _txtSearchError.gameObject.SetActive(!string.IsNullOrEmpty(errorMsg));
             }).AddTo(_disposables);
+
+            _friendController.FriendStatuses.Subscribe(statuses =>
+            {
+                // Chỉ vẽ lại nếu đang đứng ở tab FriendList
+                if (_currentTab == FriendTab.FriendList)
+                {
+                    RenderList(_friendController.FriendList.Value, _prefabFriendList, SetupFriendItem);
+                }
+            }).AddTo(_disposables);
         }
 
         private Sprite ResolveAvatarSprite(string avatarId)
@@ -204,7 +199,18 @@ namespace Game.UI.Friend
 
         private void OpenModal()
         {
+            Debug.Log($"<color=cyan>[DEBUG SESSION] Token: '{_session.Token}' | UID: '{_session.UID}' | Name: '{_session.DisplayName}'</color>");
             _modalPanel.SetActive(true);
+
+            // ========================================================
+            // [FIX]: GÁN TEXT VÀO LÚC MỞ BẢNG (VÌ LÚC NÀY SESSION ĐÃ LOAD XONG)
+            // ========================================================
+            _txtMyDisplayName.text = _session.DisplayName;
+            if (_txtMyUID != null)
+            {
+                _txtMyUID.text = $"UID: {_session.UID}";
+            }
+
             SwitchTab(FriendTab.FriendList);
             _friendController.InitializeDataAsync().Forget();
 

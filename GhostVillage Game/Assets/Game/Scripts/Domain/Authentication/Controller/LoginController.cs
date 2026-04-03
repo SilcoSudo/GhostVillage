@@ -33,46 +33,74 @@ namespace Game.UI.Login
         /// <summary>
         /// Email/Password Login Handler
         /// </summary>
+        /// <summary>
+        /// Email/Password Login Handler
+        /// </summary>
         public async void HandleLogin(string email, string password, LoginUIManager view)
         {
             view.SetInteractable(false);
-            view.SetStatus("Connecting to API...");
+            _globalUI.ShowLoading(true, "Đang xác thực thông tin..."); // Bật bảng loading che màn hình
 
-            var response = await _authService.LoginAsync(email, password);
-
-            if (response != null)
+            try
             {
-                view.gameObject.SetActive(false);
+                var response = await _authService.LoginAsync(email, password);
 
-                // --- BƯỚC MỚI: FETCH PROFILE SAU KHI CÓ TOKEN ---
-                _globalUI.ShowLoading(true, "Đang tải dữ liệu nhân vật...");
-                var profileResponse = await _authService.FetchMyProfileAsync();
-
-                _globalUI.ShowLoading(true, "Đang kết nối Máy Chủ Trò Chơi...");
-
-                // Lấy Nickname từ profile vừa fetch
-                string nickName = (profileResponse != null && profileResponse.profile != null)
-                                  ? profileResponse.profile.displayName
-                                  : "Player_" + UnityEngine.Random.Range(1000, 9999);
-
-                bool connected = await _network.ConnectAsync(nickName, response.token);
-
-                if (connected)
+                // Nếu response != null, nghĩa là Backend trả về token đàng hoàng
+                if (response != null && !string.IsNullOrEmpty(response.token))
                 {
-                    await _sceneLoader.LoadSceneAsync(sceneToLoad);
-                    _globalUI.ShowLoading(false);
+                    view.gameObject.SetActive(false);
+
+                    _globalUI.ShowLoading(true, "Đang tải dữ liệu nhân vật...");
+                    var profileResponse = await _authService.FetchMyProfileAsync();
+
+                    _globalUI.ShowLoading(true, "Đang kết nối Máy Chủ Trò Chơi...");
+
+                    string nickName = (profileResponse != null && profileResponse.profile != null)
+                                      ? profileResponse.profile.displayName
+                                      : "Player_" + UnityEngine.Random.Range(1000, 9999);
+
+                    bool connected = await _network.ConnectAsync(nickName, response.token);
+
+                    if (connected)
+                    {
+                        await _sceneLoader.LoadSceneAsync(sceneToLoad);
+                        _globalUI.ShowLoading(false);
+                    }
+                    else
+                    {
+                        // Lỗi kết nối Photon
+                        _globalUI.ShowLoading(false);
+                        view.gameObject.SetActive(true);
+                        _globalUI.ShowError("Lỗi kết nối", "Không thể kết nối đến máy chủ Photon. Vui lòng thử lại!");
+                        view.SetInteractable(true);
+                    }
                 }
                 else
                 {
+                    // TRƯỜNG HỢP BE TRẢ VỀ {success: false} (Sai pass, chưa verify...) => response bị null
                     _globalUI.ShowLoading(false);
-                    view.gameObject.SetActive(true);
-                    view.SetStatus("<color=red>Lỗi kết nối Photon!</color>");
+                    _globalUI.ShowError("Đăng nhập thất bại", "Sai Email/Mật khẩu hoặc Tài khoản chưa xác thực!");
                     view.SetInteractable(true);
                 }
             }
-            else
+            catch (Exception ex)
             {
-                view.SetStatus("<color=red>Login Failed!</color>");
+                // TRƯỜNG HỢP SERVER BE CHẾT NGẮC HOẶC MẤT MẠNG INTERNET
+                _globalUI.ShowLoading(false);
+
+                string errorMessage = "Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại mạng hoặc Server đang bảo trì!";
+
+                // Vớt vát thêm nếu Exception có chứa text lỗi sâu hơn từ APIClient
+                if (ex.Message.Contains("Invalid password") || ex.Message.Contains("User not found"))
+                {
+                    errorMessage = "Sai Email hoặc Mật khẩu!";
+                }
+                else if (ex.Message.Contains("ACCOUNT_NOT_VERIFIED"))
+                {
+                    errorMessage = "Tài khoản chưa được xác thực Email!";
+                }
+
+                _globalUI.ShowError("Lỗi Hệ Thống", errorMessage);
                 view.SetInteractable(true);
             }
         }
@@ -83,7 +111,6 @@ namespace Game.UI.Login
         public async UniTask HandleGoogleLogin(LoginUIManager view)
         {
             view.SetInteractable(false);
-            view.SetStatus("Initializing Google Login...");
 
             try
             {
@@ -102,11 +129,9 @@ namespace Game.UI.Login
                 {
                     Debug.Log($"[LoginController] Opening Google OAuth: {authUrlResponse.authUrl}");
                     Application.OpenURL(authUrlResponse.authUrl);
-                    view.SetStatus("🌐 Browser opened.\n⏳ Waiting for authorization...");
                 }
                 else
                 {
-                    view.SetStatus($"<color=red>Error: Failed to get auth URL</color>");
                     view.SetInteractable(true);
                     _callbackServer.Stop();
                 }
@@ -114,7 +139,6 @@ namespace Game.UI.Login
             catch (Exception ex)
             {
                 Debug.LogError($"[LoginController] Google Login error: {ex.Message}");
-                view.SetStatus($"<color=red>Error: {ex.Message}</color>");
                 view.SetInteractable(true);
                 _callbackServer?.Stop();
             }
@@ -124,11 +148,9 @@ namespace Game.UI.Login
         {
             if (string.IsNullOrEmpty(code))
             {
-                if (view != null) view.SetStatus("<color=red>Invalid authorization code</color>");
                 return;
             }
 
-            if (view != null) view.SetStatus("🔄 Processing authorization...");
 
             var response = await _authService.HandleGoogleCallbackAsync(code.Trim());
 
@@ -138,7 +160,6 @@ namespace Game.UI.Login
                 {
                     if (view != null)
                     {
-                        view.SetStatus("⚠️ Please complete your profile");
                         view.SetInteractable(true);
                     }
                     HandleProfileIncomplete(response.token, view);
@@ -149,7 +170,6 @@ namespace Game.UI.Login
                 {
                     if (view != null)
                     {
-                        view.SetStatus("<color=red>❌ You must be at least 13 years old to play</color>");
                         view.SetInteractable(true);
                     }
                     return;
@@ -189,7 +209,6 @@ namespace Game.UI.Login
                         if (view != null)
                         {
                             view.gameObject.SetActive(true);
-                            view.SetStatus("<color=red>Lỗi kết nối Photon!</color>");
                             view.SetInteractable(true);
                         }
                     }
@@ -202,7 +221,6 @@ namespace Game.UI.Login
 
                 if (view != null)
                 {
-                    view.SetStatus($"<color=red>❌ Error: {errorMsg}</color>");
                     view.SetInteractable(true);
                 }
             }
@@ -228,7 +246,6 @@ namespace Game.UI.Login
             if (birthdayPanel == null)
             {
                 Debug.LogError("[LoginController] BirthdayVerifyPanel not found!");
-                view.SetStatus("<color=red>Error: Birthday panel not available</color>");
                 return;
             }
 
@@ -252,7 +269,6 @@ namespace Game.UI.Login
             else
             {
                 Debug.LogError("[LoginController] ProfileCompletionUI component not found on BirthdayVerifyPanel!");
-                view.SetStatus("<color=red>Error: Profile UI component not available</color>");
             }
         }
     }

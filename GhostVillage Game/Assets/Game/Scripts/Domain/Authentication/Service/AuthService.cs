@@ -44,7 +44,7 @@ namespace Game.Domain.Authentication
             if (string.IsNullOrEmpty(_session.Token)) return null;
 
             // Gọi API lấy profile bản thân (URL tùy thuộc BE của bạn, ví dụ: /api/game/player/profile)
-            var response = await _apiClient.GetAsyncWithAuth<MyProfileResponseDTO>("/api/game/player/profile", _session.Token);
+            var response = await _apiClient.GetAsyncWithAuth<MyProfileResponseDTO>("/api/game/profile", _session.Token);
 
             if (response != null)
             {
