@@ -55,12 +55,12 @@ namespace Game.Boot
                     //LoginScene
                     _globalUI.ShowLoading(false);
                     _globalUI.ShowError("Lỗi Mạng", "Không thể kết nối đến máy chủ trò chơi.");
-                    await _sceneLoader.LoadSceneAsync("LoginScene");
+                    await _sceneLoader.LoadSceneAsync("Map_1");
                 }
             }
             else
             {
-                await _sceneLoader.LoadSceneAsync("LoginScene");
+                await _sceneLoader.LoadSceneAsync("Map_1");
             }
         }
     }

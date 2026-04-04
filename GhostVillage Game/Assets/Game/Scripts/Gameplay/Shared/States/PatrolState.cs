@@ -35,6 +35,12 @@ namespace GhostVillage.Gameplay.Shared
 
         public void Update()
         {
+            if (waypoints == null || waypoints.Length == 0)
+            {
+                monster.Stop();
+                return;
+            }
+
             // Luôn di chuyển theo waypoint hiện tại
             Vector3 targetWaypoint = waypoints[currentWaypointIndex];
             float distanceToWaypoint = Vector3.Distance(monster.transform.position, targetWaypoint);

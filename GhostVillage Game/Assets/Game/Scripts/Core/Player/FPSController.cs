@@ -190,10 +190,19 @@ public class FPSController : MonoBehaviourPun
         var invUI = Object.FindFirstObjectByType<InventoryUIManager>();
         var invManager = GetComponent<InventoryManager>();
 
+        Debug.Log($"[FPS BindInventoryUI] invUI: {(invUI != null ? "✅" : "❌")}, invManager: {(invManager != null ? "✅" : "❌")}");
+        
         if (invUI != null && invManager != null)
         {
             invUI.BindInventory(invManager);
             Debug.Log("✅ [FPS] Đã kết nối túi đồ với UI HUD.");
+        }
+        else
+        {
+            if (invUI == null)
+                Debug.LogWarning("[FPS] ⚠️ InventoryUIManager không tìm thấy trong scene. Cần thêm nó vào Map_1 hoặc load từ Lobby.");
+            if (invManager == null)
+                Debug.LogWarning("[FPS] ⚠️ InventoryManager không tìm thấy trên player.");
         }
     }
     #endregion

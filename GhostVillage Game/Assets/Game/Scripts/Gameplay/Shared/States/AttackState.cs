@@ -117,20 +117,43 @@ namespace GhostVillage.Gameplay.Shared
 
             Debug.Log("💥 AttackState: ĐÃ HIT PLAYER! -> Knock state");
 
-            RaycastHit hit;
-            Vector3 dirToPlayer = (playerPos - monster.transform.position).normalized;
-
-            if (Physics.Raycast(monster.transform.position, dirToPlayer, out hit, attackRange + 0.5f))
+            PlayerKnockedState knockedState = TryGetTargetKnockedState(playerPos);
+            if (knockedState != null)
             {
-                PlayerKnockedState knockedState = hit.collider.GetComponentInParent<PlayerKnockedState>();
-                if (knockedState != null && !knockedState.isKnocked)
+                if (!knockedState.isKnocked)
                 {
                     knockedState.GetKnocked();
-                    Debug.Log($"✓ Player knocked: {hit.collider.name}");
+                    Debug.Log($"✓ Player knocked: {knockedState.name}");
                 }
+            }
+            else
+            {
+                Debug.LogWarning("⚠️ AttackState: HIT nhưng không tìm thấy PlayerKnockedState trên collider mục tiêu.");
             }
 
             hasAttackedThisFrame = true;
+        }
+
+        private PlayerKnockedState TryGetTargetKnockedState(Vector3 playerPos)
+        {
+            Vector3 dirToPlayer = (playerPos - monster.transform.position).normalized;
+
+            // Ưu tiên raycast thẳng từ quái tới player.
+            if (Physics.Raycast(monster.transform.position, dirToPlayer, out RaycastHit hit, attackRange + 0.75f))
+            {
+                PlayerKnockedState byRay = hit.collider.GetComponentInParent<PlayerKnockedState>();
+                if (byRay != null) return byRay;
+            }
+
+            // Fallback: quét quanh vị trí player do một số prefab có collider con/lệch tâm.
+            Collider[] nearby = Physics.OverlapSphere(playerPos, 1.5f);
+            foreach (var col in nearby)
+            {
+                PlayerKnockedState byOverlap = col.GetComponentInParent<PlayerKnockedState>();
+                if (byOverlap != null) return byOverlap;
+            }
+
+            return null;
         }
 
         /// <summary>

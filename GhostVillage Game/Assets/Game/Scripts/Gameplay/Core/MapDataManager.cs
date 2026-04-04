@@ -43,6 +43,19 @@ public class MapDataManager : MonoBehaviour
                 transforms.Add(obj.transform);
             }
 
+            // Fallback: một số scene chưa gán Tag đúng nhưng vẫn đặt tên object theo quy ước.
+            if (transforms.Count == 0)
+            {
+                Transform[] allTransforms = FindObjectsByType<Transform>(FindObjectsSortMode.None);
+                foreach (var t in allTransforms)
+                {
+                    if (t != null && t.name.StartsWith(tag))
+                    {
+                        transforms.Add(t);
+                    }
+                }
+            }
+
             _tagGroups.Add(tag, transforms);
             Debug.Log($"[MapData] Index thành công {transforms.Count} điểm spawn cho Tag: {tag}");
         }
