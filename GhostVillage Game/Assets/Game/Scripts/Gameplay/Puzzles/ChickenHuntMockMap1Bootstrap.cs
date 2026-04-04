@@ -206,11 +206,11 @@ public static class ChickenHuntMockMap1Bootstrap
         GameObject prefab = Resources.Load<GameObject>(RealChickenPrefabPath);
         if (prefab != null)
         {
-            Debug.Log($"[ChickenHuntMock] ✅ Loaded real chicken prefab: {RealChickenPrefabPath}");
+            Debug.Log($"[ChickenHuntMock]  Loaded real chicken prefab: {RealChickenPrefabPath}");
             return prefab;
         }
 
-        Debug.LogWarning($"[ChickenHuntMock] ❌ Real chicken prefab not found at {RealChickenPrefabPath}. Will use sphere fallback.");
+        Debug.LogWarning($"[ChickenHuntMock]  Real chicken prefab not found at {RealChickenPrefabPath}. Will use sphere fallback.");
         return null;
     }
 
@@ -341,7 +341,7 @@ public static class ChickenHuntMockMap1Bootstrap
             if (field != null)
             {
                 field.SetValue(puzzle, reward);
-                Debug.Log($"[ChickenHuntMock] ✅ Assigned KeyItem reward to puzzle: {reward.itemName} (icon: {reward.itemIcon.name})");
+                Debug.Log($"[ChickenHuntMock]  Assigned KeyItem reward to puzzle: {reward.itemName} (icon: {reward.itemIcon.name})");
             }
         }
         else

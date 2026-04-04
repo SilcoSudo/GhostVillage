@@ -21,8 +21,8 @@ export const PlayerService = {
 
     // 2. Logic Trộn (Merge): Gắn định nghĩa thành tựu vào tiến độ của người chơi
     const mergedAchievements = allAchiDefs.map((def) => {
-      const prog = player.achievementsProgress.find(
-        (p) => p.achievementCode === def._id,
+      const prog = (player.achievementsProgress || []).find(
+        (p) => p.questId === def._id.toString() || p.achievementCode === def._id,
       );
       return {
         id: def._id,
@@ -32,21 +32,21 @@ export const PlayerService = {
         reward: def.reward,
         current: prog ? prog.current : 0,
         isClaimed: prog ? prog.isClaimed : false,
-        isEquipped: player.selectedMedals.includes(def._id),
+        isEquipped: (player.selectedMedals || []).includes(def._id),
       };
     });
 
     // 3. Trả về đúng cấu cục mà Frontend DTO mong đợi
     return {
       profile: player.profile,
-      selectedMedals: player.selectedMedals,
+      selectedMedals: player.selectedMedals || [],
       achievements: mergedAchievements,
       history: matchHistory,
       storage: {
-        unlockedPerks: player.unlockedPerks,
+        unlockedPerks: player.unlockedPerks || [],
       },
       equipped: {
-        perks: player.equippedPerks,
+        perks: player.equippedPerks || [],
       },
     };
   },

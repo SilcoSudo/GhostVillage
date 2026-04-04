@@ -108,7 +108,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
         else
         {
-            Debug.LogError("❌ [GameManager] MapData hoặc Data API chưa được Inject!");
+            Debug.LogError(" [GameManager] MapData hoặc Data API chưa được Inject!");
         }
 
         // [FIX QUAN TRỌNG] TẤT CẢ MỌI NGƯỜI ĐỀU PHẢI BẬT TRACKER
@@ -118,7 +118,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
         else
         {
-            Debug.LogError("❌ [GameManager] MatchStatisticManager chưa được Inject!");
+            Debug.LogError(" [GameManager] MatchStatisticManager chưa được Inject!");
         }
 
         _isLocalDataReady = true;
@@ -285,7 +285,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
         else
         {
-            Debug.LogError("❌ GameplayUIManager chưa được Inject vào GameManager!");
+            Debug.LogError(" GameplayUIManager chưa được Inject vào GameManager!");
         }
         yield return null;
     }
@@ -299,7 +299,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
         else
         {
-            Debug.LogError("❌ MatchStatisticManager chưa được Inject!");
+            Debug.LogError(" MatchStatisticManager chưa được Inject!");
         }
 
         var endTime = System.DateTime.UtcNow;
@@ -438,7 +438,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
         else
         {
-            Debug.LogError("❌ [GameManager] PlayerSpawner chưa được Inject!");
+            Debug.LogError(" [GameManager] PlayerSpawner chưa được Inject!");
         }
 
         // 2. Nếu là Master, sau khi spawn xong thì chuyển game sang Playing

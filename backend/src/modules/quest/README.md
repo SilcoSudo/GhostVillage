@@ -11,7 +11,7 @@ backend/src/modules/quest/
 
 ## 🎯 Features Implemented
 
-### 1. View Quest List ✅
+### 1. View Quest List 
 - **GET** `/api/quests`
 - Hỗ trợ phân trang (page, limit)
 - Lọc theo trạng thái (isActive)
@@ -19,17 +19,17 @@ backend/src/modules/quest/
 - Lọc theo difficulty (Easy/Medium/Hard/etc.)
 - Tìm kiếm full-text (search)
 
-### 2. Edit Quest ✅
+### 2. Edit Quest 
 - **GET** `/api/quests/:id` - Xem chi tiết quest
 - **POST** `/api/quests` - Tạo quest mới
 - **PUT** `/api/quests/:id` - Cập nhật quest (objectives, rewards, quest lines)
 - Hỗ trợ tìm theo MongoDB _id hoặc questId (QUEST_XXX)
 
-### 3. Toggle Activate Quest ✅
+### 3. Toggle Activate Quest 
 - **PATCH** `/api/quests/:id/status` - Bật/tắt quest
 - Hỗ trợ toggle hoặc set giá trị cụ thể
 
-### 4. Additional Features ✅
+### 4. Additional Features 
 - **DELETE** `/api/quests/:id` - Xóa quest
 - **GET** `/api/quests/stats/summary` - Thống kê tổng quan
 
@@ -85,7 +85,7 @@ backend/src/modules/quest/
 - `isCompleted`: Kiểm tra quest đã hoàn thành chưa
 - `progressPercentage`: Tính % hoàn thành quest
 
-## 🚀 API Endpoints
+##  API Endpoints
 
 ### List Quests
 ```http
@@ -340,7 +340,7 @@ curl http://localhost:5000/api/quests/stats/summary
 3. Add quest progress tracking in game logic
 4. Add quest notification system
 
-## ✅ Completed Tasks
+##  Completed Tasks
 
 - [x] Create questModel.js with schema
 - [x] Create questController.js with CRUD operations

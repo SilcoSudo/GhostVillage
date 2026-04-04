@@ -213,9 +213,9 @@ export const logActivity = async ({
       userAgent: req?.get("user-agent"),
     });
 
-    console.log("[ActivityLog] ✅ Activity logged successfully");
+    console.log("[ActivityLog]  Activity logged successfully");
   } catch (error) {
-    console.error("❌ Error logging activity:", error);
+    console.error(" Error logging activity:", error);
     // Don't throw - logging failure shouldn't break the main operation
   }
 };

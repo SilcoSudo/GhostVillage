@@ -42,7 +42,7 @@ if (isCloudinaryConfigured()) {
     api_key: process.env.CLOUDINARY_API_KEY?.trim(),
     api_secret: process.env.CLOUDINARY_API_SECRET?.trim(),
   });
-  console.log("✅ Cloudinary configured successfully");
+  console.log(" Cloudinary configured successfully");
 } else {
   console.warn(
     "⚠️  Cloudinary not configured - using base64 fallback for avatar uploads",

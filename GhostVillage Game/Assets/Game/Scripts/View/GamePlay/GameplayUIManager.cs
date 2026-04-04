@@ -93,7 +93,7 @@ public class GameplayUIManager : MonoBehaviourPunCallbacks
         }
         else
         {
-            Debug.LogError("❌ Chưa kéo GameResultUI vào GameplayUIManager!");
+            Debug.LogError(" Chưa kéo GameResultUI vào GameplayUIManager!");
         }
     }
 

@@ -30,7 +30,7 @@ namespace GhostVillage.Gameplay.Shared
             currentWaypointIndex = 0;
             GoToNextWaypoint();
             
-            Debug.Log("✅ PatrolState: Bắt đầu patrol!");
+            Debug.Log(" PatrolState: Bắt đầu patrol!");
         }
 
         public void Update()

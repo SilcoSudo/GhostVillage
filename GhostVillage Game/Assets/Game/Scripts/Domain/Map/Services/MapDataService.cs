@@ -45,17 +45,17 @@ namespace Game.Domain.Map.Services
                     var response = JsonUtility.FromJson<MapListResponse>(jsonResponse);
                     if (response != null && response.success && response.data != null)
                     {
-                        Debug.Log($"✅ Đã tải thành công {response.data.Count} Maps từ Server!");
+                        Debug.Log($" Đã tải thành công {response.data.Count} Maps từ Server!");
                         return response.data;
                     }
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"❌ Lỗi Parse JSON Map List: {e.Message}");
+                    Debug.LogError($" Lỗi Parse JSON Map List: {e.Message}");
                 }
             }
 
-            Debug.LogError("❌ Không thể lấy dữ liệu Maps từ Server!");
+            Debug.LogError(" Không thể lấy dữ liệu Maps từ Server!");
             return new List<MapConfigDTO>(); // Trả về list rỗng để tránh Null Exception
         }
 
@@ -65,11 +65,11 @@ namespace Game.Domain.Map.Services
 
             if (response != null && response.mapConfig != null)
             {
-                Debug.Log($"✅ Đã tải thành công Mega Game Data cho Map: {response.mapConfig.identityConfig.displayName}!");
+                Debug.Log($" Đã tải thành công Mega Game Data cho Map: {response.mapConfig.identityConfig.displayName}!");
                 return response;
             }
 
-            Debug.LogError($"❌ Không thể lấy Mega Game Data cho Map {mapId}!");
+            Debug.LogError($" Không thể lấy Mega Game Data cho Map {mapId}!");
             return null;
         }
     }

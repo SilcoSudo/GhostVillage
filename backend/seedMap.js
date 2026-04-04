@@ -299,7 +299,7 @@ const seedMaps = async () => {
 
     // Thêm dữ liệu mới
     const insertedMaps = await MapConfig.insertMany(maps);
-    console.log(`✅ Successfully seeded ${insertedMaps.length} maps`);
+    console.log(` Successfully seeded ${insertedMaps.length} maps`);
 
     // Hiển thị danh sách
     console.log("\n📋 Seeded Maps:");
@@ -311,7 +311,7 @@ const seedMaps = async () => {
 
     process.exit(0);
   } catch (error) {
-    console.error("❌ Error seeding maps:", error);
+    console.error(" Error seeding maps:", error);
     process.exit(1);
   }
 };

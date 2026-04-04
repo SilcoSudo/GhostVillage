@@ -47,7 +47,7 @@ namespace Game.UI.Login
             if (string.IsNullOrEmpty(_token))
             {
                 Debug.LogError("[ProfileCompletionController] Token is null!");
-                view.SetStatus("<color=red>❌ Error: Invalid session. Please sign in again.</color>");
+                view.SetStatus("<color=red> Error: Invalid session. Please sign in again.</color>");
                 view.SetInteractable(true);
                 return;
             }
@@ -64,6 +64,8 @@ namespace Game.UI.Login
                 {
                     view.SetStatus("✓ Profile updated! Loading game...");
 
+                    // Save new token to both memory and PlayerPrefs
+                    _authService.SaveToken(response.token);
                     _session.Token = response.token;
 
                     // Get updated player data
@@ -80,14 +82,14 @@ namespace Game.UI.Login
                     // Keep message generic because this branch can be any server-side failure,
                     // not just age validation.
                     Debug.LogWarning("[ProfileCompletionController] Server rejected profile");
-                    view.SetStatus("<color=red>❌ Profile update failed. Please try again.</color>");
+                    view.SetStatus("<color=red> Profile update failed. Please try again.</color>");
                     view.SetInteractable(true);
                 }
             }
             catch (Exception ex)
             {
                 Debug.LogError($"[ProfileCompletionController] Error: {ex.Message}");
-                view.SetStatus($"<color=red>❌ Error: {ex.Message}\n\nPlease try again.</color>");
+                view.SetStatus($"<color=red> Error: {ex.Message}\n\nPlease try again.</color>");
                 view.SetInteractable(true);
             }
         }

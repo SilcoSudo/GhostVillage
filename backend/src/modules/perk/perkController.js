@@ -15,7 +15,7 @@ export const PerkController = {
         ...result,
       });
     } catch (error) {
-      console.error("❌ Error in PerkController.getAllPerks:", error);
+      console.error(" Error in PerkController.getAllPerks:", error);
       return res.status(500).json({
         success: false,
         message: "Lỗi hệ thống",

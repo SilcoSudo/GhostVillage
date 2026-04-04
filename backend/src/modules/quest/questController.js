@@ -15,7 +15,7 @@ export const QuestController = {
         ...result,
       });
     } catch (error) {
-      console.error("❌ Error:", error);
+      console.error(" Error:", error);
       return res.status(500).json({
         success: false,
         message: "Lỗi hệ thống",
@@ -222,7 +222,7 @@ export const QuestController = {
         data: newProgress,
       });
     } catch (error) {
-      console.error("❌ Error in QuestController.updateProgress:", error);
+      console.error(" Error in QuestController.updateProgress:", error);
       return res.status(500).json({ success: false, message: error.message });
     }
   },

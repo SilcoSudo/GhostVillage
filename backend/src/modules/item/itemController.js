@@ -15,7 +15,7 @@ export const ItemController = {
         ...result,
       });
     } catch (error) {
-      console.error("❌ Error in ItemController.getAllItems:", error);
+      console.error(" Error in ItemController.getAllItems:", error);
       return res.status(500).json({
         success: false,
         message: "Lỗi hệ thống",

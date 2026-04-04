@@ -11,7 +11,7 @@ export const MonsterController = {
         ...result,
       });
     } catch (error) {
-      console.error("❌ Error in MonsterController.getAllMonsters:", error);
+      console.error(" Error in MonsterController.getAllMonsters:", error);
       return res.status(500).json({
         success: false,
         message: "Lỗi hệ thống",

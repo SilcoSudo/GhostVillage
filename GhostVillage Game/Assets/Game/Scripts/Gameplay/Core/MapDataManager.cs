@@ -23,7 +23,7 @@ public class MapDataManager : MonoBehaviour
     {
         if (gameData == null || gameData.mapConfig == null)
         {
-            Debug.LogError("❌ [MapData] AggregatedGameData truyền vào bị NULL!");
+            Debug.LogError(" [MapData] AggregatedGameData truyền vào bị NULL!");
             return;
         }
 

@@ -319,7 +319,7 @@ namespace Game.Core.Network
 
             // Nếu đúng pass, bật lại tính năng sync scene
             PhotonNetwork.AutomaticallySyncScene = true;
-            Debug.Log($"✅ [Photon] Join thành công: {room.Name}");
+            Debug.Log($" [Photon] Join thành công: {room.Name}");
             OnJoinLobbySuccess?.Invoke();
 
             if (PhotonNetwork.IsMasterClient)

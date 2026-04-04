@@ -3,10 +3,10 @@
 ## 📋 Tổng quan
 
 Hệ thống quản lý Quái vật (Monster Management) và Bản đồ (Map Management) đã được triển khai đầy đủ với:
-- ✅ Backend API (Node.js + Express + MongoDB)
-- ✅ Frontend Components (React + Tailwind CSS)
-- ✅ Seed Data để test
-- ✅ Xử lý lỗi hoàn chỉnh
+-  Backend API (Node.js + Express + MongoDB)
+-  Frontend Components (React + Tailwind CSS)
+-  Seed Data để test
+-  Xử lý lỗi hoàn chỉnh
 
 ---
 
@@ -53,7 +53,7 @@ GhostVillage Web/admin/src/
 
 ---
 
-## 🚀 Hướng dẫn Deployment
+##  Hướng dẫn Deployment
 
 ### 1. Backend Setup
 
@@ -74,7 +74,7 @@ node seedMap.js
 ```
 🔗 Connected to MongoDB
 🗑️  Cleared existing monsters
-✅ Successfully seeded 12 monsters
+ Successfully seeded 12 monsters
 ```
 
 #### Bước 2: Khởi động Backend Server
@@ -169,7 +169,7 @@ Thêm links điều hướng đến 2 trang mới.
 
 ---
 
-## 🔧 Xử lý lỗi
+##  Xử lý lỗi
 
 ### Backend
 

@@ -115,7 +115,9 @@ namespace Game.UI.Login
             try
             {
                 _callbackServer?.Stop();
-                await UniTask.Delay(500);
+                // TĂNG DELAY ĐỂ PORT CÓ THỜI GIAN RELEASE (TIME_WAIT)
+                // Windows cần tối thiểu 2 giây để port thực sự free
+                await UniTask.Delay(2000);
 
                 _callbackServer = new LocalCallbackServer(8888);
                 _callbackServer.Start(async (authCode) =>
@@ -191,6 +193,9 @@ namespace Game.UI.Login
 
                     // Lưu token vào session trước để hàm Fetch có thể dùng
                     _session.Token = authToken;
+                    
+                    // LƯU TOKEN VÀO PLAYERPREFS ĐỂ PERSISTENT SAU KHI RESTART
+                    _authService.SaveToken(authToken);
 
                     var profileResponse = await _authService.FetchMyProfileAsync();
 
@@ -200,6 +205,12 @@ namespace Game.UI.Login
                     string nickName = (profileResponse != null && profileResponse.profile != null)
                                       ? profileResponse.profile.displayName
                                       : "Player_" + UnityEngine.Random.Range(1000, 9999);
+                    
+                    // LƯU displayName VÀO SESSION ĐỂ TRÁNH BỊ MẤT THÔNG TIN
+                    if (profileResponse != null && profileResponse.profile != null)
+                    {
+                        _session.DisplayName = profileResponse.profile.displayName;
+                    }
 
                     // Connect Photon
                     bool connected = await _network.ConnectAsync(nickName, authToken);
@@ -221,7 +232,6 @@ namespace Game.UI.Login
                 }
                 else if (view != null)
                 {
-                    view.SetStatus("<color=red>❌ Google login response missing token</color>");
                     view.SetInteractable(true);
                 }
             }
