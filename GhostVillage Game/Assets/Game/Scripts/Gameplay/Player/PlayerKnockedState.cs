@@ -17,10 +17,15 @@ public class PlayerKnockedState : MonoBehaviourPun, IInteractable
     private float drainRate = 25f / 60f;
     private GameManager _gameManager;
 
+    private Animator _animator;
+    private int _knockedHash;
+
     [System.Obsolete]
     private void Awake()
     {
         _gameManager = FindObjectOfType<GameManager>();
+        _animator = GetComponentInChildren<Animator>();
+        _knockedHash = Animator.StringToHash("IsKnocked");
     }
 
     private void Update()
@@ -62,6 +67,11 @@ public class PlayerKnockedState : MonoBehaviourPun, IInteractable
     private void RpcSetKnockedState(bool state)
     {
         isKnocked = state;
+
+        if (_animator != null)
+        {
+            _animator.SetBool(_knockedHash, state);
+        }
 
         if (state)
         {

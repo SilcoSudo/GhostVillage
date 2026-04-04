@@ -19,14 +19,18 @@ public class FPSController : MonoBehaviourPun
     private PlayerInteract _playerInteract;
 
     [Inject] private PlayerInputActions _inputActions;
+    private Animator _animator;
+    private int _speedHash;
 
     private GlobalUIManager _globalUI;
     private float _verticalRotation = 0f;
     private bool _isLookEnabled = true;
     private bool _isInputBound = false;
-
     private bool _isSprinting = false;
     [HideInInspector] public bool isPlayingMinigame = false;
+
+    [Header("True First Person Fix")]
+    public Transform headBone; // Nơi nhét cái xương đầu vào
 
     #region VContainer Injection
     [Inject]
@@ -45,6 +49,8 @@ public class FPSController : MonoBehaviourPun
         _knockedState = GetComponent<PlayerKnockedState>();
         _stats = GetComponent<PlayerStatsManager>();
         _playerInteract = GetComponent<PlayerInteract>();
+        _animator = GetComponentInChildren<Animator>();
+        _speedHash = Animator.StringToHash("Speed");
     }
 
     private void OnDisable()
@@ -92,6 +98,13 @@ public class FPSController : MonoBehaviourPun
 
         if (!_isLookEnabled) return;
 
+        if (_knockedState != null && _knockedState.isKnocked)
+        {
+            // Báo Animator tốc độ = 0 để blend tree nó im re
+            if (_animator != null) _animator.SetFloat(_speedHash, 0f);
+            return;
+        }
+
         HandleStateInput();
         HandleMovement();
         HandleRotation();
@@ -126,10 +139,28 @@ public class FPSController : MonoBehaviourPun
         Vector2 moveInput = _inputActions.Player.Move.ReadValue<Vector2>();
         Vector3 direction = transform.right * moveInput.x + transform.forward * moveInput.y;
 
-        // MỚI: Hỏi sếp Stats lấy tốc độ. Nếu đang bấm Sprint thì lấy tốc chạy nhanh.
+        // 1. DI CHUYỂN VẬT LÝ (Code cũ của sếp)
         float currentSpeed = _isSprinting ? _stats.CurrentSprintSpeed : _stats.CurrentMoveSpeed;
-
         transform.position += direction * currentSpeed * Time.deltaTime;
+
+        // ==========================================
+        // 2. KHÚC NÀY BỊ THIẾU NÈ: TRUYỀN TỐC ĐỘ CHO ANIMATOR
+        // ==========================================
+        if (_animator != null && photonView.IsMine)
+        {
+            float targetAnimSpeed = 0f;
+
+            // Kiểm tra xem người chơi có đang bấm nút di chuyển (WASD) không
+            if (moveInput.magnitude > 0.1f)
+            {
+                // Dựa theo Blend Tree của sếp: Walk ngưỡng là 0.5, Run ngưỡng là 1
+                targetAnimSpeed = _isSprinting ? 1f : 0.5f;
+            }
+
+            // Dùng Mathf.Lerp để animation chuyển từ từ (Đứng -> Đi -> Chạy) cho nó mượt, không bị giật cục
+            float currentAnimSpeed = _animator.GetFloat(_speedHash);
+            _animator.SetFloat(_speedHash, Mathf.Lerp(currentAnimSpeed, targetAnimSpeed, Time.deltaTime * 10f));
+        }
     }
 
     private void HandleRotation()
@@ -196,5 +227,16 @@ public class FPSController : MonoBehaviourPun
             Debug.Log("✅ [FPS] Đã kết nối túi đồ với UI HUD.");
         }
     }
+
+    private void LateUpdate()
+    {
+        // CHỈ TEO ĐẦU Ở MÁY CỦA MÌNH. Máy người khác vẫn thấy đầu mình.
+        if (photonView.IsMine && headBone != null)
+        {
+            // Ép scale của xương đầu về 0. (Các xương con như mắt, tóc cũng sẽ teo theo)
+            headBone.localScale = Vector3.zero;
+        }
+    }
+
     #endregion
 }
