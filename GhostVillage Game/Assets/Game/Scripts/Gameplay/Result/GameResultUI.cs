@@ -156,10 +156,17 @@ public class GameResultUI : MonoBehaviour
         // 2. Tắt tự động đồng bộ Scene
         PhotonNetwork.AutomaticallySyncScene = false;
 
+        // --- [FIX LỖI 254] NGẮT VOICE TRƯỚC KHI THOÁT PHÒNG ---
+        var voiceClient = UnityEngine.Object.FindFirstObjectByType<Photon.Voice.PUN.PunVoiceClient>();
+        if (voiceClient != null)
+        {
+            voiceClient.Disconnect();
+            Debug.Log("🔇 [Voice] Đã ngắt kết nối Voice an toàn trước khi rời phòng.");
+        }
+
         // 3. Nếu đang trong phòng thì rời phòng, còn không thì về thẳng MainMenu
         if (PhotonNetwork.InRoom)
         {
-            // Báo cho PhotonNetworkManager biết mục tiêu sau khi LeaveRoom xong là về MainMenu
             PlayerPrefs.SetString("TargetSceneAfterLeave", "MainMenu");
             PhotonNetwork.LeaveRoom();
         }
