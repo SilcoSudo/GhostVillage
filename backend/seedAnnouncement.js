@@ -205,11 +205,11 @@ Mark your calendars and prepare for the scariest Ghost Village experience yet!
 ## Impact
 
 During maintenance:
-- ❌ Game servers will be unavailable
-- ❌ Cannot join or create games
-- ❌ Leaderboards will not update
-- ✅ Website and forums remain accessible
-- ✅ Wiki and community features available
+-  Game servers will be unavailable
+-  Cannot join or create games
+-  Leaderboards will not update
+-  Website and forums remain accessible
+-  Wiki and community features available
 
 ## Compensation
 
@@ -474,7 +474,7 @@ async function seedAnnouncements() {
 
     // Insert announcements
     const result = await Announcement.insertMany(announcementsWithAuthor);
-    console.log(`✅ Successfully seeded ${result.length} announcements!`);
+    console.log(` Successfully seeded ${result.length} announcements!`);
 
     // Display seeded announcements
     result.forEach((announcement, index) => {
@@ -482,7 +482,7 @@ async function seedAnnouncements() {
     });
 
   } catch (error) {
-    console.error('❌ Error seeding announcements:', error);
+    console.error(' Error seeding announcements:', error);
     process.exit(1);
   } finally {
     await mongoose.connection.close();

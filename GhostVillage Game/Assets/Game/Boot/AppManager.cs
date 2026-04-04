@@ -38,6 +38,9 @@ namespace Game.Boot
         {
             _settingsController.Initialize();
 
+            //  TỰ ĐỘNG TẢI TOKEN TỬ PLAYERPREFS NẾU CÓ
+            _session.LoadTokenFromStorage();
+
             if (_session.IsLoggedIn)
             {
                 _globalUI.ShowLoading(true, "Đang kết nối Máy Chủ...");
@@ -55,12 +58,12 @@ namespace Game.Boot
                     //LoginScene
                     _globalUI.ShowLoading(false);
                     _globalUI.ShowError("Lỗi Mạng", "Không thể kết nối đến máy chủ trò chơi.");
-                    await _sceneLoader.LoadSceneAsync("Map_1");
+                    await _sceneLoader.LoadSceneAsync("LoginScene");
                 }
             }
             else
             {
-                await _sceneLoader.LoadSceneAsync("Map_1");
+                await _sceneLoader.LoadSceneAsync("LoginScene");
             }
         }
     }

@@ -17,9 +17,14 @@ import { uploadToCloudinary } from "../../services/uploadService.js";
 
 const generateToken = (userId, role, rememberMe = false) => {
   const expiresIn = rememberMe ? "30d" : "1d"; // 30 days if remember me, else 1 day
-  return jwt.sign({ userId, role }, config.jwt.secret, {
+  const token = jwt.sign({ userId, role }, config.jwt.secret, {
     expiresIn,
   });
+  console.log("[generateToken]  TOKEN GENERATED:");
+  console.log("  userId:", userId, typeof userId);
+  console.log("  role:", role);
+  console.log("  token:", token.substring(0, 50) + "...");
+  return token;
 };
 
 const isGoogleAvatarUrl = (url) => {
@@ -554,6 +559,11 @@ export const AuthService = {
         }
       }
     }
+
+    console.log("[findOrCreateGoogleUser] BEFORE GENERATE TOKEN:");
+    console.log("  user._id:", user._id, typeof user._id);
+    console.log("  user.email:", user.email);
+    console.log("  user saved?", !user.isNew);
 
     const token = generateToken(user._id, user.role, true); // Remember me = true for OAuth
     return { token, user: user.toJSON() };

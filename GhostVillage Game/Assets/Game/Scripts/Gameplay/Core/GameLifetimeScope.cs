@@ -27,10 +27,10 @@ namespace Game.Scripts.Gameplay.Core
                 }
                 else
                 {
-                    Debug.LogError("❌ Không tìm thấy GameResultUI trong HUD Prefab!");
+                    Debug.LogError(" Không tìm thấy GameResultUI trong HUD Prefab!");
                 }
             }
-            else Debug.LogError("❌ Chưa kéo UI HUD Prefab!");
+            else Debug.LogError(" Chưa kéo UI HUD Prefab!");
 
             // 2. LOGIC MANAGERS (Tìm trên Hierarchy của chính Prefab này)     
             builder.RegisterComponent(GetComponentInChildren<MapDataManager>());

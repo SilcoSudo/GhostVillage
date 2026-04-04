@@ -25,7 +25,7 @@ namespace Game.Scripts.View.Lobby
             }
             else
             {
-                Debug.LogError("❌ [PerkBoardInteract] Chết dở, không tìm thấy LobbyUIManager trong Scene!");
+                Debug.LogError(" [PerkBoardInteract] Chết dở, không tìm thấy LobbyUIManager trong Scene!");
             }
         }
     }

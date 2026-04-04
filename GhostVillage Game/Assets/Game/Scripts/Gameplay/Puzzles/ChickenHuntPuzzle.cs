@@ -436,12 +436,12 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         
         if (dist > captureDistance)
         {
-            Debug.Log($"[ChickenHunt] ❌ Too far from real chicken to capture");
+            Debug.Log($"[ChickenHunt]  Too far from real chicken to capture");
             return;
         }
 
         int actorNumber = PhotonNetwork.IsConnectedAndReady ? PhotonNetwork.LocalPlayer.ActorNumber : 0;
-        Debug.Log($"[ChickenHunt] ✅ Adding capture progress, actor: {actorNumber}");
+        Debug.Log($"[ChickenHunt]  Adding capture progress, actor: {actorNumber}");
 
         if (CanUsePhotonRpc)
         {
@@ -593,7 +593,7 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         }
 
         _captureProgress = Mathf.Clamp01(_captureProgress + Mathf.Max(0.001f, amount));
-        Debug.Log($"[ChickenHunt] ✅ Progress updated to {_captureProgress:F2} / {captureRequired}");
+        Debug.Log($"[ChickenHunt]  Progress updated to {_captureProgress:F2} / {captureRequired}");
 
         if (CanUsePhotonRpc)
         {
@@ -647,7 +647,7 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
                 // Remove real chicken's mover from movement list (keep fakes moving)
                 _movers.RemoveAll(m => m.Candidate == realCandidate);
                 Destroy(realCandidate.gameObject);
-                Debug.Log("[ChickenHunt] ✅ Destroyed real chicken after capture");
+                Debug.Log("[ChickenHunt]  Destroyed real chicken after capture");
             }
         }
 
@@ -728,7 +728,7 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         
         if (_rewardPickupSpawned)
         {
-            Debug.Log($"[ChickenHunt] ✅ Reward pickup spawned at {spawnPos}, object: {pickupGo.name}");
+            Debug.Log($"[ChickenHunt]  Reward pickup spawned at {spawnPos}, object: {pickupGo.name}");
         }
     }
 
@@ -740,7 +740,7 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         KeyItemSO chickenReward = Resources.Load<KeyItemSO>("KeyItems/KeyItemChicken");
         if (chickenReward != null && chickenReward.itemIcon != null)
         {
-            Debug.Log($"[ChickenHunt] ✅ Loaded KeyItemChicken reward: {chickenReward.itemName}");
+            Debug.Log($"[ChickenHunt]  Loaded KeyItemChicken reward: {chickenReward.itemName}");
             keyItemReward = chickenReward;
             return keyItemReward;
         }
@@ -749,7 +749,7 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         KeyItemSO directLoad = Resources.Load<KeyItemSO>("KeyItems/KeyItem_Thread");
         if (directLoad != null && directLoad.itemIcon != null)
         {
-            Debug.Log($"[ChickenHunt] ✅ Loaded KeyItem from Resources: {directLoad.itemName}");
+            Debug.Log($"[ChickenHunt]  Loaded KeyItem from Resources: {directLoad.itemName}");
             keyItemReward = directLoad;
             return keyItemReward;
         }
@@ -782,7 +782,7 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         runtimeReward.itemType = ItemType.KeyItem;
 
         keyItemReward = runtimeReward;
-        Debug.LogWarning($"[ChickenHunt] keyItemReward was null. Using runtime fallback reward item. Icon: {(runtimeReward.itemIcon != null ? "✅" : "❌")}");
+        Debug.LogWarning($"[ChickenHunt] keyItemReward was null. Using runtime fallback reward item. Icon: {(runtimeReward.itemIcon != null ? "" : "")}");
         return keyItemReward;
     }
 

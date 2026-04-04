@@ -15,7 +15,7 @@ export const MoonEventController = {
         ...result,
       });
     } catch (error) {
-      console.error("❌ Error in MoonEventController.getAllEvents:", error);
+      console.error(" Error in MoonEventController.getAllEvents:", error);
       return res.status(500).json({
         success: false,
         message: "Lỗi hệ thống",

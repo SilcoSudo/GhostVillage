@@ -225,7 +225,7 @@ public class InventoryManager : MonoBehaviourPun
 
             if (resourceCheck == null)
             {
-                Debug.LogError($"❌ LỖI: Không tìm thấy Prefab '{prefabName}' trong Resources!");
+                Debug.LogError($" LỖI: Không tìm thấy Prefab '{prefabName}' trong Resources!");
                 return;
             }
 

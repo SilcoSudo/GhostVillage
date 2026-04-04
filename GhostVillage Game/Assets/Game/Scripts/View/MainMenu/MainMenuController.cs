@@ -83,11 +83,17 @@ namespace Game.UI.MainMenu
 
         private void OnDisable()
         {
-            // Gỡ sự kiện và tắt input
+            // Gỡ sự kiện input
             var escAction = _inputActions.FindAction("Esc_Tab") ?? _inputActions.FindAction("EscapeTab");
             if (escAction != null)
             {
                 escAction.performed -= OnEscapePressed;
+            }
+
+            // Gỡ sự kiện kết nối Photon
+            if (_network is PhotonNetworkManager photonMgr)
+            {
+                photonMgr.OnPhotonConnected -= HandleConnected;
             }
 
             _inputActions.Disable();
@@ -102,9 +108,18 @@ namespace Game.UI.MainMenu
                 _btnOpenEscMenu.onClick.AddListener(() => _globalUI.OpenEscMenu(GlobalUIManager.EscMenuType.MainMenu, false));
             }
 
+            //  Load token MỘT LẦN ở đây (nếu chưa load từ AppManager)
+            _session.EnsureTokenLoaded();
+
             FetchAndPopulateProfile().Forget();
             FetchAndRenderDailyQuests().Forget();
             _friendController.InitializeDataAsync().Forget();
+
+            // Nghe event kết nối Photon thành công để update UI
+            if (_network is PhotonNetworkManager photonMgr)
+            {
+                photonMgr.OnPhotonConnected += HandleConnected;
+            }
 
             if (_network.IsConnected)
                 HandleConnected();
@@ -165,6 +180,12 @@ namespace Game.UI.MainMenu
 
         private async UniTask FetchAndPopulateProfile()
         {
+            // Fallback: Nếu token vẫn empty (edge case), load từ PlayerPrefs
+            if (string.IsNullOrEmpty(_session.Token))
+            {
+                _session.EnsureTokenLoaded();
+            }
+
             var profileData = await _authService.FetchMyProfileAsync();
 
             if (profileData != null && profileData.profile != null)
@@ -240,6 +261,12 @@ namespace Game.UI.MainMenu
         private async UniTask FetchAndRenderDailyQuests()
         {
             if (_profileService == null) return;
+
+            //  Fallback: Nếu token vẫn empty (edge case), load từ PlayerPrefs
+            if (string.IsNullOrEmpty(_session.Token))
+            {
+                _session.EnsureTokenLoaded();
+            }
 
             // Gọi API GetAchievementsAsync vì bên BE mình đã gộp trả về cả dailyQuests
             var profileData = await _profileService.GetAchievementsAsync(_session.Token);

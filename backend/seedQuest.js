@@ -349,7 +349,7 @@ async function seedQuests() {
   try {
     // Connect to MongoDB
     await mongoose.connect(process.env.MONGO_URI);
-    console.log("✅ Connected to MongoDB");
+    console.log(" Connected to MongoDB");
 
     // Clear existing quest data
     const deleteResult = await Quest.deleteMany({});
@@ -357,7 +357,7 @@ async function seedQuests() {
 
     // Insert sample quests
     const insertedQuests = await Quest.insertMany(questsData);
-    console.log(`✅ Successfully inserted ${insertedQuests.length} quests`);
+    console.log(` Successfully inserted ${insertedQuests.length} quests`);
 
     // Display summary
     console.log("\n📊 Quest Summary:");
@@ -382,7 +382,7 @@ async function seedQuests() {
 
     console.log("\n🎉 Quest seeding completed successfully!");
   } catch (error) {
-    console.error("❌ Error seeding quests:", error);
+    console.error(" Error seeding quests:", error);
     process.exit(1);
   } finally {
     await mongoose.connection.close();

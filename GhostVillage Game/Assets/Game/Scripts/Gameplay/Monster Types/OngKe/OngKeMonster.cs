@@ -89,7 +89,7 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
 
         private void Start()
         {
-            Debug.Log($"🔧 OngKeMonster.Start() called");
+            Debug.Log($" OngKeMonster.Start() called");
 
             if (patrolZones != null && patrolZones.Length > 0)
             {
@@ -158,7 +158,7 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"❌ [ChangeStateType] ERROR during {newState} transition: {ex.Message}\n{ex.StackTrace}");
+                Debug.LogError($" [ChangeStateType] ERROR during {newState} transition: {ex.Message}\n{ex.StackTrace}");
                 currentState = null;
             }
         }
@@ -203,7 +203,7 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
                 case OngKeStateType.Patrol:
                     if (detected && dist <= chaseRange)
                     {
-                        Debug.Log($"✅ Patrol→Chase ({dist:F1}m)");
+                        Debug.Log($" Patrol→Chase ({dist:F1}m)");
                         ChangeStateType(OngKeStateType.Chase);
                     }
                     break;
@@ -235,7 +235,7 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
                     // Priority 1: In attack range
                     if (detected && dist <= attackRange)
                     {
-                        Debug.Log($"✅ Chase→Attack ({dist:F1}m)");
+                        Debug.Log($" Chase→Attack ({dist:F1}m)");
                         ChangeStateType(OngKeStateType.Attack);
                     }
                     // Priority 2: Lost player - bắt đầu đếm từ khi mất sight (Phase B)
@@ -253,14 +253,14 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
                         {
                             // Lấy vị trí mới nhất từ tracking NavMesh trong 3s
                             lastKnownPos = chaseState.GetCurrentTrackedPlayerPosition();
-                            Debug.Log($"✅ Chase→Investigate ({lastKnownPos}) [dự đoán Phase B {chaseTimer:F1}s]");
+                            Debug.Log($" Chase→Investigate ({lastKnownPos}) [dự đoán Phase B {chaseTimer:F1}s]");
                             ChangeStateType(OngKeStateType.Investigate, lastKnownPos);
                         }
                     }
                     // Priority 3: Player still visible but too far
                     else if (detected && dist > chaseRange)
                     {
-                        Debug.Log($"✅ Chase→Patrol ({dist:F1}m > {chaseRange}m)");
+                        Debug.Log($" Chase→Patrol ({dist:F1}m > {chaseRange}m)");
                         ChangeStateType(OngKeStateType.Patrol);
                     }
                     break;
@@ -269,12 +269,12 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
                     if (!detected)
                     {
                         lastKnownPos = playerDetector.GetLastDetectedPlayerPosition();
-                        Debug.Log($"✅ Attack→Investigate ({lastKnownPos})");
+                        Debug.Log($" Attack→Investigate ({lastKnownPos})");
                         ChangeStateType(OngKeStateType.Investigate, lastKnownPos);
                     }
                     else if (dist > attackRange + 0.5f) // Hysteresis
                     {
-                        Debug.Log($"✅ Attack→Chase ({dist:F1}m)");
+                        Debug.Log($" Attack→Chase ({dist:F1}m)");
                         ChangeStateType(OngKeStateType.Chase);
                     }
                     break;
@@ -289,12 +289,12 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
                         // State has been cleared, use saved exit reason
                         if (investigateExitWasPlayerDetected)
                         {
-                            Debug.Log($"✅ Investigate→Chase (player detected during search)");
+                            Debug.Log($" Investigate→Chase (player detected during search)");
                             ChangeStateType(OngKeStateType.Chase);
                         }
                         else
                         {
-                            Debug.Log($"✅ Investigate→Patrol (timeout after 2s search)");
+                            Debug.Log($" Investigate→Patrol (timeout after 2s search)");
                             ChangeStateType(OngKeStateType.Patrol);
                         }
                         investigateExitWasPlayerDetected = false; // Reset flag

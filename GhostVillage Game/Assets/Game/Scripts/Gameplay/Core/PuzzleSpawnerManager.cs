@@ -42,7 +42,7 @@ public class PuzzleSpawnerManager : MonoBehaviour
             if (prefab != null)
             {
                 PhotonNetwork.InstantiateRoomObject(prefab.name, targetPoint.position, targetPoint.rotation);
-                Debug.Log($"✅ [PuzzleSpawner] Spawn {puzzlePrefabId} ({prefab.name}) tại {targetPoint.name}");
+                Debug.Log($" [PuzzleSpawner] Spawn {puzzlePrefabId} ({prefab.name}) tại {targetPoint.name}");
             }
         }
     }

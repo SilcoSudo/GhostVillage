@@ -1,6 +1,7 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using VContainer;
+using Game.Core.Network;
 using Game.Core.Network.API;
 using GhostVillage.Domain.Profile;
 
@@ -9,14 +10,21 @@ namespace GhostVillage.Shop
     public class ShopService
     {
         private readonly APIClient _apiClient;
+        private readonly GameSession _session;
 
         [Inject]
-        public ShopService(APIClient apiClient)
+        public ShopService(APIClient apiClient, GameSession session)
         {
             _apiClient = apiClient;
+            _session = session;
         }
 
-        private string GetToken() => PlayerPrefs.GetString("AccessToken", "");
+        private string GetToken()
+        {
+            // Ensure token is loaded, then use GameSession as source of truth
+            _session.EnsureTokenLoaded();
+            return _session.Token ?? "";
+        }
 
         public async UniTask<ShopDataDTO> FetchShopDataAsync() {
             return await _apiClient.GetAsyncWithAuth<ShopDataDTO>("/api/game/shop", GetToken());

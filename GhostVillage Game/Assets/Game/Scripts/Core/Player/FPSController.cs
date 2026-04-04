@@ -190,12 +190,12 @@ public class FPSController : MonoBehaviourPun
         var invUI = Object.FindFirstObjectByType<InventoryUIManager>();
         var invManager = GetComponent<InventoryManager>();
 
-        Debug.Log($"[FPS BindInventoryUI] invUI: {(invUI != null ? "✅" : "❌")}, invManager: {(invManager != null ? "✅" : "❌")}");
+        Debug.Log($"[FPS BindInventoryUI] invUI: {(invUI != null ? "" : "")}, invManager: {(invManager != null ? "" : "")}");
         
         if (invUI != null && invManager != null)
         {
             invUI.BindInventory(invManager);
-            Debug.Log("✅ [FPS] Đã kết nối túi đồ với UI HUD.");
+            Debug.Log(" [FPS] Đã kết nối túi đồ với UI HUD.");
         }
         else
         {

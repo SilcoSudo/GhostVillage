@@ -58,7 +58,7 @@ namespace Game.Core.Database
             if (puzzle != null && puzzle.prefab != null) return puzzle.prefab;
 
             // Nếu quét hết tất cả mọi nơi mà vẫn không thấy
-            Debug.LogError($"❌ [ResourceDB] KHÔNG TÌM THẤY PREFAB CHO ID: {id}. Vui lòng check lại Scriptable Object!");
+            Debug.LogError($" [ResourceDB] KHÔNG TÌM THẤY PREFAB CHO ID: {id}. Vui lòng check lại Scriptable Object!");
             return null;
         }
     }

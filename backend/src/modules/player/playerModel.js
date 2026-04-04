@@ -31,6 +31,10 @@ const playerSchema = new mongoose.Schema(
     unlockedPerks: { type: [String], default: [] },
     equippedPerks: { type: [String], default: [] },
 
+    //  THÊM FIELD MEDAL ĐỂ TRACK CÁC MEDAL HUY CHƯƠNG ĐÃ UNLOCK VÀ SELECTED
+    unlockedMedals: { type: [mongoose.Schema.Types.ObjectId], default: [] },
+    selectedMedals: { type: [mongoose.Schema.Types.ObjectId], default: [] },
+
     // TIẾN ĐỘ THÀNH TỰU (Lưu vĩnh viễn không bao giờ xóa)
     achievementsProgress: [
       {

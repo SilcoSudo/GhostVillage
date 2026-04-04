@@ -41,10 +41,20 @@ namespace Game.Domain.Authentication
 
         public async UniTask<MyProfileResponseDTO> FetchMyProfileAsync()
         {
-            if (string.IsNullOrEmpty(_session.Token)) return null;
+            //  Fallback: Nếu token bị mất trong memory, load từ PlayerPrefs
+            if (string.IsNullOrEmpty(_session.Token))
+            {
+                _session.EnsureTokenLoaded();
+            }
 
-            // Gọi API lấy profile bản thân (URL tùy thuộc BE của bạn, ví dụ: /api/game/player/profile)
-            var response = await _apiClient.GetAsyncWithAuth<MyProfileResponseDTO>("/api/game/profile", _session.Token);
+            if (string.IsNullOrEmpty(_session.Token))
+            {
+                Debug.LogWarning("[AuthService] No token available - user not authenticated");
+                return null;
+            }
+
+            // Gọi API lấy profile bản thân
+            var response = await _apiClient.GetAsyncWithAuth<MyProfileResponseDTO>("/api/game/player", _session.Token);
 
             if (response != null)
             {
@@ -161,7 +171,7 @@ namespace Game.Domain.Authentication
         }
 
         // Hàm hỗ trợ lưu Token an toàn
-        private void SaveToken(string token)
+        public void SaveToken(string token)
         {
             PlayerPrefs.SetString(TOKEN_KEY, token);
             PlayerPrefs.Save();

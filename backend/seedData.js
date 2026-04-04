@@ -34,7 +34,7 @@ const seedData = async () => {
     await MapConfig.deleteMany({});
     await MatchResult.deleteMany({});
     await UserAchievement.deleteMany({}); // <-- Bê lên đây là hết bị lỗi duplicate key
-    console.log("✅  Đã dọn sạch database.");
+    console.log("  Đã dọn sạch database.");
 
     // =========================================================
     // 3. CHUẨN BỊ ID (Để link giữa các bảng)
@@ -816,11 +816,11 @@ const seedData = async () => {
 
     await MatchResult.insertMany(matchResults);
     console.log(
-      `✅ Đã tạo ${matchResults.length} trận đấu mẫu vào MatchResult.`,
+      ` Đã tạo ${matchResults.length} trận đấu mẫu vào MatchResult.`,
     );
 
     console.log("=========================================");
-    console.log("✅ KHỞI TẠO DỮ LIỆU THÀNH CÔNG TOÀN BỘ!");
+    console.log(" KHỞI TẠO DỮ LIỆU THÀNH CÔNG TOÀN BỘ!");
     console.log("👤 User 1: hung@ghostvillage.com | UID: 10000001");
     console.log("👤 User 2: belan.support@gmail.com | UID: 10000002");
     console.log("👤 User 3: raccoon@ghostvillage.com | UID: 10000003");
@@ -828,7 +828,7 @@ const seedData = async () => {
 
     process.exit();
   } catch (error) {
-    console.error("❌ Có lỗi xảy ra:", error);
+    console.error(" Có lỗi xảy ra:", error);
     process.exit(1);
   }
 };
