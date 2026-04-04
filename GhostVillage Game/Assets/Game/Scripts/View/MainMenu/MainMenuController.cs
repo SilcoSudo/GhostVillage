@@ -138,10 +138,29 @@ namespace Game.UI.MainMenu
             if (_globalUI != null) _globalUI.OnLogoutClicked -= OnLogoutAction;
         }
 
-        private void OnLogoutAction()
+        private async void OnLogoutAction()
         {
-            Debug.Log("[MainMenu] Thoát Game / Logout");
-            Application.Quit();
+            Debug.Log("<color=yellow>[MainMenu] Bắt đầu quá trình Đăng xuất...</color>");
+            _globalUI.ShowLoading(true, "Đang đăng xuất...");
+
+            // 1. Xóa sạch Session và Token lưu dưới máy
+            _session.Clear();
+            PlayerPrefs.DeleteKey("AccessToken");
+            PlayerPrefs.Save();
+
+            // 2. Ngắt kết nối Photon (Nếu đang kết nối)
+            if (Photon.Pun.PhotonNetwork.IsConnected)
+            {
+                Photon.Pun.PhotonNetwork.Disconnect();
+            }
+
+            // Chờ 1 chút cho mạng mẽo đứt hẳn để tránh lỗi dính cache
+            await UniTask.Delay(500);
+
+            _globalUI.ShowLoading(false);
+
+            // 3. Đá văng về màn hình Login (Nhớ check lại đúng tên Scene Login của sếp nhé)
+            await _sceneLoader.LoadSceneAsync("LoginScene");
         }
 
         private async UniTask FetchAndPopulateProfile()

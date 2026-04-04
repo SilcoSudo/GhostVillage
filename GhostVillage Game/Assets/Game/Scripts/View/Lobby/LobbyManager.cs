@@ -534,6 +534,11 @@ namespace Game.Scripts.UI.Lobby
 
         private void HandleExitLobby()
         {
+            if (!PhotonNetwork.InRoom)
+            {
+                _sceneLoader.LoadSceneAsync("LobbyListScene");
+                return;
+            }
             Debug.Log("[LobbyManager] User requested exit. Leaving room...");
             // Hiện Loading
             _globalUI.ShowLoading(true);

@@ -19,6 +19,7 @@ class ProfileService {
     if (!player) return null;
 
     return {
+      uid: player.uid,
       profile: {
         displayName: player.profile?.displayName,
         level: player.profile?.level || 1,
