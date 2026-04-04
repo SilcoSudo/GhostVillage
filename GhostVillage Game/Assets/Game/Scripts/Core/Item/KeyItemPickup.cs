@@ -36,11 +36,6 @@ public class KeyItemPickup : MonoBehaviourPun, IInteractable // Thêm MonoBehavi
         // Thêm vào túi đồ
         if (inventory.AddItem(data))
         {
-            // Nếu có Prefab cầm tay -> Gắn vào tay
-            if (data.itemHandModel != null)
-            {
-                player.AttachHeldItem(data.itemHandModel);
-            }
 
             // Hủy vật phẩm dưới đất (Đồng bộ qua mạng)
             if (PhotonNetwork.IsMasterClient)

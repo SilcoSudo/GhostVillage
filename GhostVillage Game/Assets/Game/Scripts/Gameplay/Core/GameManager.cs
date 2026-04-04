@@ -123,6 +123,16 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         _isLocalDataReady = true;
 
+        if (_playerSpawner != null)
+        {
+            _playerSpawner.SpawnLocalPlayer(_mapData);
+            Debug.Log("<color=green>[GameManager] Đã tự spawn Local Player thành công!</color>");
+        }
+        else
+        {
+            Debug.LogError("❌ [GameManager] PlayerSpawner chưa được Inject!");
+        }
+
         // 2. Spawn World (Chỉ Master Client thực hiện để tránh trùng lặp)
         if (PhotonNetwork.IsMasterClient)
         {
@@ -207,11 +217,11 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         switch (newState)
         {
-            case GameState.WaitingForPlayers: CheckReadyToSpawn(); break;
+            case GameState.WaitingForPlayers: Debug.Log("[GameManager] Đang chờ người chơi..."); break;
             case GameState.Playing: Debug.Log("[GameManager] START GAME!"); break;
             case GameState.EscapePhase: Debug.Log("[GameManager] RUN NOW!"); break;
-
             case GameState.Ending:
+
                 Debug.Log("[GameManager] MATCH ENDED.");
 
                 if (PhotonNetwork.IsMasterClient)

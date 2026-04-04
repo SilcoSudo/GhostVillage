@@ -24,6 +24,9 @@ public class InventoryManager : MonoBehaviourPun
     private bool _isInventoryLocked = false;
     private PlayerInteract _playerInteract;
 
+    private Animator _animator;
+    private int _itemTypeHash;
+
     public static InventoryManager LocalInstance { get; private set; }
     #endregion
 
@@ -48,6 +51,8 @@ public class InventoryManager : MonoBehaviourPun
     private void Awake()
     {
         _playerInteract = GetComponent<PlayerInteract>();
+        _animator = GetComponentInChildren<Animator>();
+        _itemTypeHash = Animator.StringToHash("ItemType");
     }
 
     private void Start()
@@ -328,13 +333,25 @@ public class InventoryManager : MonoBehaviourPun
         {
             ItemDataSO item = items[currentSlotIndex];
             if (item.itemHandModel != null)
-                _playerInteract.AttachHeldItem(item.itemHandModel);
+            {
+                // 1. Spawn model đồ vật vào đúng tay
+                _playerInteract.AttachHeldItem(item.itemHandModel, item.holdType);
+
+                // 2. Kích hoạt Animation nhấc tay lên
+                if (_animator != null) _animator.SetInteger(_itemTypeHash, (int)item.holdType);
+            }
             else
+            {
+                // Có item nhưng không có model -> hạ tay
                 _playerInteract.DetachHeldItem();
+                if (_animator != null) _animator.SetInteger(_itemTypeHash, 0);
+            }
         }
         else
         {
+            // Tay không -> hạ tay
             _playerInteract.DetachHeldItem();
+            if (_animator != null) _animator.SetInteger(_itemTypeHash, 0);
         }
     }
 

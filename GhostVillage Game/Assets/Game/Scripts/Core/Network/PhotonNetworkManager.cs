@@ -111,6 +111,16 @@ namespace Game.Core.Network
         /// </summary>
         public void JoinHallway()
         {
+            // --- [FIX LỖI 254 LOBBY] ---
+            // Rút điện thằng Voice khi ở sảnh để nó không gửi lệnh LeaveRoom bậy bạ lên MasterServer
+            var voiceClient = UnityEngine.Object.FindFirstObjectByType<Photon.Voice.PUN.PunVoiceClient>();
+            if (voiceClient != null && voiceClient.ClientState != Photon.Realtime.ClientState.Disconnected)
+            {
+                voiceClient.Disconnect();
+                Debug.Log("🔇 [Photon] Đã rút điện Voice khi về sảnh chờ!");
+            }
+            // ---------------------------
+
             if (PhotonNetwork.InRoom)
             {
                 Debug.Log("[Photon] Leaving current room to join hallway.");
@@ -218,6 +228,11 @@ namespace Game.Core.Network
             if (!PhotonNetwork.InLobby)
             {
                 Debug.LogError("[Photon] Not in lobby. Attempting to re-join.");
+
+                // [FIX LỖI] Báo UI cho người chơi biết máy chủ chưa load xong
+                var globalUI = FindFirstObjectByType<Game.Script.UI.GlobalUIManager>();
+                if (globalUI != null) globalUI.ShowError("Error", "Đang kết nối lại sảnh chờ. Vui lòng bấm lại sau 2 giây...");
+
                 JoinHallway();
                 return;
             }
@@ -270,15 +285,32 @@ namespace Game.Core.Network
         public override void OnCreateRoomFailed(short returnCode, string message)
         {
             Debug.LogError($"[Photon] Create room failed: {message}");
+
+            // [FIX LỖI] Hiển thị UI khi tên phòng bị trùng
+            var globalUI = FindFirstObjectByType<Game.Script.UI.GlobalUIManager>();
+            if (globalUI != null)
+            {
+                // Nếu mã lỗi là 32766 (GameIdAlreadyExists)
+                if (returnCode == 32766)
+                    globalUI.ShowError("Error", "Tạo thất bại: Tên phòng này đã có người sử dụng!");
+                else
+                    globalUI.ShowError("Error", $"Tạo thất bại: {message}");
+            }
+
             OnCreateLobbyFailed?.Invoke();
         }
 
-        /// <summary>
-        /// Callback khi lenh tham gia phong bi tu choi tu server.
-        /// </summary>
         public override void OnJoinRoomFailed(short returnCode, string message)
         {
             Debug.LogError($"[Photon] Join thất bại: {message}");
+
+            // [FIX LỖI] Hiển thị UI khi không vào được phòng
+            var globalUI = FindFirstObjectByType<Game.Script.UI.GlobalUIManager>();
+            if (globalUI != null)
+            {
+                globalUI.ShowError("Error", $"Không thể tham gia: {message}");
+            }
+
             OnJoinLobbyFailed?.Invoke(message);
         }
 
