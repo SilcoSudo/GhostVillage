@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22ed1bb5c6dbced4fa17647576b5fcdc, type: 3}
+  m_Name: KeyItemChicken
+  m_EditorClassIdentifier: Assembly-CSharp::KeyItemSO
+  itemId: ITEM_KEY_CHICKEN
+  itemName: "G\xE0"
+  description: "Con g\xE0 m\xE0 b\u1EA1n v\u1EEBa b\u1EAFt g\u1EA7n \u0111\xE2y."
+  itemType: 0
+  itemIcon: {fileID: 21300000, guid: 9d43bec4039428241a281f07b5372e1c, type: 3}
+  itemWorldPrefab: {fileID: -1, guid: c327e67ab1gc0885ecge175eee808h98, type: 3}
+  itemHandModel: {fileID: 5638062234538008812, guid: 3d1b13e37e94eda46b393a9b10cfb8e1, type: 3}
