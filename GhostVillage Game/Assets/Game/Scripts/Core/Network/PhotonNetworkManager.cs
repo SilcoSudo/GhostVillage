@@ -229,7 +229,9 @@ namespace Game.Core.Network
                 MaxPlayers = (byte)maxPlayers,
                 IsVisible = true,
                 IsOpen = true,
-                CleanupCacheOnLeave = true
+                CleanupCacheOnLeave = true,
+                PlayerTtl = 0,
+                EmptyRoomTtl = 0
             };
 
             if (!string.IsNullOrEmpty(password))

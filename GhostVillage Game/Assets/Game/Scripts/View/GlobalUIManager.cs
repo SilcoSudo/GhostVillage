@@ -7,15 +7,14 @@ using Game.UI.Settings;
 using UnityEngine.UI;
 using VContainer;
 using Game.Domain.Settings.Controllers;
-using Game.Core.Network.Chat; // Thêm dòng này
-using Game.Core.Scene;        // Thêm dòng này
-using Photon.Pun;             // Thêm dòng này
-using Photon.Realtime;        // Thêm dòng này
+using Game.Core.Network.Chat;
+using Game.Core.Scene;
+using Photon.Pun;
+using Photon.Realtime;
 using System.Collections.Generic;
 
 namespace Game.Script.UI
 {
-    // BỔ SUNG: IConnectionCallbacks, IMatchmakingCallbacks để nghe lén Photon
     public class GlobalUIManager : MonoBehaviour, IConnectionCallbacks, IMatchmakingCallbacks
     {
         public enum EscMenuType { None, MainMenu, Lobby, InGame }
@@ -25,8 +24,8 @@ namespace Game.Script.UI
         [SerializeField] private TMP_Text _txtTitle;
         [SerializeField] private TMP_Text _txtMessage;
 
-        [SerializeField] private GameObject _loadingPanel;
-        [SerializeField] private TMP_Text _txtLoadingMessage;
+        [Header("Loading Screen (Gom Gọn 1 Cục)")]
+        [SerializeField] private GameObject _loadingPanel; // Sếp chỉ cần kéo cái Panel chứa nền + text vào đây
         private const float LOADING_TIMEOUT = 30f;
         private CancellationTokenSource _cts;
 
@@ -34,7 +33,7 @@ namespace Game.Script.UI
         [SerializeField] private SettingsUIManager _settingsUI;
 
         [Header("Invite Notification")]
-        [SerializeField] private InviteNotificationUI _inviteNotificationUI; // KÉO GRP_INVITE VÀO ĐÂY
+        [SerializeField] private InviteNotificationUI _inviteNotificationUI;
 
         [Header("ESC Menu - Layouts")]
         [SerializeField] private GameObject _escMenuModal;
@@ -64,32 +63,24 @@ namespace Game.Script.UI
         private EscMenuType _currentEscType = EscMenuType.None;
         private float _lastToggleTime = 0f;
 
-        // BIẾN LƯU TÊN PHÒNG KHI ĐƯỢC MỜI
         private string _pendingRoomToJoin = string.Empty;
         public static bool IsBypassPassword = false;
 
         private GlobalChatManager _chatManager;
         private ISceneLoaderService _sceneLoader;
 
-
-        // ĐÃ NÂNG CẤP INJECT ĐỂ NHẬN THÊM CHAT VÀ SCENE LOADER
         [Inject]
         public void Construct(SettingsController settingsController, GlobalChatManager chatManager, ISceneLoaderService sceneLoader)
         {
-
             if (_settingsUI != null)
             {
                 _settingsUI.Init(settingsController);
-
-                // THÊM DÒNG NÀY: Khi Sếp bấm [X] ở Settings, gọi hàm CloseSettings của Global!
                 _settingsUI.OnCloseRequested += CloseSettings;
             }
-            else Debug.LogError("[GlobalUIManager] Chưa gán _settingsUI trên Inspector!");
 
             _chatManager = chatManager;
             _sceneLoader = sceneLoader;
 
-            // MÓC LỖ TAI LẮNG NGHE LỜI MỜI TỪ CHAT MANAGER
             if (_chatManager != null)
             {
                 _chatManager.OnRoomInviteReceived += HandleRoomInviteReceived;
@@ -102,7 +93,7 @@ namespace Game.Script.UI
             if (_loadingPanel != null) _loadingPanel.SetActive(false);
             if (_settingsUI != null) _settingsUI.ShowSettings(false);
             if (_escMenuModal != null) _escMenuModal.SetActive(false);
-            if (_inviteNotificationUI != null) _inviteNotificationUI.Hide(); // Mặc định ẩn
+            if (_inviteNotificationUI != null) _inviteNotificationUI.Hide();
 
             BindEscMenuEvents();
         }
@@ -117,7 +108,6 @@ namespace Game.Script.UI
         {
             if (_inviteNotificationUI != null)
             {
-                // Trượt Pop-up ra, nếu sếp bấm "Accept", hàm ExecuteJoinRoom sẽ được gọi
                 _inviteNotificationUI.Show(senderName, roomName, ExecuteJoinRoom);
             }
         }
@@ -131,28 +121,24 @@ namespace Game.Script.UI
 
             if (PhotonNetwork.InRoom)
             {
-                // Đang chơi giở trận hoặc đang ở Lobby khác -> Rời phòng trước!
                 PhotonNetwork.LeaveRoom();
-                // Xong nó sẽ nhảy xuống hàm OnConnectedToMaster ở dưới
             }
             else if (PhotonNetwork.IsConnectedAndReady)
             {
-                // Đang đứng ở Main Menu -> Bay thẳng vào luôn
                 PhotonNetwork.JoinRoom(_pendingRoomToJoin);
             }
             else
             {
-                ShowLoading(false);
-                ShowError("Lỗi Mạng", "Bạn chưa kết nối vào Server!");
+                // Thay vì chỉ ShowError, giờ dùng SafeReturn luôn
+                HandleLoadingCrash("Lỗi Mạng", "Bạn chưa kết nối vào Server!");
             }
         }
 
         // ========================================================
-        // PHOTON CALLBACKS (ĐỂ XỬ LÝ CHUYỂN PHÒNG MƯỢT MÀ)
+        // PHOTON CALLBACKS
         // ========================================================
         public void OnConnectedToMaster()
         {
-            // Vừa rớt khỏi phòng cũ xong, nhận thấy có vé mời trong tay -> Chui vào phòng mới
             if (!string.IsNullOrEmpty(_pendingRoomToJoin))
             {
                 PhotonNetwork.JoinRoom(_pendingRoomToJoin);
@@ -173,12 +159,10 @@ namespace Game.Script.UI
             if (!string.IsNullOrEmpty(_pendingRoomToJoin))
             {
                 _pendingRoomToJoin = string.Empty;
-                ShowLoading(false);
-                ShowError("Vào phòng thất bại", "Phòng đã đầy, đang chơi, hoặc không tồn tại!");
+                HandleLoadingCrash("Vào phòng thất bại", "Phòng đã đầy, đang chơi, hoặc không tồn tại!");
             }
         }
 
-        // --- BẮT BUỘC PHẢI CÓ CHO INTERFACE NHƯNG ĐỂ TRỐNG ---
         public void OnConnected() { }
         public void OnDisconnected(DisconnectCause cause) { }
         public void OnRegionListReceived(RegionHandler regionHandler) { }
@@ -191,7 +175,7 @@ namespace Game.Script.UI
         public void OnLeftRoom() { }
 
         // ========================================================
-        // ESC MENU LOGIC (GIỮ NGUYÊN NHƯ CŨ)
+        // ESC MENU LOGIC
         // ========================================================
         private void BindEscMenuEvents()
         {
@@ -279,6 +263,9 @@ namespace Game.Script.UI
             }
         }
 
+        // ========================================================
+        // MÀN HÌNH LOADING & XỬ LÝ LỖI (SAFE RETURN)
+        // ========================================================
         public void ShowLoading(bool show, string msg = "Loading...")
         {
             if (_loadingPanel == null) return;
@@ -286,7 +273,10 @@ namespace Game.Script.UI
 
             if (show)
             {
-                if (_txtLoadingMessage != null) _txtLoadingMessage.text = msg;
+                // Tự động mò xuống con để đổi chữ (Khỏi cần kéo inspector)
+                TMP_Text loadingText = _loadingPanel.GetComponentInChildren<TMP_Text>(true);
+                if (loadingText != null) loadingText.text = msg;
+
                 if (_cts != null) { _cts.Cancel(); _cts.Dispose(); }
                 _cts = new CancellationTokenSource();
                 LoadingTimeoutTask(_cts.Token).Forget();
@@ -304,8 +294,9 @@ namespace Game.Script.UI
                 await UniTask.Delay((int)(LOADING_TIMEOUT * 1000), cancellationToken: token);
                 if (_loadingPanel != null && _loadingPanel.activeInHierarchy)
                 {
-                    Debug.LogWarning($"⚠️ Loading timeout sau {LOADING_TIMEOUT}s. Tự động ẩn.");
-                    _loadingPanel.SetActive(false);
+                    Debug.LogWarning($"⚠️ Loading timeout sau {LOADING_TIMEOUT}s. Kích hoạt Safe Return.");
+                    // Nếu quá 30 giây mà đơ -> Tự động kích hoạt cơ chế rút lui an toàn
+                    HandleLoadingCrash("Mất Kết Nối", "Thời gian tải quá lâu. Đang quay về sảnh...");
                 }
             }
             catch (System.OperationCanceledException) { }
@@ -320,5 +311,31 @@ namespace Game.Script.UI
         }
 
         public void ClosePopup() => _popupPanel.SetActive(false);
+
+        /// <summary>
+        /// GỌI HÀM NÀY NẾU CÓ BIẾN LỚN KHI ĐANG LOAD MAP/SPAWN NHÂN VẬT ĐỂ RÚT AN TOÀN
+        /// </summary>
+        public void HandleLoadingCrash(string errorTitle, string errorMessage, string safeScene = "MainMenuScene")
+        {
+            Debug.LogError($"[SafeReturn] Khởi chạy! Lỗi: {errorTitle} - {errorMessage}");
+
+            // 1. Tắt Loading
+            ShowLoading(false);
+
+            // 2. Hiện Popup đập vào mặt người chơi để họ biết bị gì
+            ShowError(errorTitle, errorMessage);
+
+            // 3. Rút điện mạng (Nếu đang lỡ kẹt trong phòng)
+            if (PhotonNetwork.InRoom)
+            {
+                PhotonNetwork.LeaveRoom();
+            }
+
+            // 4. Mở cửa thoát hiểm về sảnh an toàn
+            if (_sceneLoader != null)
+            {
+                _sceneLoader.LoadSceneAsync(safeScene).Forget();
+            }
+        }
     }
 }
