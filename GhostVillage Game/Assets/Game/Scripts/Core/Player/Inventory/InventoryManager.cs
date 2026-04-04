@@ -90,24 +90,26 @@ public class InventoryManager : MonoBehaviourPun
         {
             ItemDataSO itemToDrop = items[i];
 
-            // Nếu là đồ thoát hiểm (Con Gà) thì không cho rớt
             if (itemToDrop.itemType == ItemType.EscapeTool) continue;
 
             if (itemToDrop.itemWorldPrefab != null)
             {
-                // 1. Tính toán vị trí ngẫu nhiên xung quanh (bán kính 1.5m)
                 Vector2 randomCircle = UnityEngine.Random.insideUnitCircle * 1.5f;
-                // Cộng offset vào vị trí dropPosition hiện tại, nhích lên cao 0.5m để không xuyên đất
                 Vector3 scatterPos = dropPosition.position + new Vector3(randomCircle.x, 0.5f, randomCircle.y);
 
-                // 2. Spawn qua mạng
+                // Lấy lượng pin hiện tại truyền qua mạng
+                float savedBattery = -1f;
+                if (itemToDrop is FlashlightItemSO flashlight) savedBattery = flashlight.currentBattery;
+                object[] customInitData = new object[1] { savedBattery };
+
                 GameObject droppedItem = PhotonNetwork.Instantiate(
                     itemToDrop.itemWorldPrefab.name,
                     scatterPos,
-                    UnityEngine.Random.rotation // Cho nó rớt lăn lóc ngẫu nhiên
+                    UnityEngine.Random.rotation,
+                    0,
+                    customInitData
                 );
 
-                // 3. Thêm lực nẩy nhẹ lên trên và tủa ra ngoài
                 Rigidbody rb = droppedItem.GetComponent<Rigidbody>();
                 if (rb != null)
                 {
@@ -117,7 +119,6 @@ public class InventoryManager : MonoBehaviourPun
             }
         }
 
-        // 4. Xóa sạch túi đồ ảo
         ClearInventoryAndLock();
     }
 
@@ -126,7 +127,6 @@ public class InventoryManager : MonoBehaviourPun
     /// </summary>
     public bool AddItem(ItemDataSO newItem)
     {
-        // Chặn nhặt đồ nếu túi bị khóa (trừ EscapeTool)
         if (_isInventoryLocked && newItem.itemType != ItemType.EscapeTool)
         {
             Debug.LogWarning("[Inventory] Túi đã bị khóa! Chỉ được nhặt Escape Tool.");
@@ -135,21 +135,29 @@ public class InventoryManager : MonoBehaviourPun
 
         if (items.Count >= maxSlots) return false;
 
-        items.Add(newItem);
-        Debug.Log($"[Inventory] Đã nhặt: {newItem.itemName}");
+        // [TỐI ƯU DỌN RÁC]: Mặc định xài luôn hàng gốc (Dành cho Medkit, Pin, Còi...)
+        ItemDataSO itemToStore = newItem;
 
-        OnGlobalItemAdded?.Invoke(newItem, this);
+        // NẾU LÀ ĐÈN PIN: Bắt buộc đẻ bản sao để lưu lượng Pin riêng biệt
+        if (newItem is FlashlightItemSO)
+        {
+            itemToStore = Instantiate(newItem);
+            itemToStore.name = newItem.name; // Xóa chữ (Clone)
+        }
+
+        items.Add(itemToStore);
+        Debug.Log($"[Inventory] Đã nhặt: {itemToStore.itemName}");
+
+        OnGlobalItemAdded?.Invoke(itemToStore, this);
         OnInventoryChanged?.Invoke();
 
-        // Tự động cầm món đồ mới nếu đang ở slot đó hoặc túi mới có 1 món
         if (items.Count - 1 == currentSlotIndex || items.Count == 1)
         {
             currentSlotIndex = items.Count - 1;
             EquipCurrentItem();
         }
 
-        // Sync nếu là KeyItem
-        if (newItem.itemType == ItemType.KeyItem)
+        if (itemToStore.itemType == ItemType.KeyItem)
         {
             SyncKeyCountToNetwork();
         }
@@ -234,10 +242,19 @@ public class InventoryManager : MonoBehaviourPun
                 return;
             }
 
+            // Lấy lượng pin hiện tại (nếu là đèn pin)
+            float savedBattery = -1f;
+            if (itemToDrop is FlashlightItemSO flashlight) savedBattery = flashlight.currentBattery;
+
+            // Truyền lượng pin qua mạng cho cái Model rớt dưới đất
+            object[] customInitData = new object[1] { savedBattery };
+
             GameObject droppedItem = PhotonNetwork.Instantiate(
                 prefabName,
                 dropPosition.position,
-                dropPosition.rotation
+                dropPosition.rotation,
+                0, // group
+                customInitData // <-- Bí kíp truyền hồn nằm ở đây
             );
 
             Rigidbody rb = droppedItem.GetComponent<Rigidbody>();

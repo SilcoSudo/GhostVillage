@@ -64,6 +64,7 @@ MonoBehaviour:
   - VongNhiCancelRPC
   - RpcSetKnockedState
   - RpcUpdateReviveProgress
+  - RpcSyncLight
   - AddCaptureProgressRPC
   - CompletePuzzleRPC
   - PlayFakeChickenCryRPC
