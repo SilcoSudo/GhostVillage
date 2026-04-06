@@ -1,11 +1,13 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using GhostVillage.Domain.Profile;
+using Game.Core.Network;
 using UnityEngine;
 
 public class ProfileController
 {
     private readonly ProfileService _service;
+    private readonly GameSession _session;
     // Biến lưu trữ dữ liệu tập trung trong bộ nhớ để các Tab dùng chung
     private FullProfileDTO _masterData = new FullProfileDTO
     {
@@ -14,9 +16,10 @@ public class ProfileController
     };
     private List<string> _tempMedalIds = new List<string>();
 
-    public ProfileController(ProfileService service)
+    public ProfileController(ProfileService service, GameSession session)
     {
         _service = service;
+        _session = session;
     }
 
     // Trả về dữ liệu hiện tại đang có trong Controller
@@ -25,7 +28,7 @@ public class ProfileController
     public async UniTask<FullProfileDTO> RefreshTabData(int tabIndex)
     {
         string token = PlayerPrefs.GetString("AccessToken", "");
-        Debug.Log($"<color=orange>[Controller]</color> Bắt đầu nạp Tab {tabIndex}...");
+        Debug.Log($"<color=orange>[Controller]</color> Bắt đầu nạp Tab {tabIndex}... | UID: {_session.UID}");
 
         FullProfileDTO result = null;
         switch (tabIndex)
@@ -38,6 +41,7 @@ public class ProfileController
 
                 if (pResponse != null)
                 {
+                    _masterData.uid = pResponse.uid;
                     _masterData.profile = pResponse.profile;
                     _masterData.selectedMedals = pResponse.selectedMedals;
                 }

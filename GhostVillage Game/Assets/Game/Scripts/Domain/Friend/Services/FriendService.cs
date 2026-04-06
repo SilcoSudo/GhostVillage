@@ -34,10 +34,25 @@ namespace Game.Domain.Friend.Services
         // (TRUYỀN VỀ EXCEPTION NẾU CÓ ĐỂ BẮT ERROR MESSAGE)
 
         // 2. GỬI LỜI MỜI KẾT BẠN
-        public async UniTask<bool> AddFriendAsync(string targetUserId)
+        public async UniTask<bool> AddFriendAsync(string targetId)
         {
+            string realUserId = targetId;
+
+            // [FIX CHÍ MẠNG]: Nếu truyền vào UID 8 số -> Phải "dịch" ra MongoDB UserId trước!
+            if (targetId.Length == 8)
+            {
+                var searchData = await SearchPlayerAsync(targetId);
+                if (searchData == null || string.IsNullOrEmpty(searchData.userId))
+                {
+                    Debug.LogError($"[FriendService] Lỗi: Không thể tìm thấy mã MongoDB UserId cho UID: {targetId}");
+                    return false;
+                }
+                realUserId = searchData.userId; // Lấy chuỗi dài thòng của MongoDB
+                Debug.Log($"<color=green>[FriendService] Đã dịch UID {targetId} thành UserId: {realUserId}</color>");
+            }
+
             string endpoint = "/api/web/friend/add";
-            var body = new FriendRequestBody { targetUserId = targetUserId };
+            var body = new FriendRequestBody { targetUserId = realUserId };
             string jsonBody = JsonUtility.ToJson(body);
 
             // Bỏ try-catch ở đây để quăng lỗi lên Controller xử lý
@@ -67,10 +82,22 @@ namespace Game.Domain.Friend.Services
         }
 
         // 5. HỦY KẾT BẠN
-        public async UniTask<bool> UnfriendAsync(string targetUserId)
+        public async UniTask<bool> UnfriendAsync(string targetId)
         {
+            string realUserId = targetId;
+
+            // [FIX CHÍ MẠNG]: Dịch UID 8 số ra MongoDB UserId
+            if (targetId.Length == 8)
+            {
+                var searchData = await SearchPlayerAsync(targetId);
+                if (searchData != null && !string.IsNullOrEmpty(searchData.userId))
+                {
+                    realUserId = searchData.userId;
+                }
+            }
+
             string endpoint = "/api/web/friend/unfriend";
-            var body = new FriendRequestBody { targetUserId = targetUserId };
+            var body = new FriendRequestBody { targetUserId = realUserId };
             string jsonBody = JsonUtility.ToJson(body);
 
             var response = await _apiClient.PostAsyncWithAuth<object>(endpoint, jsonBody, Token);

@@ -138,14 +138,6 @@ namespace Game.UI.Login
             string email = _emailInput.text;
             string password = _passwordInput.text;
 
-            // Basic validation before hitting the server
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
-            {
-                // Note: Consider triggering GlobalUIManager.ShowError here if needed.
-                Debug.LogWarning("[LoginUIManager] Email or Password cannot be empty!");
-                return;
-            }
-
             // Pass control to the logic controller
             _controller.HandleLogin(email, password, this);
         }

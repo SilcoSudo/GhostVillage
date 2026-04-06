@@ -213,11 +213,13 @@ namespace Game.Scripts.UI.Lobby
             {
                 if (i < players.Length)
                 {
-                    _playerSlots[i].Setup(players[i]);
+                    // ========================================================
+                    // [FIX CHÍ MẠNG 1]: Truyền thêm FriendController và GlobalUI vào
+                    // ========================================================
+                    _playerSlots[i].Setup(players[i], _friendController, _globalUI);
                 }
                 else
                 {
-                    // LỖ THỔNG TRỐNG -> TRUYỀN HÀM MỞ BẢNG MỜI VÀO ĐÂY
                     _playerSlots[i].SetEmpty(() =>
                     {
                         if (_inviteFriendModal != null)
@@ -301,14 +303,29 @@ namespace Game.Scripts.UI.Lobby
 
         public async void AddChatMessage(string sender, string message, bool isMe)
         {
+            // 1. Phân loại chuẩn xác Prefab (Sếp nhớ check Inspector xem có kéo lộn 1 prefab vào 2 ô không nha)
             GameObject prefab = isMe ? _chatMePrefab : _chatThemPrefab;
-            var chatItem = Instantiate(prefab, _chatContent);
-            var texts = chatItem.GetComponentsInChildren<TextMeshProUGUI>();
 
-            if (texts.Length >= 2)
+            if (prefab == null)
             {
-                texts[0].text = isMe ? "Toi" : sender;
-                texts[1].text = message;
+                Debug.LogError("<color=red>[Chat] Sếp chưa kéo Prefab ChatMe hoặc ChatThem vào Inspector!</color>");
+                return;
+            }
+
+            var chatItem = Instantiate(prefab, _chatContent);
+
+            // 2. Tìm ĐÚNG TÊN cục Text (Giờ sếp có đảo vị trí trên Hierarchy nó cũng không bao giờ bị ngược nữa)
+            var txtSender = chatItem.transform.Find("Txt_SenderName")?.GetComponent<TextMeshProUGUI>();
+            var txtContent = chatItem.transform.Find("Txt_Content")?.GetComponent<TextMeshProUGUI>();
+
+            // 3. Nhét chữ vào đúng lỗ
+            if (txtSender != null) txtSender.text = isMe ? "Tôi" : sender;
+            if (txtContent != null) txtContent.text = message;
+
+            // Cảnh báo nếu sếp đặt sai tên trong Hierarchy
+            if (txtSender == null || txtContent == null)
+            {
+                Debug.LogWarning($"<color=yellow>[Chat] Prefab {prefab.name} bị sai tên Object con! Hãy đảm bảo tên là 'Txt_SenderName' và 'Txt_Content'</color>");
             }
 
             await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);

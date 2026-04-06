@@ -6,10 +6,12 @@ namespace GhostVillage.Domain.Profile
     [Serializable]
     public class FullProfileDTO
     {
+        // [FIX CHÍ MẠNG 1]: Thêm dòng này để hứng cái mã 8 số từ Backend!
+        public string uid;
+
         public PlayerProfile profile;
         public List<string> selectedMedals;
 
-        // [CẬP NHẬT] Đổi kiểu dữ liệu và thêm list Daily
         public List<QuestItemDTO> achievements;
         public List<QuestItemDTO> dailyQuests;
 
