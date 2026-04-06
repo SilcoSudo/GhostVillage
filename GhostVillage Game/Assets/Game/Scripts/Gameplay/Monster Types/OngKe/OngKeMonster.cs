@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 
 namespace GhostVillage.Gameplay.Monsters.OngKe
 {
-    public enum OngKeStateType { None, Patrol, Chase, Attack, Investigate }
+    public enum OngKeStateType { None, Patrol, Chase, Attack, Investigate, Siren }
 
     /// <summary>
     /// Ông Kẹ - Boss quái Map 1 | Enum/Switch Pattern (không null state)
@@ -19,9 +19,8 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
         [SerializeField] private float patrolRadius = 25f;
 
         [Header("--- Combat ---")]
-        [SerializeField] private float chaseRange = 25f;
+        [SerializeField] private float chaseRange = 60f;
         [SerializeField] private float attackRange = 1.5f;
-        [SerializeField] private float attackDamage = 10f;
         [SerializeField] private float attackCooldown = 1f;
 
         [Header("--- Pull Skill ---")]
@@ -45,15 +44,30 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
         private ChaseState chaseState;
         private AttackState attackState;
         private InvestigateState investigateState;
+        private SirenState sirenState;
         private PullSkill pullSkill;
         private Vector3 lastKnownPos = Vector3.zero;
         private float chaseTimer = 0f;
-        private bool hasResetChaseLostSight = false; // Theo dõi thời điểm reset timer khi mất sight trong ChaseState (Phase B)
-        private bool investigateExitWasPlayerDetected = false; // theo dõi lý do exit của InvestigateState (player detected hay timeout) để quyết định chuyển state tiếp theo
+        private bool hasResetChaseLostSight = false;
+        private bool investigateExitWasPlayerDetected = false;
 
         // ── Forced Chase (triggered bởi Puzzle thua) ──────────────────────
         private Transform _forcedChaseTarget = null;
         private float _forcedChaseTimer = 0f;
+
+        // ── Fake Chicken Alarm (triggered bởi ChickenHunt khi gà giả kêu) ──
+        public void OnFakeChickenAlarm(Vector3 alarmPosition)
+        {
+            Debug.Log($"[OngKe] Gà giả kêu tại {alarmPosition}! Chuyển sang Investigate");
+            ChangeStateType(OngKeStateType.Investigate, alarmPosition);
+        }
+
+        // ── Siren Item Alarm (triggered khi player dùng item sáo) ──────────
+        public void OnSirenActivated(Vector3 sirenPosition)
+        {
+            Debug.Log($"[OngKe] Nghe tiếng sáo tại {sirenPosition}! Chuyển sang Siren state");
+            ChangeStateType(OngKeStateType.Siren, sirenPosition);
+        }
 
         protected override void Awake()
         {
@@ -103,7 +117,8 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
                 Debug.Log($"✓ Patrol zone: spawn point, radius: {patrolRadius}m");
             }
             chaseState = new ChaseState(this, 2f, chaseRange);
-            attackState = new AttackState(this, attackRange, attackDamage, attackCooldown);
+            attackState = new AttackState(this, attackRange, attackCooldown);
+            sirenState = new SirenState(this);
             pullSkill = new PullSkill(transform, pullActivationRange, pullConeHalfAngle, pullMaxForce, pullMinForce, pullCastTime, pullDuration, pullCooldown);
 
             Debug.Log($"✓ States initialized");
@@ -154,6 +169,13 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
                     ChangeState(investigateState);
                     Debug.Log($"  [ChangeState] Done. currentState = {currentState}");
                     break;
+                case OngKeStateType.Siren:
+                    Debug.Log($"  [ChangeState] Creating SirenState({investigatePos})");
+                    sirenState = new SirenState(this, investigatePos);
+                    Debug.Log($"  [ChangeState] Calling ChangeState(sirenState)");
+                    ChangeState(sirenState);
+                    Debug.Log($"  [ChangeState] Done. currentState = {currentState}");
+                    break;
             }
             }
             catch (System.Exception ex)
@@ -165,7 +187,7 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
 
         protected override void Update()
         {
-            // IMPORTANT: For Investigate state, we need to capture exit reason BEFORE base.Update() clears currentState
+            // IMPORTANT: For Investigate/Siren state, we need to capture exit reason BEFORE base.Update() clears currentState
             if (currentStateType == OngKeStateType.Investigate && currentState != null)
             {
                 InvestigateState invState = currentState as InvestigateState;
@@ -173,6 +195,26 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
                 {
                     // Save exit reason before state gets cleared
                     investigateExitWasPlayerDetected = invState.WasPlayerDetected();
+                }
+            }
+
+            // Handle Siren state exit
+            if (currentStateType == OngKeStateType.Siren && currentState != null)
+            {
+                SirenState sirenStateInstance = currentState as SirenState;
+                if (sirenStateInstance != null && sirenStateInstance.ShouldExit())
+                {
+                    investigateExitWasPlayerDetected = sirenStateInstance.WasPlayerDetected();
+                }
+            }
+
+            // Handle Siren state exit
+            if (currentStateType == OngKeStateType.Siren && currentState != null)
+            {
+                SirenState sirenStateInstance = currentState as SirenState;
+                if (sirenStateInstance != null && sirenStateInstance.ShouldExit())
+                {
+                    investigateExitWasPlayerDetected = sirenStateInstance.WasPlayerDetected();
                 }
             }
             
@@ -303,6 +345,27 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
                     {
                         // Still in Investigate state, just log debug info
                         Debug.Log($"🟡 Investigate: elapsed={invState.GetElapsedTime():F1}s, isSearching={invState.IsSearching()}");
+                    }
+                    break;
+
+                case OngKeStateType.Siren:
+                    // SirenState was exited by MonsterBase.Update()
+                    // Similar to Investigate - we saved the exit reason
+                    
+                    if (currentState == null)
+                    {
+                        // State has been cleared, use saved exit reason
+                        if (investigateExitWasPlayerDetected)
+                        {
+                            Debug.Log($" Siren→Chase (player detected at siren location)");
+                            ChangeStateType(OngKeStateType.Chase);
+                        }
+                        else
+                        {
+                            Debug.Log($" Siren→Patrol (timeout after siren search)");
+                            ChangeStateType(OngKeStateType.Patrol);
+                        }
+                        investigateExitWasPlayerDetected = false; // Reset flag
                     }
                     break;
             }

@@ -10,7 +10,6 @@ namespace GhostVillage.Gameplay.Shared
     {
         private readonly MonsterBase monster;
         private readonly float attackRange = 1.5f; // Tầm tấn công
-        private readonly float attackDamage = 10f; // Sát thương
         private readonly float attackCooldown = 1f; // Cooldown tấn công (giây)
 
         private float lastAttackTime = 0f;
@@ -18,11 +17,10 @@ namespace GhostVillage.Gameplay.Shared
         private float lastDebugLogTime = 0f; // Để tránh spam log
         private bool isFirstEnter = true; // Track lần Enter đầu tiên
 
-        public AttackState(MonsterBase monster, float attackRange = 1.5f, float attackDamage = 10f, float attackCooldown = 1f)
+        public AttackState(MonsterBase monster, float attackRange = 1.5f, float attackCooldown = 1f)
         {
             this.monster = monster;
             this.attackRange = attackRange;
-            this.attackDamage = attackDamage;
             this.attackCooldown = attackCooldown;
         }
 
@@ -154,14 +152,6 @@ namespace GhostVillage.Gameplay.Shared
             }
 
             return null;
-        }
-
-        /// <summary>
-        /// Set attack damage
-        /// </summary>
-        public void SetAttackDamage(float damage)
-        {
-            // attackDamage = damage; // Không thể vì field là readonly
         }
     }
 }
