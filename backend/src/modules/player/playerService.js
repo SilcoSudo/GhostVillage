@@ -38,6 +38,7 @@ export const PlayerService = {
 
     // 3. Trả về đúng cấu cục mà Frontend DTO mong đợi
     return {
+      uid: player.uid, // ← THÊM UID ĐỂ FRONTEND CÓ THỂ HIỂN THỊ
       profile: player.profile,
       selectedMedals: player.selectedMedals || [],
       achievements: mergedAchievements,

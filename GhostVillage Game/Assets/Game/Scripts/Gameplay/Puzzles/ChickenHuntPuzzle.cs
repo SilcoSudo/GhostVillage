@@ -530,14 +530,16 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
             }
         }
 
-        Transform target = preferredTarget != null ? preferredTarget : FindClosestPlayerTransform(alarmPosition);
-        if (target == null)
+        // Nếu có target (player) → Force Chase (cổ vật bắt được gà thật)
+        if (preferredTarget != null)
         {
-            Debug.LogWarning("[ChickenHunt] Fake chicken alarm had no valid player target for Ong Ke.");
-            return;
+            _ongKeMonster.ForceChasePlayer(preferredTarget, ongKeForceChaseDuration);
         }
-
-        _ongKeMonster.ForceChasePlayer(target, ongKeForceChaseDuration);
+        else
+        {
+            // Nếu không có target → là gà giả, ông kẹ chuyển sang Investigate tại vị trí tiếng kêu
+            _ongKeMonster.OnFakeChickenAlarm(alarmPosition);
+        }
     }
 
     private Transform FindClosestPlayerTransform(Vector3 origin)

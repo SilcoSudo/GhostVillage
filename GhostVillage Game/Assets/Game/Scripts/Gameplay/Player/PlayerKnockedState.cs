@@ -71,9 +71,24 @@ public class PlayerKnockedState : MonoBehaviourPun, IInteractable
     {
         if (isKnocked) return;
 
+        // Kiểm tra nếu chơi solo (chỉ 1 player) → Game Over ngay
+        bool isSoloGame = Photon.Pun.PhotonNetwork.PlayerList.Length == 1;
+        
         if (photonView.IsMine && _gameManager != null)
         {
-            _gameManager.ReportStatusChange(photonView.Owner.ActorNumber, PlayerMatchStatus.Knocked);
+            if (isSoloGame)
+            {
+                // Solo game: Bị knocked = Game Over ngay
+                Debug.Log("⚠️ [PlayerKnocked] Solo game detected! Knocked = Eliminated!");
+                _gameManager.ReportStatusChange(photonView.Owner.ActorNumber, PlayerMatchStatus.Eliminated);
+                // Không gọi RpcSetKnockedState vì game sẽ end ngay
+                return;
+            }
+            else
+            {
+                // Multiplayer: Cho phép revive
+                _gameManager.ReportStatusChange(photonView.Owner.ActorNumber, PlayerMatchStatus.Knocked);
+            }
         }
 
         photonView.RPC(nameof(RpcSetKnockedState), RpcTarget.All, true);
