@@ -6,6 +6,8 @@ using UnityEngine;
 using ExitGames.Client.Photon;
 using Game.Core.Network.Lobby;
 using Cysharp.Threading.Tasks;
+using VContainer;
+using VContainer.Unity;
 
 namespace Game.Core.Network
 {
@@ -347,6 +349,29 @@ namespace Game.Core.Network
             if (Game.Script.UI.GlobalUIManager.IsBypassPassword)
             {
                 Debug.Log("<color=green>Dùng thẻ VIP Bypass Password thành công!</color>");
+            }
+
+            // ✅ [FIX KẾT BẠN]: Gửi UID vào Player CustomProperties để Lobby có thể lấy
+            // Sử dụng VContainer GlobalScope để resolve GameSession
+            try
+            {
+                var container = LifetimeScope.Find<LifetimeScope>()?.Container;
+                GameSession session = container?.Resolve<GameSession>();
+
+                if (session != null && !string.IsNullOrEmpty(session.UID))
+                {
+                    var playerProps = new Hashtable { { "UID", session.UID } };
+                    PhotonNetwork.LocalPlayer.SetCustomProperties(playerProps);
+                    Debug.Log($"<color=cyan>[Photon] Đã gửi UID ({session.UID}) vào Player CustomProperties</color>");
+                }
+                else
+                {
+                    Debug.LogWarning("<color=yellow>[Photon] GameSession hoặc UID chưa available!</color>");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"<color=yellow>[Photon] Lỗi resolve GameSession: {e.Message}</color>");
             }
 
             // Nếu đúng pass, bật lại tính năng sync scene

@@ -1,82 +1,201 @@
 using UnityEngine;
 using Photon.Pun;
 
+public enum FlashlightMode
+{
+    Off = 0,
+    Normal = 1,
+    UV = 2
+}
+
 [RequireComponent(typeof(PhotonView))]
 public class PlayerFlashlight : MonoBehaviourPun
 {
-    public bool isLightOn = false;
-    private FlashlightItemSO _currentEquippedFlashlight; // MỚI: Trỏ tới cái đèn đang cầm
+    [Header("State")]
+    public FlashlightMode currentMode = FlashlightMode.Off;
+    private FlashlightItemSO _currentEquippedFlashlight;
     private InventoryManager _inventory;
 
-    private void Awake() => _inventory = GetComponent<InventoryManager>();
+    [Header("References (Kéo thả từ Prefab)")]
+    [Tooltip("Kéo cái Spotlight mà sếp tự setup ở mồm/camera vào đây")]
+    public Light headLight;
+    public Transform cameraTransform;
+    public LayerMask monsterLayer;
+
+    [Header("Settings")]
+    private float _damageTickRate = 0.2f;
+    private float _nextDamageTime = 0f;
+
+    [Header("Visual Colors")]
+    public Color normalColor = new Color(1f, 0.95f, 0.8f);
+    public Color uvColor = new Color(0.5f, 0f, 1f);
+
+    // MỚI: Biến để theo dõi log mượt mà, không xả rác console
+    private float _lastLoggedBattery = -1f;
+
+    private void Awake()
+    {
+        _inventory = GetComponent<InventoryManager>();
+        if (cameraTransform == null) cameraTransform = GetComponentInChildren<Camera>().transform;
+
+        // Ép tắt đèn lúc vừa vào game cho chắc cốp
+        if (headLight != null) headLight.enabled = false;
+        else Debug.LogError("❌ [Flashlight] Sếp quên kéo cái bóng đèn HeadLight vào Script rồi!");
+    }
+
     private void OnEnable() { if (_inventory != null) _inventory.OnSlotChanged += HandleSlotChanged; }
     private void OnDisable() { if (_inventory != null) _inventory.OnSlotChanged -= HandleSlotChanged; }
 
     private void Update()
     {
-        if (!photonView.IsMine || !isLightOn || _currentEquippedFlashlight == null) return;
+        if (!photonView.IsMine || currentMode == FlashlightMode.Off || _currentEquippedFlashlight == null) return;
 
-        // Tụt pin GHI THẲNG VÀO TÚI ĐỒ
-        _currentEquippedFlashlight.currentBattery -= _currentEquippedFlashlight.drainRate * Time.deltaTime;
+        // 1. TỤT PIN
+        float drainMultiplier = (currentMode == FlashlightMode.UV) ? 2f : 1f;
+        _currentEquippedFlashlight.currentBattery -= (_currentEquippedFlashlight.drainRate * drainMultiplier) * Time.deltaTime;
+
+        // --- HỆ THỐNG LOG PIN (In mỗi khi tụt 5%) ---
+        // Sếp có thể sửa số 5f thành 1f nếu muốn log báo chi tiết hơn
+        if (_lastLoggedBattery - _currentEquippedFlashlight.currentBattery >= 5f)
+        {
+            _lastLoggedBattery = _currentEquippedFlashlight.currentBattery;
+            int percentage = Mathf.RoundToInt((_currentEquippedFlashlight.currentBattery / _currentEquippedFlashlight.maxBattery) * 100f);
+
+            string modeStr = currentMode == FlashlightMode.UV ? "<color=purple>[UV]</color>" : "<color=yellow>[Normal]</color>";
+            Debug.Log($"{modeStr} Năng lượng đèn pin: {percentage}% ({_currentEquippedFlashlight.currentBattery:F1} / {_currentEquippedFlashlight.maxBattery})");
+        }
 
         if (_currentEquippedFlashlight.currentBattery <= 0)
         {
             _currentEquippedFlashlight.currentBattery = 0;
-            TurnOffLight();
-            Debug.Log("<color=red>[Flashlight] Hết pin rồi!</color>");
+            SetMode(FlashlightMode.Off);
+            Debug.Log("<color=red>[Flashlight] Phụt... Đèn đã hết pin!</color>");
         }
 
-        // Chỗ này sếp chèn hàm bắn tia UV sếp tự viết vào nhe
+        // 2. BẮN TIA UV DIỆT QUÁI 
+        if (currentMode == FlashlightMode.UV && _currentEquippedFlashlight.currentBattery > 0 && Time.time >= _nextDamageTime)
+        {
+            ShootUVRay();
+            _nextDamageTime = Time.time + _damageTickRate;
+        }
     }
 
+    // ==========================================
+    // LOGIC 3 TRẠNG THÁI: TẮT -> THƯỜNG -> UV -> TẮT
+    // ==========================================
     public void ToggleFlashlight(FlashlightItemSO data)
     {
         if (!photonView.IsMine) return;
 
-        // Cập nhật cái đèn đang cầm
         _currentEquippedFlashlight = data;
 
-        // Nếu đèn mới tinh từ DB rớt xuống (-1), bơm đầy pin cho nó
         if (_currentEquippedFlashlight.currentBattery < 0)
+        {
             _currentEquippedFlashlight.currentBattery = _currentEquippedFlashlight.maxBattery;
-
-        if (isLightOn)
-        {
-            TurnOffLight();
+            _lastLoggedBattery = _currentEquippedFlashlight.maxBattery; // Reset log counter
         }
-        else if (_currentEquippedFlashlight.currentBattery > 0)
+
+        if (_currentEquippedFlashlight.currentBattery <= 0)
         {
-            TurnOnLight(_currentEquippedFlashlight.lightRange);
+            Debug.Log("<color=yellow>[Flashlight] Bấm tạch tạch... Không lên, hết pin rồi!</color>");
+            SetMode(FlashlightMode.Off);
+            return;
+        }
+
+        switch (currentMode)
+        {
+            case FlashlightMode.Off:
+                _lastLoggedBattery = _currentEquippedFlashlight.currentBattery; // Đồng bộ biến đếm trước khi bật
+                SetMode(FlashlightMode.Normal);
+                break;
+            case FlashlightMode.Normal:
+                SetMode(FlashlightMode.UV);
+                break;
+            case FlashlightMode.UV:
+                SetMode(FlashlightMode.Off);
+                break;
         }
     }
 
-    private void TurnOnLight(float range)
+    private void SetMode(FlashlightMode newMode)
     {
-        isLightOn = true;
-        photonView.RPC(nameof(RpcSyncLight), RpcTarget.All, true, range);
-    }
+        currentMode = newMode;
+        float range = _currentEquippedFlashlight != null ? _currentEquippedFlashlight.lightRange : 20f;
 
-    private void TurnOffLight()
-    {
-        isLightOn = false;
-        photonView.RPC(nameof(RpcSyncLight), RpcTarget.All, false, 0f);
+        // Bắn RPC để tất cả client cùng đổi trạng thái đèn trên đầu mình
+        photonView.RPC(nameof(RpcSyncLightMode), RpcTarget.All, (int)newMode, range);
     }
 
     [PunRPC]
-    private void RpcSyncLight(bool state, float range)
+    private void RpcSyncLightMode(int modeInt, float range)
     {
-        Light handLight = GetComponentInChildren<Light>(true);
-        if (handLight != null)
+        FlashlightMode mode = (FlashlightMode)modeInt;
+
+        // SỬ DỤNG TRỰC TIẾP CÁI ĐÈN SẾP ĐÃ KÉO VÀO
+        if (headLight != null)
         {
-            handLight.enabled = state;
-            if (state) handLight.range = range;
+            if (mode == FlashlightMode.Off)
+            {
+                headLight.enabled = false;
+            }
+            else
+            {
+                headLight.enabled = true;
+                headLight.range = range;
+
+                if (mode == FlashlightMode.UV)
+                {
+                    headLight.color = uvColor;
+                    headLight.intensity = 8f;
+                }
+                else // Normal
+                {
+                    headLight.color = normalColor;
+                    headLight.intensity = 5f;
+                }
+            }
         }
     }
 
     private void HandleSlotChanged(int newSlot)
     {
         if (!photonView.IsMine) return;
-        if (isLightOn) TurnOffLight(); // Đổi đồ là phụt tắt
-        _currentEquippedFlashlight = null; // Xóa kết nối
+        if (currentMode != FlashlightMode.Off) SetMode(FlashlightMode.Off);
+        _currentEquippedFlashlight = null;
+    }
+
+    public bool CanRecharge()
+    {
+        return _currentEquippedFlashlight != null && _currentEquippedFlashlight.currentBattery < _currentEquippedFlashlight.maxBattery;
+    }
+
+    public void Recharge(float amount)
+    {
+        if (!photonView.IsMine || _currentEquippedFlashlight == null) return;
+
+        _currentEquippedFlashlight.currentBattery += amount;
+        if (_currentEquippedFlashlight.currentBattery > _currentEquippedFlashlight.maxBattery)
+        {
+            _currentEquippedFlashlight.currentBattery = _currentEquippedFlashlight.maxBattery;
+        }
+
+        // Reset lại biến đếm log để nó in ra ngay sau khi sạc
+        _lastLoggedBattery = _currentEquippedFlashlight.currentBattery;
+        Debug.Log($"<color=green>[Flashlight] Đã sạc pin! Hiện tại: {_currentEquippedFlashlight.currentBattery}/{_currentEquippedFlashlight.maxBattery}</color>");
+    }
+
+    private void ShootUVRay()
+    {
+        if (cameraTransform == null) return;
+
+        float radius = 1.5f;
+        Ray ray = new Ray(cameraTransform.position, cameraTransform.forward);
+
+        RaycastHit[] hits = Physics.SphereCastAll(ray, radius, _currentEquippedFlashlight.lightRange, monsterLayer);
+
+        foreach (var hit in hits)
+        {
+            Debug.Log($"<color=cyan>[UV Light]</color> Đang rọi tia tím vào mặt con quái: {hit.collider.name}!");
+        }
     }
 }

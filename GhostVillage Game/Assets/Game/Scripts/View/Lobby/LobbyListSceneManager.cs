@@ -164,22 +164,47 @@ namespace Game.UI.Lobby
 
         /// <summary>
         /// Xu ly lenh xac nhan tao phong.
-        /// Logic: Trim khoang trang, kiem tra ten phong hop le va ngan chan double-click bang loading.
+        /// Logic: Kiem tra Input hop le, chi cho phep chu/so, block ky tu dac biet, gioi han do dai pass.
         /// </summary>
         public void OnConfirmCreateClick()
         {
             string roomName = _inputLobbyName.text.Trim();
+            string password = _inputPassword.text;
+
+            // 1. Bắt lỗi rỗng
             if (string.IsNullOrEmpty(roomName))
             {
-                Debug.LogWarning("[UI] Room name cannot be empty.");
+                if (_globalUI != null) _globalUI.ShowError("Lỗi Nhập Liệu", "Tên phòng không được để trống!");
                 return;
             }
 
+            // 2. Bắt lỗi độ dài tên phòng (ngắn quá hoặc dài quá nhìn UI sẽ rất gớm)
+            if (roomName.Length < 3 || roomName.Length > 20)
+            {
+                if (_globalUI != null) _globalUI.ShowError("Lỗi Nhập Liệu", "Tên phòng phải dài từ 3 đến 20 ký tự!");
+                return;
+            }
+
+            // 3. Bắt lỗi ký tự đặc biệt (Chỉ cho phép Chữ không dấu/có dấu, Số và Khoảng trắng)
+            if (!System.Text.RegularExpressions.Regex.IsMatch(roomName, @"^[a-zA-Z0-9 ]+$"))
+            {
+                if (_globalUI != null) _globalUI.ShowError("Lỗi Nhập Liệu", "Tên phòng chỉ được chứa chữ cái, số và khoảng trắng (không có ký tự đặc biệt)!");
+                return;
+            }
+
+            // 4. Giới hạn độ dài Password (Mặc dù Photon cho max ping, nhưng UI mình set 16 cho đẹp)
+            if (password.Length > 16)
+            {
+                if (_globalUI != null) _globalUI.ShowError("Lỗi Nhập Liệu", "Mật khẩu không được vượt quá 16 ký tự!");
+                return;
+            }
+
+            // Mọi thứ qua cửa kiểm duyệt ngon lành -> Gọi mạng
             _globalUI.ShowLoading(true);
             _createLobbyPopup.SetActive(false);
 
             Debug.Log($"[UI] Sending create lobby request: {roomName}");
-            _network.CreateLobby(roomName, _inputPassword.text, 4);
+            _network.CreateLobby(roomName, password, 4);
         }
 
         /// <summary>
@@ -222,16 +247,16 @@ namespace Game.UI.Lobby
         {
             if (_pendingLobby == null)
             {
-                Debug.LogError("[UI] Pending lobby is null. Cannot join.");
-                _globalUI.ShowLoading(false);
+                if (_globalUI != null) _globalUI.ShowError("Lỗi Hệ Thống", "Dữ liệu phòng bị mất, vui lòng thử lại!");
                 return;
             }
 
             string enteredPass = _inputJoinPassword.text;
+
+            // Bắt lỗi không nhập pass mà đòi vào phòng kín
             if (string.IsNullOrEmpty(enteredPass))
             {
-                Debug.LogWarning("[UI] Password cannot be empty.");
-                _globalUI.ShowLoading(false);
+                if (_globalUI != null) _globalUI.ShowError("Lỗi Nhập Liệu", "Vui lòng nhập mật khẩu để vào phòng!");
                 return;
             }
 

@@ -116,8 +116,9 @@ namespace Game.Domain.Friend.Controllers
                 {
                     _globalUI.ShowError("Thành công", "Đã gửi lời mời kết bạn!");
                     await FetchSentRequestsAsync();
+                    return true;  // ✅ FIX: Return true chỉ khi success
                 }
-                return true;
+                return false;  // ✅ FIX: Return false nếu AddFriendAsync fail
             }
             catch (Exception ex)
             {

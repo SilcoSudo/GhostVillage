@@ -190,10 +190,16 @@ namespace Game.UI.MainMenu
 
             if (profileData != null && profileData.profile != null)
             {
+                Debug.Log($"<color=cyan>[MainMenuController] ✅ UID từ Session: {_session.UID} | Name: {profileData.profile.displayName}</color>");
+
                 txtPlayerName.text = profileData.profile.displayName;
                 txtPlayerLevel.text = profileData.profile.level.ToString();
                 txtCoin.text = profileData.profile.coin.ToString("N0");
                 imgPlayerAvatar.sprite = ResolveAvatarSprite(profileData.profile.avatar);
+            }
+            else
+            {
+                Debug.LogError("<color=red>[MainMenuController] ❌ Fetch Profile thất bại!</color>");
             }
         }
 

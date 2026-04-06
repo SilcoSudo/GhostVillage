@@ -501,26 +501,30 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         PlayerMatchStatus newStatus = (PlayerMatchStatus)statusInt;
 
-        if (_playerStatuses.ContainsKey(actorNumber))
+        // [FIX CHÍ MẠNG 1]: Lưới bảo hộ! Nếu danh sách chưa có người này thì tự động nạp vào
+        if (!_playerStatuses.ContainsKey(actorNumber))
         {
-            // Validate logic (ví dụ: Đã chết thì không thể thoát)
-            var currentStatus = _playerStatuses[actorNumber];
-            if (currentStatus == PlayerMatchStatus.Eliminated || currentStatus == PlayerMatchStatus.Escaped)
-            {
-                return; // Đã xong rồi thì thôi
-            }
-
-            // Cập nhật Server Data
-            _playerStatuses[actorNumber] = newStatus;
-            Debug.Log($"[GameManager] Player {actorNumber} -> {newStatus}");
-
-            // Đồng bộ lại cho tất cả client biết để cập nhật UI/Spectator
-            photonView.RPC(nameof(SyncPlayerStatusRPC), RpcTarget.All, actorNumber, statusInt);
-
-            // Kiểm tra điều kiện kết thúc game
-            CheckEndGameCondition();
+            _playerStatuses[actorNumber] = PlayerMatchStatus.Playing;
         }
+
+        // Validate logic (ví dụ: Đã chết thì không thể thoát)
+        var currentStatus = _playerStatuses[actorNumber];
+        if (currentStatus == PlayerMatchStatus.Eliminated || currentStatus == PlayerMatchStatus.Escaped)
+        {
+            return; // Đã xong rồi thì thôi
+        }
+
+        // Cập nhật Server Data
+        _playerStatuses[actorNumber] = newStatus;
+        Debug.Log($"[GameManager] Player {actorNumber} -> {newStatus}");
+
+        // Đồng bộ lại cho tất cả client biết để cập nhật UI/Spectator
+        photonView.RPC(nameof(SyncPlayerStatusRPC), RpcTarget.All, actorNumber, statusInt);
+
+        // Kiểm tra điều kiện kết thúc game
+        CheckEndGameCondition();
     }
+
 
     [PunRPC]
     private void SyncPlayerStatusRPC(int actorNumber, int statusInt)

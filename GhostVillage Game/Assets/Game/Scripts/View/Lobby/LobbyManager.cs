@@ -498,6 +498,25 @@ namespace Game.Scripts.UI.Lobby
             _uiManager.AddChatMessage(senderName, message, isMe);
         }
 
+        // =========================================================
+        // [MỚI] NHẬN LỆNH KICK TỪ CHỦ PHÒNG VÀ TỰ BAY MÀU
+        // =========================================================
+        [PunRPC]
+        public void RPC_GetKicked()
+        {
+            Debug.Log("<color=red>[Photon] Bạn đã bị chủ phòng Kick!</color>");
+
+            // Ngắt kết nối Voice trước để tránh lỗi hóc xương
+            var voiceClient = Photon.Voice.PUN.PunVoiceClient.Instance;
+            if (voiceClient != null && voiceClient.Client.InRoom)
+            {
+                voiceClient.Client.OpLeaveRoom(false);
+            }
+
+            // Tự động out phòng. Khi out xong, hàm OnLeftRoom (đã có sẵn ở trên) sẽ tự đá sếp về màn LobbyList!
+            PhotonNetwork.LeaveRoom();
+        }
+
         private async UniTask WaitForInRoom()
         {
             while (!PhotonNetwork.InRoom) await UniTask.Yield();

@@ -16,6 +16,7 @@ MonoBehaviour:
   itemName: "G\xE0"
   description: "Con g\xE0 m\xE0 b\u1EA1n v\u1EEBa b\u1EAFt g\u1EA7n \u0111\xE2y."
   itemType: 0
+  holdType: 1
   itemIcon: {fileID: 21300000, guid: 9d43bec4039428241a281f07b5372e1c, type: 3}
-  itemWorldPrefab: {fileID: -1, guid: c327e67ab1gc0885ecge175eee808h98, type: 3}
+  itemWorldPrefab: {fileID: 7053466326954444468, guid: 80df07c8d8989a74384fe6be89d4d6e8, type: 3}
   itemHandModel: {fileID: 5638062234538008812, guid: 3d1b13e37e94eda46b393a9b10cfb8e1, type: 3}

@@ -22,7 +22,8 @@ export const PlayerService = {
     // 2. Logic Trộn (Merge): Gắn định nghĩa thành tựu vào tiến độ của người chơi
     const mergedAchievements = allAchiDefs.map((def) => {
       const prog = (player.achievementsProgress || []).find(
-        (p) => p.questId === def._id.toString() || p.achievementCode === def._id,
+        (p) =>
+          p.questId === def._id.toString() || p.achievementCode === def._id,
       );
       return {
         id: def._id,
@@ -38,6 +39,7 @@ export const PlayerService = {
 
     // 3. Trả về đúng cấu cục mà Frontend DTO mong đợi
     return {
+      uid: player.uid, // Trả về UID để hiển thị trên UI (VD: UID: 10000002)
       profile: player.profile,
       selectedMedals: player.selectedMedals || [],
       achievements: mergedAchievements,

@@ -1,4 +1,5 @@
 using System;
+using System.Text.RegularExpressions;
 using Cysharp.Threading.Tasks;
 using Game.Core.Network;
 using Game.Core.Scene;
@@ -31,13 +32,60 @@ namespace Game.UI.Login
         }
 
         /// <summary>
-        /// Email/Password Login Handler
+        /// Bộ lọc (Filter) kiểm tra dữ liệu thô đầu vào
         /// </summary>
+        private bool ValidateInput(string email, string password)
+        {
+            // 1. Check rỗng
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                _globalUI.ShowError("Lỗi nhập liệu", "Email không được để trống!");
+                return false;
+            }
+
+            // 2. Check chuẩn format Email bằng Regex
+            string emailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+            if (!Regex.IsMatch(email, emailPattern))
+            {
+                _globalUI.ShowError("Lỗi nhập liệu", "Định dạng Email không hợp lệ!");
+                return false;
+            }
+
+            // 3. Check mật khẩu rỗng
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                _globalUI.ShowError("Lỗi nhập liệu", "Mật khẩu không được để trống!");
+                return false;
+            }
+
+            // 4. Check độ dài tối thiểu của mật khẩu (Ví dụ Backend set min là 6)
+            if (password.Length < 6)
+            {
+                _globalUI.ShowError("Lỗi nhập liệu", "Mật khẩu phải có ít nhất 6 ký tự!");
+                return false;
+            }
+
+            // Có thể thêm check độ dài tối đa để chống spam input quá dài
+            if (password.Length > 32)
+            {
+                _globalUI.ShowError("Lỗi nhập liệu", "Mật khẩu không được vượt quá 32 ký tự!");
+                return false;
+            }
+
+            return true; // Pass qua toàn bộ filter
+        }
+
         /// <summary>
         /// Email/Password Login Handler
         /// </summary>
         public async void HandleLogin(string email, string password, LoginUIManager view)
         {
+            // [MỚI] Thực thi bộ lọc Input trước khi làm bất cứ điều gì
+            if (!ValidateInput(email, password))
+            {
+                return; // Ngắt luồng ngay lập tức, không gửi Request đi
+            }
+
             view.SetInteractable(false);
             _globalUI.ShowLoading(true, "Đang xác thực thông tin..."); // Bật bảng loading che màn hình
 
@@ -193,7 +241,7 @@ namespace Game.UI.Login
 
                     // Lưu token vào session trước để hàm Fetch có thể dùng
                     _session.Token = authToken;
-                    
+
                     // LƯU TOKEN VÀO PLAYERPREFS ĐỂ PERSISTENT SAU KHI RESTART
                     _authService.SaveToken(authToken);
 
@@ -205,7 +253,7 @@ namespace Game.UI.Login
                     string nickName = (profileResponse != null && profileResponse.profile != null)
                                       ? profileResponse.profile.displayName
                                       : "Player_" + UnityEngine.Random.Range(1000, 9999);
-                    
+
                     // LƯU displayName VÀO SESSION ĐỂ TRÁNH BỊ MẤT THÔNG TIN
                     if (profileResponse != null && profileResponse.profile != null)
                     {
