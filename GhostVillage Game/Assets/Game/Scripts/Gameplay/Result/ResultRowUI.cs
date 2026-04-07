@@ -18,13 +18,32 @@ public class ResultRowUI : MonoBehaviour
     // [0]: Grim Reaper, [1]: Prime Target, [2]: Walking Hospital, [3]: Punching Bag, [4]: Human Siren
     [SerializeField] private Image[] _titleImages = new Image[5];
 
+    [Header("Title Library")]
+    [SerializeField] private List<TitleSpriteMapping> _titleLibrary;
+
     [Header("Settings")]
     [SerializeField] private Color _myHighlightColor = new Color(1f, 0.8f, 0f, 0.2f); // Vàng nhạt trong suốt
     [SerializeField] private Color _normalColor = new Color(0f, 0f, 0f, 0.5f); // Đen mờ
 
-    // Màu cho Title (Trắng = Đạt được, Xám mờ = Không đạt)
+    // Màu cho Title (Trắng = Đạt được, Đen mờ = Không đạt)
     private Color _colorActive = Color.white;
     private Color _colorInactive = new Color(0.2f, 0.2f, 0.2f, 0.5f);
+
+    [System.Serializable]
+    public struct TitleSpriteMapping
+    {
+        public string titleId;
+        public Sprite titleIcon;
+    }
+
+    // Mảng định nghĩa thứ tự cố định của các Title trên UI
+    private readonly string[] _fixedTitleOrder = {
+        TitleNames.GRIM_REAPER,      // Ô 0
+        TitleNames.PRIME_TARGET,     // Ô 1
+        TitleNames.WALKING_HOSPITAL, // Ô 2
+        TitleNames.PUNCHING_BAG,     // Ô 3
+        TitleNames.HUMAN_SIREN       // Ô 4
+    };
 
     public void Setup(string name, string outcome, int duration, int exp, int coin, List<string> earnedTitles, bool isMe)
     {
@@ -36,9 +55,9 @@ public class ResultRowUI : MonoBehaviour
 
         // 2. Trạng thái (Đỏ/Xanh)
         if (outcome == "ESCAPED")
-            _txtStatus.text = "<color=#00FF00>THOÁT</color>";
+            _txtStatus.text = "<color=#00FF00>ESCAPED</color>";
         else
-            _txtStatus.text = "<color=#FF0000>BỊ BẮT</color>";
+            _txtStatus.text = "<color=#FF0000>CAUGHT</color>";
 
         // 3. Thời gian (Ghi riêng rẽ ra slot Txt_Duration)
         if (_txtDuration != null)
@@ -57,22 +76,41 @@ public class ResultRowUI : MonoBehaviour
         }
         if (isMe) _txtName.color = Color.yellow;
 
-        // 6. --- Xử lý 5 Slot Title bằng Filter Màu ---
+        // 6. --- Xử lý 5 Slot Title ---
         if (earnedTitles == null) earnedTitles = new List<string>();
 
-        if (_titleImages.Length > 0 && _titleImages[0] != null)
-            _titleImages[0].color = earnedTitles.Contains(TitleNames.GRIM_REAPER) ? _colorActive : _colorInactive;
+        for (int i = 0; i < _titleImages.Length; i++)
+        {
+            if (i >= _fixedTitleOrder.Length) break;
 
-        if (_titleImages.Length > 1 && _titleImages[1] != null)
-            _titleImages[1].color = earnedTitles.Contains(TitleNames.PRIME_TARGET) ? _colorActive : _colorInactive;
+            string targetTitleId = _fixedTitleOrder[i];
+            bool hasThisTitle = earnedTitles.Contains(targetTitleId);
 
-        if (_titleImages.Length > 2 && _titleImages[2] != null)
-            _titleImages[2].color = earnedTitles.Contains(TitleNames.WALKING_HOSPITAL) ? _colorActive : _colorInactive;
+            if (_titleImages[i] != null)
+            {
+                // Gán hình từ thư viện
+                Sprite icon = GetSpriteFromLibrary(targetTitleId);
+                _titleImages[i].sprite = icon;
 
-        if (_titleImages.Length > 3 && _titleImages[3] != null)
-            _titleImages[3].color = earnedTitles.Contains(TitleNames.PUNCHING_BAG) ? _colorActive : _colorInactive;
+                // Áp màu (sáng nếu có, tối nếu không)
+                if (hasThisTitle && icon != null)
+                {
+                    _titleImages[i].color = _colorActive;
+                }
+                else
+                {
+                    _titleImages[i].color = _colorInactive;
+                }
 
-        if (_titleImages.Length > 4 && _titleImages[4] != null)
-            _titleImages[4].color = earnedTitles.Contains(TitleNames.HUMAN_SIREN) ? _colorActive : _colorInactive;
+                _titleImages[i].gameObject.SetActive(true);
+            }
+        }
+    }
+
+    private Sprite GetSpriteFromLibrary(string id)
+    {
+        if (_titleLibrary == null) return null;
+        var mapping = _titleLibrary.Find(x => x.titleId == id);
+        return mapping.titleIcon; // Nếu không tìm thấy thì trả về null
     }
 }

@@ -244,8 +244,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStatsManager
   lookSensitivity: 2
-  baseMoveSpeed: 6
-  baseSprintSpeed: 10
+  baseMoveSpeed: 4
+  baseSprintSpeed: 6
   baseMaxStamina: 100
   baseStaminaDrainRate: 15
   baseStaminaRegenRate: 10

@@ -29,6 +29,7 @@ public class ProfileUIManager : MonoBehaviour
     [SerializeField] private GameObject itemHistoryPrefab;
     [SerializeField] private GameObject itemAchievementPrefab;
     [SerializeField] private GameObject itemSelectMedalPrefab;
+    [SerializeField] private GameObject itemSelectAvatarPrefab;
 
     private Pfb_ProfileViewBinding _profileBinding;
     private Pfb_HistoryViewBinding _historyBinding;
@@ -53,6 +54,10 @@ public class ProfileUIManager : MonoBehaviour
         _profileBinding = SetupView<Pfb_ProfileViewBinding>(pfbProfileView, profileContainer);
         _historyBinding = SetupView<Pfb_HistoryViewBinding>(pfbHistoryView, historyContainer);
         _achievementBinding = SetupView<Pfb_AchievementViewBinding>(pfbAchievementView, achievementContainer);
+
+        // ========================================================
+        // 1. MÓC NỐI SỰ KIỆN CHO MODAL HUY CHƯƠNG (CŨ)
+        // ========================================================
         if (_profileBinding.btnOpenSelector != null)
         {
             _profileBinding.btnOpenSelector.onClick.AddListener(OpenMedalSelector);
@@ -64,6 +69,69 @@ public class ProfileUIManager : MonoBehaviour
         if (_profileBinding.btnSaveMedals != null)
         {
             _profileBinding.btnSaveMedals.onClick.AddListener(() => SaveMedals().Forget());
+        }
+
+        // Đảm bảo lúc mới vô là Modal Huy chương bị tắt
+        if (_profileBinding.objMedalSelector != null)
+        {
+            _profileBinding.objMedalSelector.SetActive(false);
+        }
+
+        // ========================================================
+        // 2. MÓC NỐI SỰ KIỆN CHO MODAL AVATAR (MỚI THÊM)
+        // ========================================================
+        if (_profileBinding.btnOpenAvatarSelector != null)
+        {
+            _profileBinding.btnOpenAvatarSelector.onClick.AddListener(OpenAvatarSelector);
+        }
+
+        // Bấm ra ngoài rìa để đóng bảng Avatar (Nếu cục cha ngoài cùng có component Button)
+        if (_profileBinding.objAvatarSelector.TryGetComponent<Button>(out var avatarBgBtn))
+        {
+            avatarBgBtn.onClick.AddListener(CloseAvatarSelector);
+        }
+
+        // Bắt sự kiện bấm nút Save Avatar
+        if (_profileBinding.btnSaveAvatar != null)
+        {
+            _profileBinding.btnSaveAvatar.onClick.RemoveAllListeners();
+            _profileBinding.btnSaveAvatar.onClick.AddListener(() => SaveAvatar().Forget());
+        }
+
+        // Đảm bảo lúc mới vô là Modal Avatar bị tắt
+        if (_profileBinding.objAvatarSelector != null)
+        {
+            _profileBinding.objAvatarSelector.SetActive(false);
+        }
+    }
+
+    private void OpenAvatarSelector()
+    {
+        if (_profileBinding == null || _profileBinding.objAvatarSelector == null) return;
+
+        // Tắt Modal Medal
+        _profileBinding.objMedalSelector.SetActive(false);
+
+        // Lấy Avatar ID hiện tại của player để làm gốc
+        var data = _controller.GetCurrentData();
+
+        // ========================================================
+        // [FIX LỖI CS0103]: Xài hàm của Controller thay vì cái biến cũ đã bị xóa!
+        // ========================================================
+        _controller.SetTempAvatar(data?.profile?.avatar);
+
+        // Bật Modal Avatar
+        _profileBinding.objAvatarSelector.SetActive(true);
+
+        // GỌI HÀM VẼ 5 CÁI HÌNH RA!
+        RefreshAvatarGrid();
+    }
+
+    private void CloseAvatarSelector()
+    {
+        if (_profileBinding != null && _profileBinding.objAvatarSelector != null)
+        {
+            _profileBinding.objAvatarSelector.SetActive(false);
         }
     }
 
@@ -135,6 +203,14 @@ public class ProfileUIManager : MonoBehaviour
         if (_profileBinding.txtExpValue != null)
         {
             _profileBinding.txtExpValue.text = $"{p.exp} / {p.nextLevelExp}";
+        }
+
+        // [FIX 3]: Set avatar image từ avatar ID
+        if (!string.IsNullOrEmpty(p.avatar) && _profileBinding.imgAvatar != null)
+        {
+            Sprite avatarSprite = _profileBinding.GetAvatarSprite(p.avatar);
+            _profileBinding.imgAvatar.sprite = avatarSprite;
+            _profileBinding.imgAvatar.color = Color.white; // Đảm bảo hiển thị rõ
         }
 
         for (int i = 0; i < _profileBinding.equippedMedalIcons.Length; i++)
@@ -270,29 +346,112 @@ public class ProfileUIManager : MonoBehaviour
 
         if (data.achievements == null || data.achievements.Count == 0)
         {
-            Debug.LogWarning("Dữ liệu thành tựu chưa được nạp!");
+            Debug.LogWarning("<color=red>[ProfileUI]</color> Dữ liệu thành tựu chưa được nạp!");
             return;
         }
 
         ClearContainer(_profileBinding.medalGridContent);
+
+        // Lấy tất cả các thành tựu đã claim (đã nhận huy chương)
         var allMedals = data.achievements.FindAll(a => a.isClaimed);
+        Debug.Log($"<color=cyan>[ProfileUI]</color> Tìm thấy {allMedals.Count} huy chương đã mở khóa để vẽ lên Modal.");
 
         foreach (var medal in allMedals)
         {
             var go = Instantiate(itemSelectMedalPrefab, _profileBinding.medalGridContent);
+            go.SetActive(true); // Ép nó hiện lên phòng hờ Prefab gốc bị tắt
+
+            // ========================================================
+            // [FIX CHÍ MẠNG]: Trị bệnh Unity bóp Scale tàng hình Item!
+            // ========================================================
+            if (go.TryGetComponent<RectTransform>(out var rect))
+            {
+                rect.localScale = Vector3.one; // Ép Scale về 1x1x1
+                rect.localRotation = Quaternion.identity;
+                rect.localPosition = new Vector3(rect.localPosition.x, rect.localPosition.y, 0);
+            }
+
             Sprite icon = _profileBinding.GetMedalSprite(medal.id);
 
             // Lấy trạng thái từ danh sách TẠM THỜI (Temp) để hiện dấu tích
             bool isSelected = _controller.GetTempMedals().Contains(medal.id);
 
-            go.GetComponent<Item_SelectMedalUI>().Setup(medal, isSelected, icon, () =>
+            if (go.TryGetComponent<Item_SelectMedalUI>(out var medalUI))
             {
-                _controller.ToggleMedalInList(medal.id);
-                RefreshMedalGrid(); // Vẽ lại để cập nhật dấu tích ngay lập tức
-            });
+                medalUI.Setup(medal, isSelected, icon, () =>
+                {
+                    _controller.ToggleMedalInList(medal.id);
+                    RefreshMedalGrid(); // Vẽ lại để cập nhật dấu tích ngay lập tức
+                });
+            }
         }
+
+        RefreshLayout(_profileBinding.medalGridContent);
     }
 
+    // ========================================================
+    // HÀM VẼ DANH SÁCH AVATAR
+    // ========================================================
+    // ========================================================
+    // HÀM VẼ DANH SÁCH AVATAR
+    // ========================================================
+    private void RefreshAvatarGrid()
+    {
+        if (_profileBinding == null || _profileBinding.avatarLibrary == null)
+        {
+            Debug.LogError("<color=red>[ProfileUI] Lỗi: _profileBinding hoặc avatarLibrary đang bị NULL!</color>");
+            return;
+        }
+
+        // Xóa sạch rác cũ trước khi vẽ
+        ClearContainer(_profileBinding.avatarGridContent);
+
+        Debug.Log($"<color=cyan>[ProfileUI] Đang vẽ {_profileBinding.avatarLibrary.Count} cái Avatar ra màn hình...</color>");
+
+        // Duyệt qua 5 cái hình sếp đã cấu hình trong Inspector
+        foreach (var avatarMap in _profileBinding.avatarLibrary)
+        {
+            if (itemSelectAvatarPrefab == null)
+            {
+                Debug.LogError("<color=red>[ProfileUI] Lỗi: Sếp quên kéo itemSelectAvatarPrefab vào ProfileUIManager rồi kìa!</color>");
+                return;
+            }
+
+            // Đẻ Prefab ra
+            var go = Instantiate(itemSelectAvatarPrefab, _profileBinding.avatarGridContent);
+            go.SetActive(true); // Ép nó hiện lên (Phòng hờ cái Prefab gốc sếp lỡ tắt)
+
+            // ========================================================
+            // [FIX CHÍ MẠNG]: Trị bệnh Unity tự bóp Scale tàng hình Item
+            // ========================================================
+            if (go.TryGetComponent<RectTransform>(out var rect))
+            {
+                rect.localScale = Vector3.one; // Ép Scale về 1x1x1
+                rect.localRotation = Quaternion.identity;
+                rect.localPosition = new Vector3(rect.localPosition.x, rect.localPosition.y, 0);
+            }
+
+            var itemUI = go.GetComponent<Item_SelectAvatarUI>();
+
+            // Kiểm tra xem thằng này có đang được chọn không (để hiện viền vàng)
+            bool isSelected = (_controller.GetTempAvatar() == avatarMap.avatarId);
+
+            if (itemUI != null)
+            {
+                itemUI.Setup(avatarMap.avatarId, avatarMap.avatarSprite, isSelected, (selectedId) =>
+                {
+                    // Lưu ID vào Controller
+                    _controller.SetTempAvatar(selectedId);
+                    RefreshAvatarGrid(); // Vẽ lại để cập nhật viền Vàng
+                });
+            }
+        }
+
+        // ========================================================
+        // [FIX CHÍ MẠNG 2]: Ép cái khung lưới tính toán lại chiều cao
+        // ========================================================
+        RefreshLayout(_profileBinding.avatarGridContent);
+    }
     private async UniTaskVoid SaveMedals()
     {
         Debug.Log("<color=orange>[UI]</color> Đang gửi yêu cầu lưu Medal...");
@@ -312,5 +471,36 @@ public class ProfileUIManager : MonoBehaviour
         {
             Debug.LogError("<color=red>[UI]</color> Lưu thất bại. Kiểm tra Log API phía trên.");
         }
+    }
+
+    // ========================================================
+    // [MỚI] LƯU AVATAR LÊN SERVER
+    // ========================================================
+    private async UniTaskVoid SaveAvatar()
+    {
+        Debug.Log("<color=orange>[UI]</color> Đang gửi yêu cầu lưu Avatar...");
+
+        // Khóa nút Save lại phòng chống Spam click
+        if (_profileBinding.btnSaveAvatar != null) _profileBinding.btnSaveAvatar.interactable = false;
+
+        bool success = await _controller.SaveAvatarToServer();
+
+        if (success)
+        {
+            Debug.Log("<color=green>[UI]</color> Lưu Avatar thành công!");
+
+            // Đóng bảng chọn Avatar
+            CloseAvatarSelector();
+
+            // Render lại màn hình Profile chính (Nó sẽ tự động bốc hình Avatar mới nhất từ MasterData)
+            RenderProfileTab(_controller.GetCurrentData());
+        }
+        else
+        {
+            Debug.LogError("<color=red>[UI]</color> Lưu Avatar thất bại!");
+        }
+
+        // Mở khóa lại nút Save
+        if (_profileBinding.btnSaveAvatar != null) _profileBinding.btnSaveAvatar.interactable = true;
     }
 }

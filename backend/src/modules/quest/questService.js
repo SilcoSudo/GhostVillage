@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Quest from "./questModel.js";
 import Player from "../player/playerModel.js"; // <-- Chỉnh lại đường dẫn cho đúng
 
@@ -134,8 +135,18 @@ export const QuestService = {
 
   // --- 2. CỘNG DỒN TIẾN ĐỘ TỪ BẢNG THỐNG KÊ ---
   updateProgressFromStats: async (userId, rawStats) => {
-    const player = await Player.findOne({ userId });
-    if (!player) throw new Error("Không tìm thấy Player");
+    const player = await Player.findOne({
+      $or: [
+        { userId: userId },
+        { userId: new mongoose.Types.ObjectId(userId) },
+      ],
+    });
+    if (!player) {
+      console.error(
+        `[QuestService] LỖI: Không tìm thấy Player với userId = ${userId}`,
+      );
+      throw new Error("Không tìm thấy Player");
+    }
 
     await QuestService.checkAndResetDaily(player);
 
@@ -181,7 +192,12 @@ export const QuestService = {
 
   // Đặt bên dưới hàm updateProgressFromStats của sếp
   claimQuestReward: async (userId, questId) => {
-    const player = await Player.findOne({ userId });
+    const player = await Player.findOne({
+      $or: [
+        { userId: userId },
+        { userId: new mongoose.Types.ObjectId(userId) },
+      ],
+    });
     const quest = await Quest.findOne({ questId });
 
     if (!player || !quest) throw new Error("Dữ liệu không hợp lệ");

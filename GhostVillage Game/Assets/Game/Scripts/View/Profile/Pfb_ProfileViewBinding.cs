@@ -4,43 +4,79 @@ using UnityEngine.UI;
 using System.Collections.Generic;
 using System.Linq;
 
-// Class để tạo bảng mapping trong Inspector
+#region Data Mapping Classes
+// Gom hết class tạo bảng mapping lên trên cùng cho gọn mắt
 [System.Serializable]
-public class MedalIconMap {
+public class MedalIconMap
+{
     public string medalId;
     public Sprite medalSprite;
 }
 
-public class Pfb_ProfileViewBinding : MonoBehaviour 
+[System.Serializable]
+public class AvatarIconMap
 {
-    [Header("Top Profile Info")]
+    public string avatarId;
+    public Sprite avatarSprite;
+}
+#endregion
+
+public class Pfb_ProfileViewBinding : MonoBehaviour
+{
+    // ==========================================
+    // 1. CHỈ SỐ PROFILE CƠ BẢN
+    // ==========================================
+    [Header("--- BASIC PROFILE INFO ---")]
     public TextMeshProUGUI txtName;
     public TextMeshProUGUI txtUID;
     public Image imgAvatar;
-    
-    [Header("Level & Progress")]
+    public TextMeshProUGUI txtTotalMatches;
+
+    [Header("--- LEVEL & PROGRESS ---")]
     public Slider sldLevelProgress;
     public TextMeshProUGUI txtLevel;
     public TextMeshProUGUI txtExpValue;
 
-    [Header("Statistics")]
-    public TextMeshProUGUI txtTotalMatches;
-    
-    [Header("Medal Slots")]
-    public Image[] equippedMedalIcons; // Đổi từ TextMeshProUGUI sang Image để hiện Icon
+    // ==========================================
+    // 2. HIỂN THỊ TRANG BỊ
+    // ==========================================
+    [Header("--- EQUIPPED ITEMS ---")]
+    public Image[] equippedMedalIcons;
 
-    [Header("Medal Icon Library")]
-    public List<MedalIconMap> medalLibrary; // Bảng tra cứu ID -> Sprite
+    // ==========================================
+    // 3. POPUP MODALS (BẢNG CHỌN UI)
+    // ==========================================
+    [Header("--- MEDAL SELECTOR MODAL ---")]
+    public GameObject objMedalSelector;
+    public Transform medalGridContent;
+    public Button btnOpenSelector;
+    public Button btnSaveMedals;
 
-    // Hàm bổ trợ để lấy Sprite dựa trên ID
-    public Sprite GetMedalSprite(string id) {
+    [Header("--- AVATAR SELECTOR MODAL ---")]
+    public GameObject objAvatarSelector;
+    public Transform avatarGridContent;
+    public Button btnOpenAvatarSelector;
+    public Button btnSaveAvatar;
+
+    // ==========================================
+    // 4. THƯ VIỆN DATA (KÉO THẢ ICON)
+    // ==========================================
+    [Header("--- ASSET LIBRARIES ---")]
+    public List<MedalIconMap> medalLibrary;
+    public List<AvatarIconMap> avatarLibrary;
+
+    // ==========================================
+    // 5. HELPER METHODS (XỬ LÝ LOGIC)
+    // ==========================================
+    public Sprite GetMedalSprite(string id)
+    {
         var map = medalLibrary.FirstOrDefault(m => m.medalId == id);
         return map != null ? map.medalSprite : null;
     }
 
-    [Header("Medal Selector Popup")]
-    public GameObject objMedalSelector;      // Khung Grp_MedalSelector
-    public Transform medalGridContent;       // Content của Scr_MedalGrid
-    public Button btnOpenSelector;           // Nút "Edit" hoặc "Achievement" để mở popup
-    public Button btnSaveMedals;             // Nút Btn_Save
+    public Sprite GetAvatarSprite(string id)
+    {
+        var map = avatarLibrary.FirstOrDefault(a => a.avatarId == id);
+        return map != null ? map.avatarSprite : null;
+    }
 }
