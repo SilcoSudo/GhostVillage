@@ -65,4 +65,31 @@ public class ProfileService
         );
         return response != null;
     }
+
+    // ========================================================
+    // [FIX CHÍ MẠNG]: TẠO DTO ĐỂ HỨNG DATA TỪ BACKEND
+    // ========================================================
+    [System.Serializable]
+    public class AvatarUpdateResponseDTO
+    {
+        public string avatar;
+    }
+
+    // ========================================================
+    // [MỚI] API LƯU AVATAR
+    // ========================================================
+    public async UniTask<bool> UpdateAvatarAsync(string avatarId, string token)
+    {
+        string jsonBody = $"{{\"avatarId\":\"{avatarId}\"}}";
+
+        // Đổi từ <object> thành <AvatarUpdateResponseDTO> để Unity nó hiểu!
+        var response = await _apiClient.PutAsyncWithAuth<AvatarUpdateResponseDTO>(
+            "/api/game/player/avatar",
+            jsonBody,
+            token
+        );
+
+        // Bóc được response thì trả về True
+        return response != null;
+    }
 }

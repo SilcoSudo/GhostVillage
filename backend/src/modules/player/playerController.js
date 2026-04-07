@@ -73,4 +73,34 @@ export const PlayerController = {
       res.status(500).json({ success: false, message: error.message });
     }
   },
+
+  // ==========================================
+  // [MỚI] HỨNG REQUEST ĐỔI AVATAR TỪ UNITY
+  // ==========================================
+  updateAvatar: async (req, res) => {
+    try {
+      const userId = req.user._id || req.user.id;
+      const { avatarId } = req.body; // Lấy cái ID từ Body JSON do Unity gửi lên
+
+      if (!avatarId) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Thiếu ID Avatar!" });
+      }
+
+      const updatedAvatar = await PlayerService.updateAvatar(userId, avatarId);
+
+      return res.status(200).json({
+        success: true,
+        message: "Cập nhật Avatar thành công!",
+        data: { avatar: updatedAvatar },
+      });
+    } catch (error) {
+      console.error("Update Avatar error:", error.message);
+      return res.status(400).json({
+        success: false,
+        message: error.message || "Lỗi khi cập nhật Avatar",
+      });
+    }
+  },
 };

@@ -5,343 +5,166 @@ import Quest from "./src/modules/quest/questModel.js";
 dotenv.config();
 
 const questsData = [
+  // ==========================================
+  // NHIỆM VỤ HÀNG NGÀY (DAILY) - titleId: null
+  // ==========================================
   {
-    questId: "QUEST_MAIN_001",
-    title: "The Awakening",
-    description: "Investigate the strange occurrences in the village and discover the truth behind the ghostly presence.",
-    story: "Strange lights have been seen near the old temple. The village elder believes an ancient evil has awakened. You must investigate and find out what's happening.",
-    questLine: "Main Story",
-    chapter: "Chapter 1: The Beginning",
-    prerequisites: [],
-    objectives: [
-      {
-        type: "reach",
-        description: "Reach the Old Temple",
-        target: "MAP_TEMPLE_GATE",
-        required: 1,
-        current: 0,
-      },
-      {
-        type: "interact",
-        description: "Talk to the Priestess",
-        target: "NPC_PRIESTESS",
-        required: 1,
-        current: 0,
-      },
-    ],
-    rewards: {
-      exp: 500,
-      coin: 200,
-      items: [
-        { itemId: "ITEM_SACRED_TALISMAN", quantity: 1 },
-      ],
-      titles: [],
-    },
-    difficulty: "Easy",
-    levelRequired: 1,
-    timeLimit: null,
-    isRepeatable: false,
-    cooldown: 0,
-    isActive: true,
-    npcGiver: "NPC_ELDER",
-    location: "Village Center",
-    tags: ["main", "story", "tutorial"],
-  },
-  {
-    questId: "QUEST_MAIN_002",
-    title: "Purify the Temple",
-    description: "Clear the temple of evil spirits and restore its sanctity.",
-    story: "The temple has been corrupted by dark forces. You must defeat the spirits within and cleanse the sacred grounds.",
-    questLine: "Main Story",
-    chapter: "Chapter 1: The Beginning",
-    prerequisites: ["QUEST_MAIN_001"],
-    objectives: [
-      {
-        type: "kill",
-        description: "Defeat Temple Spirits",
-        target: "MONSTER_TEMPLE_SPIRIT",
-        required: 5,
-        current: 0,
-      },
-      {
-        type: "interact",
-        description: "Light the Sacred Flame",
-        target: "OBJECT_SACRED_FLAME",
-        required: 1,
-        current: 0,
-      },
-    ],
-    rewards: {
-      exp: 1000,
-      coin: 500,
-      items: [
-        { itemId: "ITEM_BLESSED_WATER", quantity: 3 },
-      ],
-      titles: ["Temple Guardian"],
-    },
-    difficulty: "Medium",
-    levelRequired: 3,
-    timeLimit: 1800, // 30 minutes
-    isRepeatable: false,
-    cooldown: 0,
-    isActive: true,
-    npcGiver: "NPC_PRIESTESS",
-    location: "Old Temple",
-    tags: ["main", "story", "combat"],
-  },
-  {
-    questId: "QUEST_SIDE_001",
-    title: "Lost Child",
-    description: "A child has gone missing near the forest. Find and bring them back safely.",
-    story: "A worried mother asks for your help finding her child who wandered into the haunted forest.",
-    questLine: "Side Quest",
-    chapter: null,
-    prerequisites: [],
-    objectives: [
-      {
-        type: "reach",
-        description: "Search the Haunted Forest",
-        target: "MAP_HAUNTED_FOREST",
-        required: 1,
-        current: 0,
-      },
-      {
-        type: "escort",
-        description: "Escort the child back to village",
-        target: "NPC_LOST_CHILD",
-        required: 1,
-        current: 0,
-      },
-    ],
-    rewards: {
-      exp: 300,
-      coin: 150,
-      items: [
-        { itemId: "ITEM_HEALTH_POTION", quantity: 2 },
-      ],
-      titles: [],
-    },
-    difficulty: "Easy",
-    levelRequired: 1,
-    timeLimit: null,
-    isRepeatable: false,
-    cooldown: 0,
-    isActive: true,
-    npcGiver: "NPC_WORRIED_MOTHER",
-    location: "Village Center",
-    tags: ["side", "rescue", "easy"],
-  },
-  {
-    questId: "QUEST_DAILY_001",
-    title: "Spirit Hunter",
-    description: "Eliminate wandering spirits to keep the village safe.",
-    story: "Every day, new spirits emerge. Help protect the villagers by hunting them down.",
-    questLine: "Daily",
-    chapter: null,
-    prerequisites: [],
-    objectives: [
-      {
-        type: "kill",
-        description: "Defeat any spirits",
-        target: "ANY_SPIRIT",
-        required: 10,
-        current: 0,
-      },
-    ],
-    rewards: {
-      exp: 200,
+    questId: "QUEST_DAILY_PLAY_2",
+    questName: "Hardworking Survivor",
+    description: "Complete 2 matches.",
+    questType: "DAILY",
+    actionType: "PLAY_MATCH",
+    targetCount: 2,
+    reward: {
       coin: 100,
-      items: [
-        { itemId: "ITEM_SPIRIT_ESSENCE", quantity: 5 },
-      ],
-      titles: [],
-    },
-    difficulty: "Easy",
-    levelRequired: 1,
-    timeLimit: 86400, // 24 hours
-    isRepeatable: true,
-    cooldown: 86400, // Reset daily
-    isActive: true,
-    npcGiver: "NPC_GUARD_CAPTAIN",
-    location: "Village Gate",
-    tags: ["daily", "combat", "repeatable"],
-  },
-  {
-    questId: "QUEST_WEEKLY_001",
-    title: "The Collector",
-    description: "Gather rare items for the village researcher.",
-    story: "The village researcher needs rare materials for her experiments. Help her collect these items.",
-    questLine: "Weekly",
-    chapter: null,
-    prerequisites: [],
-    objectives: [
-      {
-        type: "collect",
-        description: "Collect Ghost Orbs",
-        target: "ITEM_GHOST_ORB",
-        required: 20,
-        current: 0,
-      },
-      {
-        type: "collect",
-        description: "Collect Cursed Artifacts",
-        target: "ITEM_CURSED_ARTIFACT",
-        required: 5,
-        current: 0,
-      },
-    ],
-    rewards: {
-      exp: 1500,
-      coin: 1000,
-      items: [
-        { itemId: "ITEM_RESEARCH_NOTES", quantity: 1 },
-        { itemId: "ITEM_LEGENDARY_CHEST", quantity: 1 },
-      ],
-      titles: ["Collector"],
-    },
-    difficulty: "Hard",
-    levelRequired: 10,
-    timeLimit: 604800, // 7 days
-    isRepeatable: true,
-    cooldown: 604800, // Reset weekly
-    isActive: true,
-    npcGiver: "NPC_RESEARCHER",
-    location: "Research Lab",
-    tags: ["weekly", "collection", "hard"],
-  },
-  {
-    questId: "QUEST_SIDE_002",
-    title: "The Haunted Well",
-    description: "Investigate the mysterious sounds coming from the old well.",
-    story: "Villagers have reported hearing strange voices from the abandoned well. Discover what lurks below.",
-    questLine: "Side Quest",
-    chapter: null,
-    prerequisites: ["QUEST_MAIN_001"],
-    objectives: [
-      {
-        type: "reach",
-        description: "Investigate the Old Well",
-        target: "MAP_OLD_WELL",
-        required: 1,
-        current: 0,
-      },
-      {
-        type: "kill",
-        description: "Defeat the Well Spirit",
-        target: "MONSTER_WELL_SPIRIT",
-        required: 1,
-        current: 0,
-      },
-    ],
-    rewards: {
-      exp: 800,
-      coin: 400,
-      items: [
-        { itemId: "ITEM_WATER_STONE", quantity: 1 },
-      ],
-      titles: ["Well Cleaner"],
-    },
-    difficulty: "Medium",
-    levelRequired: 5,
-    timeLimit: null,
-    isRepeatable: false,
-    cooldown: 0,
-    isActive: true,
-    npcGiver: "NPC_VILLAGE_ELDER",
-    location: "Village Square",
-    tags: ["side", "combat", "mystery"],
-  },
-  {
-    questId: "QUEST_TUTORIAL_001",
-    title: "First Steps",
-    description: "Learn the basics of surviving in the ghost village.",
-    story: "Welcome to Ghost Village. Let's learn the basics before you venture out.",
-    questLine: "Tutorial",
-    chapter: "Tutorial",
-    prerequisites: [],
-    objectives: [
-      {
-        type: "interact",
-        description: "Talk to the Guide",
-        target: "NPC_GUIDE",
-        required: 1,
-        current: 0,
-      },
-      {
-        type: "collect",
-        description: "Pick up a Torch",
-        target: "ITEM_TORCH",
-        required: 1,
-        current: 0,
-      },
-      {
-        type: "reach",
-        description: "Reach the Training Ground",
-        target: "MAP_TRAINING_GROUND",
-        required: 1,
-        current: 0,
-      },
-    ],
-    rewards: {
       exp: 100,
-      coin: 50,
-      items: [
-        { itemId: "ITEM_STARTER_KIT", quantity: 1 },
-      ],
-      titles: [],
+      titleId: null,
     },
-    difficulty: "Easy",
-    levelRequired: 1,
-    timeLimit: null,
-    isRepeatable: false,
-    cooldown: 0,
     isActive: true,
-    npcGiver: "NPC_GUIDE",
-    location: "Starting Area",
-    tags: ["tutorial", "beginner", "guide"],
   },
   {
-    questId: "QUEST_EVENT_001",
-    title: "Harvest Moon Festival",
-    description: "Participate in the special Harvest Moon event and earn exclusive rewards.",
-    story: "During the Harvest Moon, spirits are more active. The village holds a festival to keep them at bay. Join the celebration!",
-    questLine: "Event",
-    chapter: "Harvest Moon Event",
-    prerequisites: [],
-    objectives: [
-      {
-        type: "collect",
-        description: "Collect Moon Tokens",
-        target: "ITEM_MOON_TOKEN",
-        required: 50,
-        current: 0,
-      },
-      {
-        type: "kill",
-        description: "Defeat Moon Spirits",
-        target: "MONSTER_MOON_SPIRIT",
-        required: 15,
-        current: 0,
-      },
-    ],
-    rewards: {
-      exp: 2000,
-      coin: 1500,
-      items: [
-        { itemId: "ITEM_MOON_CROWN", quantity: 1 },
-        { itemId: "ITEM_EVENT_CHEST", quantity: 1 },
-      ],
-      titles: ["Moon Festival Hero"],
+    questId: "QUEST_DAILY_WIN_1",
+    questName: "Taste of Victory",
+    description: "Survive and escape the village 1 time.",
+    questType: "DAILY",
+    actionType: "WIN_MATCH",
+    targetCount: 1,
+    reward: {
+      coin: 100,
+      exp: 100,
+      titleId: null,
     },
-    difficulty: "Hard",
-    levelRequired: 8,
-    timeLimit: 259200, // 3 days
-    isRepeatable: false,
-    cooldown: 0,
-    isActive: false, // Event not active by default
-    npcGiver: "NPC_FESTIVAL_ORGANIZER",
-    location: "Festival Square",
-    tags: ["event", "limited", "special"],
+    isActive: true,
+  },
+  {
+    questId: "QUEST_DAILY_KILL_5",
+    questName: "Monster Hunter",
+    description: "Kill 5 small monsters.",
+    questType: "DAILY",
+    actionType: "KILL_SMALL_MONSTER",
+    targetCount: 5,
+    reward: {
+      coin: 100,
+      exp: 100,
+      titleId: null,
+    },
+    isActive: true,
+  },
+  {
+    questId: "QUEST_DAILY_RESCUE_3",
+    questName: "Combat Medic",
+    description: "Rescue a knocked-down teammate 3 times.",
+    questType: "DAILY",
+    actionType: "RESCUE_TEAMMATE",
+    targetCount: 3,
+    reward: {
+      coin: 300,
+      exp: 50,
+      titleId: null,
+    },
+    isActive: true,
+  },
+
+  // ==========================================
+  // THÀNH TỰU (ACHIEVEMENT) - Đã chèn Medal ID vào titleId
+  // ==========================================
+  {
+    questId: "QUEST_ACHV_RESCUE_100",
+    questName: "Guardian Angel",
+    description: "Rescue knocked-down teammates 100 times in total.",
+    questType: "ACHIEVEMENT",
+    actionType: "RESCUE_TEAMMATE",
+    targetCount: 100,
+    reward: {
+      coin: 100,
+      exp: 100,
+      titleId: "RESCUE_100", // <-- Nhận được huy chương RESCUE_100
+    },
+    isActive: true,
+  },
+  {
+    questId: "QUEST_ACHV_WIN_100",
+    questName: "Escape Artist",
+    description: "Successfully escape the map 100 times.",
+    questType: "ACHIEVEMENT",
+    actionType: "WIN_MATCH",
+    targetCount: 100,
+    reward: {
+      coin: 100,
+      exp: 100,
+      titleId: "WIN_100", // <-- Nhận được huy chương WIN_100
+    },
+    isActive: true,
+  },
+  {
+    questId: "QUEST_ACHV_PLAY_100",
+    questName: "Veteran Survivor",
+    description: "Play a total of 100 matches.",
+    questType: "ACHIEVEMENT",
+    actionType: "PLAY_MATCH",
+    targetCount: 100,
+    reward: {
+      coin: 100,
+      exp: 100,
+      titleId: "PLAY_100", // <-- Nhận được huy chương PLAY_100
+    },
+    isActive: true,
+  },
+  {
+    questId: "QUEST_ACHV_SIREN_20",
+    questName: "Attention Seeker",
+    description: "Use the siren item 20 times to alert the monster.",
+    questType: "ACHIEVEMENT",
+    actionType: "USE_SIREN",
+    targetCount: 20,
+    reward: {
+      coin: 100,
+      exp: 100,
+      titleId: "SIREN_20", // <-- Nhận được huy chương SIREN_20
+    },
+    isActive: true,
+  },
+  {
+    questId: "QUEST_ACHV_KILL_100",
+    questName: "Exterminator",
+    description: "Eliminate a total of 100 small monsters.",
+    questType: "ACHIEVEMENT",
+    actionType: "KILL_SMALL_MONSTER",
+    targetCount: 100,
+    reward: {
+      coin: 100,
+      exp: 100,
+      titleId: "KILL_100", // <-- Nhận được huy chương KILL_100
+    },
+    isActive: true,
+  },
+  {
+    questId: "QUEST_ACHV_SCREAM_20",
+    questName: "Human Siren",
+    description: "Scream into the microphone 20 times during matches.",
+    questType: "ACHIEVEMENT",
+    actionType: "SCREAM",
+    targetCount: 20,
+    reward: {
+      coin: 100,
+      exp: 100,
+      titleId: "SCREAM_20", // <-- Nhận được huy chương SCREAM_20
+    },
+    isActive: true,
+  },
+  {
+    questId: "QUEST_ACHV_KNOCK_100",
+    questName: "Punching Bag",
+    description: "Get knocked down by monsters 100 times. Are you okay? Lmaooo",
+    questType: "ACHIEVEMENT",
+    actionType: "GET_KNOCKED",
+    targetCount: 100,
+    reward: {
+      coin: 100,
+      exp: 100,
+      titleId: "KNOCK_100", // <-- Nhận được huy chương KNOCK_100
+    },
+    isActive: true,
   },
 ];
 
@@ -349,7 +172,7 @@ async function seedQuests() {
   try {
     // Connect to MongoDB
     await mongoose.connect(process.env.MONGO_URI);
-    console.log(" Connected to MongoDB");
+    console.log("🟢 Connected to MongoDB");
 
     // Clear existing quest data
     const deleteResult = await Quest.deleteMany({});
@@ -357,14 +180,14 @@ async function seedQuests() {
 
     // Insert sample quests
     const insertedQuests = await Quest.insertMany(questsData);
-    console.log(` Successfully inserted ${insertedQuests.length} quests`);
+    console.log(`✅ Successfully inserted ${insertedQuests.length} quests`);
 
     // Display summary
     console.log("\n📊 Quest Summary:");
     const summary = await Quest.aggregate([
       {
         $group: {
-          _id: "$questLine",
+          _id: "$questType",
           count: { $sum: 1 },
           active: {
             $sum: { $cond: [{ $eq: ["$isActive", true] }, 1, 0] },
@@ -376,13 +199,13 @@ async function seedQuests() {
 
     summary.forEach((item) => {
       console.log(
-        `  - ${item._id}: ${item.count} quests (${item.active} active)`
+        `  - ${item._id}: ${item.count} quests (${item.active} active)`,
       );
     });
 
     console.log("\n🎉 Quest seeding completed successfully!");
   } catch (error) {
-    console.error(" Error seeding quests:", error);
+    console.error("❌ Error seeding quests:", error);
     process.exit(1);
   } finally {
     await mongoose.connection.close();

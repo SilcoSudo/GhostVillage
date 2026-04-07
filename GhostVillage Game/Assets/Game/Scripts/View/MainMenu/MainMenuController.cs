@@ -11,6 +11,7 @@ using Game.Script.UI;
 using UnityEngine.InputSystem;
 using GhostVillage.Domain.Profile;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Game.UI.MainMenu
 {
@@ -268,19 +269,35 @@ namespace Game.UI.MainMenu
         {
             if (_profileService == null) return;
 
-            //  Fallback: Nếu token vẫn empty (edge case), load từ PlayerPrefs
             if (string.IsNullOrEmpty(_session.Token))
             {
                 _session.EnsureTokenLoaded();
             }
 
-            // Gọi API GetAchievementsAsync vì bên BE mình đã gộp trả về cả dailyQuests
             var profileData = await _profileService.GetAchievementsAsync(_session.Token);
 
-            if (profileData != null && profileData.dailyQuests != null)
+            if (profileData != null)
             {
-                RenderDailyQuests(profileData.dailyQuests);
+                // Vẽ danh sách Daily Quests ra bảng
+                if (profileData.dailyQuests != null)
+                {
+                    RenderDailyQuests(profileData.dailyQuests);
+                }
+
+                // [FIX MỚI]: Check xem có nhiệm vụ (Cả Daily lẫn Achievement) nào đang chờ nhận thưởng không
+                CheckAndShowNotification(profileData);
             }
+        }
+
+        private void CheckAndShowNotification(FullProfileDTO data)
+        {
+            if (imgAvatarNotification == null) return;
+
+            bool hasUnclaimedDaily = data.dailyQuests != null && data.dailyQuests.Any(q => q.current >= q.target && !q.isClaimed);
+            bool hasUnclaimedAchievement = data.achievements != null && data.achievements.Any(q => q.current >= q.target && !q.isClaimed);
+
+            // Bật dấu chấm đỏ lên nếu có bất kỳ 1 cái nào chưa nhận
+            imgAvatarNotification.gameObject.SetActive(hasUnclaimedDaily || hasUnclaimedAchievement);
         }
 
         private void RenderDailyQuests(List<QuestItemDTO> dailyQuests)

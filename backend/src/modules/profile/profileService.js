@@ -41,8 +41,15 @@ class ProfileService {
    */
   async getHistory(userId) {
     const objId = new mongoose.Types.ObjectId(userId);
+
+    // [FIX 2]: Lấy đúng tên Model là "MatchResult" như đã đăng ký trong matchModel.js
+    const MatchModel = mongoose.model("MatchResult");
+
     const records = await PlayerMatchHistory.find({ userId: objId })
-      .populate("matchId") // Lấy thông tin Map/Duration từ GameResult
+      .populate({
+        path: "matchId",
+        model: MatchModel, // Truyền cái Model đúng vô đây
+      })
       .sort({ createdAt: -1 })
       .limit(10)
       .lean();
@@ -53,16 +60,17 @@ class ProfileService {
         expGained: r.expGained || 0,
         coinGained: r.coinGained || 0,
         durationSec: r.matchId?.durationSec || 0,
-        rankTitles: r.titles || [], // Đây là nơi chứa GrimReaper, HumanSiren...
+        rankTitles: r.titles || [],
         resultStatus: r.resultStatus || (r.isWin ? "Victory" : "Defeat"),
         matchId: {
           mapId: r.matchId?.mapId || "Unknown",
-          mapName: r.matchId?.roomName || "Ghost Village",
+          mapName: r.matchId?.sessionId || "Ghost Village", // Sửa roomName thành sessionId (theo Schema sếp gửi)
           startTime: r.createdAt,
         },
       })),
     };
   }
+
   /**
    * Tab 3: Lấy gộp cả Thành tựu (Achievements) và Nhiệm vụ (Daily)
    */

@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import User from "./src/modules/user/userModel.js";
 import Player from "./src/modules/player/playerModel.js";
-import Achievement from "./src/modules/achievement/achievementModel.js"; // Model Định nghĩa
+import Quest from "./src/modules/quest/questModel.js";
 import GameResult from "./src/modules/profile/gameResultModel.js"; // Model Trận đấu toàn cục
 import { config } from "./src/config/env.js";
 import UserAchievement from "./src/modules/profile/playerAchievementModel.js";
@@ -24,7 +24,8 @@ const seedData = async () => {
     console.log("🗑️  Đang dọn dẹp toàn bộ dữ liệu cũ...");
     await User.deleteMany({});
     await Player.deleteMany({});
-    await Achievement.deleteMany({});
+    //await Achievement.deleteMany({});
+    await Quest.deleteMany({}); // Thêm dòng này
     await GameResult.deleteMany({});
     await UserAchievement.deleteMany({});
     // await PlayerMatchHistory.deleteMany({})
@@ -44,63 +45,166 @@ const seedData = async () => {
     const user3_Id = new mongoose.Types.ObjectId("696da0d5a6e42a937b80aaff");
 
     // TẠO ĐỊNH NGHĨA THÀNH TỰU (Global Achievements)
-    console.log("⏳ Đang tạo Achievement Definitions...");
-    await Achievement.create([
+    // =========================================================
+    // TẠO QUẢN LÝ NHIỆM VỤ & THÀNH TỰU (MỚI)
+    // =========================================================
+    console.log("⏳ Đang tạo Quest & Achievements...");
+    await Quest.create([
+      // --- DAILY QUESTS ---
       {
-        _id: "FIRST_CLEAR",
-        title: "First Clear",
-        desc: "Complete a stage for the first time.",
-        target: 1,
-        reward: { coin: 100, titleId: "Survivor" },
+        questId: "QUEST_DAILY_PLAY_2",
+        questName: "Hardworking Survivor",
+        description: "Complete 2 matches.",
+        questType: "DAILY",
+        actionType: "PLAY_MATCH",
+        targetCount: 2,
+        reward: { coin: 100, exp: 100, titleId: null },
+        isActive: true,
       },
       {
-        _id: "KILL_50",
-        title: "Slayer I",
-        desc: "Defeat 50 minions.",
-        target: 50,
-        reward: { coin: 200, titleId: "Ghost Hunter" },
+        questId: "QUEST_DAILY_WIN_1",
+        questName: "Taste of Victory",
+        description: "Survive and escape the village 1 time.",
+        questType: "DAILY",
+        actionType: "WIN_MATCH",
+        targetCount: 1,
+        reward: { coin: 100, exp: 100, titleId: null },
+        isActive: true,
       },
       {
-        _id: "KILL_500",
-        title: "Slayer II",
-        desc: "Defeat 500 minions to prove your dominance.",
-        target: 500,
-        reward: { coin: 500, titleId: "Executioner" },
+        questId: "QUEST_DAILY_KILL_5",
+        questName: "Monster Hunter",
+        description: "Kill 5 small monsters.",
+        questType: "DAILY",
+        actionType: "KILL_SMALL_MONSTER",
+        targetCount: 5,
+        reward: { coin: 100, exp: 100, titleId: null },
+        isActive: true,
       },
       {
-        _id: "WIN_5_STREAK",
-        title: "Unstoppable",
-        desc: "Win 5 matches in a row without losing.",
-        target: 5,
-        reward: { coin: 300, titleId: "Invincible" },
+        questId: "QUEST_DAILY_RESCUE_3",
+        questName: "Combat Medic",
+        description: "Rescue a knocked-down teammate 3 times.",
+        questType: "DAILY",
+        actionType: "RESCUE_TEAMMATE",
+        targetCount: 3,
+        reward: { coin: 300, exp: 50, titleId: null },
+        isActive: true,
+      },
+
+      // --- ACHIEVEMENTS (CÓ TITLE ID) ---
+      {
+        questId: "QUEST_ACHV_RESCUE_100",
+        questName: "Guardian Angel",
+        description: "Rescue knocked-down teammates 100 times in total.",
+        questType: "ACHIEVEMENT",
+        actionType: "RESCUE_TEAMMATE",
+        targetCount: 100,
+        reward: { coin: 100, exp: 100, titleId: "RESCUE_100" },
+        isActive: true,
       },
       {
-        _id: "REACH_LV_10",
-        title: "Veteran",
-        desc: "Reach player level 10.",
-        target: 10,
-        reward: { coin: 400, titleId: "Elite Survivor" },
+        questId: "QUEST_ACHV_WIN_100",
+        questName: "Escape Artist",
+        description: "Successfully escape the map 100 times.",
+        questType: "ACHIEVEMENT",
+        actionType: "WIN_MATCH",
+        targetCount: 100,
+        reward: { coin: 100, exp: 100, titleId: "WIN_100" },
+        isActive: true,
       },
       {
-        _id: "PLAY_100_MATCHES",
-        title: "Dedicated",
-        desc: "Play 100 total matches in GhostVillage.",
-        target: 100,
-        reward: { coin: 1000, titleId: "Ghost Resident" },
+        questId: "QUEST_ACHV_PLAY_100",
+        questName: "Veteran Survivor",
+        description: "Play a total of 100 matches.",
+        questType: "ACHIEVEMENT",
+        actionType: "PLAY_MATCH",
+        targetCount: 100,
+        reward: { coin: 100, exp: 100, titleId: "PLAY_100" },
+        isActive: true,
       },
       {
-        _id: "FAST_CLEAR",
-        title: "Phantom",
-        desc: "Clear any stage in less than 5 minutes.",
-        target: 1,
-        reward: { coin: 600, titleId: "The Flash" },
+        questId: "QUEST_ACHV_SIREN_20",
+        questName: "Attention Seeker",
+        description: "Use the siren item 20 times to alert the monster.",
+        questType: "ACHIEVEMENT",
+        actionType: "USE_SIREN",
+        targetCount: 20,
+        reward: { coin: 100, exp: 100, titleId: "SIREN_20" },
+        isActive: true,
       },
       {
-        _id: "MAP_EXPERT_RUNG_CHET",
-        title: "Forest Master",
-        desc: "Win 20 matches on the 'Dead Forest' map.",
-        target: 20,
-        reward: { coin: 500, titleId: "Forest Stalker" },
+        questId: "QUEST_ACHV_KILL_100",
+        questName: "Exterminator",
+        description: "Eliminate a total of 100 small monsters.",
+        questType: "ACHIEVEMENT",
+        actionType: "KILL_SMALL_MONSTER",
+        targetCount: 100,
+        reward: { coin: 100, exp: 100, titleId: "KILL_100" },
+        isActive: true,
+      },
+      {
+        questId: "QUEST_ACHV_SCREAM_20",
+        questName: "Human Siren",
+        description: "Scream into the microphone 20 times during matches.",
+        questType: "ACHIEVEMENT",
+        actionType: "SCREAM",
+        targetCount: 20,
+        reward: { coin: 100, exp: 100, titleId: "SCREAM_20" },
+        isActive: true,
+      },
+      {
+        questId: "QUEST_ACHV_KNOCK_100",
+        questName: "Punching Bag",
+        description:
+          "Get knocked down by monsters 100 times. Are you okay? Lmaooo",
+        questType: "ACHIEVEMENT",
+        actionType: "GET_KNOCKED",
+        targetCount: 100,
+        reward: { coin: 100, exp: 100, titleId: "KNOCK_100" },
+        isActive: true,
+      },
+
+      // Mấy cái cũ sếp đang test (Cho thằng Raccoon nó có cái để xài)
+      {
+        questId: "FIRST_CLEAR",
+        questName: "First Clear",
+        description: "Complete a stage for the first time.",
+        questType: "ACHIEVEMENT",
+        actionType: "WIN_MATCH",
+        targetCount: 1,
+        reward: { coin: 100, exp: 0, titleId: "FIRST_CLEAR" },
+        isActive: true,
+      },
+      {
+        questId: "KILL_50",
+        questName: "Slayer I",
+        description: "Defeat 50 minions.",
+        questType: "ACHIEVEMENT",
+        actionType: "KILL_SMALL_MONSTER",
+        targetCount: 50,
+        reward: { coin: 200, exp: 0, titleId: "KILL_50" },
+        isActive: true,
+      },
+      {
+        questId: "KILL_500",
+        questName: "Slayer II",
+        description: "Defeat 500 minions to prove your dominance.",
+        questType: "ACHIEVEMENT",
+        actionType: "KILL_SMALL_MONSTER",
+        targetCount: 500,
+        reward: { coin: 500, exp: 0, titleId: "KILL_500" },
+        isActive: true,
+      },
+      {
+        questId: "WIN_5_STREAK",
+        questName: "Unstoppable",
+        description: "Win 5 matches in a row without losing.",
+        questType: "ACHIEVEMENT",
+        actionType: "WIN_MATCH",
+        targetCount: 5,
+        reward: { coin: 300, exp: 0, titleId: "WIN_5_STREAK" },
+        isActive: true,
       },
     ]);
 
@@ -284,6 +388,9 @@ const seedData = async () => {
     // =========================================================
     // 5. TẠO DỮ LIỆU PLAYERS (Game Profiles)
     // =========================================================
+    // =========================================================
+    // 5. TẠO DỮ LIỆU PLAYERS (Game Profiles)
+    // =========================================================
     console.log("⏳ Đang tạo Players (Game Profiles)...");
     const player1 = {
       _id: new mongoose.Types.ObjectId("659d4b1e9d3e2a1b3c4d5e70"),
@@ -299,6 +406,21 @@ const seedData = async () => {
       storage: {
         unlockedPerks: [],
       },
+      // [FIX CHÍ MẠNG]: Bơm sẵn 3 huy chương cho sếp Hùng test UI!
+      unlockedMedals: ["FIRST_CLEAR", "KILL_500", "WIN_5_STREAK"],
+      selectedMedals: ["FIRST_CLEAR", "KILL_500", "WIN_5_STREAK"],
+      achievementsProgress: [
+        { questId: "QUEST_ACHV_RESCUE_100", current: 6, isClaimed: false },
+        { questId: "QUEST_ACHV_WIN_100", current: 3, isClaimed: false },
+        { questId: "QUEST_ACHV_PLAY_100", current: 8, isClaimed: false },
+        { questId: "QUEST_ACHV_KILL_100", current: 7, isClaimed: false },
+        { questId: "QUEST_ACHV_SCREAM_20", current: 1, isClaimed: false },
+        { questId: "QUEST_ACHV_KNOCK_100", current: 2, isClaimed: false },
+        { questId: "FIRST_CLEAR", current: 1, isClaimed: true },
+        { questId: "KILL_50", current: 50, isClaimed: true },
+        { questId: "KILL_500", current: 500, isClaimed: true },
+        { questId: "WIN_5_STREAK", current: 5, isClaimed: true },
+      ],
     };
 
     const player2 = {
@@ -815,9 +937,7 @@ const seedData = async () => {
     ];
 
     await MatchResult.insertMany(matchResults);
-    console.log(
-      ` Đã tạo ${matchResults.length} trận đấu mẫu vào MatchResult.`,
-    );
+    console.log(` Đã tạo ${matchResults.length} trận đấu mẫu vào MatchResult.`);
 
     console.log("=========================================");
     console.log(" KHỞI TẠO DỮ LIỆU THÀNH CÔNG TOÀN BỘ!");
