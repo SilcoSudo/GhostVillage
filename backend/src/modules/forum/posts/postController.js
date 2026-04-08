@@ -197,6 +197,34 @@ export const createPost = async (req, res, next) => {
   }
 };
 
+export const checkPostingRestriction = async (req, res, next) => {
+  try {
+    const effectiveUserId = (req.user && req.user._id) || req.body?.userId;
+
+    const postingRestriction = await getUserPostingRestriction({
+      userId: effectiveUserId,
+    });
+
+    if (!postingRestriction.allowed) {
+      return res.status(postingRestriction.statusCode || 403).json({
+        success: false,
+        message: postingRestriction.message,
+        data: {
+          mutedUntil: postingRestriction.mutedUntil || null,
+          remainingSeconds: postingRestriction.remainingSeconds || 0,
+        },
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: postingRestriction,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const updatePost = async (req, res, next) => {
   try {
     const { title, body, category, media } = req.body;

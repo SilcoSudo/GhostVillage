@@ -6,6 +6,7 @@ import { toast } from "react-hot-toast";
 import { X } from "lucide-react";
 import TiptapEditor from "./TiptapEditor";
 import { uploadMedia } from "../services/uploadService";
+import { checkPostingRestriction } from "../services/postService";
 import "./CreatePostModal.css";
 
 const MAX_POST_IMAGES = 10;
@@ -134,6 +135,8 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
     }
 
     try {
+      await checkPostingRestriction();
+
       setIsUploading(true);
 
       // Upload all media files first
