@@ -130,10 +130,39 @@ public class FPSController : MonoBehaviourPun
 
     private void HandleStateInput()
     {
-        // MỚI: Đọc Input chạy nhanh. (Bro nhớ cài nút Sprint trong Input Actions nhé)
-        _isSprinting = _inputActions.Player.Sprint.IsPressed();
-    }
+        bool isSprintPressed = _inputActions.Player.Sprint.IsPressed();
 
+        if (isSprintPressed)
+        {
+            Vector2 moveInput = _inputActions.Player.Move.ReadValue<Vector2>();
+            bool isMoving = moveInput.magnitude > 0.1f;
+
+            // [MỚI]: Truyền _isSprinting vào để nó biết là đang chạy hay mới bấm
+            if (isMoving && _stats.CanSprint(_isSprinting))
+            {
+                _isSprinting = true;
+                _stats.DrainStaminaForSprint();
+            }
+            else
+            {
+                // [LƯỚI BẢO VỆ]: Nếu đang chạy mà hết sạch máu bị ép dừng -> Gắn cờ mệt mỏi
+                if (_isSprinting)
+                {
+                    _stats.StopSprinting();
+                }
+                _isSprinting = false;
+            }
+        }
+        else
+        {
+            // Nhả phím ra
+            if (_isSprinting)
+            {
+                _stats.StopSprinting();
+            }
+            _isSprinting = false;
+        }
+    }
     private void HandleMovement()
     {
         Vector2 moveInput = _inputActions.Player.Move.ReadValue<Vector2>();
@@ -222,7 +251,7 @@ public class FPSController : MonoBehaviourPun
         var invManager = GetComponent<InventoryManager>();
 
         Debug.Log($"[FPS BindInventoryUI] invUI: {(invUI != null ? "" : "")}, invManager: {(invManager != null ? "" : "")}");
-        
+
         if (invUI != null && invManager != null)
         {
             invUI.BindInventory(invManager);

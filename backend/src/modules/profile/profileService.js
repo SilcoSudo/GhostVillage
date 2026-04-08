@@ -66,6 +66,8 @@ class ProfileService {
           mapId: r.matchId?.mapId || "Unknown",
           mapName: r.matchId?.sessionId || "Ghost Village", // Sửa roomName thành sessionId (theo Schema sếp gửi)
           startTime: r.createdAt,
+          moonEventId: r.matchId?.moonEventId || "EVENT_MOON_DEFAULT",
+          moonEventName: r.matchId?.moonEventName || "Normal Moon",
         },
       })),
     };

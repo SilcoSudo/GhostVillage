@@ -72,6 +72,12 @@ MonoBehaviour:
   - StartCatchPhaseRPC
   - SyncProgressRPC
   - RpcSyncLightMode
+  - RpcHandleCorpse
+  - MarkAsSolvedRPC
+  - SyncSecretCodeRPC
+  - TriggerPenaltyRPC
+  - RpcOpenSafeAndSpawnItem
+  - RpcSyncSafeOpened
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

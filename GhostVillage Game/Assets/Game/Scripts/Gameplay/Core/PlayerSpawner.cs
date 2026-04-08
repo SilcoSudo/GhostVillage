@@ -32,6 +32,8 @@ public class PlayerSpawner : MonoBehaviour
             // 4. KIỂM TRA & CÀI ĐẶT CHO LOCAL PLAYER
             if (playerObj != null)
             {
+                playerObj.SetActive(true);
+
                 PhotonView pv = playerObj.GetComponent<PhotonView>();
 
                 // Tiêm VContainer cho TẤT CẢ các bản sao (để tụi nó nhận Dependencies nếu cần)

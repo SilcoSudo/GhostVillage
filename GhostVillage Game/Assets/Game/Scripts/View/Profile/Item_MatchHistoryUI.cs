@@ -11,6 +11,7 @@ public class Item_MatchHistoryUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _txtDuration;
     [SerializeField] private TextMeshProUGUI _txtExp;
     [SerializeField] private TextMeshProUGUI _txtCoin;
+    [SerializeField] private TextMeshProUGUI _txtMoonType;
     [SerializeField] private TextMeshProUGUI _txtMap;
 
     [Header("Titles Settings")]
@@ -43,6 +44,12 @@ public class Item_MatchHistoryUI : MonoBehaviour
         _txtExp.text = data.expGained.ToString();
         _txtCoin.text = data.coinGained.ToString();
         _txtMap.text = data.matchId.mapName;
+
+        if (_txtMoonType != null)
+        {
+            string moonName = string.IsNullOrEmpty(data.matchId.moonEventName) ? "Normal Moon" : data.matchId.moonEventName;
+            _txtMoonType.text = moonName;
+        }
 
         // Xử lý Rank Titles theo vị trí cố định
         for (int i = 0; i < _rankTitleSlots.Length; i++)

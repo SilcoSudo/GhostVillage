@@ -74,17 +74,33 @@ public class GameplayUIManager : MonoBehaviourPunCallbacks
         UnityEngine.SceneManagement.SceneManager.LoadScene("LobbyListScene"); // Quăng về sảnh ngoài
     }
 
+
     // --- EXTERNAL CALLS (GameManager gọi cái này) ---
     public void ShowGameResult(SaveMatchRequestDTO matchData)
     {
-        // 1. Tắt hết HUD
+        // 1. Tắt HUD (Không cần tìm InventoryUIManager nữa, vì chết đã tắt rồi)
         if (interactPanel) interactPanel.SetActive(false);
+
+        // ==========================================
+        // [FIX CHÍ MẠNG]: TẮT MẸ CÁI BẢNG ĐẾM MÁU QTE ĐI!
+        // ==========================================
+        if (ReviveQTEManager.Instance != null)
+        {
+            ReviveQTEManager.Instance.StopQTE();       // Dừng thanh quét mổ cò (nếu đang cứu)
+            ReviveQTEManager.Instance.HideVictimUI();  // Ẩn luôn thanh máu đếm ngược của nạn nhân
+        }
 
         // 2. Gọi hiển thị kết quả
         if (_resultUI != null)
         {
+            // Bật nguyên cục Canvas (nếu đang bị ẩn)
+            this.gameObject.SetActive(true);
+
             // TODO: Lấy ID thật từ Photon Player Properties
             string myUserId = "MY_ID";
+            if (PhotonNetwork.LocalPlayer.CustomProperties.ContainsKey("UserId"))
+                myUserId = (string)PhotonNetwork.LocalPlayer.CustomProperties["UserId"];
+
             _resultUI.Show(matchData, myUserId);
 
             // Hiện chuột lên để click vào UI Result
@@ -93,7 +109,7 @@ public class GameplayUIManager : MonoBehaviourPunCallbacks
         }
         else
         {
-            Debug.LogError(" Chưa kéo GameResultUI vào GameplayUIManager!");
+            Debug.LogError(" Chưa kéo GameResultUI vào GameplayUIManager! Bảng Result bị Null!");
         }
     }
 

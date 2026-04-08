@@ -11,82 +11,76 @@ namespace Game.Domain.Friend.Services
     public class FriendService
     {
         private readonly APIClient _apiClient;
-        private readonly GameSession _session; // THAY ĐỔI Ở ĐÂY
+        private readonly GameSession _session;
 
         [Inject]
-        public FriendService(APIClient apiClient, GameSession session) // THAY ĐỔI Ở ĐÂY
+        public FriendService(APIClient apiClient, GameSession session)
         {
             _apiClient = apiClient;
-            _session = session; // THAY ĐỔI Ở ĐÂY
+            _session = session;
         }
 
         private string Token => _session.Token;
 
-        // 1. TÌM KIẾM THEO UID
+        [System.Obsolete]
         public async UniTask<PlayerSearchDTO> SearchPlayerAsync(string uid)
         {
-            // API nằm bên game/player
             string endpoint = $"/api/game/player/search/{uid}";
             return await _apiClient.GetAsyncWithAuth<PlayerSearchDTO>(endpoint, Token);
         }
 
-        // 2. GỬI LỜI MỜI KẾT BẠN
-        // (TRUYỀN VỀ EXCEPTION NẾU CÓ ĐỂ BẮT ERROR MESSAGE)
-
-        // 2. GỬI LỜI MỜI KẾT BẠN
+        [System.Obsolete]
         public async UniTask<bool> AddFriendAsync(string targetId)
         {
             string realUserId = targetId;
 
-            // [FIX CHÍ MẠNG]: Nếu truyền vào UID 8 số -> Phải "dịch" ra MongoDB UserId trước!
             if (targetId.Length == 8)
             {
                 var searchData = await SearchPlayerAsync(targetId);
                 if (searchData == null || string.IsNullOrEmpty(searchData.userId))
                 {
-                    Debug.LogError($"[FriendService] Lỗi: Không thể tìm thấy mã MongoDB UserId cho UID: {targetId}");
+                    Debug.LogError($"[FriendService] Lỗi: Không tìm thấy mã MongoDB UserId cho UID: {targetId}");
                     return false;
                 }
-                realUserId = searchData.userId; // Lấy chuỗi dài thòng của MongoDB
-                Debug.Log($"<color=green>[FriendService] Đã dịch UID {targetId} thành UserId: {realUserId}</color>");
+                realUserId = searchData.userId;
             }
 
             string endpoint = "/api/web/friend/add";
             var body = new FriendRequestBody { targetUserId = realUserId };
             string jsonBody = JsonUtility.ToJson(body);
 
-            // Bỏ try-catch ở đây để quăng lỗi lên Controller xử lý
-            var response = await _apiClient.PostAsyncWithAuth<object>(endpoint, jsonBody, Token);
+            // [FIX CHÍ MẠNG 1]: Dùng SimpleResponseDTO thay cho <object>
+            var response = await _apiClient.PostAsyncWithAuth<SimpleResponseDTO>(endpoint, jsonBody, Token);
             return response != null;
         }
 
+        [System.Obsolete]
         public async UniTask<bool> AcceptFriendAsync(string friendshipId)
         {
             string endpoint = "/api/web/friend/accept";
             var body = new FriendRequestBody { friendshipId = friendshipId };
             string jsonBody = JsonUtility.ToJson(body);
 
-            var response = await _apiClient.PostAsyncWithAuth<object>(endpoint, jsonBody, Token);
+            var response = await _apiClient.PostAsyncWithAuth<SimpleResponseDTO>(endpoint, jsonBody, Token);
             return response != null;
         }
 
-        // 4. TỪ CHỐI KẾT BẠN
+        [System.Obsolete]
         public async UniTask<bool> RejectFriendAsync(string friendshipId)
         {
             string endpoint = "/api/web/friend/reject";
             var body = new FriendRequestBody { friendshipId = friendshipId };
             string jsonBody = JsonUtility.ToJson(body);
 
-            var response = await _apiClient.PostAsyncWithAuth<object>(endpoint, jsonBody, Token);
+            var response = await _apiClient.PostAsyncWithAuth<SimpleResponseDTO>(endpoint, jsonBody, Token);
             return response != null;
         }
 
-        // 5. HỦY KẾT BẠN
+        [System.Obsolete]
         public async UniTask<bool> UnfriendAsync(string targetId)
         {
             string realUserId = targetId;
 
-            // [FIX CHÍ MẠNG]: Dịch UID 8 số ra MongoDB UserId
             if (targetId.Length == 8)
             {
                 var searchData = await SearchPlayerAsync(targetId);
@@ -100,11 +94,10 @@ namespace Game.Domain.Friend.Services
             var body = new FriendRequestBody { targetUserId = realUserId };
             string jsonBody = JsonUtility.ToJson(body);
 
-            var response = await _apiClient.PostAsyncWithAuth<object>(endpoint, jsonBody, Token);
+            var response = await _apiClient.PostAsyncWithAuth<SimpleResponseDTO>(endpoint, jsonBody, Token);
             return response != null;
         }
 
-        // 6. CÁC HÀM GET DANH SÁCH
         public async UniTask<List<FriendProfileDTO>> GetFriendListAsync()
             => await GetListAsync("/api/web/friend/list");
 
@@ -114,7 +107,6 @@ namespace Game.Domain.Friend.Services
         public async UniTask<List<FriendProfileDTO>> GetSentRequestsAsync()
             => await GetListAsync("/api/web/friend/sent-requests");
 
-        // Helper method cho việc Parse Json Array
         private async UniTask<List<FriendProfileDTO>> GetListAsync(string endpoint)
         {
             string url = $"{_apiClient.GetType().GetField("_baseUrl", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(_apiClient)}/{endpoint.TrimStart('/')}";
@@ -145,5 +137,12 @@ namespace Game.Domain.Friend.Services
                 return new List<FriendProfileDTO>();
             }
         }
+    }
+
+    // DTO Cứu mạng cho các API trả về rỗng hoặc message đơn giản
+    [System.Serializable]
+    public class SimpleResponseDTO
+    {
+        public string message;
     }
 }

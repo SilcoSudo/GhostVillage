@@ -44,6 +44,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Game/Scenes/Map_1.unity
     guid: 27bd921d2f9642342ad12b675693c68c
+  - enabled: 1
+    path: Assets/Game/Scenes/Map_2/Map2_Mada.unity
+    guid: 083daa4517224b044b31ebbaa3b59538
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 9f5a283fbbf7dd74bab1d4eb14eeb509, type: 3}
   m_UseUCBPForAssetBundles: 0
