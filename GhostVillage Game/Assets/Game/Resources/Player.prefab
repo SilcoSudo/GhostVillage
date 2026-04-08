@@ -249,6 +249,8 @@ MonoBehaviour:
   baseMaxStamina: 100
   baseStaminaDrainRate: 15
   baseStaminaRegenRate: 10
+  redZoneThresholdRatio: 0.2
+  staminaRegenDelay: 1
   baseBatteryDrainRate: 1
   baseReviveSpeed: 1
   speedMultiplier: 1

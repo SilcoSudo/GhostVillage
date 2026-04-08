@@ -16,6 +16,7 @@ public class GameResultUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _txtTeamResult;
     [SerializeField] private TextMeshProUGUI _txtPersonalResult;
     [SerializeField] private TextMeshProUGUI _txtMapName;
+    [SerializeField] private TextMeshProUGUI _txtMoonEvent;
 
     [Header("List Container")]
     [SerializeField] private Transform _rowContainer;
@@ -60,6 +61,10 @@ public class GameResultUI : MonoBehaviour
         else { _txtTeamResult.text = "TEAM DEFEATED"; _txtTeamResult.color = Color.red; }
 
         string timeStr = System.TimeSpan.FromSeconds(Mathf.Abs(matchData.durationSec)).ToString(@"mm\:ss");
+        string moonName = string.IsNullOrEmpty(matchData.moonEventName) ? "Trăng Bình Thường" : matchData.moonEventName;
+
+        // Tùy chọn 1: Nếu sếp có Text riêng cho Trăng
+        if (_txtMoonEvent != null) _txtMoonEvent.text = moonName;
         _txtMapName.text = $"{matchData.mapId} | {timeStr}";
 
         string myNickname = PhotonNetwork.LocalPlayer.NickName;

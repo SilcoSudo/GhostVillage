@@ -11,6 +11,8 @@ namespace Game.Domain.Match.DTO
         public string startTime;
         public string endTime;
         public int durationSec;
+        public string moonEventId;     // <--- THÊM MỚI
+        public string moonEventName;   // <--- THÊM MỚI
         public List<PlayerResultRequestDTO> playerResults;
     }
 

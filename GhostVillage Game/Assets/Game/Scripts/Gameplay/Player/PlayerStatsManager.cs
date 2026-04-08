@@ -16,6 +16,10 @@ public class PlayerStatsManager : MonoBehaviourPun
     [SerializeField] private float baseStaminaDrainRate = 15f;
     [SerializeField] private float baseStaminaRegenRate = 10f;
 
+    // Ngưỡng Đỏ (Tính theo %) - 0.2 tức là 20%
+    [SerializeField] private float redZoneThresholdRatio = 0.2f;
+    [SerializeField] private float staminaRegenDelay = 1f;
+
     [Header("🛠️ Base Survival & Item Stats")]
     [SerializeField] private float baseBatteryDrainRate = 1f;
     [SerializeField] private float baseReviveSpeed = 1f;
@@ -33,9 +37,11 @@ public class PlayerStatsManager : MonoBehaviourPun
     [HideInInspector] public float freeConsumableChance = 0f;
     [HideInInspector] public float detectionVisibilityMultiplier = 1f;
 
-    // ==========================================
-    // 🔵 CURRENT STATS (Hàm Getter cho các Script khác gọi)
-    // ==========================================
+    public float CurrentStamina { get; private set; }
+    public bool IsExhausted { get; private set; } = false;
+
+    private float _regenTimer = 0f;
+
     public float CurrentMoveSpeed => baseMoveSpeed * speedMultiplier;
     public float CurrentSprintSpeed => baseSprintSpeed * speedMultiplier;
     public float MaxStamina => baseMaxStamina * maxStaminaMultiplier;
@@ -44,43 +50,85 @@ public class PlayerStatsManager : MonoBehaviourPun
     public float BatteryDrainRate => baseBatteryDrainRate * batteryDrainMultiplier;
     public float ReviveSpeed => baseReviveSpeed * reviveSpeedMultiplier;
 
+    public float StaminaNormalized => CurrentStamina / MaxStamina;
+    public float RedZoneThreshold => redZoneThresholdRatio;
+
+    private void Start()
+    {
+        CurrentStamina = MaxStamina;
+    }
+
+    private void Update()
+    {
+        if (photonView != null && !photonView.IsMine) return;
+
+        if (_regenTimer > 0)
+        {
+            _regenTimer -= Time.deltaTime;
+        }
+        else if (CurrentStamina < MaxStamina)
+        {
+            CurrentStamina += StaminaRegenRate * Time.deltaTime;
+            CurrentStamina = Mathf.Clamp(CurrentStamina, 0, MaxStamina);
+        }
+
+        // [FIX CHÍ MẠNG]: Kiểm tra và chốt cờ Exhausted tự động mỗi frame
+        if (CurrentStamina >= MaxStamina * redZoneThresholdRatio)
+        {
+            IsExhausted = false; // Lên lại vạch xanh -> Hết mệt
+        }
+        else if (CurrentStamina <= 0)
+        {
+            IsExhausted = true;  // Về 0 -> Chắc chắn mệt
+        }
+    }
+
     public void SetLookSensitivity(float newSensitivity)
     {
         lookSensitivity = newSensitivity;
     }
 
-    // ==========================================
-    // BƠM CHỈ SỐ TỪ PHOTON KHI VÀO GAME VÀ IN LOG CHI TIẾT
-    // ==========================================
+    // [FIX CHÍ MẠNG]: Thêm tham số isAlreadySprinting để phân biệt đè Shift hay mới bấm
+    public bool CanSprint(bool isAlreadySprinting)
+    {
+        // 1. Hết sạch máu HOẶC đang bị mệt -> CẤM CHẠY
+        if (CurrentStamina <= 0 || IsExhausted) return false;
+
+        // 2. Mới bắt đầu bấm Shift mà máu đang ở vạch Đỏ -> CẤM CHẠY
+        if (!isAlreadySprinting && CurrentStamina < MaxStamina * redZoneThresholdRatio)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    public void DrainStaminaForSprint()
+    {
+        if (CurrentStamina > 0)
+        {
+            CurrentStamina -= StaminaDrainRate * Time.deltaTime;
+            CurrentStamina = Mathf.Clamp(CurrentStamina, 0, MaxStamina);
+            _regenTimer = staminaRegenDelay;
+        }
+    }
+
+    public void StopSprinting()
+    {
+        if (CurrentStamina < MaxStamina * redZoneThresholdRatio)
+        {
+            IsExhausted = true;
+        }
+    }
+
     public void ApplyPerkModifiersFromPhoton()
     {
         if (photonView == null || !photonView.IsMine) return;
-
         var props = photonView.Owner.CustomProperties;
 
-        // FIX ÉP KIỂU: Dùng Convert.ToSingle để chống lỗi Photon chuyển Float thành Int
-        if (props.TryGetValue("Perk_MaxStamina", out object maxStamina))
-            maxStaminaMultiplier = Convert.ToSingle(maxStamina);
-
-        if (props.TryGetValue("Perk_StaminaRegen", out object staminaRegen))
-            staminaRegenMultiplier = Convert.ToSingle(staminaRegen);
-
-        if (props.TryGetValue("Perk_ReviveSpeed", out object reviveSpeed))
-            reviveSpeedMultiplier = Convert.ToSingle(reviveSpeed);
-
-        if (props.TryGetValue("Perk_PreserveItem", out object preserveItem))
-            freeConsumableChance = Convert.ToSingle(preserveItem);
-
-        // --- IN LOG BÁO CÁO TỔNG KẾT CHỈ SỐ ---
-        Debug.Log("<color=cyan>=========================================</color>");
-        Debug.Log($"<color=yellow>[PlayerStats] BÁO CÁO CHỈ SỐ NHÂN VẬT CỦA SẾP (ĐÃ ÉP KIỂU AN TOÀN)</color>");
-        Debug.Log($"🏃 Tốc độ đi bộ : {baseMoveSpeed} x {speedMultiplier} = <color=green>{CurrentMoveSpeed}</color>");
-        Debug.Log($"🏃 Tốc độ chạy  : {baseSprintSpeed} x {speedMultiplier} = <color=green>{CurrentSprintSpeed}</color>");
-        Debug.Log($"🫁 Thể lực Max   : {baseMaxStamina} x {maxStaminaMultiplier} = <color=green>{MaxStamina}</color>");
-        Debug.Log($"🫁 Hồi Thể lực   : {baseStaminaRegenRate} x {staminaRegenMultiplier} = <color=green>{StaminaRegenRate}</color>");
-        Debug.Log($"🫁 Tốc độ tụt TL : {baseStaminaDrainRate} x {staminaDrainMultiplier} = <color=red>{StaminaDrainRate}</color>");
-        Debug.Log($"🛠️ Tốc độ Cứu bồ : {baseReviveSpeed} x {reviveSpeedMultiplier} = <color=green>{ReviveSpeed}</color>");
-        Debug.Log($"🎒 Tỉ lệ giữ đồ  : <color=green>{freeConsumableChance * 100}%</color>");
-        Debug.Log("<color=cyan>=========================================</color>");
+        if (props.TryGetValue("Perk_MaxStamina", out object maxStamina)) maxStaminaMultiplier = Convert.ToSingle(maxStamina);
+        if (props.TryGetValue("Perk_StaminaRegen", out object staminaRegen)) staminaRegenMultiplier = Convert.ToSingle(staminaRegen);
+        if (props.TryGetValue("Perk_ReviveSpeed", out object reviveSpeed)) reviveSpeedMultiplier = Convert.ToSingle(reviveSpeed);
+        if (props.TryGetValue("Perk_PreserveItem", out object preserveItem)) freeConsumableChance = Convert.ToSingle(preserveItem);
     }
 }

@@ -38,6 +38,7 @@ public class GameManager : MonoBehaviourPunCallbacks
     private MatchDataService _matchDataService;
     private GameplayUIManager _uiManager;
     private MatchStatisticManager _statisticManager;
+    private MoonEventManager _moonManager;
     private MatchRoute _currentMatchRoute = MatchRoute.Lose; // Mặc định là thua
     private bool _isLocalDataReady = false;
 
@@ -58,7 +59,8 @@ public class GameManager : MonoBehaviourPunCallbacks
         GameplayUIManager uiManager,
         MatchStatisticManager statisticManager,
         GameSession session,
-        ProfileService profileService
+        ProfileService profileService,
+        MoonEventManager moonManager
     )
     {
         _mapData = mapData;
@@ -73,6 +75,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         _statisticManager = statisticManager;
         _session = session;
         _profileService = profileService;
+        _moonManager = moonManager;
     }
 
     // --- UNITY LIFECYCLE ---
@@ -100,6 +103,15 @@ public class GameManager : MonoBehaviourPunCallbacks
         // --- GỌI MAP DATA SERVER CHỞ CỤC MEGA DTO VỀ ---
         Debug.Log($"[GameManager] Đang tải Mega Game Data cho map: {mapIdToLoad}");
         AggregatedGameDataDTO dataToLoad = await _mapDataService.FetchGameData(mapIdToLoad);
+
+        if (_moonManager != null && dataToLoad?.stats?.moonEvents != null)
+        {
+            _moonManager.Initialize(dataToLoad.stats.moonEvents);
+        }
+        else
+        {
+            Debug.LogWarning("⚠️ [GameManager] MoonEventManager hoặc dữ liệu MoonEvent chưa sẵn sàng!");
+        }
 
         // Nhét cục Data to vào MapDataManager
         if (_mapData != null && dataToLoad != null)
@@ -151,7 +163,7 @@ public class GameManager : MonoBehaviourPunCallbacks
 
                 // --- TRUYỀN DB VÀO CÁC HÀM SPAWN ---
                 if (_itemSpawner != null) _itemSpawner.SpawnItems(config, _mapData, _resourceDB);
-                if (_monsterSpawner != null) _monsterSpawner.SpawnMonsters(config.monsterSystemConfig, _mapData, _resourceDB);
+                if (_monsterSpawner != null) _monsterSpawner.SpawnMonsters(config.monsterSystemConfig, _mapData, _resourceDB, _moonManager);
                 if (_puzzleSpawner != null) _puzzleSpawner.SpawnPuzzles(config.puzzleConfig, _mapData, _resourceDB);
 
                 _objectiveManager.Initialize();
@@ -286,7 +298,10 @@ public class GameManager : MonoBehaviourPunCallbacks
         // Parse Data
         var matchData = JsonUtility.FromJson<SaveMatchRequestDTO>(jsonDTO);
 
-        // TODO: Chỗ này sau này thêm logic reset Voice về Global (Gọi vào VoiceManager)
+        if (_uiManager == null)
+        {
+            _uiManager = Object.FindFirstObjectByType<GameplayUIManager>(FindObjectsInactive.Include);
+        }
 
         // HIỆN UI KẾT QUẢ
         if (_uiManager != null)
@@ -295,7 +310,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
         else
         {
-            Debug.LogError(" GameplayUIManager chưa được Inject vào GameManager!");
+            Debug.LogError(" [CRITICAL] GameplayUIManager không hề tồn tại trong Scene! Không thể bung bảng Result!");
         }
         yield return null;
     }
@@ -331,6 +346,8 @@ public class GameManager : MonoBehaviourPunCallbacks
             startTime = startStr,
             endTime = endStr,
             durationSec = calculatedDuration,
+            moonEventId = _moonManager?.CurrentMoon?.eventId ?? "EVENT_MOON_DEFAULT",
+            moonEventName = _moonManager?.CurrentMoon?.eventName ?? "Trăng Mặc Định",
             playerResults = new List<PlayerResultRequestDTO>()
         };
 
@@ -547,10 +564,14 @@ public class GameManager : MonoBehaviourPunCallbacks
                 Debug.Log("<color=red>BẠN ĐÃ BỊ LOẠI! CHUYỂN SPECTATOR.</color>");
             }
         }
+
+        CheckEndGameCondition();
     }
 
     private void CheckEndGameCondition()
     {
+        if (!PhotonNetwork.IsMasterClient) return;
+
         int activePlayers = 0;
         bool teamHasEscaped = false; // Thêm biến kiểm tra xem có ai thoát không
 
@@ -571,19 +592,12 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         Debug.Log($"[GameManager] Active Players: {activePlayers}");
 
-        if (activePlayers == 0)
+        if (activePlayers == 0 && CurrentState != GameState.Ending)
         {
             Debug.Log(">>> ALL PLAYERS DONE. END GAME. <<<");
 
-            // [FIX] Cập nhật đúng Route trước khi chốt sổ
-            if (teamHasEscaped)
-            {
-                _currentMatchRoute = MatchRoute.Escape; // Đổi sang Win: Escape (150 exp)
-            }
-            else
-            {
-                _currentMatchRoute = MatchRoute.Lose; // Đổi sang Thua
-            }
+            if (teamHasEscaped) _currentMatchRoute = MatchRoute.Escape;
+            else _currentMatchRoute = MatchRoute.Lose;
 
             UpdateNetworkState(GameState.Ending);
         }

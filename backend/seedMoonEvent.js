@@ -5,126 +5,106 @@ import { config } from "dotenv";
 config();
 
 /**
- * Seed Data cho Moon Events
- * Tạo dữ liệu mẫu cho các sự kiện trăng trong game
+ * Seed Data cho Moon Events (Đã đồng bộ cấu trúc với Unity DTO)
  */
 const moonEvents = [
   {
     eventId: "EVENT_MOON_FULL",
-    displayName: "Trăng Tròn",
-    description: "Đêm trăng tròn sáng rực, tầm nhìn xa hơn nhưng quái vật cũng dễ phát hiện người chơi hơn.",
-    category: "MOON_PHASE",
-    uiIcon: "moon_full",
-    effectDescription: "Sáng, quái nhìn xa hơn",
-    coinMultiplier: 2,
-    expMultiplier: 1.5,
+    eventName: "Trăng Tròn",
+    description: "Tầm nhìn rõ ràng. Ông Kẹ ở trạng thái bình thường.",
+    uiIcon: "icon_moon_full",
     isActive: true,
-    scheduleType: "ALWAYS",
+    weight: 60, // Tỉ lệ ra nhiều nhất
+    environmentModifiers: {
+      globalLightIntensity: 1.0,
+      fogDensity: 1.0,
+    },
+    monsterBuffMultipliers: {
+      speedMultiplier: 1.0,
+      detectionRangeMultiplier: 1.0,
+      chaseRangeMultiplier: 1.0,
+      cooldownMultiplier: 1.0,
+    },
+    rewardMultipliers: {
+      expMultiplier: 1.0,
+      coinMultiplier: 1.0,
+    },
   },
   {
     eventId: "EVENT_MOON_NEW",
-    displayName: "Trăng Non",
-    description: "Đêm trăng non tối đen, tầm nhìn hạn chế nhưng dễ ẩn náu tránh quái.",
-    category: "MOON_PHASE",
-    uiIcon: "moon_new",
-    effectDescription: "Tối, giảm tầm nhìn",
-    coinMultiplier: 1.5,
-    expMultiplier: 1.3,
+    eventName: "Trăng Khuyết",
+    description:
+      "Bóng tối bao trùm. Tầm nhìn hẹp lại nhưng bạn cũng khó bị phát hiện hơn.",
+    uiIcon: "icon_moon_new",
     isActive: true,
-    scheduleType: "ALWAYS",
+    weight: 30, // Tỉ lệ vừa phải
+    environmentModifiers: {
+      globalLightIntensity: 0.5,
+      fogDensity: 2.0,
+    },
+    monsterBuffMultipliers: {
+      speedMultiplier: 1.0, // Tốc độ giữ nguyên
+      detectionRangeMultiplier: 0.8, // Quái khó nhìn thấy người chơi hơn
+      chaseRangeMultiplier: 1.0,
+      cooldownMultiplier: 1.0,
+    },
+    rewardMultipliers: {
+      expMultiplier: 1.2, // Tăng nhẹ do tối khó chơi
+      coinMultiplier: 1.2,
+    },
   },
   {
-    eventId: "EVENT_MOON_HALF",
-    displayName: "Trăng Khuyết",
-    description: "Đêm trăng khuyết, ánh sáng vừa phải, điều kiện chiến đấu cân bằng.",
-    category: "MOON_PHASE",
-    uiIcon: "moon_half",
-    effectDescription: "Ánh sáng bình thường",
-    coinMultiplier: 1,
-    expMultiplier: 1,
+    eventId: "EVENT_MOON_RED",
+    eventName: "Trăng Máu",
+    description:
+      "Bầu trời đỏ rực. Ông Kẹ phát điên, chạy nhanh và ra đòn liên tục.",
+    uiIcon: "icon_moon_red",
     isActive: true,
-    scheduleType: "ALWAYS",
-  },
-  {
-    eventId: "EVENT_LUNAR_ECLIPSE",
-    displayName: "Nguyệt Thực",
-    description: "Hiện tượng nguyệt thực hiếm gặp, quái vật trở nên dữ tợn và mạnh hơn nhiều lần.",
-    category: "SPECIAL",
-    uiIcon: "moon_eclipse",
-    effectDescription: "Quái Dữ, tăng sức mạnh quái vật",
-    coinMultiplier: 3,
-    expMultiplier: 2.5,
-    isActive: true,
-    scheduleType: "SCHEDULED",
-  },
-  {
-    eventId: "EVENT_BLOOD_MOON",
-    displayName: "Trăng Máu",
-    description: "Sự kiện trăng máu đáng sợ, quái vật xuất hiện với số lượng và sức mạnh khủng khiếp.",
-    category: "SPECIAL",
-    uiIcon: "moon_blood",
-    effectDescription: "Boss mạnh hơn, phần thưởng khủng",
-    coinMultiplier: 3,
-    expMultiplier: 2.5,
-    isActive: true,
-    scheduleType: "MANUAL",
-  },
-  {
-    eventId: "EVENT_JUNGLE_ROAR",
-    displayName: "Tiếng Gầm Rừng",
-    description: "Tiếng gầm từ rừng sâu gây choáng và làm chậm người chơi.",
-    category: "WEATHER",
-    uiIcon: "icon_roar",
-    effectDescription: "Âm thanh gây choáng",
-    coinMultiplier: 1.5,
-    expMultiplier: 1.5,
-    isActive: true,
-    scheduleType: "ALWAYS",
-  },
-  {
-    eventId: "EVENT_SANDSTORM",
-    displayName: "Bão Cát",
-    description: "Cơn bão cát dữ dội che mờ tầm nhìn và gây sát thương theo thời gian.",
-    category: "WEATHER",
-    uiIcon: "sandstorm",
-    effectDescription: "Giảm tầm nhìn, sát thương theo thời gian",
-    coinMultiplier: 1.8,
-    expMultiplier: 1.6,
-    isActive: true,
-    scheduleType: "ALWAYS",
+    weight: 10, // Rất hiếm
+    environmentModifiers: {
+      globalLightIntensity: 0.8,
+      fogDensity: 1.2,
+    },
+    monsterBuffMultipliers: {
+      speedMultiplier: 1.3, // Chạy nhanh hơn 30%
+      detectionRangeMultiplier: 1.5, // Nhìn xa hơn 50%
+      chaseRangeMultiplier: 1.5,
+      cooldownMultiplier: 0.7,
+    },
+    rewardMultipliers: {
+      expMultiplier: 2.0, // Nhân đôi EXP
+      coinMultiplier: 2.0, // Nhân đôi Tiền
+    },
   },
 ];
 
 async function seedMoonEvents() {
   try {
-    // Connect to MongoDB
     const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017";
     const DB_NAME = process.env.DB_NAME || "GhostVillage";
     await mongoose.connect(`${MONGO_URI}/${DB_NAME}`);
-    console.log(" Connected to MongoDB");
+    console.log("✅ Connected to MongoDB");
 
     // Clear existing moon events
     await MoonEvent.deleteMany({});
-    console.log("🗑️  Cleared existing Moon Events");
+    console.log("🗑️ Cleared existing Moon Events");
 
     // Insert new moon events
     const result = await MoonEvent.insertMany(moonEvents);
-    console.log(` Successfully seeded ${result.length} Moon Events`);
+    console.log(`🎉 Successfully seeded ${result.length} Moon Events`);
 
     // Display seeded events
     console.log("\n📋 Seeded Moon Events:");
     result.forEach((event) => {
       console.log(
-        `   - ${event.eventId} (${event.displayName}) - ${event.category} - ${
-          event.isActive ? "ACTIVE" : "INACTIVE"
-        }`
+        `   - ${event.eventId} (${event.eventName}) - Tỉ lệ: ${event.weight} - Active: ${event.isActive}`,
       );
     });
 
-    console.log("\n Moon Event seeding completed successfully!");
+    console.log("\n🚀 Moon Event seeding completed successfully!");
     process.exit(0);
   } catch (error) {
-    console.error(" Error seeding Moon Events:", error.message);
+    console.error("❌ Error seeding Moon Events:", error.message);
     process.exit(1);
   }
 }

@@ -79,6 +79,8 @@ namespace GhostVillage.Domain.Profile
         public string mapId;
         public string mapName;
         public string startTime;
+        public string moonEventId;
+        public string moonEventName;
     }
 
     [Serializable]

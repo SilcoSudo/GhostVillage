@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22ed1bb5c6dbced4fa17647576b5fcdc, type: 3}
+  m_Name: Bugi_Data
+  m_EditorClassIdentifier: Assembly-CSharp::KeyItemSO
+  itemId: Bugi_Data
+  itemName: Bugi
+  description: 
+  itemType: 0
+  holdType: 1
+  itemIcon: {fileID: 186343586, guid: e2ccef6073328aa4e83a5f4175ea88c7, type: 3}
+  itemWorldPrefab: {fileID: 3467787894381074955, guid: 454f42f0cbf55fd4d8ba2869da3a6dc5, type: 3}
+  itemHandModel: {fileID: 1193888433815468822, guid: ca1adfa944a65794ca8806d2983e6db0, type: 3}
