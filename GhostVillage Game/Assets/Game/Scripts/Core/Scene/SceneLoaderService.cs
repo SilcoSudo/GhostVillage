@@ -32,7 +32,7 @@ namespace Game.Core.Scene
             // 3. (Tư duy kỹ) Chờ thêm 1 chút để các Script ở Scene mới chạy xong Awake/Start
             await UniTask.Yield();
 
-            Debug.Log($"✅ [SceneLoader] Hoàn tất chuyển cảnh: {sceneName}");
+            Debug.Log($" [SceneLoader] Hoàn tất chuyển cảnh: {sceneName}");
 
             // 4. Tắt Loading Overlay
             _globalUI.ShowLoading(false);

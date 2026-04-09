@@ -12,6 +12,7 @@ using Cysharp.Threading.Tasks;
 using System.Collections;
 using Game.Scripts.Gameplay.Result;
 using Game.Domain.Map.Services;
+using Game.Core.Network;
 
 // Lưu ý: Đảm bảo bạn đã có các Enum và file GameplayEvents.cs như đã bàn trước đó
 public class GameManager : MonoBehaviourPunCallbacks
@@ -40,6 +41,9 @@ public class GameManager : MonoBehaviourPunCallbacks
     private MatchRoute _currentMatchRoute = MatchRoute.Lose; // Mặc định là thua
     private bool _isLocalDataReady = false;
 
+    private GameSession _session;
+    private ProfileService _profileService;
+
     // VContainer sẽ tự động điền các biến này vào khi Prefab GameContext được khởi tạo
     [Inject]
     public void Construct(
@@ -52,7 +56,9 @@ public class GameManager : MonoBehaviourPunCallbacks
         ObjectiveManager objectiveManager,
         MatchDataService matchDataService,
         GameplayUIManager uiManager,
-        MatchStatisticManager statisticManager
+        MatchStatisticManager statisticManager,
+        GameSession session,
+        ProfileService profileService
     )
     {
         _mapData = mapData;
@@ -65,6 +71,8 @@ public class GameManager : MonoBehaviourPunCallbacks
         _matchDataService = matchDataService;
         _uiManager = uiManager;
         _statisticManager = statisticManager;
+        _session = session;
+        _profileService = profileService;
     }
 
     // --- UNITY LIFECYCLE ---
@@ -100,7 +108,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
         else
         {
-            Debug.LogError("❌ [GameManager] MapData hoặc Data API chưa được Inject!");
+            Debug.LogError(" [GameManager] MapData hoặc Data API chưa được Inject!");
         }
 
         // [FIX QUAN TRỌNG] TẤT CẢ MỌI NGƯỜI ĐỀU PHẢI BẬT TRACKER
@@ -110,10 +118,20 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
         else
         {
-            Debug.LogError("❌ [GameManager] MatchStatisticManager chưa được Inject!");
+            Debug.LogError(" [GameManager] MatchStatisticManager chưa được Inject!");
         }
 
         _isLocalDataReady = true;
+
+        if (_playerSpawner != null)
+        {
+            _playerSpawner.SpawnLocalPlayer(_mapData);
+            Debug.Log("<color=green>[GameManager] Đã tự spawn Local Player thành công!</color>");
+        }
+        else
+        {
+            Debug.LogError("❌ [GameManager] PlayerSpawner chưa được Inject!");
+        }
 
         // 2. Spawn World (Chỉ Master Client thực hiện để tránh trùng lặp)
         if (PhotonNetwork.IsMasterClient)
@@ -158,11 +176,11 @@ public class GameManager : MonoBehaviourPunCallbacks
         GameplayEvents.OnAltarActivated += HandleEscapePhaseTrigger;
         GameplayEvents.OnLocalPlayerRequestEscape += HandleLocalPlayerEscapeRequest;
     }
-
     public override void OnDisable()
     {
         base.OnDisable();
         GameplayEvents.OnAltarActivated -= HandleEscapePhaseTrigger;
+        GameplayEvents.OnLocalPlayerRequestEscape -= HandleLocalPlayerEscapeRequest;
     }
 
     // --- NETWORK STATE SYNCHRONIZATION ---
@@ -199,32 +217,61 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         switch (newState)
         {
-            case GameState.WaitingForPlayers: CheckReadyToSpawn(); break;
+            case GameState.WaitingForPlayers: Debug.Log("[GameManager] Đang chờ người chơi..."); break;
             case GameState.Playing: Debug.Log("[GameManager] START GAME!"); break;
             case GameState.EscapePhase: Debug.Log("[GameManager] RUN NOW!"); break;
-
             case GameState.Ending:
-                Debug.Log("[GameManager] MATCH ENDED.");
 
                 Debug.Log("[GameManager] MATCH ENDED.");
 
                 if (PhotonNetwork.IsMasterClient)
                 {
-                    // 1. Tạo Data (Mock hoặc thật)
+                    // 1. Tạo Data Match History
                     var dto = CreateMatchResultData();
 
-                    // 2. Gửi API lưu DB (Fire & Forget)
+                    // 2. Gửi API lưu Lịch sử (Chỉ Master gửi)
                     _matchDataService.ReportMatchResultAsync(dto).Forget();
 
                     // 3. Bắn RPC hiện UI cho tất cả mọi người
                     string jsonDTO = JsonUtility.ToJson(dto);
                     photonView.RPC(nameof(RpcShowGameResult), RpcTarget.All, jsonDTO);
                 }
+
+                // AI CŨNG PHẢI TỰ GỬI TIẾN ĐỘ NHIỆM VỤ CỦA MÌNH LÊN SERVER
+                SendQuestProgressAPIAsync().Forget();
+
                 break;
         }
     }
 
     // Test stuffs ======================
+
+    // Hàm đóng gói số liệu và gọi Service gửi lên Backend
+    private async UniTaskVoid SendQuestProgressAPIAsync()
+    {
+        if (_statisticManager == null || _profileService == null || _session == null) return;
+
+        // Xử lý xác định Win hay Lose của máy cục bộ
+        int myActorNum = PhotonNetwork.LocalPlayer.ActorNumber;
+        PlayerMatchStatus myStatus = _playerStatuses.ContainsKey(myActorNum) ? _playerStatuses[myActorNum] : PlayerMatchStatus.Eliminated;
+        bool isWin = myStatus == PlayerMatchStatus.Escaped;
+
+        // Rút Raw Data JSON từ Statistic Manager
+        string questPayloadJson = _statisticManager.GetRawStatsPayloadForQuestAPI(isWin);
+        Debug.Log($"[GameManager] Dang gui Quest Payload: {questPayloadJson}");
+
+        // Gọi qua lớp Service chuẩn SOLID
+        bool success = await _profileService.UpdateQuestProgressAsync(questPayloadJson, _session.Token);
+
+        if (success)
+        {
+            Debug.Log("[GameManager] Cap nhat tien do Quest thanh cong!");
+        }
+        else
+        {
+            Debug.LogError("[GameManager] Loi khi cap nhat tien do Quest!");
+        }
+    }
 
     [PunRPC]
     private void RpcShowGameResult(string jsonDTO)
@@ -248,7 +295,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
         else
         {
-            Debug.LogError("❌ GameplayUIManager chưa được Inject vào GameManager!");
+            Debug.LogError(" GameplayUIManager chưa được Inject vào GameManager!");
         }
         yield return null;
     }
@@ -262,7 +309,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
         else
         {
-            Debug.LogError("❌ MatchStatisticManager chưa được Inject!");
+            Debug.LogError(" MatchStatisticManager chưa được Inject!");
         }
 
         var endTime = System.DateTime.UtcNow;
@@ -309,58 +356,85 @@ public class GameManager : MonoBehaviourPunCallbacks
     }
 
     // --- [NEW] LOGIC GỬI MOCK DATA VỀ SERVER ---
+    // --- [NEW] LOGIC GỬI MOCK DATA VỀ SERVER ---
     private async UniTaskVoid SendMockMatchReport()
     {
         var endTime = System.DateTime.UtcNow;
         var duration = (int)(endTime - _matchStartTime).TotalSeconds;
-        // Fix cứng duration nếu test quá nhanh
         if (duration < 10) duration = 600;
 
-        // 1. Tạo DTO Request
-        var request = new SaveMatchRequestDTO
+        // 1. Tạo DTO Request cho Match
+        var matchRequest = new SaveMatchRequestDTO
         {
             mapId = _mapData.CurrentMapConfig != null ? _mapData.CurrentMapConfig.identityConfig.mapId : "MAP_MOCK_TEST",
             sessionId = PhotonNetwork.CurrentRoom != null ? PhotonNetwork.CurrentRoom.Name : "Room_Offline_Test",
-            startTime = _matchStartTime.ToString("o"), // ISO format
+            startTime = _matchStartTime.ToString("o"),
             endTime = endTime.ToString("o"),
             durationSec = duration,
             playerResults = new List<PlayerResultRequestDTO>()
         };
 
-        // 2. Loop qua danh sách người chơi để tạo Mock Result cho từng người
         foreach (var p in PhotonNetwork.PlayerList)
         {
-            // Lấy status hiện tại
             PlayerMatchStatus status = _playerStatuses.ContainsKey(p.ActorNumber)
                 ? _playerStatuses[p.ActorNumber]
                 : PlayerMatchStatus.Playing;
 
-            // Mock Logic: Nếu Escaped thì Win, còn lại là Thua
-            bool isWin = status == PlayerMatchStatus.Escaped;
-
-            // [MOCK] ID giả lấy từ Seed Data DB (Hùng hoặc Raccoon) để test
-            // Logic thật: Lấy từ p.CustomProperties["UserId"]
+            bool isPlayerWin = status == PlayerMatchStatus.Escaped;
             string mockUserId = p.IsLocal ? "659d4b1e9d3e2a1b3c4d5e6f" : "696da0d5a6e42a937b80aaff";
 
             var playerResult = new PlayerResultRequestDTO
             {
                 userId = mockUserId,
                 nickname = p.NickName,
-                isWin = isWin,
-                outcome = isWin ? "ESCAPED" : "DEAD", // Mock Outcome
+                isWin = isPlayerWin,
+                outcome = isPlayerWin ? "ESCAPED" : "DEAD",
                 rewards = new MatchRewardDTO
                 {
-                    exp = isWin ? 1000 : 100,
-                    coin = isWin ? 500 : 50
+                    exp = isPlayerWin ? 1000 : 100,
+                    coin = isPlayerWin ? 500 : 50
                 },
-                titles = new List<string> { "Tester", "BugHunter" } // Mock Titles
+                titles = new List<string> { "Tester", "BugHunter" }
             };
 
-            request.playerResults.Add(playerResult);
+            matchRequest.playerResults.Add(playerResult);
         }
 
-        // 3. Gửi đi qua Service
-        await _matchDataService.ReportMatchResultAsync(request);
+        // ===============================================
+        // 2. CHUẨN BỊ RAW STATS CHO QUEST API
+        // ===============================================
+        PlayerMatchStatus myStatus = _playerStatuses.ContainsKey(PhotonNetwork.LocalPlayer.ActorNumber)
+                ? _playerStatuses[PhotonNetwork.LocalPlayer.ActorNumber]
+                : PlayerMatchStatus.Playing;
+        bool isWin = myStatus == PlayerMatchStatus.Escaped;
+
+        string questPayloadJson = "";
+        if (_statisticManager != null)
+        {
+            // Lấy JSON string trực tiếp từ hàm chuẩn hóa
+            questPayloadJson = _statisticManager.GetRawStatsPayloadForQuestAPI(isWin);
+            Debug.Log($"<color=yellow>[GameManager] Đóng gói Quest Payload: {questPayloadJson}</color>");
+        }
+
+        // ===============================================
+        // 3. BẮN 2 SÚNG SONG SONG (BỎ DÒNG ĐỢI AWAIT CŨ)
+        // ===============================================
+        Debug.Log("<color=orange>[GameManager] Đang gửi kết quả Match & Quest lên Server...</color>");
+
+        // Task 1: Gửi Match History (Giữ dùng Service của sếp)
+        var matchTask = _matchDataService.ReportMatchResultAsync(matchRequest);
+
+        // Task 2: Gửi Quest Stats (Chọc thẳng APIClient hoặc tạo QuestDataService tuỳ sếp)
+        // Ở đây tui ví dụ gọi qua APIClient (nhớ Inject APIClient vào GameManager nếu chưa có)
+        // var questTask = _apiClient.PostAsyncWithAuth<object>("/api/quests/update-progress", questPayloadJson, _session.Token);
+
+        // Chờ cả 2 xong
+        // await UniTask.WhenAll(matchTask, questTask);
+
+        // NẾU SẾP CHƯA TẠO API CHO QUEST THÌ CỨ ĐỂ MỘT MÌNH MATCH TASK CHẠY TRƯỚC:
+        await matchTask;
+
+        Debug.Log("<color=green>[GameManager] Xong! Đã gửi toàn bộ thông tin lên Server!</color>");
     }
 
     // --- GAMEPLAY LOGIC FLOW ---
@@ -374,7 +448,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
         else
         {
-            Debug.LogError("❌ [GameManager] PlayerSpawner chưa được Inject!");
+            Debug.LogError(" [GameManager] PlayerSpawner chưa được Inject!");
         }
 
         // 2. Nếu là Master, sau khi spawn xong thì chuyển game sang Playing
@@ -427,26 +501,30 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         PlayerMatchStatus newStatus = (PlayerMatchStatus)statusInt;
 
-        if (_playerStatuses.ContainsKey(actorNumber))
+        // [FIX CHÍ MẠNG 1]: Lưới bảo hộ! Nếu danh sách chưa có người này thì tự động nạp vào
+        if (!_playerStatuses.ContainsKey(actorNumber))
         {
-            // Validate logic (ví dụ: Đã chết thì không thể thoát)
-            var currentStatus = _playerStatuses[actorNumber];
-            if (currentStatus == PlayerMatchStatus.Eliminated || currentStatus == PlayerMatchStatus.Escaped)
-            {
-                return; // Đã xong rồi thì thôi
-            }
-
-            // Cập nhật Server Data
-            _playerStatuses[actorNumber] = newStatus;
-            Debug.Log($"[GameManager] Player {actorNumber} -> {newStatus}");
-
-            // Đồng bộ lại cho tất cả client biết để cập nhật UI/Spectator
-            photonView.RPC(nameof(SyncPlayerStatusRPC), RpcTarget.All, actorNumber, statusInt);
-
-            // Kiểm tra điều kiện kết thúc game
-            CheckEndGameCondition();
+            _playerStatuses[actorNumber] = PlayerMatchStatus.Playing;
         }
+
+        // Validate logic (ví dụ: Đã chết thì không thể thoát)
+        var currentStatus = _playerStatuses[actorNumber];
+        if (currentStatus == PlayerMatchStatus.Eliminated || currentStatus == PlayerMatchStatus.Escaped)
+        {
+            return; // Đã xong rồi thì thôi
+        }
+
+        // Cập nhật Server Data
+        _playerStatuses[actorNumber] = newStatus;
+        Debug.Log($"[GameManager] Player {actorNumber} -> {newStatus}");
+
+        // Đồng bộ lại cho tất cả client biết để cập nhật UI/Spectator
+        photonView.RPC(nameof(SyncPlayerStatusRPC), RpcTarget.All, actorNumber, statusInt);
+
+        // Kiểm tra điều kiện kết thúc game
+        CheckEndGameCondition();
     }
+
 
     [PunRPC]
     private void SyncPlayerStatusRPC(int actorNumber, int statusInt)

@@ -83,19 +83,19 @@
 
 //         public override void OnConnectedToMaster()
 //         {
-//             Debug.Log("✅ [Photon] OnConnectedToMaster called");
+//             Debug.Log(" [Photon] OnConnectedToMaster called");
 //             PrintPhotonState();
 //         }
 
 //         public override void OnDisconnected(DisconnectCause cause)
 //         {
-//             Debug.Log($"❌ [Photon] OnDisconnected: {cause}");
+//             Debug.Log($" [Photon] OnDisconnected: {cause}");
 //             PrintPhotonState();
 //         }
 
 //         public override void OnCustomAuthenticationResponse(Dictionary<string, object> data)
 //         {
-//             Debug.Log("✅ [Photon] OnCustomAuthenticationResponse called");
+//             Debug.Log(" [Photon] OnCustomAuthenticationResponse called");
 //             Debug.Log($"  Data keys: {string.Join(", ", data.Keys)}");
 //             foreach (var kv in data)
 //             {
@@ -105,7 +105,7 @@
 
 //         public override void OnCustomAuthenticationFailed(string debugMessage)
 //         {
-//             Debug.Log($"❌ [Photon] OnCustomAuthenticationFailed: {debugMessage}");
+//             Debug.Log($" [Photon] OnCustomAuthenticationFailed: {debugMessage}");
 //             PrintPhotonState();
 //         }
 //     }

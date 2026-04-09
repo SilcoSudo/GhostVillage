@@ -16,9 +16,21 @@ public class InventorySlotUI : MonoBehaviour
     {
         if (item != null)
         {
-            iconImage.sprite = item.itemIcon;
-            iconImage.color = Color.white;
-            iconImage.enabled = true;
+            if (item.itemIcon != null)
+            {
+                iconImage.sprite = item.itemIcon;
+                iconImage.color = Color.white;
+                iconImage.enabled = true;
+                Debug.Log($"[InventorySlot] SetItem '{item.itemName}': sprite={item.itemIcon.name}");
+            }
+            else
+            {
+                // Fallback: show colored placeholder nếu icon missing
+                iconImage.sprite = null;
+                iconImage.color = new Color(0.3f, 0.7f, 0.3f, 1f); // Green placeholder
+                iconImage.enabled = true;
+                Debug.LogWarning($"[InventorySlot] Item '{item.itemName}' có icon NULL! Showing placeholder color.");
+            }
         }
         else
         {

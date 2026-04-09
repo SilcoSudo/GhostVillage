@@ -15,7 +15,7 @@ export const QuestController = {
         ...result,
       });
     } catch (error) {
-      console.error("❌ Error:", error);
+      console.error(" Error:", error);
       return res.status(500).json({
         success: false,
         message: "Lỗi hệ thống",
@@ -197,6 +197,45 @@ export const QuestController = {
         message: "Lỗi hệ thống",
         error: error.message,
       });
+    }
+  },
+
+  updateProgress: async (req, res) => {
+    try {
+      const userId = req.user._id || req.user.id;
+      const { rawStats } = req.body; // Unity gửi lên cái Dictionary<string, int>
+
+      if (!rawStats) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Thiếu dữ liệu rawStats" });
+      }
+
+      const newProgress = await QuestService.updateProgressFromStats(
+        userId,
+        rawStats,
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Cập nhật tiến độ nhiệm vụ thành công!",
+        data: newProgress,
+      });
+    } catch (error) {
+      console.error(" Error in QuestController.updateProgress:", error);
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  },
+
+  claimReward: async (req, res) => {
+    try {
+      const userId = req.user._id || req.user.id;
+      const { questId } = req.body;
+
+      const result = await QuestService.claimQuestReward(userId, questId);
+      return res.status(200).json({ success: true, data: result });
+    } catch (error) {
+      return res.status(400).json({ success: false, message: error.message });
     }
   },
 };

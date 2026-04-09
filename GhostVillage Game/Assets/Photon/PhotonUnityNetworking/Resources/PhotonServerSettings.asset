@@ -64,6 +64,14 @@ MonoBehaviour:
   - VongNhiCancelRPC
   - RpcSetKnockedState
   - RpcUpdateReviveProgress
+  - RpcSyncLight
+  - AddCaptureProgressRPC
+  - CompletePuzzleRPC
+  - PlayFakeChickenCryRPC
+  - RequestMasterAlarmRPC
+  - StartCatchPhaseRPC
+  - SyncProgressRPC
+  - RpcSyncLightMode
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

@@ -30,11 +30,17 @@ namespace GhostVillage.Gameplay.Shared
             currentWaypointIndex = 0;
             GoToNextWaypoint();
             
-            Debug.Log("✅ PatrolState: Bắt đầu patrol!");
+            Debug.Log(" PatrolState: Bắt đầu patrol!");
         }
 
         public void Update()
         {
+            if (waypoints == null || waypoints.Length == 0)
+            {
+                monster.Stop();
+                return;
+            }
+
             // Luôn di chuyển theo waypoint hiện tại
             Vector3 targetWaypoint = waypoints[currentWaypointIndex];
             float distanceToWaypoint = Vector3.Distance(monster.transform.position, targetWaypoint);

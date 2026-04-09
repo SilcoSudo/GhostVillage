@@ -17,10 +17,10 @@ namespace Game.UI.Friend
     {
         [Header("--- Main Dependencies ---")]
         [SerializeField] private Button _btnOpenFriend;
-        [SerializeField] private GameObject _notiDotMainMenu; // THÊM MỚI: Chấm đỏ trên nút ngoài MainMenu
-        [SerializeField] private GameObject _modalPanel; // Grp_FriendModal
-        [SerializeField] private Transform _contentTransform; // Src_Content/Viewport/Content
-        [SerializeField] private GameObject _loadingPanel; // Img_Loading
+        [SerializeField] private GameObject _notiDotMainMenu;
+        [SerializeField] private GameObject _modalPanel;
+        [SerializeField] private Transform _contentTransform;
+        [SerializeField] private GameObject _loadingPanel;
 
         [Header("--- My Profile Section ---")]
         [SerializeField] private Image _imgMyAvatar;
@@ -43,11 +43,11 @@ namespace Game.UI.Friend
         [SerializeField] private Button _btnTabFindFriend;
         [SerializeField] private Button _btnTabPending;
         [SerializeField] private Button _btnTabSent;
-        [SerializeField] private GameObject _notiDotPendingTab; // Img_NotiDot inside Btn_Pending
+        [SerializeField] private GameObject _notiDotPendingTab;
         [SerializeField] private Button _btnCloseModal;
 
         [Header("--- Search Box (Find Friend Tab) ---")]
-        [SerializeField] private GameObject _searchPanel; // Grp_SearchBox
+        [SerializeField] private GameObject _searchPanel;
         [SerializeField] private TMP_InputField _inputSearchUID;
         [SerializeField] private Button _btnSearchSubmit;
         [SerializeField] private TextMeshProUGUI _txtSearchError;
@@ -74,7 +74,7 @@ namespace Game.UI.Friend
             BindUIEvents();
             BindReactiveData();
 
-            _modalPanel.SetActive(false); // Hide initially
+            _modalPanel.SetActive(false);
             _notiDotPendingTab.SetActive(false);
         }
 
@@ -88,32 +88,62 @@ namespace Game.UI.Friend
             _btnTabPending.onClick.AddListener(() => SwitchTab(FriendTab.Pending));
             _btnTabSent.onClick.AddListener(() => SwitchTab(FriendTab.Sent));
 
-            _btnSearchSubmit.onClick.AddListener(() =>
+            _btnSearchSubmit.onClick.AddListener(async () =>
             {
                 string uid = _inputSearchUID.text.Trim();
-                _friendController.SearchByUID(uid).Forget();
+
+                if (string.IsNullOrEmpty(uid))
+                {
+                    if (_globalUI != null) _globalUI.ShowError("Lỗi nhập liệu", "UID không được để trống!");
+                    return;
+                }
+
+                if (uid.Length != 8 || !System.Text.RegularExpressions.Regex.IsMatch(uid, @"^\d{8}$"))
+                {
+                    if (_globalUI != null) _globalUI.ShowError("Lỗi nhập liệu", "UID không hợp lệ! Vui lòng nhập chính xác 8 chữ số.");
+                    return;
+                }
+
+                string myUid = _txtMyUID.text.Replace("UID: ", "").Trim();
+
+                if (uid == myUid)
+                {
+                    if (_globalUI != null) _globalUI.ShowError("Oops!", "Bạn không thể tìm kiếm chính mình!");
+                    ClearContent();
+                    return;
+                }
+
+                if (_txtSearchError != null) _txtSearchError.gameObject.SetActive(false);
+
+                // ========================================================
+                // [FIX CHÍ MẠNG 1]: Bọc Try-Catch để hứng lỗi API (như 404 Not Found)
+                // ========================================================
+                try
+                {
+                    await _friendController.SearchByUID(uid);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"[FriendUI] Lỗi tìm kiếm: {e.Message}");
+
+                    // Nếu lỗi do Controller báo rỗng, GlobalUI sẽ hiện lên
+                    if (_globalUI != null)
+                    {
+                        // Kiểm tra nếu là lỗi HTTP 404
+                        if (e.Message.Contains("404"))
+                            _globalUI.ShowError("Không tìm thấy", "Không tìm thấy người chơi với UID này.");
+                        else
+                            _globalUI.ShowError("Lỗi tìm kiếm", "Đã xảy ra lỗi khi tìm kiếm UID. Vui lòng thử lại!");
+                    }
+                    ClearContent(); // Xóa sạch kết quả cũ nếu tìm lỗi
+                }
             });
         }
 
         private void BindReactiveData()
         {
-            // --- Bind My Profile Data ---
-            _txtMyDisplayName.text = _session.DisplayName;
-
-            // 🎯 [TEMPORARY MOCK DATA] Gắn cứng UID ảo để test UI chạy lên trước
-            if (_txtMyUID != null)
-            {
-                _txtMyUID.text = "UID: 10000001"; // Gắn đại một số nào đó cho nó hiện lên UI
-            }
-
-            // Assuming UID is stored in PlayerDataStore or derived. 
-            // If it's not in the store, you might need to fetch it or pass it differently.
-            // For now, I'll assume you add a UID property to PlayerDataStore.
-            // _playerDataStore.UID.Subscribe(val => _txtMyUID.text = $"UID: {val}").AddTo(_disposables);
-
             if (defaultAvatar != null) _imgMyAvatar.sprite = defaultAvatar;
 
-            // --- Bind Friend System State ---
             _friendController.IsLoading.Subscribe(isLoading =>
             {
                 _loadingPanel.SetActive(isLoading);
@@ -156,8 +186,25 @@ namespace Game.UI.Friend
 
             _friendController.SearchError.Subscribe(errorMsg =>
             {
-                _txtSearchError.text = errorMsg;
-                _txtSearchError.gameObject.SetActive(!string.IsNullOrEmpty(errorMsg));
+                if (_txtSearchError != null)
+                {
+                    _txtSearchError.text = "";
+                    _txtSearchError.gameObject.SetActive(false);
+                }
+
+                // Nếu có chuỗi lỗi báo về từ Controller thì bắn GlobalUI lên
+                if (!string.IsNullOrEmpty(errorMsg) && _globalUI != null)
+                {
+                    _globalUI.ShowError("Thông báo", errorMsg);
+                }
+            }).AddTo(_disposables);
+
+            _friendController.FriendStatuses.Subscribe(statuses =>
+            {
+                if (_currentTab == FriendTab.FriendList)
+                {
+                    RenderList(_friendController.FriendList.Value, _prefabFriendList, SetupFriendItem);
+                }
             }).AddTo(_disposables);
         }
 
@@ -177,11 +224,35 @@ namespace Game.UI.Friend
         private void OpenModal()
         {
             _modalPanel.SetActive(true);
-            SwitchTab(FriendTab.FriendList);
-            _friendController.InitializeDataAsync().Forget();
 
-            // Ẩn chấm đỏ MainMenu khi đã mở Modal
+            _txtMyDisplayName.text = _session.DisplayName;
+            if (_txtMyUID != null)
+            {
+                _txtMyUID.text = $"UID: {_session.UID}";
+            }
+
+            SwitchTab(FriendTab.FriendList);
+
+            // ========================================================
+            // [FIX]: GỌI HÀM ASYNC RIÊNG THAY VÌ DÙNG ContinueWith 
+            // ========================================================
+            SafeInitializeDataAsync().Forget();
+
             if (_notiDotMainMenu != null) _notiDotMainMenu.SetActive(false);
+        }
+
+        // HÀM MỚI TẠO ĐỂ LOAD DATA VÀ BẮT LỖI
+        private async UniTaskVoid SafeInitializeDataAsync()
+        {
+            try
+            {
+                await _friendController.InitializeDataAsync();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[FriendUI] Lỗi tải dữ liệu bạn bè: {e.Message}");
+                if (_globalUI != null) _globalUI.ShowError("Lỗi Dữ Liệu", "Không thể lấy danh sách bạn bè lúc này.");
+            }
         }
 
         private void CloseModal()
@@ -198,37 +269,46 @@ namespace Game.UI.Friend
             if (tab == FriendTab.FindFriend)
             {
                 _inputSearchUID.text = "";
-                _txtSearchError.text = "";
+                if (_txtSearchError != null) _txtSearchError.text = "";
                 _friendController.CurrentSearchResult.Value = null;
-                return; // Tab này tự xử, không cần fetch List
+                return;
             }
 
-            // GỌI HÀM BẤT ĐỒNG BỘ ĐỂ FETCH DATA MỚI NHẤT TRƯỚC KHI RENDER
             UpdateTabAsync(tab).Forget();
         }
 
         private async UniTaskVoid UpdateTabAsync(FriendTab tab)
         {
-            switch (tab)
+            // ========================================================
+            // [FIX CHÍ MẠNG 3]: Bọc Try-Catch khi chuyển Tab
+            // ========================================================
+            try
             {
-                case FriendTab.FriendList:
-                    await _friendController.FetchFriendListAsync();
-                    if (_currentTab == FriendTab.FriendList)
-                        RenderList(_friendController.FriendList.Value, _prefabFriendList, SetupFriendItem);
-                    break;
+                switch (tab)
+                {
+                    case FriendTab.FriendList:
+                        await _friendController.FetchFriendListAsync();
+                        if (_currentTab == FriendTab.FriendList)
+                            RenderList(_friendController.FriendList.Value, _prefabFriendList, SetupFriendItem);
+                        break;
 
-                case FriendTab.Pending:
-                    await _friendController.FetchPendingRequestsAsync();
-                    if (_currentTab == FriendTab.Pending)
-                        RenderList(_friendController.PendingRequests.Value, _prefabPending, SetupPendingItem);
-                    break;
+                    case FriendTab.Pending:
+                        await _friendController.FetchPendingRequestsAsync();
+                        if (_currentTab == FriendTab.Pending)
+                            RenderList(_friendController.PendingRequests.Value, _prefabPending, SetupPendingItem);
+                        break;
 
-                case FriendTab.Sent:
-                    // BẮT BUỘC FETCH LẠI TRƯỚC KHI VẼ
-                    await _friendController.FetchSentRequestsAsync();
-                    if (_currentTab == FriendTab.Sent)
-                        RenderList(_friendController.SentRequests.Value, _prefabSent, SetupSentItem);
-                    break;
+                    case FriendTab.Sent:
+                        await _friendController.FetchSentRequestsAsync();
+                        if (_currentTab == FriendTab.Sent)
+                            RenderList(_friendController.SentRequests.Value, _prefabSent, SetupSentItem);
+                        break;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[FriendUI] Lỗi tải dữ liệu Tab {tab}: {e.Message}");
+                if (_globalUI != null) _globalUI.ShowError("Lỗi", $"Không thể tải danh sách ({tab}).");
             }
         }
 
@@ -259,7 +339,32 @@ namespace Game.UI.Friend
         private void SetupFriendItem(GameObject obj, FriendProfileDTO data)
         {
             SetText(obj, "Txt_DisplayName", data.GetDisplayName());
-            SetText(obj, "Txt_Status", "Online"); // Mặc định hiển thị, update sau với Photon
+
+            string userId = data.GetUserId();
+            string statusText = "Offline";
+            Color statusColor = Color.gray;
+
+            if (_friendController.FriendStatuses.Value.TryGetValue(userId, out int chatStatus))
+            {
+                if (chatStatus == 2)
+                {
+                    statusText = "Online";
+                    statusColor = Color.green;
+                }
+                else if (chatStatus == 3)
+                {
+                    statusText = "In-Game";
+                    statusColor = Color.red;
+                }
+            }
+
+            SetText(obj, "Txt_Status", statusText);
+
+            var imgStatus = obj.transform.Find("Img_StatusPoint")?.GetComponent<Image>();
+            if (imgStatus != null)
+            {
+                imgStatus.color = statusColor;
+            }
 
             var btnUnfriend = obj.transform.Find("Btn_Unfriend")?.GetComponent<Button>();
             if (btnUnfriend != null)
@@ -267,16 +372,26 @@ namespace Game.UI.Friend
                 btnUnfriend.onClick.RemoveAllListeners();
                 btnUnfriend.onClick.AddListener(async () =>
                 {
-                    bool isSuccess = await _friendController.Unfriend(data.GetUserId());
-                    if (isSuccess)
+                    // ========================================================
+                    // [FIX CHÍ MẠNG 4]: Bọc Try-Catch khi xóa bạn
+                    // ========================================================
+                    try
                     {
-                        if (_globalUI != null) _globalUI.ShowError("Thành công", "Đã xóa khỏi danh sách bạn bè.");
-                        // BẮT BUỘC RENDER LẠI UI NGAY LẬP TỨC
-                        SwitchTab(_currentTab);
+                        bool isSuccess = await _friendController.Unfriend(data.GetUserId());
+                        if (isSuccess)
+                        {
+                            if (_globalUI != null) _globalUI.ShowError("Thành công", "Đã xóa khỏi danh sách bạn bè.");
+                            SwitchTab(_currentTab);
+                        }
+                        else
+                        {
+                            if (_globalUI != null) _globalUI.ShowError("Lỗi", "Không thể xóa bạn lúc này!");
+                        }
                     }
-                    else
+                    catch (Exception e)
                     {
-                        if (_globalUI != null) _globalUI.ShowError("Lỗi", "Không thể xóa bạn lúc này!");
+                        Debug.LogWarning($"[FriendUI] Lỗi hủy kết bạn: {e.Message}");
+                        if (_globalUI != null) _globalUI.ShowError("Lỗi hệ thống", "Đã xảy ra lỗi khi kết nối máy chủ.");
                     }
                 });
             }
@@ -293,15 +408,15 @@ namespace Game.UI.Friend
                 btnAccept.onClick.RemoveAllListeners();
                 btnAccept.onClick.AddListener(async () =>
                 {
-                    bool isSuccess = await _friendController.AcceptRequest(data.GetFriendshipId());
-                    if (isSuccess)
+                    try
                     {
-                        // THÀNH CÔNG -> RENDER LẠI UI
-                        SwitchTab(_currentTab);
+                        bool isSuccess = await _friendController.AcceptRequest(data.GetFriendshipId());
+                        if (isSuccess) SwitchTab(_currentTab);
+                        else if (_globalUI != null) _globalUI.ShowError("Lỗi", "Không thể chấp nhận (Có thể thư đã bị thu hồi)!");
                     }
-                    else if (_globalUI != null)
+                    catch (Exception)
                     {
-                        _globalUI.ShowError("Lỗi", "Không thể chấp nhận (Có thể thư đã bị thu hồi)!");
+                        if (_globalUI != null) _globalUI.ShowError("Lỗi hệ thống", "Không thể xử lý yêu cầu.");
                     }
                 });
             }
@@ -312,15 +427,15 @@ namespace Game.UI.Friend
                 btnReject.onClick.RemoveAllListeners();
                 btnReject.onClick.AddListener(async () =>
                 {
-                    bool isSuccess = await _friendController.RejectRequest(data.GetFriendshipId());
-                    if (isSuccess)
+                    try
                     {
-                        // THÀNH CÔNG -> RENDER LẠI UI
-                        SwitchTab(_currentTab);
+                        bool isSuccess = await _friendController.RejectRequest(data.GetFriendshipId());
+                        if (isSuccess) SwitchTab(_currentTab);
+                        else if (_globalUI != null) _globalUI.ShowError("Lỗi", "Không thể từ chối!");
                     }
-                    else if (_globalUI != null)
+                    catch (Exception)
                     {
-                        _globalUI.ShowError("Lỗi", "Không thể từ chối!");
+                        if (_globalUI != null) _globalUI.ShowError("Lỗi hệ thống", "Không thể xử lý yêu cầu.");
                     }
                 });
             }
@@ -337,16 +452,19 @@ namespace Game.UI.Friend
                 btnTakeBack.onClick.RemoveAllListeners();
                 btnTakeBack.onClick.AddListener(async () =>
                 {
-                    bool isSuccess = await _friendController.RejectRequest(data.GetFriendshipId());
-                    if (isSuccess)
+                    try
                     {
-                        if (_globalUI != null) _globalUI.ShowError("Thành công", "Đã thu hồi lời mời!");
-
-                        // Gọi Controller Fetch lại danh sách Sent
-                        await _friendController.FetchSentRequestsAsync();
-
-                        // RENDER LẠI UI NGAY LẬP TỨC
-                        SwitchTab(_currentTab);
+                        bool isSuccess = await _friendController.RejectRequest(data.GetFriendshipId());
+                        if (isSuccess)
+                        {
+                            if (_globalUI != null) _globalUI.ShowError("Thành công", "Đã thu hồi lời mời!");
+                            await _friendController.FetchSentRequestsAsync();
+                            SwitchTab(_currentTab);
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        if (_globalUI != null) _globalUI.ShowError("Lỗi hệ thống", "Không thể thu hồi lúc này.");
                     }
                 });
             }
@@ -363,19 +481,26 @@ namespace Game.UI.Friend
                 btnAdd.onClick.RemoveAllListeners();
                 btnAdd.onClick.AddListener(async () =>
                 {
-                    bool isSuccess = await _friendController.SendFriendRequest(data.userId);
+                    try
+                    {
+                        bool isSuccess = await _friendController.SendFriendRequest(data.userId);
 
-                    if (isSuccess)
-                    {
-                        // Ở Tab Tìm kiếm thì chỉ cần đổi text Nút là đủ mượt rồi, không cần tải lại List
-                        btnAdd.interactable = false;
-                        var btnText = btnAdd.GetComponentInChildren<TextMeshProUGUI>();
-                        if (btnText != null) btnText.text = "Đã Gửi";
-                        if (_globalUI != null) _globalUI.ShowError("Thành công", "Đã gửi lời mời!");
+                        if (isSuccess)
+                        {
+                            btnAdd.interactable = false;
+                            var btnText = btnAdd.GetComponentInChildren<TextMeshProUGUI>();
+                            if (btnText != null) btnText.text = "Đã Gửi";
+                            if (_globalUI != null) _globalUI.ShowError("Thành công", "Đã gửi lời mời!");
+                        }
+                        else
+                        {
+                            if (_globalUI != null) _globalUI.ShowError("Lỗi", "Đã gửi lời mời hoặc đã là bạn!");
+                        }
                     }
-                    else
+                    catch (Exception e)
                     {
-                        if (_globalUI != null) _globalUI.ShowError("Lỗi", "Đã gửi lời mời hoặc đã là bạn!");
+                        Debug.LogWarning($"[FriendUI] Lỗi gửi kết bạn: {e.Message}");
+                        if (_globalUI != null) _globalUI.ShowError("Lỗi", "Có vẻ như UID này không thể kết bạn.");
                     }
                 });
             }

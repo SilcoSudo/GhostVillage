@@ -134,7 +134,7 @@ const seedMonsters = async () => {
 
     // Thêm dữ liệu mới
     const insertedMonsters = await Monster.insertMany(monsters);
-    console.log(`✅ Successfully seeded ${insertedMonsters.length} monsters`);
+    console.log(` Successfully seeded ${insertedMonsters.length} monsters`);
 
     // Hiển thị danh sách
     console.log("\n📋 Seeded Monsters:");
@@ -146,7 +146,7 @@ const seedMonsters = async () => {
 
     process.exit(0);
   } catch (error) {
-    console.error("❌ Error seeding monsters:", error);
+    console.error(" Error seeding monsters:", error);
     process.exit(1);
   }
 };

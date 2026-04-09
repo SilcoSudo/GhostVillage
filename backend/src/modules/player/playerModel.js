@@ -26,28 +26,57 @@ const playerSchema = new mongoose.Schema(
       avatar: { type: String, default: "avatar_default_01" },
       level: { type: Number, default: 1 },
       exp: { type: Number, default: 0 },
-      coin: { type: Number, default: 1000 }
+      coin: { type: Number, default: 1000 },
     },
-    unlockedSkins: { type: [String], default: [] }, 
     unlockedPerks: { type: [String], default: [] },
-    equippedSkins: {
-      head: { type: String, default: "" }, // Lưu prefabId của head
-      body: { type: String, default: "" }  // Lưu prefabId của body
-    },
     equippedPerks: { type: [String], default: [] },
-    unlockedMedals: [String],
-    selectedMedals: { type: [String], default: [] },
-    // Sub-document để truy vấn tiến độ cực nhanh
+
+    //  THÊM FIELD MEDAL ĐỂ TRACK CÁC MEDAL HUY CHƯƠNG ĐÃ UNLOCK VÀ SELECTED
+    unlockedMedals: { type: [mongoose.Schema.Types.ObjectId], default: [] },
+    selectedMedals: { type: [mongoose.Schema.Types.ObjectId], default: [] },
+
+    // TIẾN ĐỘ THÀNH TỰU (Lưu vĩnh viễn không bao giờ xóa)
     achievementsProgress: [
       {
-        achievementCode: String,
+        questId: String, // ID của Quest (Loại ACHIEVEMENT)
         current: { type: Number, default: 0 },
         isClaimed: { type: Boolean, default: false },
       },
     ],
+
+    // TIẾN ĐỘ NHIỆM VỤ NGÀY (Sẽ bị xóa đè khi sang ngày mới)
+    dailyProgress: [
+      {
+        questId: String, // ID của Quest (Loại DAILY)
+        current: { type: Number, default: 0 },
+        isClaimed: { type: Boolean, default: false },
+      },
+    ],
+
+    // THỜI GIAN RESET LƯỜI (Kiểm tra xem đã qua 0h00 chưa)
+    lastDailyReset: { type: Date, default: Date.now },
   },
   { timestamps: true },
 );
+
+playerSchema.pre("validate", async function (next) {
+  try {
+    if (this.uid) return next();
+
+    for (let i = 0; i < 20; i++) {
+      const candidate = Math.floor(10000000 + Math.random() * 90000000).toString();
+      const exists = await mongoose.models.Player.exists({ uid: candidate });
+      if (!exists) {
+        this.uid = candidate;
+        return next();
+      }
+    }
+
+    return next(new Error("Unable to generate unique player uid"));
+  } catch (error) {
+    return next(error);
+  }
+});
 
 // Populate User reference when returning JSON
 playerSchema.methods.toJSON = function () {

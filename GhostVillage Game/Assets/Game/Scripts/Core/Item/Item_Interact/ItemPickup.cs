@@ -5,7 +5,8 @@ using Game.Core.Player.RayCast; // Chứa interface IInteractable của bro
 namespace Game.Core.Interaction
 {
     [RequireComponent(typeof(PhotonView))]
-    public class ItemPickup : MonoBehaviourPun, IInteractable
+    // MỚI: Thêm IPunInstantiateMagicCallback để nó biết "nghe ngóng" data lúc văng ra từ túi
+    public class ItemPickup : MonoBehaviourPun, IInteractable, IPunInstantiateMagicCallback
     {
         [Header("Item Data")]
         [Tooltip("Kéo file Scriptable Object của Medkit (hoặc item bất kỳ) vào đây")]
@@ -74,6 +75,32 @@ namespace Game.Core.Interaction
             if (PhotonNetwork.IsMasterClient)
             {
                 PhotonNetwork.Destroy(gameObject);
+            }
+        }
+
+        // ==========================================
+        // MỚI: HÀNG RÀO HỨNG PIN KHI RỚT XUỐNG ĐẤT
+        // ==========================================
+        public void OnPhotonInstantiate(PhotonMessageInfo info)
+        {
+            // Kiểm tra xem lúc đẻ ra, MasterClient có nhét mảng customInitData nào vào không?
+            if (info.photonView.InstantiationData != null && info.photonView.InstantiationData.Length > 0)
+            {
+                float savedBattery = (float)info.photonView.InstantiationData[0];
+
+                // BẢO MẬT TUYỆT ĐỐI: Chỉ kích hoạt nếu là Đèn Pin VÀ pin hợp lệ (>= 0).
+                // Medkit, Còi (-1) sẽ tự động bị văng ra khỏi if này, không ảnh hưởng gì!
+                if (savedBattery >= 0f && data is FlashlightItemSO)
+                {
+                    // Phân thân Data gốc ra thành 1 bản Clone cục bộ ngay tại mặt đất
+                    data = Instantiate(data);
+                    data.name = data.name.Replace("(Clone)", "");
+
+                    // Nhét số pin cũ vào bản Clone này
+                    ((FlashlightItemSO)data).currentBattery = savedBattery;
+
+                    Debug.Log($"<color=cyan>[ItemPickup]</color> Kế thừa thành công: {data.itemName} còn {savedBattery} pin.");
+                }
             }
         }
     }

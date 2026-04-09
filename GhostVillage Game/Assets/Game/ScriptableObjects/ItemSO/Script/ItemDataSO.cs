@@ -9,6 +9,13 @@ public enum ItemType
     EscapeTool       // Cầm trên tay, bật tắt được (Đèn, Máy dò)
 }
 
+public enum HoldType
+{
+    None = 0,       // Không cầm gì
+    OneHand = 1,    // Cầm 1 tay (Đèn pin)
+    TwoHands = 2    // Bưng 2 tay (Medkit)
+}
+
 // Bỏ dòng CreateAssetMenu đi vì ta sẽ tạo từ class con
 public class ItemDataSO : ScriptableObject
 {
@@ -17,7 +24,11 @@ public class ItemDataSO : ScriptableObject
     public string itemId;
     public string itemName;
     [TextArea] public string description;
-    public ItemType itemType; // <-- Để phân loại UI
+    public ItemType itemType;
+
+    [Header("Animation Settings")]
+    [Tooltip("Định nghĩa món đồ này cầm 1 tay hay 2 tay để chạy đúng Animation")]
+    public HoldType holdType = HoldType.OneHand;
 
     [Header("UI Visuals")]
     public Sprite itemIcon;

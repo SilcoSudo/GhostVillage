@@ -114,16 +114,28 @@ namespace Game.Domain.Friend.Controllers
                 bool success = await _friendService.AddFriendAsync(targetUserId);
                 if (success)
                 {
-                    _globalUI.ShowError("Thành công", "Đã gửi lời mời kết bạn!"); // Dùng ké Popup báo OK
+                    _globalUI.ShowError("Thành công", "Đã gửi lời mời kết bạn!");
                     await FetchSentRequestsAsync();
+                    return true;  // ✅ FIX: Return true chỉ khi success
                 }
-                return true; // Trả về true nếu thành công
+                return false;  // ✅ FIX: Return false nếu AddFriendAsync fail
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Bắt lỗi 400 từ Backend
-                _globalUI.ShowError("Lỗi thêm bạn", "Người này đã là bạn, hoặc bạn đã gửi lời mời trước đó rồi!");
-                return false; // Trả về false nếu lỗi
+                // [FIX]: Hứng cái lỗi ném từ API (VD: Bạn đã đạt giới hạn 20 người bạn)
+                // Phải check xem nó có phải UnityWebRequestException không, nếu có thì bóc Message.
+                // Ở đây ta cứ in chung chung cái ex.Message trước, APIClient nó sẽ bọc lại
+                string errorMsg = "Người này đã là bạn, hoặc bạn đã gửi lời mời trước đó rồi!";
+
+                // Nếu BE trả về 400 kèm message, ta móc nó ra (dựa theo log APIClient của sếp)
+                if (ex.Message.Contains("400") || ex.Message.Contains("giới hạn"))
+                {
+                    // Lọc để hiển thị một câu dễ nhìn hơn nếu có chữ "giới hạn"
+                    errorMsg = "Không thể gửi. Có thể danh sách bạn bè của một người đã đầy!";
+                }
+
+                _globalUI.ShowError("Lỗi kết bạn", errorMsg);
+                return false;
             }
             finally { IsLoading.Value = false; }
         }
@@ -141,10 +153,17 @@ namespace Game.Domain.Friend.Controllers
                 }
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                _globalUI.ShowError("Lỗi", "Không thể chấp nhận (Có thể lời mời đã bị hủy)!");
-                await FetchPendingRequestsAsync(); // Cập nhật lại UI nhỡ lời mời biến mất thật
+                // [FIX]: Hứng lỗi đầy bạn lúc Accept
+                string errorMsg = "Không thể chấp nhận (Có thể lời mời đã bị hủy)!";
+                if (ex.Message.Contains("400") || ex.Message.Contains("giới hạn"))
+                {
+                    errorMsg = "Không thể chấp nhận. Danh sách bạn bè đã đầy (Giới hạn 20 người)!";
+                }
+
+                _globalUI.ShowError("Lỗi", errorMsg);
+                await FetchPendingRequestsAsync();
                 return false;
             }
             finally { IsLoading.Value = false; }

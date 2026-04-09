@@ -1,20 +1,29 @@
 using Cysharp.Threading.Tasks;
+using Game.Core.Network;
 using Game.Core.Network.API;
 using UnityEngine;
 using System.Collections.Generic;
+using GhostVillage.Domain.Profile;
 
 namespace GhostVillage.Storage
 {
     public class StorageService
     {
         private readonly APIClient _apiClient;
+        private readonly GameSession _session;
 
-        public StorageService(APIClient apiClient)
+        public StorageService(APIClient apiClient, GameSession session)
         {
             _apiClient = apiClient;
+            _session = session;
         }
 
-        private string GetToken() => PlayerPrefs.GetString("AccessToken", "");
+        private string GetToken()
+        {
+            // Ensure token is loaded, then use GameSession as source of truth
+            _session.EnsureTokenLoaded();
+            return _session.Token ?? "";
+        }
 
         public async UniTask<FullProfileDTO> GetFullStorageDataAsync()
         {
@@ -25,7 +34,14 @@ namespace GhostVillage.Storage
         {
             var body = new EquipPerkRequest { perks = perkIds };
             string json = JsonUtility.ToJson(body);
-            return await _apiClient.PutAsyncWithAuth<List<string>>("/api/game/player/equip-perk", json, GetToken());
+            
+            var response = await _apiClient.PutAsyncWithAuth<EquipPerkResponse>("/api/game/player/equip-perk", json, GetToken());
+            
+            if (response != null && response.success)
+            {
+                return response.data;
+            }
+            return null;
         }
     }
 }

@@ -47,14 +47,9 @@ public class PlayerSpawner : MonoBehaviour
                     PlayerStatsManager stats = playerObj.GetComponent<PlayerStatsManager>();
                     if (stats != null)
                     {
-                        // A. Cài đặt Settings (Ví dụ: Độ nhạy chuột lưu từ Menu)
                         float savedSens = PlayerPrefs.GetFloat("MouseSensitivity", 2f);
                         stats.SetLookSensitivity(savedSens);
-
-                        // B. Nơi này chuẩn bị gọi API Fetch Loadout/Perk để đè vào
-                        // Ví dụ: Nhận được perk Thắt Lưng Cỏ Bện từ Backend
-                        // stats.maxStaminaMultiplier = 1.15f;
-                        // stats.staminaRegenMultiplier = 1.10f;
+                        stats.ApplyPerkModifiersFromPhoton();
 
                         Debug.Log("<color=yellow>[Spawner]</color> Đã nạp thành công Base Settings & Perks cho Local Player.");
                     }

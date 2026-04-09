@@ -13,11 +13,14 @@ namespace Game.Core.Player.RayCast // namespace cũ của bạn là RayCast hay 
         [SerializeField] private LayerMask interactLayer;
 
         [Header("Held Item Settings")]
-        [SerializeField] private Transform heldItemParent;
+        [Tooltip("Kéo xương RightHand vào đây (mixamorig:RightHand)")]
+        [SerializeField] private Transform rightHandParent;
+
+
+        [Tooltip("Kéo một Transform rỗng nằm ngang ngực vào đây")]
+        [SerializeField] private Transform twoHandParent;
+
         private GameObject _currentHeldItem;
-
-        // Đã xóa: _uiManager (Vì chúng ta dùng Event, không cần reference trực tiếp)
-
         private PhotonView _pv;
         private IInteractable _currentInteractable;
 
@@ -48,11 +51,21 @@ namespace Game.Core.Player.RayCast // namespace cũ của bạn là RayCast hay 
         }
 
         // --- HÀM CẦM NẮM VẬT PHẨM ---
-        public void AttachHeldItem(GameObject heldPrefab)
+        public void AttachHeldItem(GameObject heldPrefab, HoldType holdType)
         {
-            if (heldPrefab == null || heldItemParent == null) return;
+            if (heldPrefab == null) return;
             DetachHeldItem();
-            _currentHeldItem = Instantiate(heldPrefab, heldItemParent);
+
+            // Chọn Parent tương ứng
+            Transform targetParent = (holdType == HoldType.TwoHands) ? twoHandParent : rightHandParent;
+
+            if (targetParent == null)
+            {
+                Debug.LogWarning($"<color=yellow>[PlayerInteract]</color> Thiếu điểm gắp đồ cho kiểu {holdType}!");
+                return;
+            }
+
+            _currentHeldItem = Instantiate(heldPrefab, targetParent);
             _currentHeldItem.transform.localPosition = Vector3.zero;
             _currentHeldItem.transform.localRotation = Quaternion.identity;
         }

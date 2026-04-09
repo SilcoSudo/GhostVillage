@@ -8,7 +8,6 @@ import { config } from "./src/config/env.js";
 import UserAchievement from "./src/modules/profile/playerAchievementModel.js";
 import MapConfig from "./src/modules/map/mapConfigModel.js";
 import MatchResult from "./src/modules/match/matchModel.js";
-import CosmeticItem from "./src/modules/shop/cosmeticItemModel.js";
 import Perk from "./src/modules/perk/perkModel.js";
 import ShopPool from "./src/modules/shop/shopPoolModel.js";
 dotenv.config();
@@ -29,16 +28,13 @@ const seedData = async () => {
     await GameResult.deleteMany({});
     await UserAchievement.deleteMany({});
     // await PlayerMatchHistory.deleteMany({})
-    await CosmeticItem.deleteMany({});
     await Perk.deleteMany({});
     await ShopPool.deleteMany({});
-    console.log(
-      "🗑️  Đã xóa dữ liệu cũ.",
-    );
+    console.log("🗑️  Đã xóa dữ liệu cũ.");
     await MapConfig.deleteMany({});
     await MatchResult.deleteMany({});
     await UserAchievement.deleteMany({}); // <-- Bê lên đây là hết bị lỗi duplicate key
-    console.log("✅  Đã dọn sạch database.");
+    console.log("  Đã dọn sạch database.");
 
     // =========================================================
     // 3. CHUẨN BỊ ID (Để link giữa các bảng)
@@ -108,129 +104,129 @@ const seedData = async () => {
       },
     ]);
 
-  //Shop (Skin & Perk)
-  const cosmeticItems = await CosmeticItem.create([
-    { name: "Straw Hat", type: "Hat", price: 100, rarity: "COMMON", prefabId: "SO_Hat_Straw" },
-    { name: "Officer Cap", type: "Hat", price: 500, rarity: "RARE", prefabId: "SO_Hat_Officer" },
-    { name: "Villager Shirt", type: "Body", price: 200, rarity: "COMMON", prefabId: "SO_Body_Villager" },
-    { name: "Dark Armor", type: "Body", price: 2000, rarity: "EPIC", prefabId: "SO_Body_Armor" }
-  ]);
+    //Shop (Perk)
+    const perkData = [
+      // --- EPIC PERKS ---
+      {
+        perkId: "PERK_EPIC_SPECTRAL_REFLEX",
+        perkName: "Spectral Reflection",
+        description:
+          "When knocked down, automatically revive with 100% Stamina after 3 seconds. (Once per match)",
+        rarity: "EPIC",
+        price: 2000,
+        prefabId: "PERK_EPIC_SPECTRAL_REFLEX",
+        modifiers: {
+          autoReviveCount: 1,
+          reviveDelay: 3,
+          reviveStaminaPercent: 1.0,
+        },
+      },
+      {
+        perkId: "PERK_EPIC_PROPHETIC_SIGHT",
+        perkName: "Prophetic Sight",
+        description:
+          "Whenever a teammate completes a puzzle, reveal the Boss and all allies' outlines through walls for 7 seconds.",
+        rarity: "EPIC",
+        price: 2000,
+        prefabId: "PERK_EPIC_PROPHETIC_SIGHT",
+        modifiers: {
+          revealDuration: 7,
+          revealOutline: true,
+        },
+      },
 
-  const perkData = [
-  // --- EPIC PERKS ---
-  {
-    perkId: "PERK_EPIC_SPECTRAL_REFLEX",
-    perkName: "Spectral Reflection",
-    description: "When knocked down, automatically revive with 100% Stamina after 3 seconds. (Once per match)",
-    rarity: "EPIC",
-    price: 2000,
-    prefabId: "PERK_Epic_AutoRevive",
-    modifiers: { 
-      autoReviveCount: 1, 
-      reviveDelay: 3, 
-      reviveStaminaPercent: 1.0 
-    }
-  },
-  {
-    perkId: "PERK_EPIC_PROPHETIC_SIGHT",
-    perkName: "Prophetic Sight",
-    description: "Whenever a teammate completes a puzzle, reveal the Boss and all allies' outlines through walls for 7 seconds.",
-    rarity: "EPIC",
-    price: 2000,
-    prefabId: "PERK_Epic_Wallhack",
-    modifiers: { 
-      revealDuration: 7, 
-      revealOutline: true 
-    }
-  },
+      // --- RARE PERKS ---
+      {
+        perkId: "PERK_RARE_RELIC_BEARER",
+        perkName: "Relic Bearer",
+        description:
+          "Rescue speed increased by 15%. After a successful rescue, both you and the rescued ally gain 15% Move Speed for 5 seconds.",
+        rarity: "RARE",
+        price: 800,
+        prefabId: "PERK_RARE_RELIC_BEARER",
+        modifiers: {
+          reviveSpeedMult: 1.15,
+          postReviveSpeedBoost: 0.15,
+          boostDuration: 5,
+        },
+      },
+      {
+        perkId: "PERK_RARE_AGARWOOD_BEADS",
+        perkName: "Agarwood Beads",
+        description:
+          "The Boss's detection range against you is reduced by 15%.",
+        rarity: "RARE",
+        price: 800,
+        prefabId: "PERK_RARE_AGARWOOD_BEADS",
+        modifiers: {
+          bossDetectionRangeMult: 0.85,
+        },
+      },
+      {
+        perkId: "PERK_RARE_ANCESTRAL_VOW",
+        perkName: "Ancestral Vow",
+        description:
+          "Gain permanent buffs for each teammate eliminated (stacks up to 3 times): +5% Move Speed and -10% Stamina consumption.",
+        rarity: "RARE",
+        price: 1000,
+        prefabId: "PERK_RARE_ANCESTRAL_VOW",
+        modifiers: {
+          speedBoostPerDeath: 0.05,
+          staminaSavePerDeath: 0.1,
+          maxStacks: 3,
+        },
+      },
 
-  // --- RARE PERKS ---
-  {
-    perkId: "PERK_RARE_RELIC_BEARER",
-    perkName: "Relic Bearer",
-    description: "Rescue speed increased by 15%. After a successful rescue, both you and the rescued ally gain 15% Move Speed for 5 seconds.",
-    rarity: "RARE",
-    price: 800,
-    prefabId: "PERK_Rare_RescueBoost",
-    modifiers: { 
-      reviveSpeedMult: 1.15, 
-      postReviveSpeedBoost: 0.15, 
-      boostDuration: 5 
-    }
-  },
-  {
-    perkId: "PERK_RARE_AGARWOOD_BEADS",
-    perkName: "Agarwood Beads",
-    description: "The Boss's detection range against you is reduced by 15%.",
-    rarity: "RARE",
-    price: 800,
-    prefabId: "PERK_Rare_StealthBeads",
-    modifiers: { 
-      bossDetectionRangeMult: 0.85 
-    }
-  },
-  {
-    perkId: "PERK_RARE_ANCESTRAL_VOW",
-    perkName: "Ancestral Vow",
-    description: "Gain permanent buffs for each teammate eliminated (stacks up to 3 times): +5% Move Speed and -10% Stamina consumption.",
-    rarity: "RARE",
-    price: 1000,
-    prefabId: "PERK_Rare_DeathStack",
-    modifiers: { 
-      speedBoostPerDeath: 0.05, 
-      staminaSavePerDeath: 0.10, 
-      maxStacks: 3 
-    }
-  },
-
-  // --- COMMON PERKS ---
-  {
-    perkId: "PERK_COM_BRAIDED_BELT",
-    perkName: "Braided Grass Belt",
-    description: "Increases Max Stamina by 15% and increases Stamina regeneration speed by 10%.",
-    rarity: "COMMON",
-    price: 200,
-    prefabId: "PERK_Common_StaminaBase",
-    modifiers: { 
-      maxStaminaMult: 1.15, 
-      staminaRegenMult: 1.10 
-    }
-  },
-  {
-    perkId: "PERK_COM_GLOOM_EYE",
-    perkName: "Gloom Eye",
-    description: "Reduces Flashlight battery consumption rate by 15%.",
-    rarity: "COMMON",
-    price: 150,
-    prefabId: "PERK_Common_BatterySave",
-    modifiers: { 
-      batteryDrainMult: 0.85 
-    }
-  },
-  {
-    perkId: "PERK_COM_TIRE_SANDALS",
-    perkName: "Tire Tread Sandals",
-    description: "Reduces Stamina consumption while sprinting by 15%.",
-    rarity: "COMMON",
-    price: 250,
-    prefabId: "PERK_Common_Sprinting",
-    modifiers: { 
-      sprintStaminaDrainMult: 0.85 
-    }
-  },
-  {
-    perkId: "PERK_COM_INDIGO_POUCH",
-    perkName: "Indigo Cloth Pouch",
-    description: "Has a 10% chance to not consume Med-kits or Batteries upon use.",
-    rarity: "COMMON",
-    price: 300,
-    prefabId: "PERK_Common_ItemLuck",
-    modifiers: { 
-      preserveItemChance: 0.10 
-    }
-  }
-];
-  const createdPerks = await Perk.create(perkData);
+      // --- COMMON PERKS ---
+      {
+        perkId: "PERK_COM_BRAIDED_BELT",
+        perkName: "Braided Grass Belt",
+        description:
+          "Increases Max Stamina by 15% and increases Stamina regeneration speed by 10%.",
+        rarity: "COMMON",
+        price: 200,
+        prefabId: "PERK_COM_BRAIDED_BELT",
+        modifiers: {
+          maxStaminaMult: 1.15,
+          staminaRegenMult: 1.1,
+        },
+      },
+      {
+        perkId: "PERK_COM_GLOOM_EYE",
+        perkName: "Gloom Eye",
+        description: "Reduces Flashlight battery consumption rate by 15%.",
+        rarity: "COMMON",
+        price: 150,
+        prefabId: "PERK_COM_GLOOM_EYE",
+        modifiers: {
+          batteryDrainMult: 0.85,
+        },
+      },
+      {
+        perkId: "PERK_COM_TIRE_SANDALS",
+        perkName: "Tire Tread Sandals",
+        description: "Reduces Stamina consumption while sprinting by 15%.",
+        rarity: "COMMON",
+        price: 250,
+        prefabId: "PERK_COM_TIRE_SANDALS",
+        modifiers: {
+          sprintStaminaDrainMult: 0.85,
+        },
+      },
+      {
+        perkId: "PERK_COM_INDIGO_POUCH",
+        perkName: "Indigo Cloth Pouch",
+        description:
+          "Has a 10% chance to not consume Med-kits or Batteries upon use.",
+        rarity: "COMMON",
+        price: 300,
+        prefabId: "PERK_COM_INDIGO_POUCH",
+        modifiers: {
+          preserveItemChance: 0.1,
+        },
+      },
+    ];
+    const createdPerks = await Perk.create(perkData);
 
     // --- TẠO USER 1: Web Auth User (Email-only) ---
     // Role: user | admin
@@ -258,7 +254,7 @@ const seedData = async () => {
       _id: user2_Id,
       email: "belan.support@gmail.com",
       fullname: "Bé Lan Support",
-      password: "belan.support@gmail.com",
+      password: "12345678",
       dateOfBirth: new Date("2000-02-02"),
       avatar: "avatar_default_01",
       bio: "Bé Lan Support",
@@ -301,7 +297,6 @@ const seedData = async () => {
         coin: 1000,
       },
       storage: {
-        unlockedSkins: ["skin_default"],
         unlockedPerks: [],
       },
     };
@@ -317,7 +312,6 @@ const seedData = async () => {
         coin: 1000,
       },
       storage: {
-        unlockedSkins: ["skin_default"],
         unlockedPerks: [],
       },
     };
@@ -332,13 +326,8 @@ const seedData = async () => {
         exp: 450,
         coin: 5000,
       },
-      unlockedSkins: ["SO_Hat_Straw", "SO_Body_Villager"], 
-      unlockedPerks: ["PERK_Runner_1"],
-      equippedSkins: {
-        head: "SO_Hat_Straw",     // Đang đội Nón rơm
-        body: "SO_Body_Villager"  // Đang mặc áo dân làng
-      },
-      equippedPerks: ["PERK_Runner_1"],
+      unlockedPerks: ["PERK_COM_INDIGO_POUCH"],
+      equippedPerks: ["PERK_COM_INDIGO_POUCH"],
       selectedMedals: ["FIRST_CLEAR", "KILL_500"],
       achievementsProgress: [
         { achievementCode: "FIRST_CLEAR", current: 1, isClaimed: true },
@@ -827,11 +816,11 @@ const seedData = async () => {
 
     await MatchResult.insertMany(matchResults);
     console.log(
-      `✅ Đã tạo ${matchResults.length} trận đấu mẫu vào MatchResult.`,
+      ` Đã tạo ${matchResults.length} trận đấu mẫu vào MatchResult.`,
     );
 
     console.log("=========================================");
-    console.log("✅ KHỞI TẠO DỮ LIỆU THÀNH CÔNG TOÀN BỘ!");
+    console.log(" KHỞI TẠO DỮ LIỆU THÀNH CÔNG TOÀN BỘ!");
     console.log("👤 User 1: hung@ghostvillage.com | UID: 10000001");
     console.log("👤 User 2: belan.support@gmail.com | UID: 10000002");
     console.log("👤 User 3: raccoon@ghostvillage.com | UID: 10000003");
@@ -839,7 +828,7 @@ const seedData = async () => {
 
     process.exit();
   } catch (error) {
-    console.error("❌ Có lỗi xảy ra:", error);
+    console.error(" Có lỗi xảy ra:", error);
     process.exit(1);
   }
 };

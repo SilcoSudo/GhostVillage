@@ -70,7 +70,7 @@ namespace Game.Core.DI
             }
             else
             {
-                Debug.LogError("❌ LỖI: Chưa kéo Photon Prefab vào AppLifetimeScope!");
+                Debug.LogError(" LỖI: Chưa kéo Photon Prefab vào AppLifetimeScope!");
             }
 
             // ==========================================
@@ -97,7 +97,7 @@ namespace Game.Core.DI
             }
             else
             {
-                Debug.LogError("❌ LỖI: Chưa kéo GlobalUI Prefab vào AppLifetimeScope!");
+                Debug.LogError(" LỖI: Chưa kéo GlobalUI Prefab vào AppLifetimeScope!");
             }
 
             // Login Controller

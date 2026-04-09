@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
+using UnityEngine.Rendering;
+using Game.Core.Player.RayCast;
 
 public class TestMovement : MonoBehaviour
 {
@@ -15,12 +17,22 @@ public class TestMovement : MonoBehaviour
     public float runSpeed = 6f;   
     public float lookSensitivity = 15f;
 
+    [Header("First Person View")]
+    public bool hideLocalBody = true;
+    public bool keepBodyShadows = true;
+    public bool stabilizeCamera = true;
+    public float cameraHeight = 1.62f;
+    public float cameraForwardOffset = 0.32f;
+    public float cameraSmoothSpeed = 16f;
+
     private PlayerInputActions _inputActions;
     private Rigidbody _rb;
     private CapsuleCollider _col; // Thêm collider để tắt/mở
+    private PlayerInteract _playerInteract;
     private float _verticalRotation = 0f;
     private MovementState _currentState = MovementState.Idle;
     private bool _isDead = false;
+    private Renderer[] _bodyRenderers;
 
     private readonly int SpeedHash = Animator.StringToHash("Speed");
     private readonly int DieHash = Animator.StringToHash("Die");
@@ -31,8 +43,15 @@ public class TestMovement : MonoBehaviour
         _inputActions = new PlayerInputActions();
         _rb = GetComponent<Rigidbody>();
         _col = GetComponent<CapsuleCollider>();
+        _playerInteract = GetComponent<PlayerInteract>();
+        _bodyRenderers = GetComponentsInChildren<Renderer>(true);
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
+        if (hideLocalBody)
+        {
+            ApplyBodyRenderMode();
+        }
     }
 
     private void OnEnable() => _inputActions.Player.Enable();
@@ -51,7 +70,32 @@ public class TestMovement : MonoBehaviour
 
         HandleRotation();
         HandleMovement();
+        HandleInteraction();
         HandleAnimation();
+    }
+
+    private void HandleInteraction()
+    {
+        if (_playerInteract == null) return;
+
+        if (_inputActions.Player.Interact.triggered)
+        {
+            _playerInteract.TryInteract();
+        }
+    }
+
+    private void LateUpdate()
+    {
+        if (!stabilizeCamera || playerCam == null) return;
+
+        Vector3 targetPos = transform.position
+                            + Vector3.up * cameraHeight
+                            + transform.forward * cameraForwardOffset;
+
+        playerCam.transform.position = Vector3.Lerp(
+            playerCam.transform.position,
+            targetPos,
+            cameraSmoothSpeed * Time.deltaTime);
     }
 
     private void HandleMovement()
@@ -140,5 +184,30 @@ public class TestMovement : MonoBehaviour
         if (animator == null || _isDead) return;
         float target = (_currentState == MovementState.Walking) ? 1f : (_currentState == MovementState.Running ? 2f : 0f);
         animator.SetFloat(SpeedHash, target, 0.1f, Time.deltaTime);
+    }
+
+    private void ApplyBodyRenderMode()
+    {
+        if (_bodyRenderers == null) return;
+
+        for (int i = 0; i < _bodyRenderers.Length; i++)
+        {
+            Renderer r = _bodyRenderers[i];
+            if (r == null) continue;
+
+            // Never hide camera helpers or UI under camera
+            if (playerCam != null && r.transform.IsChildOf(playerCam.transform))
+                continue;
+
+            if (keepBodyShadows)
+            {
+                r.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
+                r.enabled = true;
+            }
+            else
+            {
+                r.enabled = false;
+            }
+        }
     }
 }

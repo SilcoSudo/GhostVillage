@@ -22,7 +22,7 @@ export const MatchController = {
         data: savedMatch,
       });
     } catch (error) {
-      console.error("❌ Error in MatchController.saveMatchResult:", error);
+      console.error(" Error in MatchController.saveMatchResult:", error);
       return res.status(500).json({
         success: false,
         message: "Lỗi hệ thống khi lưu kết quả trận đấu.",

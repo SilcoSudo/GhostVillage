@@ -23,7 +23,7 @@ public class MapDataManager : MonoBehaviour
     {
         if (gameData == null || gameData.mapConfig == null)
         {
-            Debug.LogError("❌ [MapData] AggregatedGameData truyền vào bị NULL!");
+            Debug.LogError(" [MapData] AggregatedGameData truyền vào bị NULL!");
             return;
         }
 
@@ -41,6 +41,19 @@ public class MapDataManager : MonoBehaviour
             foreach (var obj in objects)
             {
                 transforms.Add(obj.transform);
+            }
+
+            // Fallback: một số scene chưa gán Tag đúng nhưng vẫn đặt tên object theo quy ước.
+            if (transforms.Count == 0)
+            {
+                Transform[] allTransforms = FindObjectsByType<Transform>(FindObjectsSortMode.None);
+                foreach (var t in allTransforms)
+                {
+                    if (t != null && t.name.StartsWith(tag))
+                    {
+                        transforms.Add(t);
+                    }
+                }
             }
 
             _tagGroups.Add(tag, transforms);

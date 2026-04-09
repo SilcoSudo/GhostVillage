@@ -19,7 +19,7 @@ namespace Game.UI.Login
         [SerializeField] private Transform _dayButtonsContainer;      // Container for day buttons (Grid Layout)
         [SerializeField] private Button _dayButtonPrefab;             // Day button prefab
         [SerializeField] private TextMeshProUGUI _selectedDateText;   // Show selected date
-        
+
         [Header("Action Buttons")]
         [SerializeField] private Button _submitButton;
         [SerializeField] private Button _backButton;
@@ -58,7 +58,7 @@ namespace Game.UI.Login
 
             // Create day buttons pool
             CreateDayButtonsPool();
-            
+
             // Draw calendar
             UpdateCalendar();
 
@@ -171,7 +171,7 @@ namespace Game.UI.Login
         private int CalculateAge(DateTime dateOfBirth)
         {
             int age = DateTime.Now.Year - dateOfBirth.Year;
-            if (DateTime.Now.Month < dateOfBirth.Month || 
+            if (DateTime.Now.Month < dateOfBirth.Month ||
                 (DateTime.Now.Month == dateOfBirth.Month && DateTime.Now.Day < dateOfBirth.Day))
             {
                 age--;
@@ -242,7 +242,6 @@ namespace Game.UI.Login
             {
                 _loginUI.gameObject.SetActive(true);
                 _loginUI.SetInteractable(true);
-                _loginUI.SetStatus("Ready to Login");
             }
         }
 

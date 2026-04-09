@@ -1,6 +1,7 @@
 using VContainer;
 using VContainer.Unity;
 using UnityEngine;
+using Game.Core.Scene;
 
 namespace GhostVillage.Shop
 {
@@ -8,14 +9,13 @@ namespace GhostVillage.Shop
     {
         [Header("Shop Scene References")]
         [SerializeField] private ShopManager _shopManager;
-        [SerializeField] private CharacterPreviewer _characterPreviewer;
 
         protected override void Configure(IContainerBuilder builder)
         {
             // Đăng ký các thành phần có sẵn trong Scene
             builder.RegisterComponent(_shopManager);
-            builder.RegisterComponent(_characterPreviewer);
             builder.RegisterEntryPoint<ShopController>();
+            builder.Register<SceneLoaderService>(Lifetime.Singleton);
         }
     }
 }

@@ -9,6 +9,8 @@ using Cysharp.Threading.Tasks;
 using Game.Domain.Authentication;
 using Game.Script.UI;
 using UnityEngine.InputSystem;
+using GhostVillage.Domain.Profile;
+using System.Collections.Generic;
 
 namespace Game.UI.MainMenu
 {
@@ -30,6 +32,12 @@ namespace Game.UI.MainMenu
         [Header("Profile Images")]
         [SerializeField] private Image imgPlayerAvatar;
         [SerializeField] private Image imgAvatarNotification;
+
+        [Header("Daily Quests UI")]
+        [SerializeField] private Transform _dailyQuestContent; // Nơi chứa Item
+        [SerializeField] private GameObject _dailyQuestPrefab; // Prefab Item_DailyQuestUI
+
+        [Inject] private ProfileService _profileService; // Lấy service để fetch & claim quest
 
         [System.Serializable]
         private class AvatarEntry
@@ -75,11 +83,17 @@ namespace Game.UI.MainMenu
 
         private void OnDisable()
         {
-            // Gỡ sự kiện và tắt input
+            // Gỡ sự kiện input
             var escAction = _inputActions.FindAction("Esc_Tab") ?? _inputActions.FindAction("EscapeTab");
             if (escAction != null)
             {
                 escAction.performed -= OnEscapePressed;
+            }
+
+            // Gỡ sự kiện kết nối Photon
+            if (_network is PhotonNetworkManager photonMgr)
+            {
+                photonMgr.OnPhotonConnected -= HandleConnected;
             }
 
             _inputActions.Disable();
@@ -94,8 +108,18 @@ namespace Game.UI.MainMenu
                 _btnOpenEscMenu.onClick.AddListener(() => _globalUI.OpenEscMenu(GlobalUIManager.EscMenuType.MainMenu, false));
             }
 
+            //  Load token MỘT LẦN ở đây (nếu chưa load từ AppManager)
+            _session.EnsureTokenLoaded();
+
             FetchAndPopulateProfile().Forget();
+            FetchAndRenderDailyQuests().Forget();
             _friendController.InitializeDataAsync().Forget();
+
+            // Nghe event kết nối Photon thành công để update UI
+            if (_network is PhotonNetworkManager photonMgr)
+            {
+                photonMgr.OnPhotonConnected += HandleConnected;
+            }
 
             if (_network.IsConnected)
                 HandleConnected();
@@ -129,22 +153,53 @@ namespace Game.UI.MainMenu
             if (_globalUI != null) _globalUI.OnLogoutClicked -= OnLogoutAction;
         }
 
-        private void OnLogoutAction()
+        private async void OnLogoutAction()
         {
-            Debug.Log("[MainMenu] Thoát Game / Logout");
-            Application.Quit();
+            Debug.Log("<color=yellow>[MainMenu] Bắt đầu quá trình Đăng xuất...</color>");
+            _globalUI.ShowLoading(true, "Đang đăng xuất...");
+
+            // 1. Xóa sạch Session và Token lưu dưới máy
+            _session.Clear();
+            PlayerPrefs.DeleteKey("AccessToken");
+            PlayerPrefs.Save();
+
+            // 2. Ngắt kết nối Photon (Nếu đang kết nối)
+            if (Photon.Pun.PhotonNetwork.IsConnected)
+            {
+                Photon.Pun.PhotonNetwork.Disconnect();
+            }
+
+            // Chờ 1 chút cho mạng mẽo đứt hẳn để tránh lỗi dính cache
+            await UniTask.Delay(500);
+
+            _globalUI.ShowLoading(false);
+
+            // 3. Đá văng về màn hình Login (Nhớ check lại đúng tên Scene Login của sếp nhé)
+            await _sceneLoader.LoadSceneAsync("LoginScene");
         }
 
         private async UniTask FetchAndPopulateProfile()
         {
+            // Fallback: Nếu token vẫn empty (edge case), load từ PlayerPrefs
+            if (string.IsNullOrEmpty(_session.Token))
+            {
+                _session.EnsureTokenLoaded();
+            }
+
             var profileData = await _authService.FetchMyProfileAsync();
 
             if (profileData != null && profileData.profile != null)
             {
+                Debug.Log($"<color=cyan>[MainMenuController] ✅ UID từ Session: {_session.UID} | Name: {profileData.profile.displayName}</color>");
+
                 txtPlayerName.text = profileData.profile.displayName;
                 txtPlayerLevel.text = profileData.profile.level.ToString();
                 txtCoin.text = profileData.profile.coin.ToString("N0");
                 imgPlayerAvatar.sprite = ResolveAvatarSprite(profileData.profile.avatar);
+            }
+            else
+            {
+                Debug.LogError("<color=red>[MainMenuController] ❌ Fetch Profile thất bại!</color>");
             }
         }
 
@@ -177,32 +232,96 @@ namespace Game.UI.MainMenu
             // Chuyển sang scene xem danh sách
             _sceneLoader.LoadSceneAsync("LobbyListScene");
         }
-        
+
         // Gắn vào Profile
-        public void OpenProfileScene() 
+        public void OpenProfileScene()
         {
             // Chuyển sang scene Profile
             _sceneLoader.LoadSceneAsync("ProfileScene");
         }
 
         // Gắn vào nút "Shop"
-        public void OpenShopScene() 
+        public void OpenShopScene()
         {
             // Chuyển sang scene Shop
             _sceneLoader.LoadSceneAsync("ShopScene");
         }
 
-        public void OpenStorageScene() 
+        public void OpenStorageScene()
         {
             // Chuyển sang scene Storage
             _sceneLoader.LoadSceneAsync("StorageScene");
         }
-        
+
         // Gắn vào nút "Test Host" (Nút ảo để test)
         public void OnDebugCreateRoomClick()
         {
             _statusText.text = "Creating Test Room...";
             _network.CreateLobby("Test_Room_01", "", 4);
+        }
+
+        // =========================================================
+        // VÙNG LOGIC DAILY QUEST TRONG MAIN MENU
+        // =========================================================
+
+        private async UniTask FetchAndRenderDailyQuests()
+        {
+            if (_profileService == null) return;
+
+            //  Fallback: Nếu token vẫn empty (edge case), load từ PlayerPrefs
+            if (string.IsNullOrEmpty(_session.Token))
+            {
+                _session.EnsureTokenLoaded();
+            }
+
+            // Gọi API GetAchievementsAsync vì bên BE mình đã gộp trả về cả dailyQuests
+            var profileData = await _profileService.GetAchievementsAsync(_session.Token);
+
+            if (profileData != null && profileData.dailyQuests != null)
+            {
+                RenderDailyQuests(profileData.dailyQuests);
+            }
+        }
+
+        private void RenderDailyQuests(List<QuestItemDTO> dailyQuests)
+        {
+            // 1. Dọn rác UI cũ
+            foreach (Transform child in _dailyQuestContent) Destroy(child.gameObject);
+
+            // 2. Sinh item mới
+            foreach (var quest in dailyQuests)
+            {
+                var itemGo = Instantiate(_dailyQuestPrefab, _dailyQuestContent);
+
+                if (itemGo.TryGetComponent<RectTransform>(out var rect))
+                    rect.localScale = Vector3.one;
+
+                // Lưu ý namespace của Item_DailyQuestUI đang nằm ở Lobby
+                if (itemGo.TryGetComponent<Game.Scripts.UI.Lobby.Item_DailyQuestUI>(out var ui))
+                {
+                    ui.Setup(quest, () => ClaimQuest(quest.id).Forget());
+                }
+            }
+        }
+
+        private async UniTaskVoid ClaimQuest(string questId)
+        {
+            _globalUI.ShowLoading(true);
+            bool success = await _profileService.ClaimQuestAsync(questId, _session.Token);
+            _globalUI.ShowLoading(false);
+
+            if (success)
+            {
+                Debug.Log($"<color=green>[MainMenu] Nhận thưởng nhiệm vụ {questId} thành công!</color>");
+
+                // Refresh lại cả 2 thứ: Profile (để tiền/exp nảy số) và Daily List (để nút biến thành ĐÃ NHẬN)
+                FetchAndPopulateProfile().Forget();
+                FetchAndRenderDailyQuests().Forget();
+            }
+            else
+            {
+                Debug.LogError($"<color=red>[MainMenu] Nhận thưởng {questId} thất bại!</color>");
+            }
         }
     }
 }

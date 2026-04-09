@@ -101,7 +101,7 @@ async function seedMoonEvents() {
     const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017";
     const DB_NAME = process.env.DB_NAME || "GhostVillage";
     await mongoose.connect(`${MONGO_URI}/${DB_NAME}`);
-    console.log("✅ Connected to MongoDB");
+    console.log(" Connected to MongoDB");
 
     // Clear existing moon events
     await MoonEvent.deleteMany({});
@@ -109,7 +109,7 @@ async function seedMoonEvents() {
 
     // Insert new moon events
     const result = await MoonEvent.insertMany(moonEvents);
-    console.log(`✅ Successfully seeded ${result.length} Moon Events`);
+    console.log(` Successfully seeded ${result.length} Moon Events`);
 
     // Display seeded events
     console.log("\n📋 Seeded Moon Events:");
@@ -121,10 +121,10 @@ async function seedMoonEvents() {
       );
     });
 
-    console.log("\n✅ Moon Event seeding completed successfully!");
+    console.log("\n Moon Event seeding completed successfully!");
     process.exit(0);
   } catch (error) {
-    console.error("❌ Error seeding Moon Events:", error.message);
+    console.error(" Error seeding Moon Events:", error.message);
     process.exit(1);
   }
 }

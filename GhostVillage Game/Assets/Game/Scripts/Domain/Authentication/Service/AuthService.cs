@@ -2,6 +2,7 @@ using Cysharp.Threading.Tasks;
 using Game.Core.Network;
 using Game.Core.Network.API;
 using Game.Domain.Authentication.DTOs;
+using GhostVillage.Domain.Profile;
 using System;
 using UnityEngine;
 
@@ -39,19 +40,35 @@ namespace Game.Domain.Authentication
             return response; // Trả về DTO cho Controller xử lý tiếp
         }
 
-        public async UniTask<MyProfileResponseDTO> FetchMyProfileAsync()
+        public async UniTask<FullProfileDTO> FetchMyProfileAsync()
         {
-            if (string.IsNullOrEmpty(_session.Token)) return null;
-
-            // Gọi API lấy profile bản thân (URL tùy thuộc BE của bạn, ví dụ: /api/game/player/profile)
-            var response = await _apiClient.GetAsyncWithAuth<MyProfileResponseDTO>("/api/game/player/profile", _session.Token);
-
-            if (response != null)
+            if (string.IsNullOrEmpty(_session.Token))
             {
-                // Lưu tạm UID và Tên vào Session để Photon và hệ thống Bạn Bè xài
+                _session.EnsureTokenLoaded();
+            }
+
+            if (string.IsNullOrEmpty(_session.Token))
+            {
+                Debug.LogWarning("[AuthService] No token available - user not authenticated");
+                return null;
+            }
+
+            // [FIX CHÍ MẠNG 1]: Sửa lại endpoint cho chuẩn với Backend
+            var response = await _apiClient.GetAsyncWithAuth<FullProfileDTO>("/api/game/player", _session.Token);
+
+            if (response != null && response.profile != null)
+            {
+                // [FIX CHÍ MẠNG 2]: Phải nạp UID vào Session thì Photon Chat và kết bạn mới xài được!
                 _session.UID = response.uid;
                 _session.DisplayName = response.profile.displayName;
+
+                Debug.Log($"<color=green>[AuthService] Nạp Profile thành công! UID: {_session.UID} | Name: {_session.DisplayName}</color>");
             }
+            else
+            {
+                Debug.LogError("<color=red>[AuthService] Fetch Profile thất bại hoặc API trả về rỗng!</color>");
+            }
+
             return response;
         }
 
@@ -161,7 +178,7 @@ namespace Game.Domain.Authentication
         }
 
         // Hàm hỗ trợ lưu Token an toàn
-        private void SaveToken(string token)
+        public void SaveToken(string token)
         {
             PlayerPrefs.SetString(TOKEN_KEY, token);
             PlayerPrefs.Save();

@@ -1,6 +1,7 @@
 import Player from "./playerModel.js";
 import Achievement from "../achievement/achievementModel.js";
 import PlayerMatchHistory from "../profile/playerMatchHistoryModel.js";
+import Perk from "../perk/perkModel.js";
 
 export const PlayerService = {
   // Hàm lấy trọn bộ Profile cho UI
@@ -20,8 +21,9 @@ export const PlayerService = {
 
     // 2. Logic Trộn (Merge): Gắn định nghĩa thành tựu vào tiến độ của người chơi
     const mergedAchievements = allAchiDefs.map((def) => {
-      const prog = player.achievementsProgress.find(
-        (p) => p.achievementCode === def._id,
+      const prog = (player.achievementsProgress || []).find(
+        (p) =>
+          p.questId === def._id.toString() || p.achievementCode === def._id,
       );
       return {
         id: def._id,
@@ -31,24 +33,23 @@ export const PlayerService = {
         reward: def.reward,
         current: prog ? prog.current : 0,
         isClaimed: prog ? prog.isClaimed : false,
-        isEquipped: player.selectedMedals.includes(def._id),
+        isEquipped: (player.selectedMedals || []).includes(def._id),
       };
     });
 
     // 3. Trả về đúng cấu cục mà Frontend DTO mong đợi
     return {
+      uid: player.uid, // Trả về UID để hiển thị trên UI (VD: UID: 10000002)
       profile: player.profile,
-      selectedMedals: player.selectedMedals,
+      selectedMedals: player.selectedMedals || [],
       achievements: mergedAchievements,
       history: matchHistory,
       storage: {
-        unlockedSkins: player.unlockedSkins,
-        unlockedPerks: player.unlockedPerks
+        unlockedPerks: player.unlockedPerks || [],
       },
       equipped: {
-        skins: player.equippedSkins,
-        perks: player.equippedPerks
-      }
+        perks: player.equippedPerks || [],
+      },
     };
   },
   // Đã sửa lại chuẩn chỉ để tìm bằng UID 8 số
@@ -71,37 +72,19 @@ export const PlayerService = {
       level: targetPlayer.profile.level,
     };
   },
-    // Thêm hàm Update Medal
-    updateSelectedMedals: async (userId, medalCodes) => {
-      // 1. Kiểm tra tối đa 3 huy chương
-      if (medalCodes.length > 3) throw new Error("Can only equip up to 3 medals.");
+  // Thêm hàm Update Medal
+  updateSelectedMedals: async (userId, medalCodes) => {
+    // 1. Kiểm tra tối đa 3 huy chương
+    if (medalCodes.length > 3)
+      throw new Error("Can only equip up to 3 medals.");
 
-      // 2. Cập nhật Player
-      const player = await Player.findOneAndUpdate(
-        { userId },
-        { selectedMedals: medalCodes },
-        { new: true }
-      );
-      return player.selectedMedals;
-    },
-
-    updateEquippedSkins: async (userId, headId, bodyId) => {
-    const player = await Player.findOne({ userId });
-    if (!player) throw new Error("Player not found");
-
-    // Kiểm tra sở hữu: Chỉ validate nếu id không phải chuỗi rỗng (tháo đồ)
-    if (headId && headId !== "" && !player.unlockedSkins.includes(headId)) {
-      throw new Error("You do not own this head skin.");
-    }
-    if (bodyId && bodyId !== "" && !player.unlockedSkins.includes(bodyId)) {
-      throw new Error("You do not own this body skin.");
-    }
-
-    if (headId !== undefined) player.equippedSkins.head = headId;
-    if (bodyId !== undefined) player.equippedSkins.body = bodyId;
-
-    await player.save();
-    return player.equippedSkins;
+    // 2. Cập nhật Player
+    const player = await Player.findOneAndUpdate(
+      { userId },
+      { selectedMedals: medalCodes },
+      { new: true },
+    );
+    return player.selectedMedals;
   },
 
   updateEquippedPerks: async (userId, perkIds) => {
@@ -116,18 +99,59 @@ export const PlayerService = {
     else if (playerLevel >= 10) maxSlots = 2;
 
     if (perkIds.length > maxSlots) {
-        throw new Error(`Level ${playerLevel} chỉ được trang bị tối đa ${maxSlots} kỹ năng.`);
+      throw new Error(
+        `Level ${playerLevel} chỉ được trang bị tối đa ${maxSlots} kỹ năng.`,
+      );
     }
 
     // Kiểm tra quyền sở hữu
     for (const id of perkIds) {
-        if (id && !player.unlockedPerks.includes(id)) {
-            throw new Error(`Kỹ năng ${id} chưa được mở khóa.`);
-        }
+      if (id && !player.unlockedPerks.includes(id)) {
+        throw new Error(`Kỹ năng ${id} chưa được mở khóa.`);
+      }
     }
 
     player.equippedPerks = perkIds;
     await player.save();
     return player.equippedPerks;
-  }
+  },
+
+  // ==========================================
+  // [MỚI] API CHUYÊN DỤNG CHO BẢNG PERK LOBBY
+  // ==========================================
+  getPlayerPerksData: async (userId) => {
+    const player = await Player.findOne({ userId }).lean();
+    if (!player) throw new Error("Player not found");
+
+    // Lấy thông tin chi tiết của NHỮNG PERK MÀ PLAYER ĐANG SỞ HỮU
+    // Dùng $in để query một phát lấy luôn cho lẹ
+    const ownedPerksDetails = await Perk.find({
+      perkId: { $in: player.unlockedPerks },
+      isActive: true,
+    }).lean();
+
+    // Map lại data cho sạch đẹp để gởi xuống Unity
+    const mergedUnlockedPerks = ownedPerksDetails.map((p) => ({
+      perkId: p.perkId,
+      perkName: p.perkName,
+      description: p.description,
+      rarity: p.rarity,
+      prefabId: p.prefabId,
+      modifiers: p.modifiers,
+      isEquipped: player.equippedPerks.includes(p.perkId),
+    }));
+
+    // Tính toán số lượng Slot được phép dùng
+    let maxSlots = 1;
+    const playerLevel = player.profile.level || 1;
+    if (playerLevel >= 25) maxSlots = 3;
+    else if (playerLevel >= 10) maxSlots = 2;
+
+    return {
+      playerLevel: playerLevel,
+      maxPerkSlots: maxSlots,
+      equippedPerks: player.equippedPerks, // Mảng ID các perk đang trang bị
+      unlockedPerksDetails: mergedUnlockedPerks, // Mảng chứa full Info để vẽ UI
+    };
+  },
 };

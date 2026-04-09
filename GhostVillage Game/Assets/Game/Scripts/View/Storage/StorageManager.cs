@@ -5,18 +5,24 @@ using UnityEngine.UI;
 using TMPro;
 using GhostVillage.Shop;
 
+// Xin chào bạn!
+
 namespace GhostVillage.Storage
 {
     public class StorageManager : MonoBehaviour
     {
         public Action<List<string>> OnEquipPerkRequested;
 
+        [Header("--- NAVIGATION ---")]
+        public Button btnBack;
+        public Action OnBackRequested;
+
         [Header("--- PERK INVENTORY ---")]
         public Transform gridOwnedPerks;
         public GameObject slotPrefab;
 
         [Header("--- EQUIPPED SLOTS ---")]
-        public EquippedPerkSlotUI[] equippedPerkSlots; 
+        public EquippedPerkSlotUI[] equippedPerkSlots;
 
         [Header("--- DETAILS PANEL ---")]
         public Image imgSelectedPerkIcon;
@@ -29,8 +35,17 @@ namespace GhostVillage.Storage
         private int _playerLevel;
         private int _maxPerkSlots;
 
+        // [MỚI] Lưu lại data để tí nữa giật UI (Refresh) không bị mất
+        private List<PerkSO> _cachedOwnedPerks;
+        private ItemDatabaseSO _cachedItemDB;
+
         private void Start()
         {
+            if (btnBack != null)
+            {
+                btnBack.onClick.AddListener(() => OnBackRequested?.Invoke());
+            }
+
             btnEquipPerk.onClick.AddListener(HandlePerkEquipBtn);
             // Ẩn detail mặc định nếu chưa chọn gì
             imgSelectedPerkIcon.gameObject.SetActive(false);
@@ -41,7 +56,11 @@ namespace GhostVillage.Storage
 
         public void SetupPerkUI(int level, List<PerkSO> ownedPerks, List<string> equippedIds, ItemDatabaseSO db)
         {
+            // Cập nhật lại Cache để tái sử dụng
             _playerLevel = level;
+            _cachedOwnedPerks = ownedPerks;
+            _cachedItemDB = db;
+
             _currentEquippedPerks = new List<string>(equippedIds);
             _maxPerkSlots = level >= 25 ? 3 : (level >= 10 ? 2 : 1);
 
@@ -51,7 +70,7 @@ namespace GhostVillage.Storage
                 int slotIdx = i + 1;
                 bool locked = (slotIdx == 2 && level < 10) || (slotIdx == 3 && level < 25);
                 string msg = locked ? $"Lv.{(slotIdx == 2 ? 10 : 25)}" : "";
-                
+
                 Sprite icon = null;
                 string pName = "";
 
@@ -64,15 +83,15 @@ namespace GhostVillage.Storage
                     {
                         icon = perkSO.icon;
                         pName = perkSO.itemName;
-                        Debug.Log($"<color=green>[Storage]</color> Slot {i} tìm thấy Perk: {pName}");
+                        // Bỏ bớt log đi cho đỡ rác Console lúc Refresh
+                        // Debug.Log($"<color=green>[Storage]</color> Slot {i} tìm thấy Perk: {pName}");
                     }
                     else
                     {
-                        // NẾU LOG NÀY HIỆN LÊN: Bạn cần kiểm tra lại prefabId trong ScriptableObject
                         Debug.LogWarning($"<color=red>[Storage]</color> Slot {i} thất bại! Không tìm thấy ID: '{perkIdFromServer}' trong Database.");
                     }
                 }
-                
+
                 // Gọi hàm SetStatus với đầy đủ 4 tham số
                 equippedPerkSlots[i].SetStatus(locked, msg, pName, icon);
             }
@@ -99,7 +118,7 @@ namespace GhostVillage.Storage
             btnEquipPerk.gameObject.SetActive(true);
 
             txtBtnEquipPerk.text = isEquipped ? "UNEQUIP" : "EQUIP";
-            
+
             // Check giới hạn slot để enable/disable nút Equip
             if (!isEquipped && _currentEquippedPerks.Count >= _maxPerkSlots)
                 btnEquipPerk.interactable = false;
@@ -111,12 +130,39 @@ namespace GhostVillage.Storage
         {
             if (_selectedPerk == null) return;
 
-            if (_currentEquippedPerks.Contains(_selectedPerk.prefabId))
-                _currentEquippedPerks.Remove(_selectedPerk.prefabId);
-            else
-                _currentEquippedPerks.Add(_selectedPerk.prefabId);
+            bool isCurrentlyEquipped = _currentEquippedPerks.Contains(_selectedPerk.prefabId);
 
+            if (isCurrentlyEquipped)
+            {
+                // Nếu đang mặc thì cho phép tháo ra thoải mái
+                _currentEquippedPerks.Remove(_selectedPerk.prefabId);
+            }
+            else
+            {
+                // Nếu đang định mặc thêm, phải kiểm tra xem còn slot trống không
+                if (_currentEquippedPerks.Count >= _maxPerkSlots)
+                {
+                    Debug.LogWarning("Đã hết ô trống kỹ năng!");
+                    return;
+                }
+                _currentEquippedPerks.Add(_selectedPerk.prefabId);
+            }
+
+            // [1] HÚ LÊN CHO API BẮN VỀ SERVER (Giữ nguyên của Sếp)
             OnEquipPerkRequested?.Invoke(_currentEquippedPerks);
+
+            // ==========================================
+            // [2] GIẬT LẠI UI NGAY LẬP TỨC ĐỂ HIỂN THỊ ĐÚNG TRẠNG THÁI
+            // ==========================================
+            if (_cachedOwnedPerks != null && _cachedItemDB != null)
+            {
+                // Gọi lại SetupPerkUI để vẽ lại mấy cái Slot ở trên và list ở dưới
+                SetupPerkUI(_playerLevel, _cachedOwnedPerks, _currentEquippedPerks, _cachedItemDB);
+
+                // Vẽ lại cái nút bên phải để đổi chữ EQUIP -> UNEQUIP
+                bool newEquippedState = _currentEquippedPerks.Contains(_selectedPerk.prefabId);
+                SelectPerk(_selectedPerk, newEquippedState);
+            }
         }
     }
 }

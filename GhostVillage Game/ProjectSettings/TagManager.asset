@@ -14,6 +14,7 @@ TagManager:
   - SP_Item_Fix
   - SP_Player
   - TestMonster
+  - SP_ChickenCoop
   layers:
   - Default
   - TransparentFX

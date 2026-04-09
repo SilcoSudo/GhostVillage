@@ -196,7 +196,7 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
       onHide();
     } catch (error) {
       setIsUploading(false);
-      console.error("❌ Failed to save post:", error);
+      console.error(" Failed to save post:", error);
       toast.error(
         error.response?.data?.message ||
           `Failed to ${isEditMode ? "update" : "create"} post`,

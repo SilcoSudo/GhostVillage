@@ -7,7 +7,8 @@ using Cysharp.Threading.Tasks;
 using Photon.Pun;
 using Photon.Realtime;
 using Game.Script.UI; // Thêm thư viện GlobalUIManager
-using VContainer;     // Thêm thư viện Inject
+using VContainer;
+using GhostVillage.Domain.Profile;     // Thêm thư viện Inject
 
 namespace Game.Scripts.UI.Lobby
 {
@@ -62,6 +63,11 @@ namespace Game.Scripts.UI.Lobby
         [Header("Game Control")]
         [SerializeField] private TextMeshProUGUI _txtStartGamePrompt;
 
+        [Header("Perk Modal")]
+        [SerializeField] private ManagePerkModalUI _managePerkModal;
+        [Inject] private Game.Domain.Perk.Controllers.PerkController _perkController; // Tiêm ông cố nội này vào
+
+
 
         #endregion
 
@@ -71,6 +77,10 @@ namespace Game.Scripts.UI.Lobby
         [Inject] private GlobalUIManager _globalUI;
         [Header("Invite Modal")]
         [SerializeField] private InviteFriendModalUI _inviteFriendModal;
+
+        // BỔ SUNG BIẾN CHO TUTORIAL
+        [Header("Tutorial Modal")]
+        [SerializeField] private TutorialModalUI _tutorialModal;
 
         // TIÊM RADAR VÀ CHAT VÀO ĐÂY ĐỂ TRUYỀN XUỐNG MODAL
         [Inject] private Game.Domain.Friend.Controllers.FriendController _friendController;
@@ -102,6 +112,15 @@ namespace Game.Scripts.UI.Lobby
             if (_txtStartGamePrompt) _txtStartGamePrompt.gameObject.SetActive(false);
             if (_inviteFriendModal != null) _inviteFriendModal.gameObject.SetActive(false);
 
+            if (_tutorialModal != null && _tutorialModal.BtnClose != null)
+            {
+                _tutorialModal.BtnClose.onClick.AddListener(() => ShowTutorialModal(false));
+            }
+            if (_managePerkModal != null && _managePerkModal.BtnClose != null)
+            {
+                _managePerkModal.BtnClose.onClick.AddListener(() => ShowManagePerkModal(false));
+            }
+
             // Bind Button Events
             if (_btnNextMap) _btnNextMap.onClick.AddListener(() => OnNextMapClicked?.Invoke());
             if (_btnPrevMap) _btnPrevMap.onClick.AddListener(() => OnPrevMapClicked?.Invoke());
@@ -124,12 +143,34 @@ namespace Game.Scripts.UI.Lobby
         public bool IsAnyUIOpen =>
                     (_managementModal != null && _managementModal.activeSelf) ||
                     (_mapPickerModal != null && _mapPickerModal.activeSelf) ||
-                    IsChatFocused();
+                    (_managePerkModal != null && _managePerkModal.gameObject.activeSelf) ||
+                    (_tutorialModal != null && _tutorialModal.gameObject.activeSelf) ||
+                    IsChatFocused() ||
+                    (_inviteFriendModal != null && _inviteFriendModal.gameObject.activeSelf);
 
         public void SetRoomInfo(string roomName, string hostName, string password)
         {
             _txtRoomInfo.text = $"Room: {roomName} - Host: {hostName}";
             _txtRoomPassword.text = string.IsNullOrEmpty(password) ? "Public Room" : $"Pass: {password}";
+        }
+
+        #endregion
+
+
+        #region Tutorial Modal Logic
+
+        // HÀM MỚI CHUYÊN DÙNG ĐỂ BẬT TẮT HƯỚNG DẪN + XỬ LÝ CHUỘT
+        public void ShowTutorialModal(bool show)
+        {
+            if (_tutorialModal == null) return;
+
+            if (show) _tutorialModal.OpenModal();
+            else _tutorialModal.CloseModal();
+
+            if (_imgDimBG) _imgDimBG.SetActive(show);
+
+            Cursor.lockState = show ? CursorLockMode.None : CursorLockMode.Locked;
+            Cursor.visible = show;
         }
 
         #endregion
@@ -172,11 +213,13 @@ namespace Game.Scripts.UI.Lobby
             {
                 if (i < players.Length)
                 {
-                    _playerSlots[i].Setup(players[i]);
+                    // ========================================================
+                    // [FIX CHÍ MẠNG 1]: Truyền thêm FriendController và GlobalUI vào
+                    // ========================================================
+                    _playerSlots[i].Setup(players[i], _friendController, _globalUI);
                 }
                 else
                 {
-                    // LỖ THỔNG TRỐNG -> TRUYỀN HÀM MỞ BẢNG MỜI VÀO ĐÂY
                     _playerSlots[i].SetEmpty(() =>
                     {
                         if (_inviteFriendModal != null)
@@ -260,14 +303,29 @@ namespace Game.Scripts.UI.Lobby
 
         public async void AddChatMessage(string sender, string message, bool isMe)
         {
+            // 1. Phân loại chuẩn xác Prefab (Sếp nhớ check Inspector xem có kéo lộn 1 prefab vào 2 ô không nha)
             GameObject prefab = isMe ? _chatMePrefab : _chatThemPrefab;
-            var chatItem = Instantiate(prefab, _chatContent);
-            var texts = chatItem.GetComponentsInChildren<TextMeshProUGUI>();
 
-            if (texts.Length >= 2)
+            if (prefab == null)
             {
-                texts[0].text = isMe ? "Toi" : sender;
-                texts[1].text = message;
+                Debug.LogError("<color=red>[Chat] Sếp chưa kéo Prefab ChatMe hoặc ChatThem vào Inspector!</color>");
+                return;
+            }
+
+            var chatItem = Instantiate(prefab, _chatContent);
+
+            // 2. Tìm ĐÚNG TÊN cục Text (Giờ sếp có đảo vị trí trên Hierarchy nó cũng không bao giờ bị ngược nữa)
+            var txtSender = chatItem.transform.Find("Txt_SenderName")?.GetComponent<TextMeshProUGUI>();
+            var txtContent = chatItem.transform.Find("Txt_Content")?.GetComponent<TextMeshProUGUI>();
+
+            // 3. Nhét chữ vào đúng lỗ
+            if (txtSender != null) txtSender.text = isMe ? "Tôi" : sender;
+            if (txtContent != null) txtContent.text = message;
+
+            // Cảnh báo nếu sếp đặt sai tên trong Hierarchy
+            if (txtSender == null || txtContent == null)
+            {
+                Debug.LogWarning($"<color=yellow>[Chat] Prefab {prefab.name} bị sai tên Object con! Hãy đảm bảo tên là 'Txt_SenderName' và 'Txt_Content'</color>");
             }
 
             await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
@@ -300,6 +358,27 @@ namespace Game.Scripts.UI.Lobby
 
         #region Interaction & Utils
 
+        // Truyền Controller vào cho Modal lúc bật lên luôn
+        public void ShowManagePerkModal(bool show)
+        {
+            if (_managePerkModal == null) return;
+
+            if (show)
+            {
+                _managePerkModal.Init(_perkController);
+                _managePerkModal.OpenModal();
+            }
+            else
+            {
+                _managePerkModal.CloseModal();
+            }
+
+            if (_imgDimBG) _imgDimBG.SetActive(show);
+
+            Cursor.lockState = show ? CursorLockMode.None : CursorLockMode.Locked;
+            Cursor.visible = show;
+        }
+
         public void SetInteractPrompt(string message, bool visible)
         {
             if (_interactPromptGo)
@@ -328,14 +407,31 @@ namespace Game.Scripts.UI.Lobby
             }
         }
 
-        public void AddMission(string description, bool isDone)
+        // Thay thế hàm AddMission cũ bằng hàm này
+        // Cập nhật lại hàm Render ở LobbyUIManager
+        public void RenderDailyQuests(List<QuestItemDTO> dailyQuests)
         {
-            var item = Instantiate(_missionItemPrefab, _missionListContent);
-            var texts = item.GetComponentsInChildren<TextMeshProUGUI>();
-            if (texts.Length >= 2)
+            // Dọn dẹp content cũ
+            foreach (Transform child in _missionListContent) Destroy(child.gameObject);
+
+            if (dailyQuests == null || dailyQuests.Count == 0) return;
+
+            foreach (var quest in dailyQuests)
             {
-                texts[0].text = description;
-                texts[1].text = isDone ? "<color=green>Done</color>" : "In Progress";
+                var itemGo = Instantiate(_missionItemPrefab, _missionListContent);
+
+                // Reset scale để UI không bị vỡ (bệnh nan y của ScrollView Unity)
+                if (itemGo.TryGetComponent<RectTransform>(out var rect))
+                {
+                    rect.localScale = Vector3.one;
+                }
+
+                // Trỏ tới đúng cái Script mới tui vừa viết
+                if (itemGo.TryGetComponent<Item_LobbyDailyQuestUI>(out var ui))
+                {
+                    // Truyền data vào, đéo cần truyền sự kiện bấm nút nữa
+                    ui.Setup(quest);
+                }
             }
         }
 

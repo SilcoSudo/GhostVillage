@@ -101,21 +101,39 @@ namespace Game.Core.Network.API
             try
             {
                 await request.SendWebRequest();
+
+                // [BẢN VÁ]: Chặn ngay lập tức nếu Server chết hoặc mất mạng
+                if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.DataProcessingError)
+                {
+                    throw new Exception("SERVER_DOWN");
+                }
+
+                // [BẢN VÁ]: Bắt mã 401 Unauthorized (Token hết hạn, sai token)
+                if (request.responseCode == 401)
+                {
+                    throw new Exception("TOKEN_EXPIRED");
+                }
+
+                // Nếu có lỗi HTTP khác (404, 500)
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogError($"[API Error HTTP {request.responseCode}]: {request.error}");
+                    return default;
+                }
+
                 string jsonResponse = request.downloadHandler.text;
 
-                // BƯỚC 1: Parse lớp vỏ success trước để kiểm tra
                 var baseResponse = JsonUtility.FromJson<ResponseWrapper<string>>(jsonResponse);
                 if (baseResponse == null || !baseResponse.success) return default;
 
-                // BƯỚC 2: "Bóc" lấy nội dung bên trong trường 'data' và parse riêng
-                // Vì JsonUtility yếu với Generics, ta cần parse thẳng vào kiểu T
                 string dataJson = ExtractDataField(jsonResponse);
                 return JsonUtility.FromJson<T>(dataJson);
             }
             catch (Exception e)
             {
+                // Vẫn log lỗi, nhưng PHẢI THROW để lớp gọi nó (AppManager) bắt được
                 Debug.LogError($"[API Error] {e.Message}");
-                return default;
+                throw;
             }
         }
 
@@ -126,9 +144,74 @@ namespace Game.Core.Network.API
             int dataIdx = json.IndexOf("\"data\":");
             if (dataIdx == -1) return "{}";
 
-            int start = dataIdx + 7;
-            int end = json.LastIndexOf("}");
-            return json.Substring(start, end - start);
+            // ✅ FIX: Tìm dấu ':' sau "data"
+            int colonIdx = json.IndexOf(":", dataIdx);
+            int start = colonIdx + 1;
+
+            // ✅ FIX: Bỏ qua khoảng trắng & kiểm tra ký tự đầu tiên
+            while (start < json.Length && char.IsWhiteSpace(json[start]))
+            {
+                start++;
+            }
+
+            // ✅ FIX: Bây giờ start trỏ tới '{' hoặc '[' hoặc "null" hoặc string
+            if (start >= json.Length) return "{}";
+
+            char firstChar = json[start];
+
+            // Nếu là object {...} hoặc array [...]
+            if (firstChar == '{' || firstChar == '[')
+            {
+                int bracketCount = 0;
+                int end = start;
+
+                // Tìm bracket khớp
+                for (int i = start; i < json.Length; i++)
+                {
+                    char c = json[i];
+                    if (c == '{' || c == '[')
+                    {
+                        bracketCount++;
+                    }
+                    else if (c == '}' || c == ']')
+                    {
+                        bracketCount--;
+                        if (bracketCount == 0)
+                        {
+                            end = i + 1;
+                            break;
+                        }
+                    }
+                }
+
+                return json.Substring(start, end - start);
+            }
+
+            // Nếu là null, string, number
+            if (json.Substring(start).StartsWith("null"))
+            {
+                return "null";
+            }
+
+            // Parse string nếu là string value
+            if (firstChar == '"')
+            {
+                int end = start + 1;
+                while (end < json.Length && json[end] != '"')
+                {
+                    if (json[end] == '\\') end++; // Skip escaped character
+                    end++;
+                }
+                return json.Substring(start, end - start + 1);
+            }
+
+            // Parse number hoặc boolean
+            int numEnd = start;
+            while (numEnd < json.Length && !char.IsWhiteSpace(json[numEnd]) && json[numEnd] != ',' && json[numEnd] != '}')
+            {
+                numEnd++;
+            }
+            return json.Substring(start, numEnd - start);
         }
 
         // Hàm POST Generic (Thêm đoạn này vào)
@@ -270,29 +353,32 @@ namespace Game.Core.Network.API
                 request.SetRequestHeader("Content-Type", "application/json");
                 request.SetRequestHeader("Authorization", $"Bearer {token}");
 
-                await request.SendWebRequest();
-
-                if (request.result != UnityWebRequest.Result.Success)
-                {
-                    Debug.LogError($"[API] Error: {request.error} | Response: {request.downloadHandler.text}");
-                    return default;
-                }
-
-                string jsonResponse = request.downloadHandler.text;
-
                 try
                 {
+                    await request.SendWebRequest();
+
+                    // Check kết nối & Token
+                    if (request.result == UnityWebRequest.Result.ConnectionError) throw new Exception("SERVER_DOWN");
+                    if (request.responseCode == 401) throw new Exception("TOKEN_EXPIRED");
+
+                    if (request.result != UnityWebRequest.Result.Success)
+                    {
+                        Debug.LogError($"[API] Error: {request.error} | Response: {request.downloadHandler.text}");
+                        return default;
+                    }
+
+                    string jsonResponse = request.downloadHandler.text;
                     var wrapper = JsonUtility.FromJson<ResponseWrapper<T>>(jsonResponse);
 
                     if (wrapper != null && wrapper.success) return wrapper.data;
-                    
+
                     Debug.LogError($"[API] Server Logic Error: {wrapper?.error}");
                     return default;
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"[API] Parse JSON Error: {e.Message}");
-                    return default;
+                    Debug.LogError($"[API Error] {e.Message}");
+                    throw;
                 }
             }
         }

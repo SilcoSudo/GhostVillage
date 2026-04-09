@@ -6,6 +6,8 @@ using UnityEngine;
 using ExitGames.Client.Photon;
 using Game.Core.Network.Lobby;
 using Cysharp.Threading.Tasks;
+using VContainer;
+using VContainer.Unity;
 
 namespace Game.Core.Network
 {
@@ -111,6 +113,16 @@ namespace Game.Core.Network
         /// </summary>
         public void JoinHallway()
         {
+            // --- [FIX LỖI 254 LOBBY] ---
+            // Rút điện thằng Voice khi ở sảnh để nó không gửi lệnh LeaveRoom bậy bạ lên MasterServer
+            var voiceClient = UnityEngine.Object.FindFirstObjectByType<Photon.Voice.PUN.PunVoiceClient>();
+            if (voiceClient != null && voiceClient.ClientState != Photon.Realtime.ClientState.Disconnected)
+            {
+                voiceClient.Disconnect();
+                Debug.Log("🔇 [Photon] Đã rút điện Voice khi về sảnh chờ!");
+            }
+            // ---------------------------
+
             if (PhotonNetwork.InRoom)
             {
                 Debug.Log("[Photon] Leaving current room to join hallway.");
@@ -218,6 +230,11 @@ namespace Game.Core.Network
             if (!PhotonNetwork.InLobby)
             {
                 Debug.LogError("[Photon] Not in lobby. Attempting to re-join.");
+
+                // [FIX LỖI] Báo UI cho người chơi biết máy chủ chưa load xong
+                var globalUI = FindFirstObjectByType<Game.Script.UI.GlobalUIManager>();
+                if (globalUI != null) globalUI.ShowError("Error", "Đang kết nối lại sảnh chờ. Vui lòng bấm lại sau 2 giây...");
+
                 JoinHallway();
                 return;
             }
@@ -229,7 +246,9 @@ namespace Game.Core.Network
                 MaxPlayers = (byte)maxPlayers,
                 IsVisible = true,
                 IsOpen = true,
-                CleanupCacheOnLeave = true
+                CleanupCacheOnLeave = true,
+                PlayerTtl = 0,
+                EmptyRoomTtl = 0
             };
 
             if (!string.IsNullOrEmpty(password))
@@ -268,15 +287,32 @@ namespace Game.Core.Network
         public override void OnCreateRoomFailed(short returnCode, string message)
         {
             Debug.LogError($"[Photon] Create room failed: {message}");
+
+            // [FIX LỖI] Hiển thị UI khi tên phòng bị trùng
+            var globalUI = FindFirstObjectByType<Game.Script.UI.GlobalUIManager>();
+            if (globalUI != null)
+            {
+                // Nếu mã lỗi là 32766 (GameIdAlreadyExists)
+                if (returnCode == 32766)
+                    globalUI.ShowError("Error", "Tạo thất bại: Tên phòng này đã có người sử dụng!");
+                else
+                    globalUI.ShowError("Error", $"Tạo thất bại: {message}");
+            }
+
             OnCreateLobbyFailed?.Invoke();
         }
 
-        /// <summary>
-        /// Callback khi lenh tham gia phong bi tu choi tu server.
-        /// </summary>
         public override void OnJoinRoomFailed(short returnCode, string message)
         {
             Debug.LogError($"[Photon] Join thất bại: {message}");
+
+            // [FIX LỖI] Hiển thị UI khi không vào được phòng
+            var globalUI = FindFirstObjectByType<Game.Script.UI.GlobalUIManager>();
+            if (globalUI != null)
+            {
+                globalUI.ShowError("Error", $"Không thể tham gia: {message}");
+            }
+
             OnJoinLobbyFailed?.Invoke(message);
         }
 
@@ -315,9 +351,32 @@ namespace Game.Core.Network
                 Debug.Log("<color=green>Dùng thẻ VIP Bypass Password thành công!</color>");
             }
 
+            // ✅ [FIX KẾT BẠN]: Gửi UID vào Player CustomProperties để Lobby có thể lấy
+            // Sử dụng VContainer GlobalScope để resolve GameSession
+            try
+            {
+                var container = LifetimeScope.Find<LifetimeScope>()?.Container;
+                GameSession session = container?.Resolve<GameSession>();
+
+                if (session != null && !string.IsNullOrEmpty(session.UID))
+                {
+                    var playerProps = new Hashtable { { "UID", session.UID } };
+                    PhotonNetwork.LocalPlayer.SetCustomProperties(playerProps);
+                    Debug.Log($"<color=cyan>[Photon] Đã gửi UID ({session.UID}) vào Player CustomProperties</color>");
+                }
+                else
+                {
+                    Debug.LogWarning("<color=yellow>[Photon] GameSession hoặc UID chưa available!</color>");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"<color=yellow>[Photon] Lỗi resolve GameSession: {e.Message}</color>");
+            }
+
             // Nếu đúng pass, bật lại tính năng sync scene
             PhotonNetwork.AutomaticallySyncScene = true;
-            Debug.Log($"✅ [Photon] Join thành công: {room.Name}");
+            Debug.Log($" [Photon] Join thành công: {room.Name}");
             OnJoinLobbySuccess?.Invoke();
 
             if (PhotonNetwork.IsMasterClient)

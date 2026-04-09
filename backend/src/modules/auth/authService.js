@@ -17,9 +17,14 @@ import { uploadToCloudinary } from "../../services/uploadService.js";
 
 const generateToken = (userId, role, rememberMe = false) => {
   const expiresIn = rememberMe ? "30d" : "1d"; // 30 days if remember me, else 1 day
-  return jwt.sign({ userId, role }, config.jwt.secret, {
+  const token = jwt.sign({ userId, role }, config.jwt.secret, {
     expiresIn,
   });
+  console.log("[generateToken]  TOKEN GENERATED:");
+  console.log("  userId:", userId, typeof userId);
+  console.log("  role:", role);
+  console.log("  token:", token.substring(0, 50) + "...");
+  return token;
 };
 
 const isGoogleAvatarUrl = (url) => {
@@ -130,6 +135,17 @@ const syncDefaultAvatarToCloudinary = async (user, displayName) => {
   });
 
   return uploadResult?.secure_url || null;
+};
+
+const generateUniquePlayerUid = async () => {
+  // Generate an 8-digit unique uid for Player profile.
+  for (let i = 0; i < 20; i++) {
+    const uid = Math.floor(10000000 + Math.random() * 90000000).toString();
+    const exists = await Player.exists({ uid });
+    if (!exists) return uid;
+  }
+
+  throw new Error("Failed to generate unique player uid");
 };
 
 export const AuthService = {
@@ -343,9 +359,12 @@ export const AuthService = {
     let player = await Player.findOne({ userId });
 
     if (!player) {
+      const uid = await generateUniquePlayerUid();
+
       // Auto-create player profile on first login
       player = await Player.create({
         userId,
+        uid,
         profile: {
           displayName: displayName || `Player_${userId.toString().slice(-6)}`,
           avatar: "avatar_default_01",
@@ -353,10 +372,8 @@ export const AuthService = {
           exp: 0,
           coin: 1000,
         },
-        inventory: {
-          unlockedSkins: ["skin_default"],
-          unlockedPerks: [],
-        },
+        unlockedSkins: ["skin_default"],
+        unlockedPerks: [],
       });
     }
 
@@ -543,6 +560,11 @@ export const AuthService = {
       }
     }
 
+    console.log("[findOrCreateGoogleUser] BEFORE GENERATE TOKEN:");
+    console.log("  user._id:", user._id, typeof user._id);
+    console.log("  user.email:", user.email);
+    console.log("  user saved?", !user.isNew);
+
     const token = generateToken(user._id, user.role, true); // Remember me = true for OAuth
     return { token, user: user.toJSON() };
   },
@@ -559,6 +581,21 @@ export const AuthService = {
     user.dateOfBirth = new Date(dateOfBirth);
     user.password = password; // Will be hashed by pre-save hook
 
+    await user.save();
+
+    return user;
+  },
+
+  /**
+   * GAME: Complete OAuth user profile (dateOfBirth only)
+   */
+  updateUserDateOfBirth: async (userId, dateOfBirth) => {
+    const user = await userModel.findById(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    user.dateOfBirth = new Date(dateOfBirth);
     await user.save();
 
     return user;

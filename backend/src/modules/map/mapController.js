@@ -143,7 +143,7 @@ export const MapController = {
         data: gameData,
       });
     } catch (error) {
-      console.error("❌ Lỗi tải Game Data:", error);
+      console.error(" Lỗi tải Game Data:", error);
       if (error.message === "Không tìm thấy Map")
         return res.status(404).json({ success: false, message: error.message });
       return res.status(500).json({

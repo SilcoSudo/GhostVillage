@@ -80,7 +80,7 @@ namespace GhostVillage.Gameplay.Shared
                     // Đã tới - bắt đầu phase tìm kiếm
                     isSearching = true;
                     searchPhaseStartTime = elapsedTime;
-                    Debug.Log($"✅ InvestigateState: Đã tới vị trí, bắt đầu tìm kiếm!");
+                    Debug.Log($" InvestigateState: Đã tới vị trí, bắt đầu tìm kiếm!");
                 }
             }
 

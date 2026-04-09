@@ -67,13 +67,20 @@ export const authMiddleware = async (req, res, next) => {
 
       // 2. Verify Token
       const decoded = jwt.verify(token, config.jwt.secret);
-      console.log("[AuthMiddleware] Decoded token:", decoded);
+      console.log("[AuthMiddleware]  TOKEN VERIFIED:");
+      console.log("  decoded.userId:", decoded.userId, typeof decoded.userId);
+      console.log("  decoded.role:", decoded.role);
 
       // 3. Lấy User từ DB và gắn vào req.user để các controller sau dùng
       // .select('-password') để không lấy trường password
+      console.log("[AuthMiddleware] 🔍 LOOKING UP USER:", decoded.userId);
       req.user = await User.findById(decoded.userId).select("-password");
 
-      console.log("[AuthMiddleware] Found user:", req.user?._id, req.user?.email);
+      console.log("[AuthMiddleware] USER LOOKUP RESULT:", req.user ? " FOUND" : " NOT FOUND");
+      if (req.user) {
+        console.log("  _id:", req.user._id);
+        console.log("  email:", req.user.email);
+      }
 
       if (!req.user) {
         console.log("[AuthMiddleware] User not found with id:", decoded.userId);

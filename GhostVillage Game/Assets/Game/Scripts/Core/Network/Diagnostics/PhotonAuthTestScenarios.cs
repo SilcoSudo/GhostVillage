@@ -79,7 +79,7 @@
 //         {
 //             if (string.IsNullOrEmpty(token))
 //             {
-//                 Debug.LogError("[TEST A] ❌ Token is empty!");
+//                 Debug.LogError("[TEST A]  Token is empty!");
 //                 return;
 //             }
 

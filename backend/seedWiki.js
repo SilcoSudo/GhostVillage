@@ -147,7 +147,7 @@ const seedWikis = async() => {
                 `${process.env.MONGO_URI}/${process.env.DB_NAME || "GhostVillage"}` :
                 "mongodb://localhost:27017/GhostVillage";
             await mongoose.connect(dbUri);
-            console.log("✅ Connected to MongoDB:", dbUri);
+            console.log(" Connected to MongoDB:", dbUri);
             // Check if wikis already exist
             const existingCount = await Wiki.countDocuments({
                 entityType: { $in: ['monster', 'map', 'item'] }
@@ -159,7 +159,7 @@ const seedWikis = async() => {
                 const deleteResult = await Wiki.deleteMany({
                     entityType: { $in: ['monster', 'map', 'item'] }
                 });
-                console.log(`✅ Deleted ${deleteResult.deletedCount} existing wikis\n`);
+                console.log(` Deleted ${deleteResult.deletedCount} existing wikis\n`);
             }
 
             // Create a default admin user ID (replace with actual admin ID)
@@ -345,7 +345,7 @@ Vật phẩm nhiệm vụ cần thiết để tiến triển trong game.
 
     // Insert all wikis
     const created = await Wiki.insertMany(wikisToCreate);
-    console.log(`✅ Created ${created.length} wiki entries`);
+    console.log(` Created ${created.length} wiki entries`);
 
     // Summary
     console.log("\n📊 Summary:");
@@ -359,7 +359,7 @@ Vật phẩm nhiệm vụ cần thiết để tiến triển trong game.
     console.log("\n✨ Seed completed successfully!");
     process.exit(0);
   } catch (error) {
-    console.error("❌ Error seeding wikis:", error);
+    console.error(" Error seeding wikis:", error);
     process.exit(1);
   }
 };

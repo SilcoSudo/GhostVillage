@@ -62,7 +62,7 @@ const startServer = async () => {
       console.log(`✓ Socket.IO enabled`);
     });
   } catch (error) {
-    console.error("❌ Failed to start server:", error);
+    console.error(" Failed to start server:", error);
     process.exit(1);
   }
 };
@@ -71,7 +71,7 @@ startServer();
 
 // Handle unhandled promise rejections
 process.on("unhandledRejection", (err) => {
-  console.error("❌ Unhandled Rejection:", err);
+  console.error(" Unhandled Rejection:", err);
   if (config.nodeEnv === "production") {
     process.exit(1);
   }

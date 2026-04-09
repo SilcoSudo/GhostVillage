@@ -4,6 +4,8 @@ using UnityEngine.UI;
 using Photon.Realtime;
 using Photon.Pun;
 using Photon.Voice.Unity;
+using System;
+using Game.Script.UI;
 
 namespace Game.Scripts.UI.Lobby
 {
@@ -33,10 +35,10 @@ namespace Game.Scripts.UI.Lobby
         private float _lastVolume = 1f;
 
         /// <summary>
-        /// Nạp dữ liệu người chơi vào slot và cấu hình quyền hạn (Kick).
+        /// Nạp dữ liệu người chơi vào slot và cấu hình quyền hạn (Kick, Add Friend).
         /// </summary>
         [System.Obsolete]
-        public void Setup(Player player)
+        public void Setup(Player player, Game.Domain.Friend.Controllers.FriendController friendController, GlobalUIManager globalUI)
         {
             _targetPlayer = player;
             _grpActive.SetActive(true);
@@ -50,9 +52,19 @@ namespace Game.Scripts.UI.Lobby
             _btnKick.onClick.RemoveAllListeners();
             _btnKick.onClick.AddListener(() =>
             {
-                Debug.Log($"[Photon] Đang Kick người chơi qua RPC: {player.NickName}");
-                // Gửi lệnh Kick tới đúng người chơi đó
-                PhotonView.Get(this).RPC("RPC_GetKicked", player);
+                Debug.Log($"<color=red>[Photon] MasterClient đang thực thi quyền sinh sát: Tống cổ {player.NickName}</color>");
+
+                // [FIX CHÍ MẠNG]: Mượn PhotonView của LobbyManager để gửi lệnh (Vì UI không có PhotonView)
+                var lobbyManager = FindObjectOfType<LobbyManager>();
+                if (lobbyManager != null && lobbyManager.photonView != null)
+                {
+                    // Gửi đích danh tới máy của thằng bị kick
+                    lobbyManager.photonView.RPC("RPC_GetKicked", player);
+                }
+                else
+                {
+                    Debug.LogError("[FriendBoard] Không tìm thấy LobbyManager để gửi lệnh Kick!");
+                }
             });
 
             _sldVolume.gameObject.SetActive(!player.IsLocal); // Không tự chỉnh âm lượng bản thân
@@ -60,7 +72,7 @@ namespace Game.Scripts.UI.Lobby
             _sldVolume.value = 1f; // Mặc định âm lượng tối đa
             _sldVolume.onValueChanged.AddListener((val) => SetLocalVolume(val));
 
-            // 3. LOGIC MUTE LOCAL (BUTTON MUTE)
+            // LOGIC MUTE LOCAL (BUTTON MUTE)
             _btnMute.gameObject.SetActive(!player.IsLocal);
             _btnMute.onClick.RemoveAllListeners();
             _btnMute.onClick.AddListener(() =>
@@ -70,9 +82,87 @@ namespace Game.Scripts.UI.Lobby
                 SetLocalVolume(_isMuted ? 0f : _sldVolume.value);
             });
 
+            // ==========================================
+            // [FIX CHÍ MẠNG 2]: LOGIC KẾT BẠN (ADD FRIEND)
+            // ==========================================
             if (_btnAddFriend != null)
             {
-                _btnAddFriend.gameObject.SetActive(!player.IsLocal);
+                if (player.IsLocal)
+                {
+                    _btnAddFriend.gameObject.SetActive(false); // Ẩn nút nếu là chính mình
+                }
+                else
+                {
+                    // 1. Quét xem đã là bạn bè chưa
+                    bool isAlreadyFriend = false;
+                    if (friendController != null && friendController.FriendList.Value != null)
+                    {
+                        foreach (var friend in friendController.FriendList.Value)
+                        {
+                            // Dò theo ID Photon hoặc dò theo Tên hiển thị để chống "trượt"
+                            if (friend.GetUserId() == player.UserId || friend.GetDisplayName() == player.NickName)
+                            {
+                                isAlreadyFriend = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (isAlreadyFriend)
+                    {
+                        // 2. Đã là bạn thì ẩn cmn nút luôn
+                        _btnAddFriend.gameObject.SetActive(false);
+                    }
+                    else
+                    {
+                        // 3. Chưa là bạn thì hiện nút và gắn API
+                        _btnAddFriend.gameObject.SetActive(true);
+                        _btnAddFriend.interactable = true;
+                        _btnAddFriend.onClick.RemoveAllListeners();
+                        _btnAddFriend.onClick.AddListener(async () =>
+                        {
+                            try
+                            {
+                                // ✅ FIX: Lấy UID 8 số từ CustomProperties (được gửi khi join room)
+                                // CustomProperties phải có "UID" key do PhotonNetworkManager gửi
+                                string targetUid = player.CustomProperties.ContainsKey("UID")
+                                    ? (string)player.CustomProperties["UID"]
+                                    : null;
+
+                                Debug.Log($"<color=cyan>[FriendBoard] Ấn kết bạn - Người chơi: {player.NickName} | UID: {targetUid}</color>");
+
+                                if (string.IsNullOrEmpty(targetUid))
+                                {
+                                    Debug.LogError($"<color=red>[FriendBoard] ❌ Không lấy được UID từ CustomProperties!</color>");
+                                    if (globalUI != null) globalUI.ShowError("Lỗi", "Không thể lấy ID của người chơi này!");
+                                    return;
+                                }
+
+                                Debug.Log($"<color=yellow>[FriendBoard] Gửi lời mời kết bạn tới UID: {targetUid}</color>");
+                                bool isSuccess = await friendController.SendFriendRequest(targetUid);
+
+                                Debug.Log($"<color=cyan>[FriendBoard] SendFriendRequest result: {isSuccess}</color>");
+
+                                if (isSuccess)
+                                {
+                                    Debug.Log($"<color=green>[FriendBoard] ✅ Gửi thành công!</color>");
+                                    _btnAddFriend.interactable = false; // Bóp nút chặn click nháy
+                                    if (globalUI != null) globalUI.ShowError("Thành công", $"Đã gửi lời mời kết bạn tới {player.NickName}!");
+                                }
+                                else
+                                {
+                                    Debug.LogWarning($"<color=red>[FriendBoard] ❌ SendFriendRequest trả về false!</color>");
+                                    if (globalUI != null) globalUI.ShowError("Lỗi", "Gửi lời mời thất bại hoặc đã gửi trước đó!");
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Debug.LogError($"<color=red>[FriendBoard] Exception: {e.Message}\n{e.StackTrace}</color>");
+                                if (globalUI != null) globalUI.ShowError("Lỗi hệ thống", "Không thể gửi lời mời lúc này.");
+                            }
+                        });
+                    }
+                }
             }
         }
 
@@ -124,8 +214,12 @@ namespace Game.Scripts.UI.Lobby
         }
 
         [PunRPC]
-        public void RPC_GetKicked()
+        public void RPC_GetKicked(int targetActorNumber)
         {
+            // ✅ Chỉ kick nếu ActorNumber match với LocalPlayer
+            if (PhotonNetwork.LocalPlayer.ActorNumber != targetActorNumber)
+                return;
+
             Debug.Log("<color=red>Bạn đã bị chủ phòng Kick!</color>");
 
             // Ngắt kết nối Voice trước để tránh lỗi "LeaveRoom not allowed on MasterServer"
