@@ -37,39 +37,54 @@ class ProfileService {
   }
 
   /**
-   * Tab 2: Lịch sử đấu (History) - Đã fix Populate
+   * Tab 2: Lịch sử đấu (History) - Fix lấy tên Map từ Config
    */
   async getHistory(userId) {
     const objId = new mongoose.Types.ObjectId(userId);
-
-    // [FIX 2]: Lấy đúng tên Model là "MatchResult" như đã đăng ký trong matchModel.js
     const MatchModel = mongoose.model("MatchResult");
+    const MapConfigModel = mongoose.model("MapConfig"); // [MỚI]: Gọi model MapConfig
 
     const records = await PlayerMatchHistory.find({ userId: objId })
       .populate({
         path: "matchId",
-        model: MatchModel, // Truyền cái Model đúng vô đây
+        model: MatchModel,
       })
       .sort({ createdAt: -1 })
       .limit(10)
       .lean();
 
+    // [BÍ THUẬT]: Lấy danh sách MapId duy nhất có trong history để fetch tên 1 lần cho lẹ
+    const uniqueMapIds = [
+      ...new Set(records.map((r) => r.matchId?.mapId).filter((id) => id)),
+    ];
+    const mapConfigs = await MapConfigModel.find({
+      "identityConfig.mapId": { $in: uniqueMapIds },
+    }).lean();
+
     return {
-      history: records.map((r) => ({
-        isWin: r.isWin,
-        expGained: r.expGained || 0,
-        coinGained: r.coinGained || 0,
-        durationSec: r.matchId?.durationSec || 0,
-        rankTitles: r.titles || [],
-        resultStatus: r.resultStatus || (r.isWin ? "Victory" : "Defeat"),
-        matchId: {
-          mapId: r.matchId?.mapId || "Unknown",
-          mapName: r.matchId?.sessionId || "Ghost Village", // Sửa roomName thành sessionId (theo Schema sếp gửi)
-          startTime: r.createdAt,
-          moonEventId: r.matchId?.moonEventId || "EVENT_MOON_DEFAULT",
-          moonEventName: r.matchId?.moonEventName || "Normal Moon",
-        },
-      })),
+      history: records.map((r) => {
+        // Tìm thông tin Map tương ứng trong đống Config vừa fetch
+        const mapInfo = mapConfigs.find(
+          (m) => m.identityConfig.mapId === r.matchId?.mapId,
+        );
+
+        return {
+          isWin: r.isWin,
+          expGained: r.expGained || 0,
+          coinGained: r.coinGained || 0,
+          durationSec: r.matchId?.durationSec || 0,
+          rankTitles: r.titles || [],
+          resultStatus: r.resultStatus || (r.isWin ? "Victory" : "Defeat"),
+          matchId: {
+            mapId: r.matchId?.mapId || "Unknown",
+            // [FIX CHỐT HẠ]: Lấy displayName từ bảng MapConfig, không lấy sessionId bậy bạ nữa!
+            mapName: mapInfo?.identityConfig?.displayName || "Unknown Map",
+            startTime: r.createdAt,
+            moonEventId: r.matchId?.moonEventId || "EVENT_MOON_DEFAULT",
+            moonEventName: r.matchId?.moonEventName || "Normal Moon",
+          },
+        };
+      }),
     };
   }
 
@@ -121,28 +136,19 @@ class ProfileService {
       .map((q) => mapQuestProgress(q, player.achievementsProgress));
 
     // ====================================================
-    // 4. BÍ THUẬT DAILY POOL: RANDOM THEO NGÀY HIỆN TẠI
+    // RANDOM DAILY THEO NGÀY HIỆN TẠI
     // ====================================================
-    const allDailyQuests = activeQuests.filter((q) => q.questType === "DAILY");
+    const finalDailyQuests = player.dailyProgress
+      .map((progress) => {
+        // Tìm cấu hình Quest gốc
+        const questDef = activeQuests.find(
+          (q) => q.questId === progress.questId,
+        );
+        if (!questDef) return null; // Lỡ quest bị xóa
 
-    const today = new Date();
-    const seedString = `${today.getUTCFullYear()}${today.getUTCMonth()}${today.getUTCDate()}`;
-
-    let seed = 0;
-    for (let i = 0; i < seedString.length; i++) {
-      seed = seedString.charCodeAt(i) + ((seed << 5) - seed);
-    }
-
-    const shuffledDailies = [...allDailyQuests].sort(() => {
-      const x = Math.sin(seed++) * 10000;
-      return x - Math.floor(x) - 0.5;
-    });
-
-    const todaysDailyQuests = shuffledDailies.slice(0, 3);
-
-    const finalDailyQuests = todaysDailyQuests.map((q) =>
-      mapQuestProgress(q, player.dailyProgress),
-    );
+        return mapQuestProgress(questDef, player.dailyProgress);
+      })
+      .filter((q) => q != null);
 
     return {
       achievements: achievements,

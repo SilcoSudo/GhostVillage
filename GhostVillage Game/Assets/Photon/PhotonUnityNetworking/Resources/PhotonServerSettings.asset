@@ -78,6 +78,15 @@ MonoBehaviour:
   - TriggerPenaltyRPC
   - RpcOpenSafeAndSpawnItem
   - RpcSyncSafeOpened
+  - OnPuzzleFailedRPC
+  - OnPuzzleSolvedRPC
+  - SyncPuzzleConfigRPC
+  - PlaceItemRPC
+  - RemoveItemRPC
+  - UpdateWaterLevelRPC
+  - ActivateValveRPC
+  - InstallPartRPC
+  - TriggerEscapeSequenceRPC
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

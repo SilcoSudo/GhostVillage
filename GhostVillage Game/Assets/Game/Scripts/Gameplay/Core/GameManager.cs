@@ -188,11 +188,32 @@ public class GameManager : MonoBehaviourPunCallbacks
         GameplayEvents.OnAltarActivated += HandleEscapePhaseTrigger;
         GameplayEvents.OnLocalPlayerRequestEscape += HandleLocalPlayerEscapeRequest;
     }
+
+    public override void OnEnable()
+    {
+        base.OnEnable();
+        GameplayEvents.OnAltarActivated += HandleEscapePhaseTrigger;
+        GameplayEvents.OnLocalPlayerRequestEscape += HandleLocalPlayerEscapeRequest;
+
+        // [FIX CHÍ MẠNG]: Dạy GameManager lắng nghe trạng thái sống/chết của Player
+        GameplayEvents.OnPlayerStatusChanged += HandleLocalPlayerStatusChanged;
+    }
+
     public override void OnDisable()
     {
         base.OnDisable();
         GameplayEvents.OnAltarActivated -= HandleEscapePhaseTrigger;
         GameplayEvents.OnLocalPlayerRequestEscape -= HandleLocalPlayerEscapeRequest;
+        GameplayEvents.OnPlayerStatusChanged -= HandleLocalPlayerStatusChanged;
+    }
+
+    private void HandleLocalPlayerStatusChanged(int actorNum, PlayerMatchStatus newStatus)
+    {
+        // Khi thuyền hú "Thằng này bị bỏ lại (Eliminated)", Client tự giác báo lên Master
+        if (PhotonNetwork.LocalPlayer.ActorNumber == actorNum)
+        {
+            ReportStatusChange(actorNum, newStatus);
+        }
     }
 
     // --- NETWORK STATE SYNCHRONIZATION ---

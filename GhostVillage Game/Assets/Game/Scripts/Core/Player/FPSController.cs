@@ -105,6 +105,8 @@ public class FPSController : MonoBehaviourPun
             return;
         }
 
+        if (HintModalUI.IsHintOpen) return;
+
         HandleStateInput();
         HandleMovement();
         HandleRotation();

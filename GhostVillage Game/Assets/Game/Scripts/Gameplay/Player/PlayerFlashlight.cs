@@ -195,7 +195,22 @@ public class PlayerFlashlight : MonoBehaviourPun
 
         foreach (var hit in hits)
         {
-            Debug.Log($"<color=cyan>[UV Light]</color> Đang rọi tia tím vào mặt con quái: {hit.collider.name}!");
+            // TÌM XEM CON QUÁI CÓ NHẬN SÁT THƯƠNG UV KHÔNG
+            IUVReactable uvTarget = hit.collider.GetComponent<IUVReactable>();
+            if (uvTarget != null)
+            {
+                // Bắn tia UV = Tích tụ thời gian chết cho quái
+                // Truyền ActorNumber để Server biết ai là người giết quái mà cộng điểm!
+                uvTarget.OnUVIrradiated(_damageTickRate, photonView.Owner.ActorNumber);
+            }
         }
     }
+
+    // Thêm interface này để mọi con quái sau này dính UV đều dùng được
+    public interface IUVReactable
+    {
+        void OnUVIrradiated(float amount, int attackerActorNumber);
+    }
+
+
 }
