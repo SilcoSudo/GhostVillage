@@ -50,7 +50,7 @@ public class InventoryUIManager : MonoBehaviour
 
         for (int i = 0; i < slots.Length; i++)
         {
-            if (i < items.Count) slots[i].SetItem(items[i]);
+            if (i < items.Length && items[i] != null) slots[i].SetItem(items[i]);
             else slots[i].Clear();
         }
     }

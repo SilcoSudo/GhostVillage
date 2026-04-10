@@ -216,7 +216,7 @@ public class ReviveQTEManager : MonoBehaviour
         if (_saviorFPS != null)
         {
             var stats = _saviorFPS.GetComponent<PlayerStatsManager>();
-            if (stats != null && _saviorInventory != null && _saviorInventory.items.Count > 0)
+            if (stats != null && _saviorInventory != null && _saviorInventory.items.Length > 0)
             {
                 float keepChance = stats.freeConsumableChance;
 

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22ed1bb5c6dbced4fa17647576b5fcdc, type: 3}
   m_Name: Bugi_Data
   m_EditorClassIdentifier: Assembly-CSharp::KeyItemSO
-  itemId: Bugi_Data
+  itemId: ITEM_SPARKPLUG
   itemName: Bugi
   description: 
   itemType: 0

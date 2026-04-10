@@ -47,6 +47,7 @@ namespace Game.Core.Player.RayCast // namespace cũ của bạn là RayCast hay 
 
                 // Truyền chính mình (this.gameObject) vào để vật phẩm/người gục biết ai đang bấm
                 _currentInteractable.Interact(this.gameObject);
+                InteractionEvents.TriggerHover(_currentInteractable.GetPromptMessage(), true);
             }
         }
 

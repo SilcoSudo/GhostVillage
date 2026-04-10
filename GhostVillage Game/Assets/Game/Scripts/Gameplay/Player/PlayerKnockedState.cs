@@ -404,7 +404,7 @@ public class PlayerKnockedState : MonoBehaviourPun, IInteractable
         if (!isKnocked) return;
 
         var inventory = actor.GetComponent<InventoryManager>();
-        if (inventory != null && inventory.items.Count > 0)
+        if (inventory != null && inventory.items.Length > 0)
         {
             var currentItem = inventory.items[inventory.currentSlotIndex];
             if (currentItem != null && currentItem.itemId == "ITEM_MEDKIT")

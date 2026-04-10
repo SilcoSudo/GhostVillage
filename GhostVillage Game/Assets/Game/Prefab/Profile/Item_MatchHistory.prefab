@@ -436,7 +436,7 @@ MonoBehaviour:
   _txtExp: {fileID: 1126919682614176332}
   _txtCoin: {fileID: 6865036371696796943}
   _txtMoonType: {fileID: 6027613220192518332}
-  _txtMap: {fileID: 6027613220192518332}
+  _txtMap: {fileID: 3141039374137491534}
   _rankTitleSlots:
   - {fileID: 7165084076212458476}
   - {fileID: 2845464572031599905}
@@ -690,7 +690,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\xD4ng K\u1EB9"
+  m_text: Map Name
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

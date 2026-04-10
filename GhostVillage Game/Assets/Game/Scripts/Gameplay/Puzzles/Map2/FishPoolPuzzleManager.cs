@@ -175,6 +175,10 @@ public class FishPoolPuzzleManager : MonoBehaviourPun
         }
 
         Debug.Log("<color=green>[FishPool] ĐÃ GIẢI MÃ THÀNH CÔNG! NÍN TIẾNG CÁ!</color>");
+        if (PhotonNetwork.IsMasterClient)
+        {
+            GameplayEvents.OnPuzzleSolved?.Invoke();
+        }
     }
 
     [PunRPC]
