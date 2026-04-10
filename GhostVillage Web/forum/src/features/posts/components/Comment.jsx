@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Dropdown, Form, Button } from "react-bootstrap";
 import {
   MoreVertical,
@@ -33,6 +33,7 @@ const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.content);
   const [showReportModal, setShowReportModal] = useState(false);
+  const isDeletedComment = comment.content === "This comment has been deleted.";
 
   const deleteCommentMutation = useDeleteComment(postId);
   const createCommentMutation = useCreateComment(postId);
@@ -56,6 +57,13 @@ const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
       await deleteCommentMutation.mutateAsync(comment._id);
     }
   };
+
+  useEffect(() => {
+    if (isDeletedComment) {
+      setIsEditing(false);
+      setEditText(comment.content);
+    }
+  }, [isDeletedComment, comment.content]);
 
   const handleReply = () => {
     setShowReplyForm(!showReplyForm);
@@ -127,7 +135,9 @@ const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
         </div>
       )}
       <div className="comment-content-wrapper">
-        <div className="comment-bubble">
+        <div
+          className={`comment-bubble ${isDeletedComment ? "comment-bubble-deleted" : ""}`}
+        >
           <div className="comment-header">
             <span className="comment-author">
               <span className="comment-author-name">
@@ -152,7 +162,7 @@ const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
                 <MoreVertical size={16} />
               </Dropdown.Toggle>
               <Dropdown.Menu>
-                {isAuthor ? (
+                {!isDeletedComment && isAuthor ? (
                   <>
                     <Dropdown.Item onClick={() => setIsEditing(true)}>
                       <Edit2 size={14} />
@@ -185,7 +195,11 @@ const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
               autoFocus
             />
           ) : (
-            <p className="comment-text">{comment.content}</p>
+            <p
+              className={`comment-text ${isDeletedComment ? "comment-text-deleted" : ""}`}
+            >
+              {comment.content}
+            </p>
           )}
         </div>
 

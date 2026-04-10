@@ -12,15 +12,51 @@ const PostRecoveryModal = ({
 }) => {
   const { t } = useTranslation();
   const [recoveryReason, setRecoveryReason] = useState("");
+  const [error, setError] = useState("");
+
+  const MAX_RECOVERY_REASON_LENGTH = 500;
+
+  const handleReasonChange = (e) => {
+    const nextValue = e.target.value;
+
+    if (nextValue.length <= MAX_RECOVERY_REASON_LENGTH) {
+      setRecoveryReason(nextValue);
+      if (error) setError("");
+    }
+  };
 
   const handleConfirm = async () => {
-    await onConfirm(recoveryReason);
+    const trimmedReason = recoveryReason.trim();
+
+    if (recoveryReason && !trimmedReason) {
+      setError(
+        t(
+          "posts.recoveryNotesValidation",
+          "Recovery notes cannot be only spaces.",
+        ),
+      );
+      return;
+    }
+
+    if (trimmedReason.length > MAX_RECOVERY_REASON_LENGTH) {
+      setError(
+        t(
+          "posts.recoveryNotesTooLong",
+          "Recovery notes cannot exceed 500 characters.",
+        ),
+      );
+      return;
+    }
+
+    await onConfirm(trimmedReason);
     setRecoveryReason("");
+    setError("");
   };
 
   const handleClose = () => {
     if (isSubmitting) return;
     setRecoveryReason("");
+    setError("");
     onClose();
   };
 
@@ -100,9 +136,11 @@ const PostRecoveryModal = ({
                 "Enter notes about why this post is being restored..."
               }
               value={recoveryReason}
-              onChange={(e) => setRecoveryReason(e.target.value)}
+              onChange={handleReasonChange}
               rows="4"
+              maxLength={MAX_RECOVERY_REASON_LENGTH}
             />
+            {error ? <p className="notes-error">{error}</p> : null}
           </div>
         </div>
 
