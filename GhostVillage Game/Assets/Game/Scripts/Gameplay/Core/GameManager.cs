@@ -171,7 +171,7 @@ public class GameManager : MonoBehaviourPunCallbacks
             else Debug.LogError("[GameManager] Config is NULL!");
 
             // Master chuyển trạng thái sang Chờ Người Chơi
-            UpdateNetworkState(GameState.WaitingForPlayers);
+            UpdateNetworkState(GameState.Playing);
         }
         else
         {
@@ -524,12 +524,15 @@ public class GameManager : MonoBehaviourPunCallbacks
             PhotonNetwork.LocalPlayer.ActorNumber, (int)PlayerMatchStatus.Escaped);
     }
 
+    // --- NETWORK LOGIC (MASTER ONLY) ---
+
     public void ReportStatusChange(int actorNumber, PlayerMatchStatus status)
     {
+        // [FIX BOMB]: Tránh việc gọi gửi Report khi game đã End (Gây spam mạng)
+        if (CurrentState == GameState.Ending) return;
+
         photonView.RPC(nameof(UpdatePlayerStatusRPC), RpcTarget.MasterClient, actorNumber, (int)status);
     }
-
-    // --- NETWORK LOGIC (MASTER ONLY) ---
 
     [PunRPC]
     private void UpdatePlayerStatusRPC(int actorNumber, int statusInt)
@@ -539,14 +542,17 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         PlayerMatchStatus newStatus = (PlayerMatchStatus)statusInt;
 
-        // [FIX CHÍ MẠNG 1]: Lưới bảo hộ! Nếu danh sách chưa có người này thì tự động nạp vào
         if (!_playerStatuses.ContainsKey(actorNumber))
         {
             _playerStatuses[actorNumber] = PlayerMatchStatus.Playing;
         }
 
-        // Validate logic (ví dụ: Đã chết thì không thể thoát)
         var currentStatus = _playerStatuses[actorNumber];
+
+        // [FIX BOMB 1]: NẾU TRẠNG THÁI GIỐNG NHAU THÌ DỪNG LẠI NGAY! (Chống lặp vô tận)
+        if (currentStatus == newStatus) return;
+
+        // Validate logic (ví dụ: Đã chết thì không thể thoát)
         if (currentStatus == PlayerMatchStatus.Eliminated || currentStatus == PlayerMatchStatus.Escaped)
         {
             return; // Đã xong rồi thì thôi
@@ -558,11 +564,7 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         // Đồng bộ lại cho tất cả client biết để cập nhật UI/Spectator
         photonView.RPC(nameof(SyncPlayerStatusRPC), RpcTarget.All, actorNumber, statusInt);
-
-        // Kiểm tra điều kiện kết thúc game
-        CheckEndGameCondition();
     }
-
 
     [PunRPC]
     private void SyncPlayerStatusRPC(int actorNumber, int statusInt)
@@ -578,7 +580,6 @@ public class GameManager : MonoBehaviourPunCallbacks
             if (status == PlayerMatchStatus.Escaped)
             {
                 Debug.Log("<color=green>BẠN ĐÃ THOÁT! CHUYỂN SPECTATOR.</color>");
-                // Logic ẩn nhân vật, bật camera spectator ở đây
             }
             else if (status == PlayerMatchStatus.Eliminated)
             {
@@ -586,20 +587,26 @@ public class GameManager : MonoBehaviourPunCallbacks
             }
         }
 
-        CheckEndGameCondition();
+        // [FIX BOMB 2]: CHỈ MASTER MỚI ĐƯỢC QUYỀN KIỂM TRA ĐIỀU KIỆN END GAME
+        // Khúc này trước đây sếp để ở ngoài, ai cũng chạy, đâm ra loạn cào cào mạng!
+        if (PhotonNetwork.IsMasterClient)
+        {
+            CheckEndGameCondition();
+        }
     }
 
     private void CheckEndGameCondition()
     {
-        if (!PhotonNetwork.IsMasterClient) return;
+        // Chắc ăn thêm phát nữa, chỉ Master mới có quyền phán xét kết thúc game
+        if (!PhotonNetwork.IsMasterClient || CurrentState == GameState.Ending) return;
 
         int activePlayers = 0;
-        bool teamHasEscaped = false; // Thêm biến kiểm tra xem có ai thoát không
+        bool teamHasEscaped = false;
 
         foreach (var status in _playerStatuses.Values)
         {
             // Nếu còn người Đang chơi hoặc Bị nock (còn cứu được) -> Game chưa hết
-            if (status == PlayerMatchStatus.Playing || status == PlayerMatchStatus.Knocked)
+            if (status == PlayerMatchStatus.Playing)
             {
                 activePlayers++;
             }
@@ -613,7 +620,7 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         Debug.Log($"[GameManager] Active Players: {activePlayers}");
 
-        if (activePlayers == 0 && CurrentState != GameState.Ending)
+        if (activePlayers == 0)
         {
             Debug.Log(">>> ALL PLAYERS DONE. END GAME. <<<");
 
@@ -628,10 +635,6 @@ public class GameManager : MonoBehaviourPunCallbacks
     public void OnPlayerReachedExit(int actorNumber)
     {
         Debug.Log($"[GameManager] Player {actorNumber} đã thoát!");
-
-        // Logic kiểm tra điều kiện thắng:
-        // Ví dụ: Nếu tất cả người sống sót đã thoát -> Ending
-        // Hoặc đơn giản là ai thoát thì tính điểm người đó.
 
         if (PhotonNetwork.IsMasterClient)
         {

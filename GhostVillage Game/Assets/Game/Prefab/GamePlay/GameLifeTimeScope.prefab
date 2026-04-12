@@ -481,6 +481,15 @@ MonoBehaviour:
   - audioID: FISH_SPLASH
     clip: {fileID: 8300000, guid: e3320e747b476ef4687a67affb9fb124, type: 3}
     defaultVolume: 1
+  - audioID: DROWNED_ALERT
+    clip: {fileID: 8300000, guid: c234b3dc32d3f8c41bb44adec040b2df, type: 3}
+    defaultVolume: 1
+  - audioID: DROWNED_BURN
+    clip: {fileID: 8300000, guid: aedaa430e7fa8f74eb700055a0369282, type: 3}
+    defaultVolume: 1
+  - audioID: DROWNED_CRAWL
+    clip: {fileID: 8300000, guid: fc43cf8f122fbca4584a1aa84fe378b3, type: 3}
+    defaultVolume: 1
 --- !u!1 &8360186681429180301
 GameObject:
   m_ObjectHideFlags: 0

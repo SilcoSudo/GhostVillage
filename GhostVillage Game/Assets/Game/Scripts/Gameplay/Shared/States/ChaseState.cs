@@ -63,7 +63,7 @@ namespace GhostVillage.Gameplay.Shared
                     lastSeenTime = Time.time;
                     lastLogTime = Time.time;
                     hasLostSight = true;
-                    Debug.Log($"🔴 ChaseState: Mất sight! Vị trí cuối: {lastSeenPlayerPos}");
+                    //Debug.Log($"🔴 ChaseState: Mất sight! Vị trí cuối: {lastSeenPlayerPos}");
                 }
 
                 // Kiểm tra còn trong timeout không (2 giây)
@@ -74,7 +74,7 @@ namespace GhostVillage.Gameplay.Shared
                     // NavMesh luôn biết vị trí player, nên lấy từ đó
                     Vector3 currentPlayerPos = monster.GetPlayerPosition();
                     monster.MoveTo(currentPlayerPos);
-                    
+
                     // Nhìn về hướng player hiện tại
                     Vector3 directionToPlayer = currentPlayerPos - monster.transform.position;
                     if (directionToPlayer.sqrMagnitude > 0.01f)
@@ -89,12 +89,6 @@ namespace GhostVillage.Gameplay.Shared
                         monster.GetPlayerDetector().UpdateDetectionDirection(monster.GetNavMeshAgent().velocity.normalized);
                     }
 
-                    // Log mỗi 0.5s để tránh spam
-                    if (Time.time - lastLogTime > 0.5f)
-                    {
-                        Debug.Log($"🔴 ChaseState: Theo dõi NavMesh - Player ở ({currentPlayerPos}), Quái ở ({monster.transform.position}) ({timeSinceLostSight:F1}s / {lastSeenDuration}s)");
-                        lastLogTime = Time.time;
-                    }
                 }
                 else
                 {
@@ -167,5 +161,6 @@ namespace GhostVillage.Gameplay.Shared
             }
             // Nếu hết timeout, return last known position
             return lastSeenPlayerPos;
-        }    }
+        }
+    }
 }

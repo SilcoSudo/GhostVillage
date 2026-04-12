@@ -22,14 +22,14 @@ namespace GhostVillage.Gameplay.Shared
         {
             if (waypoints == null || waypoints.Length == 0)
             {
-                Debug.LogError("PatrolState: Không có waypoint nào được cấu hình!");     
+                Debug.LogError("PatrolState: Không có waypoint nào được cấu hình!");
                 return;
             }
 
             // Reset waypoint index khi vào lại (từ ChaseState hoặc state khác)
             currentWaypointIndex = 0;
             GoToNextWaypoint();
-            
+
             Debug.Log(" PatrolState: Bắt đầu patrol!");
         }
 
@@ -52,7 +52,7 @@ namespace GhostVillage.Gameplay.Shared
             if (distanceToWaypoint < 1f)
             {
                 Debug.Log($"📍 PatrolState: Đã đến waypoint {currentWaypointIndex}. Chuyển sang waypoint {(currentWaypointIndex + 1) % waypoints.Length}");
-                
+
                 // Chuyển sang waypoint tiếp theo
                 currentWaypointIndex = (currentWaypointIndex + 1) % waypoints.Length;
             }
@@ -70,11 +70,12 @@ namespace GhostVillage.Gameplay.Shared
                 monster.LookForward();
             }
 
-            // QUAN TRỌNG: Cập nhật detection cone để xoay cùng với model
+
             // Lấy hướng di chuyển từ NavMeshAgent velocity
-            if (monster.GetNavMeshAgent() != null && monster.GetNavMeshAgent().velocity.sqrMagnitude > 0.01f)
+            if (monster.GetPlayerDetector() != null)
             {
-                monster.GetPlayerDetector().UpdateDetectionDirection(monster.GetNavMeshAgent().velocity.normalized);
+                // Không dùng vận tốc agent nữa, dùng luôn cái cằm của monster cho nó chắc ăn
+                monster.GetPlayerDetector().UpdateDetectionDirection(monster.transform.forward);
             }
         }
 
@@ -102,7 +103,7 @@ namespace GhostVillage.Gameplay.Shared
 
             Vector3 targetWaypoint = waypoints[currentWaypointIndex];
             Debug.Log($"📍 PatrolState: Di chuyển đến waypoint[{currentWaypointIndex}] = {targetWaypoint}");
-            
+
             monster.MoveTo(targetWaypoint);
         }
 

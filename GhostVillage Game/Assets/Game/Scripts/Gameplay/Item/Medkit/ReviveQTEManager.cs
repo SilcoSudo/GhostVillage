@@ -42,11 +42,17 @@ public class ReviveQTEManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null) Instance = this;
+        // [FIX]: Tránh lỗi đẻ muộn hoặc đổi scene làm mất Instance
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
 
         // Mặc định ẩn cả 2 cục đi
-        grpSavior.SetActive(false);
-        grpVictim.SetActive(false);
+        if (grpSavior != null) grpSavior.SetActive(false);
+        if (grpVictim != null) grpVictim.SetActive(false);
     }
 
     public void StartQTE(PlayerKnockedState victim, InventoryManager inventory, FPSController saviorFPS)
@@ -82,6 +88,21 @@ public class ReviveQTEManager : MonoBehaviour
 
     private void Update()
     {
+        // ========================================================
+        // FIX LỖI: NGƯỜI CỨU BỊ QUÁI CẮN TRONG LÚC ĐANG LÀM QTE
+        // ========================================================
+        if (_isPlaying && _saviorFPS != null)
+        {
+            // Moi cái trạng thái của thằng đang ngồi cứu (Savior) ra check
+            var saviorKnockedState = _saviorFPS.GetComponent<PlayerKnockedState>();
+            if (saviorKnockedState != null && saviorKnockedState.isKnocked)
+            {
+                Debug.LogWarning("⚠️ [QTE] Mày cũng bị quái tát ngã rồi, cứu đéo gì nữa! Dừng QTE ngay!");
+                StopQTE();
+                return;
+            }
+        }
+
         // ========================================================
         // FIX LỖI: NGƯỜI CỨU TỰ KIỂM TRA MÁU BẠN VÀ TỰ KẾT THÚC QTE
         // ========================================================
@@ -271,7 +292,7 @@ public class ReviveQTEManager : MonoBehaviour
         }
 
         // 3. Bắn Log chỉ số để theo dõi
-        Debug.Log($"<color=white>[QTE Progress]</color> Máu Nạn Nhân: {currentBlood:F1}/{maxBlood} ({ratio * 100:F0}%)");
+        //Debug.Log($"<color=white>[QTE Progress]</color> Máu Nạn Nhân: {currentBlood:F1}/{maxBlood} ({ratio * 100:F0}%)");
     }
 
     public void HideVictimUI()
