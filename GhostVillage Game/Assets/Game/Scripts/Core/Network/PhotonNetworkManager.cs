@@ -39,6 +39,16 @@ namespace Game.Core.Network
                 return;
             }
             DontDestroyOnLoad(gameObject);
+
+            // ========================================================
+            // [FIX LỖI MẤT KẾT NỐI KHI TEST 2 MÁY / ẨN CỬA SỔ]
+            // ========================================================
+            // 1. Ép Unity luôn chạy ngầm, không pause game khi mất Focus
+            Application.runInBackground = true;
+
+            // 2. Báo cho Photon biết "Tui vẫn sống, đừng có cắt mạng tui!"
+            // Cho phép mất tín hiệu Focus lên tới 60000ms (60 giây) trước khi timeout
+            PhotonNetwork.KeepAliveInBackground = 60000;
         }
 
         /// <summary>

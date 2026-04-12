@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Photon.Pun;
 using UnityEngine.InputSystem;
 
-
 namespace Game.Scripts.Gameplay.Core
 {
     public class SpectatorController : MonoBehaviour
@@ -21,10 +20,35 @@ namespace Game.Scripts.Gameplay.Core
         private float _rotY = 20f; // Góc ngước ban đầu
         private bool _isActive = false;
 
+        // [MỚI] Tự tạo một Camera riêng cho Spectator để tha hồ quay tay!
+        private Camera _orbitCamera;
+        private AudioListener _orbitAudio;
+
         public void ActivateSpectator()
         {
             _isActive = true;
             _rotX = transform.eulerAngles.y;
+
+            // Đẻ ra một cái Camera Vô hình giữa trời
+            if (_orbitCamera == null)
+            {
+                GameObject camObj = new GameObject("OrbitSpectatorCamera");
+                _orbitCamera = camObj.AddComponent<Camera>();
+                _orbitAudio = camObj.AddComponent<AudioListener>();
+
+                // Copy setting từ Main Camera sang (nếu có để đỡ bị lỗi render)
+                Camera mainCam = Camera.main;
+                if (mainCam != null)
+                {
+                    _orbitCamera.CopyFrom(mainCam);
+                    // Dọn dẹp mấy cái rác rưởi lỡ copy dính
+                    var audioMain = camObj.GetComponent<AudioListener>();
+                    if (audioMain != null && audioMain != _orbitAudio) Destroy(audioMain);
+                }
+            }
+
+            _orbitCamera.enabled = true;
+            if (_orbitAudio != null) _orbitAudio.enabled = true;
 
             FindNewTarget();
             Debug.Log("<color=magenta>[Spectator] Orbit Camera đã kích hoạt!</color>");
@@ -33,32 +57,43 @@ namespace Game.Scripts.Gameplay.Core
         public void DeactivateSpectator()
         {
             _isActive = false;
+            if (_orbitCamera != null)
+            {
+                Destroy(_orbitCamera.gameObject); // Chơi xong đập bỏ luôn
+            }
         }
 
         private void Update()
         {
-            if (!_isActive) return;
+            if (!_isActive || _orbitCamera == null) return;
 
-            // Xử lý xoay chuột
+            // Xử lý xoay chuột (Xoay cái Camera mới, không liên quan mẹ gì thằng đang bị xem)
             Vector2 mouseDelta = Mouse.current.delta.ReadValue();
             _rotX += mouseDelta.x * _sensitivity;
             _rotY -= mouseDelta.y * _sensitivity;
-            _rotY = Mathf.Clamp(_rotY, -20f, 80f); // Không cho lật ngược camera
+            _rotY = Mathf.Clamp(_rotY, -20f, 80f); // Không cho lật ngược camera lòi quần lót
 
             // Đổi mục tiêu
-            if (Keyboard.current.aKey.wasPressedThisFrame) ChangeTarget(-1);
-            if (Keyboard.current.dKey.wasPressedThisFrame) ChangeTarget(1);
+            if (Keyboard.current.aKey.wasPressedThisFrame || Keyboard.current.leftArrowKey.wasPressedThisFrame) ChangeTarget(-1);
+            if (Keyboard.current.dKey.wasPressedThisFrame || Keyboard.current.rightArrowKey.wasPressedThisFrame) ChangeTarget(1);
         }
 
         private void LateUpdate()
         {
-            if (!_isActive) return;
+            if (!_isActive || _orbitCamera == null) return;
 
             // Nếu người đang xem bất ngờ bốc hơi (chết/thoát), tự động tìm người mới
             if (_currentTarget == null || !_currentTarget.gameObject.activeInHierarchy)
             {
                 FindNewTarget();
                 if (_currentTarget == null) return; // Vẫn không có ai thì chịu
+            }
+
+            var knockedState = _currentTarget.GetComponent<PlayerKnockedState>();
+            if (knockedState != null && knockedState.isKnocked)
+            {
+                FindNewTarget();
+                if (_currentTarget == null) return;
             }
 
             // ===============================================
@@ -70,8 +105,8 @@ namespace Game.Scripts.Gameplay.Core
             // Lùi camera ra sau lưng target một khoảng _distance
             Vector3 position = targetCenter - (rotation * Vector3.forward * _distance);
 
-            transform.rotation = rotation;
-            transform.position = position;
+            _orbitCamera.transform.rotation = rotation;
+            _orbitCamera.transform.position = position;
         }
 
         private void FindNewTarget()
@@ -82,10 +117,9 @@ namespace Game.Scripts.Gameplay.Core
             foreach (var p in players)
             {
                 var knockedState = p.GetComponent<PlayerKnockedState>();
-
                 var pView = p.GetComponent<PhotonView>();
 
-                // Tiêu chí người sống: Không bị Knocked VÀ GameObject còn bật (chưa Escaped)
+                // Tiêu chí người sống: Không bị Knocked VÀ GameObject còn bật VÀ ĐÉO PHẢI MÌNH
                 if (knockedState != null && !knockedState.isKnocked && p.activeInHierarchy && pView != null && !pView.IsMine)
                 {
                     _livingPlayers.Add(p);

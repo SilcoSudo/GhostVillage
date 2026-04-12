@@ -159,12 +159,28 @@ public class PlayerKnockedState : MonoBehaviourPun, IInteractable
     {
         if (!isKnocked) return;
 
+        if (_gameManager != null && _gameManager.CurrentState != GameState.Playing)
+        {
+            if (photonView.IsMine && ReviveQTEManager.Instance != null)
+            {
+                ReviveQTEManager.Instance.HideVictimUI();
+            }
+            return;
+        }
+
         currentProgress -= drainRate * Time.deltaTime;
         currentProgress = Mathf.Max(0, currentProgress);
 
-        if (photonView.IsMine && ReviveQTEManager.Instance != null)
+        if (photonView.IsMine)
         {
-            ReviveQTEManager.Instance.UpdateVictimUI(currentProgress, maxProgress);
+            if (ReviveQTEManager.Instance != null)
+            {
+                ReviveQTEManager.Instance.UpdateVictimUI(currentProgress, maxProgress);
+            }
+            else
+            {
+                Debug.LogError("⚠️ [PlayerKnocked] LỖI CHÍ MẠNG: Đéo tìm thấy ReviveQTEManager trong Scene! Máu sẽ không hiện!");
+            }
         }
 
         if (photonView.IsMine && currentProgress <= 0)
@@ -176,6 +192,7 @@ public class PlayerKnockedState : MonoBehaviourPun, IInteractable
 
     public void GetKnocked()
     {
+        // Chỉ bị Knocked khi đang khỏe mạnh (isKnocked = false)
         if (isKnocked) return;
 
         _knockCount++; // Tăng số lần bị bắt
@@ -198,11 +215,13 @@ public class PlayerKnockedState : MonoBehaviourPun, IInteractable
             }
             else
             {
+                Debug.Log($"⚠️ [PlayerKnocked] Lần 1 bị bắt! Xin người tới cứu!");
                 // Mới bị lần 1: Cho phép revive
                 _gameManager.ReportStatusChange(photonView.Owner.ActorNumber, PlayerMatchStatus.Knocked);
             }
         }
 
+        // Bắn RPC cho toàn bản đồ thấy thằng này bị ngã sấp mặt
         photonView.RPC(nameof(RpcSetKnockedState), RpcTarget.All, true);
     }
 
@@ -223,8 +242,6 @@ public class PlayerKnockedState : MonoBehaviourPun, IInteractable
     {
         Debug.Log($"<color=magenta>[Spectator] Hóa kiếp làm Hồn! Escaped: {isEscaped}</color>");
 
-        // === [FIX 1]: KHÓA MÕM HỒN LẠI ===
-        // Tìm Component Voice gắn trên chính Player này
         var myVoiceView = GetComponent<PhotonVoiceView>();
         if (myVoiceView != null && myVoiceView.RecorderInUse != null)
         {
@@ -232,19 +249,21 @@ public class PlayerKnockedState : MonoBehaviourPun, IInteractable
             Debug.Log("🔇 [Voice] Đã dán băng keo vào mồm Hồn, cấm phát biểu linh tinh!");
         }
 
-        // === [FIX 2]: ĐÁ BAY UI CỦA NGƯỜI CHẾT/THOÁT ===
         var inventoryUI = UnityEngine.Object.FindFirstObjectByType<InventoryUIManager>();
-        if (inventoryUI != null)
-        {
-            inventoryUI.gameObject.SetActive(false);
-        }
+        if (inventoryUI != null) inventoryUI.gameObject.SetActive(false);
 
         if (playerCamera != null)
         {
-            playerCamera.SetParent(null);
+            // === TẮT CAM CỦA MÌNH (Đừng bứng SetParent(null) nữa) ===
+            var myCamComponent = playerCamera.GetComponent<Camera>();
+            if (myCamComponent != null) myCamComponent.enabled = false;
 
-            SpectatorController spec = playerCamera.gameObject.GetComponent<SpectatorController>();
-            if (spec == null) spec = playerCamera.gameObject.AddComponent<SpectatorController>();
+            var myAudioComponent = playerCamera.GetComponent<AudioListener>();
+            if (myAudioComponent != null) myAudioComponent.enabled = false;
+
+            // Kích hoạt kịch bản đi mượn Cam thằng khác
+            SpectatorController spec = gameObject.GetComponent<SpectatorController>();
+            if (spec == null) spec = gameObject.AddComponent<SpectatorController>();
             spec.ActivateSpectator();
         }
 
@@ -290,6 +309,11 @@ public class PlayerKnockedState : MonoBehaviourPun, IInteractable
     {
         isKnocked = state;
 
+        if (state)
+        {
+            currentProgress = startingProgress;
+        }
+
         if (_animator != null)
         {
             if (state)
@@ -304,18 +328,38 @@ public class PlayerKnockedState : MonoBehaviourPun, IInteractable
             _animator.SetBool(_knockedHash, state);
         }
 
+        Rigidbody rb = GetComponent<Rigidbody>();
+        UnityEngine.AI.NavMeshAgent navAgent = GetComponent<UnityEngine.AI.NavMeshAgent>();
+
         if (_capsuleCollider != null)
         {
             if (state) // Lúc bị gục
             {
-                // Bóp lùn xuống 0.8m. 
-                // [FIX]: Hạ trọng tâm Y xuống 0.2 (hoặc 0.1) để nó dán sát mặt đất!
+                if (rb != null) rb.isKinematic = true;
+
+                // [FIX CHÍ MẠNG LỖI ĐẨY MESH]: Không tắt Agent, nhưng TẮT OBSTACLE AVOIDANCE của nó đi!
+                if (navAgent != null)
+                {
+                    navAgent.obstacleAvoidanceType = UnityEngine.AI.ObstacleAvoidanceType.NoObstacleAvoidance;
+                    navAgent.radius = 0.01f; // Bóp vụn bán kính cản đường
+                }
+
+                _capsuleCollider.isTrigger = true;
                 _capsuleCollider.height = 0.8f;
                 _capsuleCollider.center = new Vector3(_capsuleCollider.center.x, 0.2f, _capsuleCollider.center.z);
             }
-            else // Lúc đứng lên
+            else // Lúc đứng lên (Được cứu)
             {
-                // Trả lại chiều cao và trọng tâm ban đầu (3.8 và 0.9398)
+                if (rb != null) rb.isKinematic = false;
+
+                // Bật lại tránh vật cản như cũ (Dựa theo thông số ảnh sếp chụp)
+                if (navAgent != null)
+                {
+                    navAgent.obstacleAvoidanceType = UnityEngine.AI.ObstacleAvoidanceType.MedQualityObstacleAvoidance;
+                    navAgent.radius = 0.5f;
+                }
+
+                _capsuleCollider.isTrigger = false;
                 _capsuleCollider.height = _originalCapsuleHeight;
                 _capsuleCollider.center = new Vector3(_capsuleCollider.center.x, _originalCapsuleCenterY, _capsuleCollider.center.z);
             }
@@ -327,9 +371,13 @@ public class PlayerKnockedState : MonoBehaviourPun, IInteractable
             {
                 if (playerCamera != null)
                 {
-                    playerCamera.SetParent(null);
                     if (_fpsController != null) _fpsController.SetLookEnabled(false);
                     StartCoroutine(CameraFallRoutine());
+                }
+
+                if (ReviveQTEManager.Instance != null)
+                {
+                    ReviveQTEManager.Instance.UpdateVictimUI(currentProgress, maxProgress);
                 }
             }
             else
@@ -337,7 +385,6 @@ public class PlayerKnockedState : MonoBehaviourPun, IInteractable
                 if (playerCamera != null)
                 {
                     StopAllCoroutines();
-                    playerCamera.SetParent(_originalCamParent);
                     playerCamera.localPosition = _originalCamLocalPos;
                     playerCamera.localRotation = _originalCamLocalRot;
                     if (_fpsController != null) _fpsController.SetLookEnabled(true);
@@ -377,10 +424,12 @@ public class PlayerKnockedState : MonoBehaviourPun, IInteractable
         float duration = 0.5f;
         float elapsed = 0f;
 
-        Vector3 startPos = playerCamera.position;
-        Vector3 targetPos = new Vector3(startPos.x, transform.position.y + 0.2f, startPos.z);
-        Quaternion startRot = playerCamera.rotation;
-        Quaternion targetRot = Quaternion.Euler(0, startRot.eulerAngles.y, 45f);
+        // ĐỔI SANG DÙNG LOCAL ĐỂ CAMERA LUÔN DÍNH TRÊN ĐẦU NHÂN VẬT
+        Vector3 startPos = playerCamera.localPosition;
+        Vector3 targetPos = new Vector3(startPos.x, startPos.y - 0.8f, startPos.z); // Rớt xuống một chút
+
+        Quaternion startRot = playerCamera.localRotation;
+        Quaternion targetRot = Quaternion.Euler(0, startRot.eulerAngles.y, 45f); // Nghiêng đầu 45 độ
 
         while (elapsed < duration)
         {
@@ -388,20 +437,42 @@ public class PlayerKnockedState : MonoBehaviourPun, IInteractable
             float t = elapsed / duration;
             float smoothT = t * t * (3f - 2f * t);
 
-            playerCamera.position = Vector3.Lerp(startPos, targetPos, smoothT);
-            playerCamera.rotation = Quaternion.Slerp(startRot, targetRot, smoothT);
+            playerCamera.localPosition = Vector3.Lerp(startPos, targetPos, smoothT);
+            playerCamera.localRotation = Quaternion.Slerp(startRot, targetRot, smoothT);
             yield return null;
         }
 
-        playerCamera.position = targetPos;
-        playerCamera.rotation = targetRot;
+        playerCamera.localPosition = targetPos;
+        playerCamera.localRotation = targetRot;
     }
 
-    public string GetPromptMessage() => "Cứu chữa (F)";
+    public string GetPromptMessage()
+    {
+        // 1. Nếu không bị Knocked, hoặc đã chết hẳn (Máu <= 0) thì đéo hiện gì cả
+        if (!isKnocked || currentProgress <= 0) return string.Empty;
+
+        // 2. Check xem thằng đang nhìn có cầm Medkit không
+        // Lấy FPSController của thằng Local Player (thằng đang chơi)
+        var localPlayer = UnityEngine.Object.FindFirstObjectByType<FPSController>();
+        if (localPlayer != null)
+        {
+            var inventory = localPlayer.GetComponent<InventoryManager>();
+            if (inventory != null && inventory.items.Length > 0)
+            {
+                var currentItem = inventory.items[inventory.currentSlotIndex];
+                if (currentItem != null && currentItem.itemId == "ITEM_MEDKIT")
+                {
+                    return "Cứu chữa"; // Đủ điều kiện mới hiện
+                }
+            }
+        }
+
+        return string.Empty; // Không có Medkit thì im re
+    }
 
     public void Interact(GameObject actor)
     {
-        if (!isKnocked) return;
+        if (!isKnocked || currentProgress <= 0) return;
 
         var inventory = actor.GetComponent<InventoryManager>();
         if (inventory != null && inventory.items.Length > 0)

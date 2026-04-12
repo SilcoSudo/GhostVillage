@@ -87,6 +87,12 @@ MonoBehaviour:
   - ActivateValveRPC
   - InstallPartRPC
   - TriggerEscapeSequenceRPC
+  - RpcAlertAndSink
+  - RpcFreezeAndSink
+  - RpcActivateTeleport
+  - RpcDoTeleportSequence
+  - ReceiveJumpscareRPC
+  - RpcPlayJumpscareEffect
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

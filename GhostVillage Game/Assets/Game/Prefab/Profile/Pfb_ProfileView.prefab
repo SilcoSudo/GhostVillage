@@ -428,15 +428,15 @@ MonoBehaviour:
     medalSprite: {fileID: 21300000, guid: 6b5becefc111c69468fb7640f033e5a0, type: 3}
   avatarLibrary:
   - avatarId: avatar_default_01
-    avatarSprite: {fileID: 1651848752, guid: 412061ab55e24ac4e8620a04a28b9e2a, type: 3}
+    avatarSprite: {fileID: 21300000, guid: acb764021784ff643ac25494a60cf255, type: 3}
   - avatarId: avatar_default_02
-    avatarSprite: {fileID: 21300000, guid: 9d43bec4039428241a281f07b5372e1c, type: 3}
+    avatarSprite: {fileID: 21300000, guid: b1d8045183f9ab545b5abae9c1c1e5ce, type: 3}
   - avatarId: avatar_default_03
-    avatarSprite: {fileID: 1651848752, guid: 412061ab55e24ac4e8620a04a28b9e2a, type: 3}
+    avatarSprite: {fileID: 21300000, guid: 3f37f64804179cd4ab98525bd2f49b06, type: 3}
   - avatarId: avatar_default_04
-    avatarSprite: {fileID: 21300000, guid: a7d910fbcd9ea2844a35d775dfb93eae, type: 3}
+    avatarSprite: {fileID: 21300000, guid: 35ac34f683deaad42bb7223670f05d35, type: 3}
   - avatarId: avatar_default_05
-    avatarSprite: {fileID: 21300000, guid: b96296d03a6f68b4494c0689f4486bca, type: 3}
+    avatarSprite: {fileID: 21300000, guid: 58ec19140d4656a438829f643767ec6e, type: 3}
 --- !u!1 &1403789854970907046
 GameObject:
   m_ObjectHideFlags: 0
