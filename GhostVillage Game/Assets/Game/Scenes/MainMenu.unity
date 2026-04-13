@@ -4929,8 +4929,18 @@ MonoBehaviour:
   _imgMyAvatar: {fileID: 1020404273}
   _txtMyDisplayName: {fileID: 1266992162}
   _txtMyUID: {fileID: 1848335459}
-  avatarPresets: []
-  defaultAvatar: {fileID: 21300000, guid: a7d910fbcd9ea2844a35d775dfb93eae, type: 3}
+  avatarPresets:
+  - id: avatar_default_01
+    sprite: {fileID: 21300000, guid: acb764021784ff643ac25494a60cf255, type: 3}
+  - id: avatar_default_02
+    sprite: {fileID: 21300000, guid: b1d8045183f9ab545b5abae9c1c1e5ce, type: 3}
+  - id: avatar_default_03
+    sprite: {fileID: 21300000, guid: 3f37f64804179cd4ab98525bd2f49b06, type: 3}
+  - id: avatar_default_04
+    sprite: {fileID: 21300000, guid: 35ac34f683deaad42bb7223670f05d35, type: 3}
+  - id: avatar_default_05
+    sprite: {fileID: 21300000, guid: 58ec19140d4656a438829f643767ec6e, type: 3}
+  defaultAvatar: {fileID: 21300000, guid: cf524e9537161c94f8cb9d85b45e256c, type: 3}
   _btnTabFriendList: {fileID: 1927287534}
   _btnTabFindFriend: {fileID: 1028429787}
   _btnTabPending: {fileID: 220712454}
@@ -4993,7 +5003,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00084388704}
+  m_AnchoredPosition: {x: 0, y: 0.00008826846}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1006207207
@@ -5096,7 +5106,7 @@ GameObject:
   - component: {fileID: 1020404274}
   - component: {fileID: 1020404273}
   m_Layer: 0
-  m_Name: Img_MyAvatar
+  m_Name: Img_ProfilePic
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5134,16 +5144,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 74a2e90070166b144a3d82d366cefd9b, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -6825,7 +6835,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 757051268}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.999997
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -7261,9 +7271,17 @@ MonoBehaviour:
   _dailyQuestContent: {fileID: 1391822902}
   _dailyQuestPrefab: {fileID: 8142586962774860609, guid: e697f84a818431b4f992f3d999ed71bf, type: 3}
   avatarPresets:
+  - id: avatar_default_01
+    sprite: {fileID: 21300000, guid: acb764021784ff643ac25494a60cf255, type: 3}
   - id: avatar_default_02
-    sprite: {fileID: -787965264, guid: 2f0936f1734e75343bda787b90036dc7, type: 3}
-  defaultAvatar: {fileID: 21300000, guid: 66efb24ed46044ab8a039599cbc47d7b, type: 3}
+    sprite: {fileID: 21300000, guid: b1d8045183f9ab545b5abae9c1c1e5ce, type: 3}
+  - id: avatar_default_03
+    sprite: {fileID: 21300000, guid: 3f37f64804179cd4ab98525bd2f49b06, type: 3}
+  - id: avatar_default_04
+    sprite: {fileID: 21300000, guid: 35ac34f683deaad42bb7223670f05d35, type: 3}
+  - id: avatar_default_05
+    sprite: {fileID: 21300000, guid: 58ec19140d4656a438829f643767ec6e, type: 3}
+  defaultAvatar: {fileID: 21300000, guid: cf524e9537161c94f8cb9d85b45e256c, type: 3}
   _btnOpenEscMenu: {fileID: 1334288687}
 --- !u!1 &1415982289
 GameObject:

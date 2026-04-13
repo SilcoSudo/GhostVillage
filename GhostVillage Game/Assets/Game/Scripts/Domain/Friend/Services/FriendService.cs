@@ -119,6 +119,8 @@ namespace Game.Domain.Friend.Services
                 await request.SendWebRequest();
                 string json = request.downloadHandler.text;
 
+                Debug.Log($"<color=orange>[FriendService] JSON RAW từ {endpoint}:</color> {json}");
+
                 int start = json.IndexOf("\"data\":[");
                 if (start == -1) return new List<FriendProfileDTO>();
 

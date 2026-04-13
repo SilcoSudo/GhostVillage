@@ -1,5 +1,6 @@
 import Friend from "./friendModel.js";
 import User from "../../user/userModel.js";
+import Player from "../../player/playerModel.js";
 import NotificationService from "../../forum/notifications/notificationService.js";
 import mongoose from "mongoose";
 
@@ -26,18 +27,41 @@ class FriendService {
         ],
       }).populate("userId friendId", "fullname email avatar bio");
 
-      // [BỌC GIÁP]: Lọc bỏ những record mà user đã bị xóa khỏi DB
       const validFriendships = friendships.filter(
         (f) => f.userId != null && f.friendId != null,
       );
 
+      // [FIX ĐỒNG BỘ DATA MỚI]: Lấy danh sách ID bạn bè
+      const friendUserIds = validFriendships.map((f) =>
+        f.userId._id.toString() === userId.toString()
+          ? f.friendId._id
+          : f.userId._id,
+      );
+
+      // [FIX ĐỒNG BỘ DATA MỚI]: Query bảng Player để lấy Avatar mới nhất
+      const players = await Player.find({
+        userId: { $in: friendUserIds },
+      }).lean();
+
       const friends = validFriendships.map((friendship) => {
-        const friend =
+        let friend =
           friendship.userId._id.toString() === userId.toString()
             ? friendship.friendId
             : friendship.userId;
+
+        friend = friend.toObject ? friend.toObject() : friend;
+
+        // [FIX ĐỒNG BỘ DATA MỚI]: Gán đè avatar và fullname từ bảng Player sang bảng User
+        const playerMatch = players.find(
+          (p) => p.userId.toString() === friend._id.toString(),
+        );
+        if (playerMatch && playerMatch.profile) {
+          friend.avatar = playerMatch.profile.avatar || friend.avatar;
+          friend.fullname = playerMatch.profile.displayName || friend.fullname;
+        }
+
         return {
-          ...(friend.toObject ? friend.toObject() : friend),
+          ...friend,
           friendshipId: friendship._id,
           acceptedAt: friendship.acceptedAt,
         };
@@ -60,13 +84,32 @@ class FriendService {
         status: "pending",
       }).populate("userId", "fullname email avatar bio");
 
-      // [BỌC GIÁP]: Lọc bỏ bóng ma
       const validRequests = requests.filter((r) => r.userId != null);
 
-      return validRequests.map((request) => ({
-        ...request.toObject(),
-        requester: request.userId,
-      }));
+      // [FIX ĐỒNG BỘ DATA MỚI]
+      const requesterIds = validRequests.map((r) => r.userId._id);
+      const players = await Player.find({
+        userId: { $in: requesterIds },
+      }).lean();
+
+      return validRequests.map((request) => {
+        const reqObj = request.toObject();
+        let requester = reqObj.userId;
+
+        const playerMatch = players.find(
+          (p) => p.userId.toString() === requester._id.toString(),
+        );
+        if (playerMatch && playerMatch.profile) {
+          requester.avatar = playerMatch.profile.avatar || requester.avatar;
+          requester.fullname =
+            playerMatch.profile.displayName || requester.fullname;
+        }
+
+        return {
+          ...reqObj,
+          requester: requester,
+        };
+      });
     } catch (error) {
       console.error("Error getting pending requests:", error);
       throw error;
@@ -83,13 +126,30 @@ class FriendService {
         status: "pending",
       }).populate("friendId", "fullname email avatar bio");
 
-      // [BỌC GIÁP]: Lọc bỏ bóng ma
       const validRequests = requests.filter((r) => r.friendId != null);
 
-      return validRequests.map((request) => ({
-        ...request.toObject(),
-        targetUser: request.friendId,
-      }));
+      // [FIX ĐỒNG BỘ DATA MỚI]
+      const targetIds = validRequests.map((r) => r.friendId._id);
+      const players = await Player.find({ userId: { $in: targetIds } }).lean();
+
+      return validRequests.map((request) => {
+        const reqObj = request.toObject();
+        let targetUser = reqObj.friendId;
+
+        const playerMatch = players.find(
+          (p) => p.userId.toString() === targetUser._id.toString(),
+        );
+        if (playerMatch && playerMatch.profile) {
+          targetUser.avatar = playerMatch.profile.avatar || targetUser.avatar;
+          targetUser.fullname =
+            playerMatch.profile.displayName || targetUser.fullname;
+        }
+
+        return {
+          ...reqObj,
+          targetUser: targetUser,
+        };
+      });
     } catch (error) {
       console.error("Error getting sent requests:", error);
       throw error;

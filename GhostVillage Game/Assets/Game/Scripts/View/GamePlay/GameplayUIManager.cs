@@ -3,7 +3,9 @@ using TMPro;
 using Photon.Pun;
 using Game.Domain.Match.DTO;
 using UnityEngine.InputSystem; // THÊM DÒNG NÀY ĐỂ BẮT PHÍM ESC
-using Game.Script.UI; // THÊM DÒNG NÀY ĐỂ GỌI GLOBAL UI
+using Game.Script.UI;
+using Game.Scripts.Gameplay.Core;
+using Game.Scripts.Core.Game; // THÊM DÒNG NÀY ĐỂ GỌI GLOBAL UI
 
 public class GameplayUIManager : MonoBehaviourPunCallbacks
 {
@@ -14,6 +16,10 @@ public class GameplayUIManager : MonoBehaviourPunCallbacks
     [Header("Interaction UI")]
     [SerializeField] private GameObject interactPanel;
     [SerializeField] private TextMeshProUGUI interactText;
+
+    [Header("UI Groups to Hide on EndGame")]
+    [SerializeField] private GameObject _grpStamina;
+    [SerializeField] private GameObject _grpPerk;
 
     private GlobalUIManager _globalUI; // Biến giữ liên lạc với Sếp tổng UI
 
@@ -118,12 +124,26 @@ public class GameplayUIManager : MonoBehaviourPunCallbacks
     {
         base.OnEnable(); // BẮT BUỘC PHẢI CÓ ĐỂ PHOTON HOẠT ĐỘNG
         InteractionEvents.OnInteractHover += HandleInteractHover;
+        GameplayEvents.OnGameStateChanged += HandleGameStateChanged;
     }
 
     public override void OnDisable()
     {
         base.OnDisable(); // BẮT BUỘC PHẢI CÓ ĐỂ PHOTON HOẠT ĐỘNG
         InteractionEvents.OnInteractHover -= HandleInteractHover;
+        GameplayEvents.OnGameStateChanged -= HandleGameStateChanged;
+    }
+
+    // [BƯỚC 3]: TẮT STAMINA VÀ PERK KHI END GAME
+    private void HandleGameStateChanged(GameState state)
+    {
+        if (state == GameState.Ending)
+        {
+            if (_grpStamina != null) _grpStamina.SetActive(false);
+            if (_grpPerk != null) _grpPerk.SetActive(false);
+
+            Debug.Log("<color=cyan>[UI_HUD_Main]</color> Đã giấu thanh Stamina và Perk để hiện bảng Result!");
+        }
     }
 
     private void HandleInteractHover(string prompt, bool isHovering)

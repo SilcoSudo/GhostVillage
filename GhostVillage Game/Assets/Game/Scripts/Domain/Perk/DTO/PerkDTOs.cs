@@ -37,12 +37,20 @@ namespace Game.Domain.Perk.DTOs
     [Serializable]
     public class PerkModifiersDTO
     {
-        // Nhóm Stamina
+        // Nhóm Thể lực & Chạy
         public float maxStaminaMult;
         public float staminaRegenMult;
+        public float sprintStaminaDrainMult; // Của Tire Tread Sandals (Sếp đang thiếu)
 
-        // Nhóm Items
+        // Nhóm Ancestral Vow (Buff khi Đồng đội bay màu) - Sếp đang thiếu sạch
+        public float speedBoostPerDeath;
+        public float staminaSavePerDeath;
+        public int maxStacks;
+
+        // Nhóm Sinh tồn & Tiêu hao Item
         public float preserveItemChance;
+        public float batteryDrainMult;       // Của Gloom Eye (Sếp đang thiếu)
+        public float bossDetectionRangeMult; // Của Agarwood Beads (Sếp đang thiếu)
 
         // Nhóm Nhìn thấu (Prophetic Sight)
         public float revealDuration;
@@ -53,8 +61,10 @@ namespace Game.Domain.Perk.DTOs
         public float postReviveSpeedBoost;
         public float boostDuration;
 
-        // --- Sếp có thể bổ sung thêm các biến khác ở đây nếu sau này tạo thêm Perk ---
-        // VD: public float moveSpeedMult;
+        // Nhóm Tự Hồi sinh (Spectral Reflex) - Sếp đang thiếu sạch
+        public int autoReviveCount;
+        public float reviveDelay;
+        public float reviveStaminaPercent;
     }
 
     [Serializable]
