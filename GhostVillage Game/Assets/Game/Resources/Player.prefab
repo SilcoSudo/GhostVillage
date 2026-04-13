@@ -293,9 +293,12 @@ MonoBehaviour:
   staminaRegenMultiplier: 1
   batteryDrainMultiplier: 1
   reviveSpeedMultiplier: 1
-  medkitEffectivenessMultiplier: 1
   freeConsumableChance: 0
   detectionVisibilityMultiplier: 1
+  ancestralSpeedBoost: 0
+  ancestralStaminaSave: 0
+  postReviveSpeedBoost: 0
+  postReviveBoostDuration: 0
 --- !u!114 &6827533154869371687
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1071,7 +1074,7 @@ GameObject:
   - component: {fileID: 5837483625213191459}
   m_Layer: 6
   m_Name: Drop_Position
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1264,7 +1267,7 @@ GameObject:
   - component: {fileID: 187801447984271026}
   m_Layer: 0
   m_Name: Player_BaBa_Base@T-Pose
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1348,7 +1351,7 @@ GameObject:
   - component: {fileID: 254591228906891448}
   m_Layer: 6
   m_Name: TwoHandParent
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1381,7 +1384,7 @@ GameObject:
   - component: {fileID: 5966276153195428868}
   m_Layer: 6
   m_Name: Speaker
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2273,7 +2276,7 @@ GameObject:
   - component: {fileID: 6887792159756969021}
   m_Layer: 6
   m_Name: Camera
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

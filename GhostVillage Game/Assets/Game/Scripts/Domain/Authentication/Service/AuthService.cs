@@ -40,6 +40,7 @@ namespace Game.Domain.Authentication
             return response; // Trả về DTO cho Controller xử lý tiếp
         }
 
+
         public async UniTask<FullProfileDTO> FetchMyProfileAsync()
         {
             if (string.IsNullOrEmpty(_session.Token))

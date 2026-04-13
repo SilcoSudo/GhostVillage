@@ -33,19 +33,29 @@ public class PlayerStatsManager : MonoBehaviourPun
     [HideInInspector] public float staminaRegenMultiplier = 1f;
     [HideInInspector] public float batteryDrainMultiplier = 1f;
     [HideInInspector] public float reviveSpeedMultiplier = 1f;
-    [HideInInspector] public float medkitEffectivenessMultiplier = 1f;
     [HideInInspector] public float freeConsumableChance = 0f;
     [HideInInspector] public float detectionVisibilityMultiplier = 1f;
+
+    // [Thêm mới cho Ancestral Vow]
+    [HideInInspector] public float ancestralSpeedBoost = 0f;
+    [HideInInspector] public float ancestralStaminaSave = 0f;
+
+    // [Thêm mới cho Relic Bearer]
+    [HideInInspector] public float postReviveSpeedBoost = 0f;
+    [HideInInspector] public float postReviveBoostDuration = 0f;
 
     public float CurrentStamina { get; private set; }
     public bool IsExhausted { get; private set; } = false;
 
     private float _regenTimer = 0f;
 
-    public float CurrentMoveSpeed => baseMoveSpeed * speedMultiplier;
-    public float CurrentSprintSpeed => baseSprintSpeed * speedMultiplier;
+    // Tính toán tốc độ hiện tại có cộng dồn Ancestral Vow (nếu có)
+    public float CurrentMoveSpeed => (baseMoveSpeed * speedMultiplier) * (1f + ancestralSpeedBoost);
+    public float CurrentSprintSpeed => (baseSprintSpeed * speedMultiplier) * (1f + ancestralSpeedBoost);
     public float MaxStamina => baseMaxStamina * maxStaminaMultiplier;
-    public float StaminaDrainRate => baseStaminaDrainRate * staminaDrainMultiplier;
+
+    // Hao thể lực lúc chạy (Trừ đi phần tiết kiệm của Ancestral Vow)
+    public float StaminaDrainRate => (baseStaminaDrainRate * staminaDrainMultiplier) * (1f - ancestralStaminaSave);
     public float StaminaRegenRate => baseStaminaRegenRate * staminaRegenMultiplier;
     public float BatteryDrainRate => baseBatteryDrainRate * batteryDrainMultiplier;
     public float ReviveSpeed => baseReviveSpeed * reviveSpeedMultiplier;
@@ -72,7 +82,6 @@ public class PlayerStatsManager : MonoBehaviourPun
             CurrentStamina = Mathf.Clamp(CurrentStamina, 0, MaxStamina);
         }
 
-        // [FIX CHÍ MẠNG]: Kiểm tra và chốt cờ Exhausted tự động mỗi frame
         if (CurrentStamina >= MaxStamina * redZoneThresholdRatio)
         {
             IsExhausted = false; // Lên lại vạch xanh -> Hết mệt
@@ -88,13 +97,10 @@ public class PlayerStatsManager : MonoBehaviourPun
         lookSensitivity = newSensitivity;
     }
 
-    // [FIX CHÍ MẠNG]: Thêm tham số isAlreadySprinting để phân biệt đè Shift hay mới bấm
     public bool CanSprint(bool isAlreadySprinting)
     {
-        // 1. Hết sạch máu HOẶC đang bị mệt -> CẤM CHẠY
         if (CurrentStamina <= 0 || IsExhausted) return false;
 
-        // 2. Mới bắt đầu bấm Shift mà máu đang ở vạch Đỏ -> CẤM CHẠY
         if (!isAlreadySprinting && CurrentStamina < MaxStamina * redZoneThresholdRatio)
         {
             return false;
@@ -121,14 +127,48 @@ public class PlayerStatsManager : MonoBehaviourPun
         }
     }
 
+    // Hàm ngoài để gọi Hồi Máu (Dành cho Auto Revive)
+    public void ForceSetStamina(float percent)
+    {
+        CurrentStamina = MaxStamina * percent;
+        CurrentStamina = Mathf.Clamp(CurrentStamina, 0, MaxStamina);
+        if (CurrentStamina >= MaxStamina * redZoneThresholdRatio) IsExhausted = false;
+    }
+
+    // ========================================================
+    // ĐÂY LÀ HÀM CHÍ MẠNG SẾP CẦN NẠP LẠI TỪ PHOTON NETWORK
+    // ========================================================
     public void ApplyPerkModifiersFromPhoton()
     {
         if (photonView == null || !photonView.IsMine) return;
         var props = photonView.Owner.CustomProperties;
 
-        if (props.TryGetValue("Perk_MaxStamina", out object maxStamina)) maxStaminaMultiplier = Convert.ToSingle(maxStamina);
-        if (props.TryGetValue("Perk_StaminaRegen", out object staminaRegen)) staminaRegenMultiplier = Convert.ToSingle(staminaRegen);
-        if (props.TryGetValue("Perk_ReviveSpeed", out object reviveSpeed)) reviveSpeedMultiplier = Convert.ToSingle(reviveSpeed);
-        if (props.TryGetValue("Perk_PreserveItem", out object preserveItem)) freeConsumableChance = Convert.ToSingle(preserveItem);
+        try
+        {
+            Debug.Log($"<color=cyan>[Stats]</color> Đang nạp {props.Count} chỉ số từ Balo Photon...");
+
+            // 1. Nhóm Thể lực & Chạy
+            if (props.TryGetValue("P_MaxStam", out object maxStamina)) maxStaminaMultiplier = Convert.ToSingle(maxStamina);
+            if (props.TryGetValue("P_StamRegen", out object staminaRegen)) staminaRegenMultiplier = Convert.ToSingle(staminaRegen);
+            if (props.TryGetValue("P_SprintDrain", out object sprintDrain)) staminaDrainMultiplier = Convert.ToSingle(sprintDrain);
+
+            // 2. Nhóm Sinh tồn
+            if (props.TryGetValue("P_BattDrain", out object battDrain)) batteryDrainMultiplier = Convert.ToSingle(battDrain);
+            if (props.TryGetValue("P_Vis", out object vis)) detectionVisibilityMultiplier = Convert.ToSingle(vis);
+            if (props.TryGetValue("P_Preserve", out object preserve)) freeConsumableChance = Convert.ToSingle(preserve);
+
+            // 3. Nhóm Cứu hộ (Relic Bearer)
+            if (props.TryGetValue("P_RevSpeed", out object revS)) reviveSpeedMultiplier = Convert.ToSingle(revS);
+
+            // LƯU Ý: Các chỉ số ẩn đặc biệt (như delay hồi sinh, số stack đồng đội chết, thời gian nhìn xuyên tường...)
+            // Không cộng thẳng vào Base Stats mà sẽ được gọi rút trực tiếp từ Photon CustomProperties
+            // lúc sếp viết Logic kích hoạt Skill (ví dụ trong GetKnocked hoặc lúc giải xong Puzzle).
+
+            Debug.Log($"<color=green>[Stats]</color> ✅ Nạp xong! MaxStam: {maxStaminaMultiplier}, StamRegen: {staminaRegenMultiplier}, SprintDrain: {staminaDrainMultiplier}, BattDrain: {batteryDrainMultiplier}");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"<color=red>[Stats]</color> ❌ Lỗi khi ép kiểu Perk Modifiers:\n{e.Message}");
+        }
     }
 }

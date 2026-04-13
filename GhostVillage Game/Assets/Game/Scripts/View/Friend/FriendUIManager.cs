@@ -10,6 +10,7 @@ using Cysharp.Threading.Tasks;
 using System;
 using Game.Core.Network;
 using Game.Script.UI;
+using Game.Domain.Authentication;
 
 namespace Game.UI.Friend
 {
@@ -64,6 +65,8 @@ namespace Game.UI.Friend
         private GlobalUIManager _globalUI;
         private readonly CompositeDisposable _disposables = new();
 
+        [Inject] private AuthService _authService; // <--- THÊM DÒNG NÀY
+
         private enum FriendTab { FriendList, FindFriend, Pending, Sent }
         private FriendTab _currentTab = FriendTab.FriendList;
 
@@ -78,6 +81,7 @@ namespace Game.UI.Friend
             _notiDotPendingTab.SetActive(false);
         }
 
+        [Obsolete]
         private void BindUIEvents()
         {
             _btnOpenFriend.onClick.AddListener(OpenModal);
@@ -140,6 +144,7 @@ namespace Game.UI.Friend
             });
         }
 
+        [Obsolete]
         private void BindReactiveData()
         {
             if (defaultAvatar != null) _imgMyAvatar.sprite = defaultAvatar;
@@ -210,32 +215,31 @@ namespace Game.UI.Friend
 
         private Sprite ResolveAvatarSprite(string avatarId)
         {
+            Debug.Log($"[ResolveAvatarSprite] Đang tìm hình cho ID: '{avatarId}'");
             if (!string.IsNullOrEmpty(avatarId) && avatarPresets != null)
             {
                 for (int i = 0; i < avatarPresets.Length; i++)
                 {
                     if (avatarPresets[i] != null && avatarPresets[i].id == avatarId && avatarPresets[i].sprite != null)
+                    {
+                        Debug.Log($"[FriendUI] Found sprite for avatarId '{avatarId}': {avatarPresets[i].sprite.name}");
                         return avatarPresets[i].sprite;
+                    }
                 }
             }
+            Debug.LogWarning($"[FriendUI] AvatarId '{avatarId}' not found in presets, using default. Presets count: {avatarPresets?.Length ?? 0}");
             return defaultAvatar != null ? defaultAvatar : _imgMyAvatar.sprite;
         }
 
+        [Obsolete]
         private void OpenModal()
         {
             _modalPanel.SetActive(true);
 
-            _txtMyDisplayName.text = _session.DisplayName;
-            if (_txtMyUID != null)
-            {
-                _txtMyUID.text = $"UID: {_session.UID}";
-            }
+            FetchAndSetMyProfile().Forget();
 
             SwitchTab(FriendTab.FriendList);
 
-            // ========================================================
-            // [FIX]: GỌI HÀM ASYNC RIÊNG THAY VÌ DÙNG ContinueWith 
-            // ========================================================
             SafeInitializeDataAsync().Forget();
 
             if (_notiDotMainMenu != null) _notiDotMainMenu.SetActive(false);
@@ -260,6 +264,7 @@ namespace Game.UI.Friend
             _modalPanel.SetActive(false);
         }
 
+        [Obsolete]
         private void SwitchTab(FriendTab tab)
         {
             _currentTab = tab;
@@ -277,6 +282,7 @@ namespace Game.UI.Friend
             UpdateTabAsync(tab).Forget();
         }
 
+        [Obsolete]
         private async UniTaskVoid UpdateTabAsync(FriendTab tab)
         {
             // ========================================================
@@ -336,9 +342,11 @@ namespace Game.UI.Friend
         // --- SETUP PREFAB ITEMS ---
         // ==========================================
 
+        [Obsolete]
         private void SetupFriendItem(GameObject obj, FriendProfileDTO data)
         {
             SetText(obj, "Txt_DisplayName", data.GetDisplayName());
+            SetAvatar(obj, data.GetAvatar()); // <-- GỌI Ở ĐÂY
 
             string userId = data.GetUserId();
             string statusText = "Offline";
@@ -397,10 +405,12 @@ namespace Game.UI.Friend
             }
         }
 
+        [Obsolete]
         private void SetupPendingItem(GameObject obj, FriendProfileDTO data)
         {
             SetText(obj, "Txt_DisplayName", data.GetDisplayName());
             SetText(obj, "Txt_UID", "UID: ***");
+            SetAvatar(obj, data.GetAvatar()); // <-- GỌI Ở ĐÂY
 
             var btnAccept = obj.transform.Find("Btn_Accept")?.GetComponent<Button>();
             if (btnAccept != null)
@@ -441,10 +451,12 @@ namespace Game.UI.Friend
             }
         }
 
+        [Obsolete]
         private void SetupSentItem(GameObject obj, FriendProfileDTO data)
         {
             SetText(obj, "Txt_DisplayName", data.GetDisplayName());
             SetText(obj, "Txt_Status", "Đang chờ...");
+            SetAvatar(obj, data.GetAvatar()); // <-- GỌI Ở ĐÂY
 
             var btnTakeBack = obj.transform.Find("Btn_TakeBack")?.GetComponent<Button>();
             if (btnTakeBack != null)
@@ -470,10 +482,12 @@ namespace Game.UI.Friend
             }
         }
 
+        [Obsolete]
         private void SetupFindItem(GameObject obj, PlayerSearchDTO data)
         {
             SetText(obj, "Txt_DisplayName", data.displayName);
             SetText(obj, "Txt_UID", $"UID: {data.uid}");
+            SetAvatar(obj, data.avatar); // <-- GỌI Ở ĐÂY (Với Search thì data nó trả thẳng cái avatar)
 
             var btnAdd = obj.transform.Find("Btn_AddFriend")?.GetComponent<Button>();
             if (btnAdd != null)
@@ -506,11 +520,81 @@ namespace Game.UI.Friend
             }
         }
 
+        private async UniTaskVoid FetchAndSetMyProfile()
+        {
+            try
+            {
+                // Gọi API lấy profile của chính mình
+                var profileData = await _authService.FetchMyProfileAsync();
+
+                if (profileData != null && profileData.profile != null)
+                {
+                    _txtMyDisplayName.text = profileData.profile.displayName;
+                    if (_txtMyUID != null) _txtMyUID.text = $"UID: {_session.UID}";
+
+                    // Gán avatar của mình
+                    if (_imgMyAvatar != null)
+                    {
+                        _imgMyAvatar.sprite = ResolveAvatarSprite(profileData.profile.avatar);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[FriendUI] Lỗi lấy thông tin cá nhân: {e.Message}");
+                // Fallback nếu lỗi: Vẫn hiện tên và UID từ session
+                _txtMyDisplayName.text = _session.DisplayName;
+                if (_txtMyUID != null) _txtMyUID.text = $"UID: {_session.UID}";
+            }
+        }
+
+        private void SetAvatar(GameObject parent, string avatarId)
+        {
+            Image[] allImages = parent.GetComponentsInChildren<Image>(true);
+            Image targetAvatarImage = null;
+            foreach (var img in allImages)
+            {
+                if (img.gameObject.name == "Img_ProfilePic")
+                {
+                    targetAvatarImage = img;
+                    break;
+                }
+            }
+
+            if (targetAvatarImage != null)
+            {
+                Debug.Log($"[SetAvatar] Đang gắn hình cho Prefab: {parent.name} với Avatar ID: {avatarId}");
+                targetAvatarImage.sprite = ResolveAvatarSprite(avatarId);
+            }
+            else
+            {
+                Debug.LogWarning($"[FriendUI] Không tìm thấy Image avatar trong Prefab {parent.name}");
+            }
+        }
+
+
         private void SetText(GameObject parent, string childName, string text)
         {
-            var textComp = parent.transform.Find(childName)?.GetComponent<TextMeshProUGUI>();
-            if (textComp != null) textComp.text = text;
-            else Debug.LogWarning($"[FriendUI] Cannot find {childName} on {parent.name}");
+            TextMeshProUGUI[] allTexts = parent.GetComponentsInChildren<TextMeshProUGUI>(true);
+            TextMeshProUGUI targetTextComp = null;
+
+            foreach (var txt in allTexts)
+            {
+                if (txt.gameObject.name == childName)
+                {
+                    targetTextComp = txt;
+                    break;
+                }
+            }
+
+            if (targetTextComp != null)
+            {
+                targetTextComp.text = text;
+            }
+            else
+            {
+                Debug.LogWarning($"[FriendUI] Cannot find TextMeshProUGUI {childName} on {parent.name}");
+            }
         }
 
         private void OnDestroy()
