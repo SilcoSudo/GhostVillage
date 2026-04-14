@@ -201,8 +201,10 @@ public class FPSController : MonoBehaviourPun
         // MỚI: Hỏi sếp Stats lấy độ nhạy chuột
         float currentSensitivity = _stats.lookSensitivity;
 
-        float mouseX = lookInput.x * currentSensitivity * Time.deltaTime * 100f;
-        float mouseY = lookInput.y * currentSensitivity * Time.deltaTime * 100f;
+        float mouseMultiplier = 0.1f;
+
+        float mouseX = lookInput.x * currentSensitivity * mouseMultiplier;
+        float mouseY = lookInput.y * currentSensitivity * mouseMultiplier;
 
         _verticalRotation -= mouseY;
         _verticalRotation = Mathf.Clamp(_verticalRotation, -80f, 80f);

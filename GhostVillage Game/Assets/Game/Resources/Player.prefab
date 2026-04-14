@@ -54,6 +54,7 @@ GameObject:
   - component: {fileID: -7655005216016039397}
   - component: {fileID: 2496939903830817862}
   - component: {fileID: 958768899498627804}
+  - component: {fileID: 8365199394453088430}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -277,15 +278,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e40ab5c48e539384583cded1d03ceda3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStatsManager
-  lookSensitivity: 2
-  baseMoveSpeed: 4
-  baseSprintSpeed: 6
+  lookSensitivity: 1
+  baseMoveSpeed: 3
+  baseSprintSpeed: 5
   baseMaxStamina: 100
   baseStaminaDrainRate: 15
   baseStaminaRegenRate: 10
   redZoneThresholdRatio: 0.2
   staminaRegenDelay: 1
-  baseBatteryDrainRate: 1
+  baseBatteryDrainRate: 0.5
   baseReviveSpeed: 1
   speedMultiplier: 1
   maxStaminaMultiplier: 1
@@ -295,6 +296,10 @@ MonoBehaviour:
   reviveSpeedMultiplier: 1
   freeConsumableChance: 0
   detectionVisibilityMultiplier: 1
+  hasPropheticSight: 0
+  hasAutoRevive: 0
+  hasRelicBearer: 0
+  hasAncestralVow: 0
   ancestralSpeedBoost: 0
   ancestralStaminaSave: 0
   postReviveSpeedBoost: 0
@@ -383,9 +388,23 @@ MonoBehaviour:
   cameraTransform: {fileID: 7854717136852411816}
   monsterLayer:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 8256
   normalColor: {r: 1, g: 0.95, b: 0.8, a: 1}
   uvColor: {r: 0.5, g: 0, b: 1, a: 1}
+--- !u!114 &8365199394453088430
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100691100974995321}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6e55c9b414d94e469729ed4b25776d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::XRayPerkController
+  _xRayMaterial: {fileID: 2100000, guid: dfd26d8b20a44804d8d2d80dbb30f732, type: 2}
+  _xRayDuration: 5
 --- !u!1 &301576926713191709
 GameObject:
   m_ObjectHideFlags: 0
@@ -2824,14 +2843,14 @@ Light:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7167234992178267918}
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 12
   m_Type: 0
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 1
-  m_Range: 25.019331
-  m_SpotAngle: 30
-  m_InnerSpotAngle: 17.360376
+  m_Range: 18.267616
+  m_SpotAngle: 84.488945
+  m_InnerSpotAngle: 50.631294
   m_CookieSize2D: {x: 0.5, y: 0.5}
   m_Shadows:
     m_Type: 0

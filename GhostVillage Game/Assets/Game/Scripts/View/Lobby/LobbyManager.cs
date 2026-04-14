@@ -208,35 +208,67 @@ namespace Game.Scripts.UI.Lobby
                 return;
             }
 
-            float maxStaminaMult = 1f;
-            float staminaRegenMult = 1f;
-            float preserveItemChance = 0f;
-            float reviveSpeedMult = 1f;
+            // 1. Khởi tạo Base Stats mặc định
+            float p_MaxStam = 1f;
+            float p_StamRegen = 1f;
+            float p_SprintDrain = 1f;
+            float p_BattDrain = 1f;
+            float p_Vis = 1f;
+            float p_Preserve = 0f;
+            float p_RevSpeed = 1f;
 
+            // Cờ cho các kỹ năng đặc biệt
+            bool p_XRay = false;
+            bool p_AutoRevive = false;
+            bool p_RelicBearer = false;
+            bool p_AncestralVow = false;
+
+            // 2. Quét qua file JSON và tính toán
             foreach (var perkId in data.equippedPerks)
             {
                 var perkDetail = data.unlockedPerksDetails.Find(p => p.perkId == perkId);
                 if (perkDetail != null && perkDetail.modifiers != null)
                 {
                     var mod = perkDetail.modifiers;
-                    if (mod.maxStaminaMult > 0) maxStaminaMult *= mod.maxStaminaMult;
-                    if (mod.staminaRegenMult > 0) staminaRegenMult *= mod.staminaRegenMult;
-                    if (mod.preserveItemChance > 0) preserveItemChance += mod.preserveItemChance;
-                    if (mod.reviveSpeedMult > 0) reviveSpeedMult *= mod.reviveSpeedMult;
+
+                    // Nhóm tính % (Multiplier)
+                    if (mod.maxStaminaMult > 0) p_MaxStam *= mod.maxStaminaMult;
+                    if (mod.staminaRegenMult > 0) p_StamRegen *= mod.staminaRegenMult;
+                    if (mod.sprintStaminaDrainMult > 0) p_SprintDrain *= mod.sprintStaminaDrainMult;
+                    if (mod.batteryDrainMult > 0) p_BattDrain *= mod.batteryDrainMult;
+                    if (mod.bossDetectionRangeMult > 0) p_Vis *= mod.bossDetectionRangeMult;
+                    if (mod.reviveSpeedMult > 0) p_RevSpeed *= mod.reviveSpeedMult;
+
+                    // Nhóm cộng dồn (Additive)
+                    if (mod.preserveItemChance > 0) p_Preserve += mod.preserveItemChance;
+
+                    // Nhóm Cờ (Booleans) cho kỹ năng kích hoạt
+                    if (perkId == "PERK_EPIC_PROPHETIC_SIGHT") p_XRay = true;
+                    if (perkId == "PERK_EPIC_SPECTRAL_REFLEX") p_AutoRevive = true;
+                    if (perkId == "PERK_RARE_RELIC_BEARER") p_RelicBearer = true;
+                    if (perkId == "PERK_RARE_ANCESTRAL_VOW") p_AncestralVow = true;
                 }
             }
 
+            // 3. Nạp vào Balo Photon bằng ĐÚNG TÊN KEY mà PlayerStatsManager chờ
             var props = new Hashtable
-            {
-                { "Perk_IDs", data.equippedPerks.ToArray() },
-                { "Perk_MaxStamina", maxStaminaMult },
-                { "Perk_StaminaRegen", staminaRegenMult },
-                { "Perk_PreserveItem", preserveItemChance },
-                { "Perk_ReviveSpeed", reviveSpeedMult }
-            };
+    {
+        { "Perk_IDs", data.equippedPerks.ToArray() },
+        { "P_MaxStam", p_MaxStam },
+        { "P_StamRegen", p_StamRegen },
+        { "P_SprintDrain", p_SprintDrain },
+        { "P_BattDrain", p_BattDrain },
+        { "P_Vis", p_Vis },
+        { "P_Preserve", p_Preserve },
+        { "P_RevSpeed", p_RevSpeed },
+        { "P_XRay", p_XRay },
+        { "P_AutoRevive", p_AutoRevive },
+        { "P_RelicBearer", p_RelicBearer },
+        { "P_AncestralVow", p_AncestralVow }
+    };
 
             PhotonNetwork.LocalPlayer.SetCustomProperties(props);
-            Debug.Log($"<color=green>[LobbyManager]</color> Đã tự động nạp {data.equippedPerks.Count} Perks vào túi đồ mạng!");
+            Debug.Log($"<color=green>[LobbyManager]</color> Đã nạp {data.equippedPerks.Count} Perks. X-Ray: {p_XRay}");
         }
 
         #endregion
