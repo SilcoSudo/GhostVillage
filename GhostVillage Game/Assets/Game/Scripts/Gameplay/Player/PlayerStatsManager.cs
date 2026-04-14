@@ -35,6 +35,10 @@ public class PlayerStatsManager : MonoBehaviourPun
     [HideInInspector] public float reviveSpeedMultiplier = 1f;
     [HideInInspector] public float freeConsumableChance = 0f;
     [HideInInspector] public float detectionVisibilityMultiplier = 1f;
+    [HideInInspector] public bool hasPropheticSight = false;
+    [HideInInspector] public bool hasAutoRevive = false;
+    [HideInInspector] public bool hasRelicBearer = false;
+    [HideInInspector] public bool hasAncestralVow = false;
 
     // [Thêm mới cho Ancestral Vow]
     [HideInInspector] public float ancestralSpeedBoost = 0f;
@@ -159,6 +163,11 @@ public class PlayerStatsManager : MonoBehaviourPun
 
             // 3. Nhóm Cứu hộ (Relic Bearer)
             if (props.TryGetValue("P_RevSpeed", out object revS)) reviveSpeedMultiplier = Convert.ToSingle(revS);
+
+            if (props.TryGetValue("P_XRay", out object xRayVal)) hasPropheticSight = Convert.ToBoolean(xRayVal);
+            if (props.TryGetValue("P_AutoRevive", out object autoReviveVal)) hasAutoRevive = Convert.ToBoolean(autoReviveVal);
+            if (props.TryGetValue("P_RelicBearer", out object relicVal)) hasRelicBearer = Convert.ToBoolean(relicVal);
+            if (props.TryGetValue("P_AncestralVow", out object vowVal)) hasAncestralVow = Convert.ToBoolean(vowVal);
 
             // LƯU Ý: Các chỉ số ẩn đặc biệt (như delay hồi sinh, số stack đồng đội chết, thời gian nhìn xuyên tường...)
             // Không cộng thẳng vào Base Stats mà sẽ được gọi rút trực tiếp từ Photon CustomProperties

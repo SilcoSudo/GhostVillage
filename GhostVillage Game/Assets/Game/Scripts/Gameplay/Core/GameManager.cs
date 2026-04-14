@@ -13,6 +13,7 @@ using System.Collections;
 using Game.Scripts.Gameplay.Result;
 using Game.Domain.Map.Services;
 using Game.Core.Network;
+using Game.Script.UI;
 
 // Lưu ý: Đảm bảo bạn đã có các Enum và file GameplayEvents.cs như đã bàn trước đó
 public class GameManager : MonoBehaviourPunCallbacks
@@ -241,6 +242,7 @@ public class GameManager : MonoBehaviourPunCallbacks
     }
 
     // Hàm xử lý Logic cục bộ khi State thay đổi
+    [System.Obsolete]
     private void SetLocalState(GameState newState)
     {
         if (CurrentState == newState) return;
@@ -251,7 +253,14 @@ public class GameManager : MonoBehaviourPunCallbacks
         switch (newState)
         {
             case GameState.WaitingForPlayers: Debug.Log("[GameManager] Đang chờ người chơi..."); break;
-            case GameState.Playing: Debug.Log("[GameManager] START GAME!"); break;
+            case GameState.Playing:
+                Debug.Log("[GameManager] START GAME!");
+                // var globalUI = FindObjectOfType<GlobalUIManager>();
+                // if (globalUI != null)
+                // {
+                //     globalUI.ShowLoading(false);
+                // }
+                break;
             case GameState.EscapePhase: Debug.Log("[GameManager] RUN NOW!"); break;
             case GameState.Ending:
 
