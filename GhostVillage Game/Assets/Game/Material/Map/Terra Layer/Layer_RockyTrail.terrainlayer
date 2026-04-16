@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1953259897 &8574412962073106934
+TerrainLayer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Layer_RockyTrail
+  m_DiffuseTexture: {fileID: 2800000, guid: 151acd488125b3743b83693d5d0d8cd7, type: 3}
+  m_NormalMapTexture: {fileID: 2800000, guid: 0a9b586bb33343c4099f214f9e9cf580, type: 3}
+  m_MaskMapTexture: {fileID: 2800000, guid: 53f63879ebd74e441a2ae3391038679f, type: 3}
+  m_TileSize: {x: 4, y: 4}
+  m_TileOffset: {x: 0, y: 0}
+  m_Specular: {r: 0, g: 0, b: 0, a: 0}
+  m_Metallic: 0
+  m_Smoothness: 0
+  m_NormalScale: 1
+  m_DiffuseRemapMin: {x: 0, y: 0, z: 0, w: 0}
+  m_DiffuseRemapMax: {x: 1, y: 1, z: 1, w: 1}
+  m_MaskMapRemapMin: {x: 0, y: 0, z: 0, w: 0}
+  m_MaskMapRemapMax: {x: 0.14092141, y: 0.55284554, z: 1, w: 0}
+  m_SmoothnessSource: 1

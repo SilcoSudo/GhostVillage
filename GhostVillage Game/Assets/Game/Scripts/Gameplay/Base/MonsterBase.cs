@@ -1,3 +1,4 @@
+using Game.Scripts.Gameplay.Core;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -166,7 +167,7 @@ namespace GhostVillage.Gameplay.Base
         /// </summary>
         public virtual bool IsMoving()
         {
-            return navMeshAgent != null && navMeshAgent.isOnNavMesh && 
+            return navMeshAgent != null && navMeshAgent.isOnNavMesh &&
                    navMeshAgent.hasPath && navMeshAgent.remainingDistance > stoppingDistance;
         }
 
@@ -246,6 +247,23 @@ namespace GhostVillage.Gameplay.Base
                 Gizmos.color = Color.green;
                 Gizmos.DrawRay(monsterTransform.position, monsterTransform.forward);
             }
+        }
+
+        /// <summary>
+        /// [MỚI] Áp dụng các hiệu ứng từ sự kiện Trăng (Moon Event)
+        /// CHỈ CHỈNH SỬA TỐC ĐỘ DI CHUYỂN (An toàn cho mọi loại quái).
+        /// </summary>
+        public virtual void ApplyMoonModifiers(MoonEventManager moonManager)
+        {
+            if (moonManager == null || navMeshAgent == null) return;
+
+            // Lấy hệ số tốc độ từ Trăng
+            float speedMult = moonManager.GetMonsterSpeedMultiplier();
+
+            // Áp dụng thẳng vào NavMeshAgent
+            navMeshAgent.speed = moveSpeed * speedMult;
+
+            Debug.Log($"[MonsterBase] Đã buff Trăng cho <color=orange>{monsterName}</color> | Tốc độ mới: {navMeshAgent.speed} (Gốc: {moveSpeed} x {speedMult})");
         }
     }
 }

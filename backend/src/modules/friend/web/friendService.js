@@ -1,9 +1,19 @@
 import Friend from "./friendModel.js";
 import User from "../../user/userModel.js";
+import Player from "../../player/playerModel.js";
 import NotificationService from "../../forum/notifications/notificationService.js";
 import mongoose from "mongoose";
 
 class FriendService {
+  static async getAcceptedFriendCount(userId) {
+    return Friend.countDocuments({
+      $or: [
+        { userId: userId, status: "accepted" },
+        { friendId: userId, status: "accepted" },
+      ],
+    });
+  }
+
   /**
    * Get friend list (accepted friendships)
    * Returns user objects for all accepted friends
@@ -17,18 +27,41 @@ class FriendService {
         ],
       }).populate("userId friendId", "fullname email avatar bio");
 
-      // [BỌC GIÁP]: Lọc bỏ những record mà user đã bị xóa khỏi DB
       const validFriendships = friendships.filter(
         (f) => f.userId != null && f.friendId != null,
       );
 
+      // [FIX ĐỒNG BỘ DATA MỚI]: Lấy danh sách ID bạn bè
+      const friendUserIds = validFriendships.map((f) =>
+        f.userId._id.toString() === userId.toString()
+          ? f.friendId._id
+          : f.userId._id,
+      );
+
+      // [FIX ĐỒNG BỘ DATA MỚI]: Query bảng Player để lấy Avatar mới nhất
+      const players = await Player.find({
+        userId: { $in: friendUserIds },
+      }).lean();
+
       const friends = validFriendships.map((friendship) => {
-        const friend =
+        let friend =
           friendship.userId._id.toString() === userId.toString()
             ? friendship.friendId
             : friendship.userId;
+
+        friend = friend.toObject ? friend.toObject() : friend;
+
+        // [FIX ĐỒNG BỘ DATA MỚI]: Gán đè avatar và fullname từ bảng Player sang bảng User
+        const playerMatch = players.find(
+          (p) => p.userId.toString() === friend._id.toString(),
+        );
+        if (playerMatch && playerMatch.profile) {
+          friend.avatar = playerMatch.profile.avatar || friend.avatar;
+          friend.fullname = playerMatch.profile.displayName || friend.fullname;
+        }
+
         return {
-          ...(friend.toObject ? friend.toObject() : friend),
+          ...friend,
           friendshipId: friendship._id,
           acceptedAt: friendship.acceptedAt,
         };
@@ -51,13 +84,32 @@ class FriendService {
         status: "pending",
       }).populate("userId", "fullname email avatar bio");
 
-      // [BỌC GIÁP]: Lọc bỏ bóng ma
       const validRequests = requests.filter((r) => r.userId != null);
 
-      return validRequests.map((request) => ({
-        ...request.toObject(),
-        requester: request.userId,
-      }));
+      // [FIX ĐỒNG BỘ DATA MỚI]
+      const requesterIds = validRequests.map((r) => r.userId._id);
+      const players = await Player.find({
+        userId: { $in: requesterIds },
+      }).lean();
+
+      return validRequests.map((request) => {
+        const reqObj = request.toObject();
+        let requester = reqObj.userId;
+
+        const playerMatch = players.find(
+          (p) => p.userId.toString() === requester._id.toString(),
+        );
+        if (playerMatch && playerMatch.profile) {
+          requester.avatar = playerMatch.profile.avatar || requester.avatar;
+          requester.fullname =
+            playerMatch.profile.displayName || requester.fullname;
+        }
+
+        return {
+          ...reqObj,
+          requester: requester,
+        };
+      });
     } catch (error) {
       console.error("Error getting pending requests:", error);
       throw error;
@@ -74,13 +126,30 @@ class FriendService {
         status: "pending",
       }).populate("friendId", "fullname email avatar bio");
 
-      // [BỌC GIÁP]: Lọc bỏ bóng ma
       const validRequests = requests.filter((r) => r.friendId != null);
 
-      return validRequests.map((request) => ({
-        ...request.toObject(),
-        targetUser: request.friendId,
-      }));
+      // [FIX ĐỒNG BỘ DATA MỚI]
+      const targetIds = validRequests.map((r) => r.friendId._id);
+      const players = await Player.find({ userId: { $in: targetIds } }).lean();
+
+      return validRequests.map((request) => {
+        const reqObj = request.toObject();
+        let targetUser = reqObj.friendId;
+
+        const playerMatch = players.find(
+          (p) => p.userId.toString() === targetUser._id.toString(),
+        );
+        if (playerMatch && playerMatch.profile) {
+          targetUser.avatar = playerMatch.profile.avatar || targetUser.avatar;
+          targetUser.fullname =
+            playerMatch.profile.displayName || targetUser.fullname;
+        }
+
+        return {
+          ...reqObj,
+          targetUser: targetUser,
+        };
+      });
     } catch (error) {
       console.error("Error getting sent requests:", error);
       throw error;
@@ -105,14 +174,20 @@ class FriendService {
         throw new Error("Cannot add yourself as a friend");
       }
 
-      // ========================================================
-      // [FIX]: CHECK GIỚI HẠN 20 BẠN TRƯỚC KHI GỬI LỜI MỜI
-      // ========================================================
-      const countA = await this.getFriendCount(userAId);
-      if (countA >= 20) throw new Error("Bạn đã đạt giới hạn 20 người bạn");
+      const [userAFriendCount, userBFriendCount] = await Promise.all([
+        FriendService.getAcceptedFriendCount(userAId),
+        FriendService.getAcceptedFriendCount(userBId),
+      ]);
 
-      const countB = await this.getFriendCount(userBId);
-      if (countB >= 20) throw new Error("Đối phương đã đầy danh sách bạn bè");
+      if (userAFriendCount >= 20) {
+        throw new Error(
+          "Friend limit reached. You can have at most 20 friends",
+        );
+      }
+
+      if (userBFriendCount >= 20) {
+        throw new Error("This user already has the maximum number of friends");
+      }
 
       // Check if friendship already exists
       const existingFriendship = await Friend.findOne({
@@ -176,16 +251,19 @@ class FriendService {
         throw new Error("Only pending requests can be accepted");
       }
 
-      // ========================================================
-      // [FIX]: CHECK GIỚI HẠN 20 BẠN TRƯỚC KHI CHẤP NHẬN
-      // ========================================================
-      const countA = await this.getFriendCount(friendship.userId._id);
-      const countB = await this.getFriendCount(friendship.friendId._id);
+      const [requesterFriendCount, targetFriendCount] = await Promise.all([
+        FriendService.getAcceptedFriendCount(friendship.userId._id),
+        FriendService.getAcceptedFriendCount(friendship.friendId._id),
+      ]);
 
-      if (countA >= 20 || countB >= 20) {
+      if (requesterFriendCount >= 20) {
         throw new Error(
-          "Không thể chấp nhận vì một trong hai người đã đạt giới hạn 20 bạn bè",
+          "Friend limit reached. You can have at most 20 friends",
         );
+      }
+
+      if (targetFriendCount >= 20) {
+        throw new Error("This user already has the maximum number of friends");
       }
 
       // Update status
@@ -235,16 +313,19 @@ class FriendService {
         throw new Error("Only pending requests can be accepted");
       }
 
-      // ========================================================
-      // [FIX]: CHECK GIỚI HẠN 20 BẠN TRƯỚC KHI CHẤP NHẬN
-      // ========================================================
-      const countA = await this.getFriendCount(friendship.userId._id);
-      const countB = await this.getFriendCount(friendship.friendId._id);
+      const [requesterFriendCount, targetFriendCount] = await Promise.all([
+        FriendService.getAcceptedFriendCount(friendship.userId._id),
+        FriendService.getAcceptedFriendCount(friendship.friendId._id),
+      ]);
 
-      if (countA >= 20 || countB >= 20) {
+      if (requesterFriendCount >= 20) {
         throw new Error(
-          "Không thể chấp nhận vì một trong hai người đã đạt giới hạn 20 bạn bè",
+          "Friend limit reached. You can have at most 20 friends",
         );
+      }
+
+      if (targetFriendCount >= 20) {
+        throw new Error("This user already has the maximum number of friends");
       }
 
       // Update status

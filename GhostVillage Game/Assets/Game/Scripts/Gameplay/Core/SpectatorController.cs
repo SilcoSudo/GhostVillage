@@ -1,0 +1,174 @@
+using UnityEngine;
+using System.Collections.Generic;
+using Photon.Pun;
+using UnityEngine.InputSystem;
+
+namespace Game.Scripts.Gameplay.Core
+{
+    public class SpectatorController : MonoBehaviour
+    {
+        [Header("Orbit Settings")]
+        [SerializeField] private float _sensitivity = 0.2f;
+        [SerializeField] private float _distance = 3.5f; // Khoảng cách từ Camera tới người
+        [SerializeField] private Vector3 _targetOffset = new Vector3(0, 1.5f, 0); // Nhìn vào phần ngực/đầu người chơi
+
+        private Transform _currentTarget;
+        private List<GameObject> _livingPlayers = new List<GameObject>();
+        private int _targetIndex = 0;
+
+        private float _rotX;
+        private float _rotY = 20f; // Góc ngước ban đầu
+        private bool _isActive = false;
+
+        // [MỚI] Tự tạo một Camera riêng cho Spectator để tha hồ quay tay!
+        private Camera _orbitCamera;
+        private AudioListener _orbitAudio;
+
+        public void ActivateSpectator()
+        {
+            _isActive = true;
+            _rotX = transform.eulerAngles.y;
+
+            // Đẻ ra một cái Camera Vô hình giữa trời
+            if (_orbitCamera == null)
+            {
+                GameObject camObj = new GameObject("OrbitSpectatorCamera");
+                _orbitCamera = camObj.AddComponent<Camera>();
+                _orbitAudio = camObj.AddComponent<AudioListener>();
+
+                // Copy setting từ Main Camera sang (nếu có để đỡ bị lỗi render)
+                Camera mainCam = Camera.main;
+                if (mainCam != null)
+                {
+                    _orbitCamera.CopyFrom(mainCam);
+                    // Dọn dẹp mấy cái rác rưởi lỡ copy dính
+                    var audioMain = camObj.GetComponent<AudioListener>();
+                    if (audioMain != null && audioMain != _orbitAudio) Destroy(audioMain);
+                }
+            }
+
+            _orbitCamera.enabled = true;
+            if (_orbitAudio != null) _orbitAudio.enabled = true;
+
+            FindNewTarget();
+            Debug.Log("<color=magenta>[Spectator] Orbit Camera đã kích hoạt!</color>");
+        }
+
+        public void DeactivateSpectator()
+        {
+            _isActive = false;
+            if (_orbitCamera != null)
+            {
+                Destroy(_orbitCamera.gameObject); // Chơi xong đập bỏ luôn
+            }
+        }
+
+        private void Update()
+        {
+            if (!_isActive || _orbitCamera == null) return;
+
+            // Xử lý xoay chuột (Xoay cái Camera mới, không liên quan mẹ gì thằng đang bị xem)
+            Vector2 mouseDelta = Mouse.current.delta.ReadValue();
+            _rotX += mouseDelta.x * _sensitivity;
+            _rotY -= mouseDelta.y * _sensitivity;
+            _rotY = Mathf.Clamp(_rotY, -20f, 80f); // Không cho lật ngược camera lòi quần lót
+
+            // Đổi mục tiêu
+            if (Keyboard.current.aKey.wasPressedThisFrame || Keyboard.current.leftArrowKey.wasPressedThisFrame) ChangeTarget(-1);
+            if (Keyboard.current.dKey.wasPressedThisFrame || Keyboard.current.rightArrowKey.wasPressedThisFrame) ChangeTarget(1);
+        }
+
+        private void LateUpdate()
+        {
+            if (!_isActive || _orbitCamera == null) return;
+
+            // Nếu người đang xem bất ngờ bốc hơi (chết/thoát), tự động tìm người mới
+            if (_currentTarget == null || !_currentTarget.gameObject.activeInHierarchy)
+            {
+                FindNewTarget();
+                if (_currentTarget == null) return; // Vẫn không có ai thì chịu
+            }
+
+            var knockedState = _currentTarget.GetComponent<PlayerKnockedState>();
+            if (knockedState != null && knockedState.isKnocked)
+            {
+                FindNewTarget();
+                if (_currentTarget == null) return;
+            }
+
+            // ===============================================
+            // TÍNH TOÁN QUỸ ĐẠO QUAY (ORBIT MATH)
+            // ===============================================
+            Quaternion rotation = Quaternion.Euler(_rotY, _rotX, 0);
+            Vector3 targetCenter = _currentTarget.position + _targetOffset;
+
+            // Lùi camera ra sau lưng target một khoảng _distance
+            Vector3 position = targetCenter - (rotation * Vector3.forward * _distance);
+
+            _orbitCamera.transform.rotation = rotation;
+            _orbitCamera.transform.position = position;
+        }
+
+        private void FindNewTarget()
+        {
+            _livingPlayers.Clear();
+            GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+
+            foreach (var p in players)
+            {
+                var knockedState = p.GetComponent<PlayerKnockedState>();
+                var pView = p.GetComponent<PhotonView>();
+
+                // Tiêu chí người sống: Không bị Knocked VÀ GameObject còn bật VÀ ĐÉO PHẢI MÌNH
+                if (knockedState != null && !knockedState.isKnocked && p.activeInHierarchy && pView != null && !pView.IsMine)
+                {
+                    _livingPlayers.Add(p);
+                }
+            }
+
+            if (_livingPlayers.Count > 0)
+            {
+                _targetIndex = 0; // Reset index về 0
+                SetTarget(_livingPlayers[0].transform);
+            }
+            else
+            {
+                Debug.LogWarning("[Spectator] Không tìm thấy ai còn sống để xem!");
+                _currentTarget = null;
+            }
+        }
+
+        private void ChangeTarget(int direction)
+        {
+            if (_livingPlayers.Count <= 1)
+            {
+                FindNewTarget();
+                if (_livingPlayers.Count <= 1) return;
+            }
+
+            // Dùng vòng lặp kiểm tra để tránh bay vào người vừa chết nhưng chưa xóa khỏi list
+            int startIdx = _targetIndex;
+            do
+            {
+                _targetIndex = (_targetIndex + direction + _livingPlayers.Count) % _livingPlayers.Count;
+                var potentialTarget = _livingPlayers[_targetIndex];
+
+                if (potentialTarget != null && potentialTarget.activeInHierarchy)
+                {
+                    SetTarget(potentialTarget.transform);
+                    return; // Đã tìm thấy người khỏe mạnh
+                }
+
+            } while (_targetIndex != startIdx); // Duyệt hết 1 vòng mà không ai sống
+
+            // Nếu chạy tới đây thì team chết sạch
+            FindNewTarget();
+        }
+
+        private void SetTarget(Transform target)
+        {
+            _currentTarget = target;
+            Debug.Log($"<color=cyan>[Spectator] Đang xem: {target.gameObject.name}</color>");
+        }
+    }
+}

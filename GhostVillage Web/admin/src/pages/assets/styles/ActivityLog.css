@@ -184,11 +184,6 @@
   min-width: 180px;
 }
 
-.filter-icon {
-  color: var(--text-brass);
-  flex-shrink: 0;
-}
-
 .filter-select {
   flex: 1;
   padding: 10px 12px;

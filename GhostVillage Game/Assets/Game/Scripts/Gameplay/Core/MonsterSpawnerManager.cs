@@ -4,6 +4,7 @@ using Game.Domain.Map.DTOs;
 using System.Collections;
 using System.Collections.Generic;
 using Game.Core.Database;
+using Game.Scripts.Gameplay.Core;
 
 public class MonsterSpawnerManager : MonoBehaviour
 {
@@ -14,16 +15,18 @@ public class MonsterSpawnerManager : MonoBehaviour
     private MonsterSystemConfigDTO _currentConfig;
     private MapDataManager _mapData;
     private GameResourceDatabaseSO _resourceDB;
+    private MoonEventManager _moonManager;
 
     private List<int> _activeMinionIds = new List<int>();
 
-    public void SpawnMonsters(MonsterSystemConfigDTO config, MapDataManager mapData, GameResourceDatabaseSO resourceDB)
+    public void SpawnMonsters(MonsterSystemConfigDTO config, MapDataManager mapData, GameResourceDatabaseSO resourceDB, MoonEventManager moonManager)
     {
         if (!PhotonNetwork.IsMasterClient) return;
 
         _currentConfig = config;
         _mapData = mapData;
         _resourceDB = resourceDB;
+        _moonManager = moonManager;
 
         Debug.Log("[MonsterSpawner] Khởi động hệ thống quái vật...");
 
@@ -51,8 +54,15 @@ public class MonsterSpawnerManager : MonoBehaviour
 
         if (prefab != null)
         {
-            PhotonNetwork.InstantiateRoomObject(prefab.name, target.position, target.rotation);
+            GameObject boss = PhotonNetwork.InstantiateRoomObject(prefab.name, target.position, target.rotation);
             Debug.Log($"👹 [MonsterSpawner] Boss {bossId} đã xuất hiện tại {target.name}!");
+
+            // [MỚI]: Bơm hệ số Trăng vào Boss
+            if (_moonManager != null)
+            {
+                var monsterBase = boss.GetComponent<GhostVillage.Gameplay.Base.MonsterBase>();
+                if (monsterBase != null) monsterBase.ApplyMoonModifiers(_moonManager);
+            }
         }
     }
 
@@ -92,6 +102,13 @@ public class MonsterSpawnerManager : MonoBehaviour
             GameObject minion = PhotonNetwork.InstantiateRoomObject(prefab.name, target.position, target.rotation);
             PhotonView pv = minion.GetComponent<PhotonView>();
             if (pv != null) _activeMinionIds.Add(pv.ViewID);
+
+            // [MỚI]: Bơm hệ số Trăng vào Minion
+            if (_moonManager != null)
+            {
+                var monsterBase = minion.GetComponent<GhostVillage.Gameplay.Base.MonsterBase>();
+                if (monsterBase != null) monsterBase.ApplyMoonModifiers(_moonManager);
+            }
         }
     }
 

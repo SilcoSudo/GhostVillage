@@ -72,6 +72,27 @@ MonoBehaviour:
   - StartCatchPhaseRPC
   - SyncProgressRPC
   - RpcSyncLightMode
+  - RpcHandleCorpse
+  - MarkAsSolvedRPC
+  - SyncSecretCodeRPC
+  - TriggerPenaltyRPC
+  - RpcOpenSafeAndSpawnItem
+  - RpcSyncSafeOpened
+  - OnPuzzleFailedRPC
+  - OnPuzzleSolvedRPC
+  - SyncPuzzleConfigRPC
+  - PlaceItemRPC
+  - RemoveItemRPC
+  - UpdateWaterLevelRPC
+  - ActivateValveRPC
+  - InstallPartRPC
+  - TriggerEscapeSequenceRPC
+  - RpcAlertAndSink
+  - RpcFreezeAndSink
+  - RpcActivateTeleport
+  - RpcDoTeleportSequence
+  - ReceiveJumpscareRPC
+  - RpcPlayJumpscareEffect
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

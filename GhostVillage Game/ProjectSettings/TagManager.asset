@@ -15,6 +15,10 @@ TagManager:
   - SP_Player
   - TestMonster
   - SP_ChickenCoop
+  - Boss
+  - Minion
+  - WayPoint
+  - Puddle
   layers:
   - Default
   - TransparentFX
@@ -26,10 +30,10 @@ TagManager:
   - Wall
   - TestPlayer
   - TestMonster
-  - 
-  - 
-  - 
-  - 
+  - Minion
+  - Boundary
+  - XRay_Boss
+  - XRay_Minion
   - 
   - 
   - 

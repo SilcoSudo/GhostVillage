@@ -15,6 +15,8 @@ public class ProfileController
         selectedMedals = new List<string>()
     };
     private List<string> _tempMedalIds = new List<string>();
+    // Biến lưu tạm Avatar đang được chọn trong bảng, chưa ấn Save
+    private string _tempAvatarId = "";
 
     public ProfileController(ProfileService service, GameSession session)
     {
@@ -128,5 +130,35 @@ public class ProfileController
     {
         string token = PlayerPrefs.GetString("AccessToken", "");
         return await _service.ClaimQuestAsync(id, token);
+    }
+
+    // ========================================================
+    // [MỚI] QUẢN LÝ AVATAR
+    // ========================================================
+    public void SetTempAvatar(string avatarId)
+    {
+        _tempAvatarId = avatarId;
+    }
+
+    public string GetTempAvatar()
+    {
+        return _tempAvatarId;
+    }
+
+    public async UniTask<bool> SaveAvatarToServer()
+    {
+        if (string.IsNullOrEmpty(_tempAvatarId)) return false;
+
+        string token = PlayerPrefs.GetString("AccessToken", "");
+
+        // Bóp cò API
+        bool success = await _service.UpdateAvatarAsync(_tempAvatarId, token);
+
+        if (success)
+        {
+            // Lưu thành công thì cập nhật luôn vào Master Data để UI vẽ lại
+            _masterData.profile.avatar = _tempAvatarId;
+        }
+        return success;
     }
 }

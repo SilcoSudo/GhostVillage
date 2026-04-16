@@ -6,10 +6,12 @@ import { toast } from "react-hot-toast";
 import { X } from "lucide-react";
 import TiptapEditor from "./TiptapEditor";
 import { uploadMedia } from "../services/uploadService";
+import { checkPostingRestriction } from "../services/postService";
 import "./CreatePostModal.css";
 
 const MAX_POST_IMAGES = 10;
 const MAX_POST_VIDEOS = 1;
+const MAX_POST_BODY_LENGTH = 20000;
 
 const getMediaCounts = (mediaList = []) => {
   const imageCount = mediaList.filter(
@@ -48,6 +50,9 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
   ];
 
   const [errors, setErrors] = useState({});
+
+  const getPlainTextLength = (value = "") =>
+    value.replace(/<[^>]*>/g, "").length;
 
   // Load post data when editing
   useEffect(() => {
@@ -103,6 +108,8 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
       newErrors.body = "Content is required";
     } else if (formData.body.trim().length < 10) {
       newErrors.body = "Content must be at least 10 characters";
+    } else if (getPlainTextLength(formData.body) > MAX_POST_BODY_LENGTH) {
+      newErrors.body = `Content must not exceed ${MAX_POST_BODY_LENGTH} characters`;
     }
 
     setErrors(newErrors);
@@ -128,6 +135,8 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
     }
 
     try {
+      await checkPostingRestriction();
+
       setIsUploading(true);
 
       // Upload all media files first
@@ -484,8 +493,9 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
               <div className="invalid-feedback d-block">{errors.body}</div>
             )}
             <Form.Text className="char-counter">
-              {formData.body.replace(/<[^>]*>/g, "").length}{" "}
+              {getPlainTextLength(formData.body)}{" "}
               {t("post.create.contentCounter")}
+              {` / ${MAX_POST_BODY_LENGTH}`}
             </Form.Text>
             <Form.Text className="char-counter d-block">
               Media: {getMediaCounts(uploadedImages).imageCount}/

@@ -21,12 +21,10 @@ MonoBehaviour:
     prefab: {fileID: 7723053562602984848, guid: 50b849f38cc225a44ba541096021650f, type: 3}
   randomEquipments: []
   monsters:
-  - entityId: BOSS_ONG_KE
-    prefab: {fileID: 3636443237326501205, guid: a310be84496b44447806cfa5def0967b, type: 3}
-  - entityId: MINION_SHADOW_HAND
-    prefab: {fileID: 6458741422548826572, guid: dfa5bfd4df52a764b89b669a967427b6, type: 3}
-  - entityId: MINION_CURSED_RAT
-    prefab: {fileID: 5122327123068424174, guid: 060097ba8ab758541a7c62b3b0feff6a, type: 3}
+  - entityId: BOSS_MADA
+    prefab: {fileID: 5167604229924277683, guid: 42c02c1145627644796c13aaf79c330b, type: 3}
+  - entityId: MINION_DROWNED
+    prefab: {fileID: 2041089602458688669, guid: 49a5e38fcde8bc341aff4e9af89b6145, type: 3}
   puzzles:
   - entityId: PUZZLE_FIND_DOLL
     prefab: {fileID: 8126756268081071111, guid: f0aa56b0f0b6cab4480a1f0f89562a60, type: 3}

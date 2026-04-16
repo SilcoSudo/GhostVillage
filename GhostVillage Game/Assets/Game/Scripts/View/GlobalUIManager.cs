@@ -315,7 +315,7 @@ namespace Game.Script.UI
         /// <summary>
         /// GỌI HÀM NÀY NẾU CÓ BIẾN LỚN KHI ĐANG LOAD MAP/SPAWN NHÂN VẬT ĐỂ RÚT AN TOÀN
         /// </summary>
-        public void HandleLoadingCrash(string errorTitle, string errorMessage, string safeScene = "MainMenuScene")
+        public void HandleLoadingCrash(string errorTitle, string errorMessage, string safeScene = "MainMenu")
         {
             Debug.LogError($"[SafeReturn] Khởi chạy! Lỗi: {errorTitle} - {errorMessage}");
 

@@ -86,7 +86,7 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
 
         candidates = runtimeCandidates;
         realChickenIndex = runtimeRealChickenIndex;
-        
+
         // Track fake chickens separately so we don't destroy them on puzzle completion
         _fakeChickens.Clear();
         for (int i = 0; i < candidates.Count; i++)
@@ -96,7 +96,7 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
                 _fakeChickens.Add(candidates[i]);
             }
         }
-        
+
         InitializeCandidates();
     }
 
@@ -433,7 +433,7 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
 
         float dist = Vector3.Distance(actor.transform.position, _realChickenTf.position);
         Debug.Log($"[ChickenHunt] TryAddCaptureProgressByInteract - distance to real chicken: {dist:F2}, captureDistance: {captureDistance}");
-        
+
         if (dist > captureDistance)
         {
             Debug.Log($"[ChickenHunt]  Too far from real chicken to capture");
@@ -583,12 +583,12 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
     {
         Debug.Log($"[ChickenHunt] AddCaptureProgressRPC called - amount: {amount}, progress before: {_captureProgress:F2}");
 
-        if (_isSolved || !_isCatchPhase) 
+        if (_isSolved || !_isCatchPhase)
         {
             Debug.LogWarning($"[ChickenHunt] AddCaptureProgressRPC rejected: isSolved={_isSolved}, isCatchPhase={_isCatchPhase}");
             return;
         }
-        if (PhotonNetwork.IsConnectedAndReady && !PhotonNetwork.IsMasterClient) 
+        if (PhotonNetwork.IsConnectedAndReady && !PhotonNetwork.IsMasterClient)
         {
             Debug.Log("[ChickenHunt] AddCaptureProgressRPC: not master client");
             return;
@@ -727,7 +727,7 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         ConfigurePickupData(pickupGo, rewardItem);
         ApplyChickenVisualToPickup(pickupGo);
         _rewardPickupSpawned = pickupGo != null;
-        
+
         if (_rewardPickupSpawned)
         {
             Debug.Log($"[ChickenHunt]  Reward pickup spawned at {spawnPos}, object: {pickupGo.name}");
@@ -923,7 +923,7 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         if (!added)
         {
             // Fallback if inventory is full.
-            for (int i = 0; i < inv.items.Count; i++)
+            for (int i = 0; i < inv.items.Length; i++)
             {
                 var item = inv.items[i];
                 if (item == null || item.itemType == ItemType.EscapeTool) continue;

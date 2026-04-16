@@ -124,10 +124,6 @@
   gap: 8px;
 }
 
-.filter-icon {
-  color: var(--text-primary);
-}
-
 .filter-select {
   padding: 10px 12px;
   border: 1px solid var(--border-color);

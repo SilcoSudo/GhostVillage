@@ -6,6 +6,8 @@ import { useFriendList } from "../../shared/hooks/useFriend";
 import { getAvatarUrl, cacheAvatar } from "../../shared/utils/avatarCache";
 import "./ChatWidget.css";
 
+const MAX_MESSAGE_LENGTH = 2000;
+
 const ChatWidget = () => {
   const { user } = useContext(AuthContext);
   const {
@@ -43,10 +45,13 @@ const ChatWidget = () => {
   const handleSendMessage = () => {
     if (!messageInput.trim() || !selectedFriend) return;
 
+    const content = messageInput.trim();
+    if (content.length > MAX_MESSAGE_LENGTH) return;
+
     const newMessage = {
       id: Date.now(),
       senderId: user._id,
-      text: messageInput,
+      text: content,
       timestamp: new Date(),
       isSent: true, // Thêm trường này để phân biệt tin nhắn của user hay friend
     };
@@ -209,9 +214,13 @@ const ChatWidget = () => {
                   placeholder="Nhập tin nhắn..."
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
+                  maxLength={MAX_MESSAGE_LENGTH}
                   onKeyPress={handleKeyPress}
                   rows="2"
                 />
+                <span className="chat-character-count">
+                  {messageInput.length}/{MAX_MESSAGE_LENGTH}
+                </span>
                 <button
                   className="send-btn"
                   onClick={handleSendMessage}

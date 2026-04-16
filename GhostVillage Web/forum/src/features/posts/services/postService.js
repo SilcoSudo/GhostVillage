@@ -12,6 +12,12 @@ export const getPost = async (postId) => {
   return response.data;
 };
 
+// Check whether the current user can create a post
+export const checkPostingRestriction = async () => {
+  const response = await axios.get("/web/forum/posting-restriction");
+  return response.data;
+};
+
 // Create post
 export const createPost = async (postData) => {
   const response = await axios.post("/web/forum", postData);

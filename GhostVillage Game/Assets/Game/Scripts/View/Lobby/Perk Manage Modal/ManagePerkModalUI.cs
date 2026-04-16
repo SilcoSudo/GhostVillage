@@ -216,39 +216,78 @@ namespace Game.Scripts.UI.Lobby
                 Debug.Log("<color=green>Đã lưu Loadout Perk lên Server thành công!</color>");
 
                 // --- BÍ THUẬT: ĐÓNG GÓI CHỈ SỐ GỬI VÀO PHOTON ---
-                float maxStaminaMult = 1f;
-                float staminaRegenMult = 1f;
-                float preserveItemChance = 0f;
-                float reviveSpeedMult = 1f;
+                float maxStam = 1f, stamRegen = 1f, sprintDrain = 1f;
+                float battDrain = 1f, vis = 1f, revS = 1f, pres = 0f;
+                float postRevSpeed = 0f, postRevDur = 0f;
 
-                // Duyệt qua các Perk đang chọn để cộng dồn Buff
+                var props = new ExitGames.Client.Photon.Hashtable
+                {
+                    { "Perk_IDs", _tempEquippedPerks.ToArray() }, // Lưu mảng ID để vào game vẽ UI
+                    { "P_AutoRev_Count", 0 },     // Xóa trí nhớ Spectral Reflex
+                    { "P_AutoRev_Delay", 0f },
+                    { "P_AutoRev_Stam", 0f },
+                    { "P_Ances_Speed", 0f },      // Xóa trí nhớ Ancestral Vow
+                    { "P_Ances_Save", 0f },
+                    { "P_Ances_Max", 0 },
+                    { "P_Reveal_Dur", 0f },       // Xóa trí nhớ Prophetic Sight
+                    { "P_Reveal_Out", false }
+                };
+
+                // Nhét toàn bộ vào Balo Photon của LocalPlayer
+                // 3. CỘNG DỒN CHỈ SỐ TỪ CÁC PERK ĐANG MẶC TRÊN NGƯỜI
                 foreach (var perkId in _tempEquippedPerks)
                 {
                     var perkDetail = _currentData.unlockedPerksDetails.Find(p => p.perkId == perkId);
-                    if (perkDetail != null && perkDetail.modifiers != null)
-                    {
-                        var mod = perkDetail.modifiers;
+                    if (perkDetail?.modifiers == null) continue;
+                    var mod = perkDetail.modifiers;
 
-                        // Cộng/Nhân dồn các chỉ số từ DTO của sếp
-                        if (mod.maxStaminaMult > 0) maxStaminaMult *= mod.maxStaminaMult;
-                        if (mod.staminaRegenMult > 0) staminaRegenMult *= mod.staminaRegenMult;
-                        if (mod.preserveItemChance > 0) preserveItemChance += mod.preserveItemChance;
-                        if (mod.reviveSpeedMult > 0) reviveSpeedMult *= mod.reviveSpeedMult;
+                    // Nhóm nhân/cộng dồn
+                    if (mod.maxStaminaMult > 0) maxStam *= mod.maxStaminaMult;
+                    if (mod.staminaRegenMult > 0) stamRegen *= mod.staminaRegenMult;
+                    if (mod.sprintStaminaDrainMult > 0) sprintDrain *= mod.sprintStaminaDrainMult;
+                    if (mod.batteryDrainMult > 0) battDrain *= mod.batteryDrainMult;
+                    if (mod.bossDetectionRangeMult > 0) vis *= mod.bossDetectionRangeMult;
+                    if (mod.reviveSpeedMult > 0) revS *= mod.reviveSpeedMult;
+                    if (mod.postReviveSpeedBoost > 0) postRevSpeed += mod.postReviveSpeedBoost;
+                    if (mod.boostDuration > 0) postRevDur = mod.boostDuration;
+                    if (mod.preserveItemChance > 0) pres += mod.preserveItemChance;
+
+                    // Nhóm kỹ năng kích hoạt (Chỉ lấy khi có mang Perk)
+                    if (mod.autoReviveCount > 0)
+                    {
+                        props["P_AutoRev_Count"] = mod.autoReviveCount;
+                        props["P_AutoRev_Delay"] = mod.reviveDelay;
+                        props["P_AutoRev_Stam"] = mod.reviveStaminaPercent;
+                    }
+                    if (mod.maxStacks > 0)
+                    {
+                        props["P_Ances_Speed"] = mod.speedBoostPerDeath;
+                        props["P_Ances_Save"] = mod.staminaSavePerDeath;
+                        props["P_Ances_Max"] = mod.maxStacks;
+                    }
+                    if (mod.revealDuration > 0)
+                    {
+                        props["P_Reveal_Dur"] = mod.revealDuration;
+                        props["P_Reveal_Out"] = mod.revealOutline;
                     }
                 }
 
-                // Nhét toàn bộ vào Balo Photon của LocalPlayer
-                var props = new ExitGames.Client.Photon.Hashtable
-                {
-                    { "Perk_IDs", _tempEquippedPerks.ToArray() }, // Giữ lại mảng ID nhỡ vào game cần hiện Icon
-                    { "Perk_MaxStamina", maxStaminaMult },
-                    { "Perk_StaminaRegen", staminaRegenMult },
-                    { "Perk_PreserveItem", preserveItemChance },
-                    { "Perk_ReviveSpeed", reviveSpeedMult }
-                };
-                PhotonNetwork.LocalPlayer.SetCustomProperties(props);
-                // ------------------------------------------------
+                // 4. GÓI GỌN VÀO TÚI ĐỒ MẠNG (PHOTON)
+                props["P_MaxStam"] = maxStam;
+                props["P_StamRegen"] = stamRegen;
+                props["P_SprintDrain"] = sprintDrain;
+                props["P_BattDrain"] = battDrain;
+                props["P_Vis"] = vis;
+                props["P_RevSpeed"] = revS;
+                props["P_Preserve"] = pres;
+                props["P_PostRev_Speed"] = postRevSpeed;
+                props["P_PostRev_Dur"] = postRevDur;
 
+                PhotonNetwork.LocalPlayer.SetCustomProperties(props);
+
+                Debug.Log("<color=cyan>[Lobby]</color> Đã nạp thành công 9 chỉ số Perk vào Photon CustomProperties!");
+
+                // Đóng bảng
                 if (_btnClose != null) _btnClose.onClick.Invoke();
             }
         }

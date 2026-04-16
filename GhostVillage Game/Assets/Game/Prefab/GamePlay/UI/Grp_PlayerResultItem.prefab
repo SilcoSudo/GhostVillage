@@ -62,6 +62,17 @@ MonoBehaviour:
   - {fileID: 6507294464658674386}
   - {fileID: 7825462477606537299}
   - {fileID: 2586976808667133827}
+  _titleLibrary:
+  - titleId: GrimReaper
+    titleIcon: {fileID: 1887601620, guid: a593c02289cc918458a1f868e81f1775, type: 3}
+  - titleId: PrimeTarget
+    titleIcon: {fileID: -640810172, guid: a593c02289cc918458a1f868e81f1775, type: 3}
+  - titleId: WalkingHospital
+    titleIcon: {fileID: -1349398389, guid: a593c02289cc918458a1f868e81f1775, type: 3}
+  - titleId: PunchingBag
+    titleIcon: {fileID: 899157667, guid: a593c02289cc918458a1f868e81f1775, type: 3}
+  - titleId: HumanSiren
+    titleIcon: {fileID: -1373092256, guid: a593c02289cc918458a1f868e81f1775, type: 3}
   _myHighlightColor: {r: 1, g: 0.8, b: 0, a: 0.2}
   _normalColor: {r: 0, g: 0, b: 0, a: 0.5}
 --- !u!1 &1505997714228542348

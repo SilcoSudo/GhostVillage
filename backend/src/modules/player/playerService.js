@@ -1,7 +1,8 @@
 import Player from "./playerModel.js";
-import Achievement from "../achievement/achievementModel.js";
+import Quest from "../quest/questModel.js";
 import PlayerMatchHistory from "../profile/playerMatchHistoryModel.js";
 import Perk from "../perk/perkModel.js";
+import MatchResult from "../match/matchModel.js"; // <--- Thêm import này
 
 export const PlayerService = {
   // Hàm lấy trọn bộ Profile cho UI
@@ -10,36 +11,40 @@ export const PlayerService = {
     const [player, matchHistory, allAchiDefs] = await Promise.all([
       Player.findOne({ userId }).lean(),
       PlayerMatchHistory.find({ userId })
-        .populate("matchId") // Lấy thông tin map từ bảng GameResult
+        .populate({ path: "matchId", model: MatchResult })
         .limit(10)
         .sort({ createdAt: -1 })
         .lean(),
-      Achievement.find().lean(),
+      Quest.find({ questType: "ACHIEVEMENT" }).lean(),
     ]);
 
     if (!player) throw new Error("Player not found");
 
     // 2. Logic Trộn (Merge): Gắn định nghĩa thành tựu vào tiến độ của người chơi
     const mergedAchievements = allAchiDefs.map((def) => {
+      // [FIX 1]: Tìm theo questId chứ không phải _id
       const prog = (player.achievementsProgress || []).find(
-        (p) =>
-          p.questId === def._id.toString() || p.achievementCode === def._id,
+        (p) => p.questId === def.questId,
       );
+
+      const finalId =
+        def.reward && def.reward.titleId ? def.reward.titleId : def.questId;
+
       return {
-        id: def._id,
-        title: def.title,
-        desc: def.desc,
-        target: def.target,
+        id: finalId,
+        title: def.questName, // Sửa def.title -> def.questName
+        desc: def.description, // Sửa def.desc -> def.description
+        target: def.targetCount,
         reward: def.reward,
         current: prog ? prog.current : 0,
         isClaimed: prog ? prog.isClaimed : false,
-        isEquipped: (player.selectedMedals || []).includes(def._id),
+        isEquipped: (player.selectedMedals || []).includes(finalId), // [FIX 3]: So sánh bằng finalId
       };
     });
 
     // 3. Trả về đúng cấu cục mà Frontend DTO mong đợi
     return {
-      uid: player.uid, // Trả về UID để hiển thị trên UI (VD: UID: 10000002)
+      uid: player.uid,
       profile: player.profile,
       selectedMedals: player.selectedMedals || [],
       achievements: mergedAchievements,
@@ -153,5 +158,34 @@ export const PlayerService = {
       equippedPerks: player.equippedPerks, // Mảng ID các perk đang trang bị
       unlockedPerksDetails: mergedUnlockedPerks, // Mảng chứa full Info để vẽ UI
     };
+  },
+
+  // ==========================================
+  // [MỚI] API ĐỔI AVATAR
+  // ==========================================
+  updateAvatar: async (userId, newAvatarId) => {
+    // 1. Dùng ID avatar hợp lệ sếp đã chốt: avatar_default_01 -> 05
+    const validAvatars = [
+      "avatar_default_01",
+      "avatar_default_02",
+      "avatar_default_03",
+      "avatar_default_04",
+      "avatar_default_05",
+    ];
+
+    if (!validAvatars.includes(newAvatarId)) {
+      throw new Error("ID Avatar không hợp lệ!");
+    }
+
+    // 2. Tìm và Update thẳng vào DB (lưu ý: avatar nằm trong object `profile`)
+    const player = await Player.findOneAndUpdate(
+      { userId },
+      { $set: { "profile.avatar": newAvatarId } },
+      { new: true }, // Trả về data mới sau khi update
+    );
+
+    if (!player) throw new Error("Không tìm thấy người chơi.");
+
+    return player.profile.avatar;
   },
 };
