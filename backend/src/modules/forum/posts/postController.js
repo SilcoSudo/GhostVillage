@@ -197,6 +197,34 @@ export const createPost = async (req, res, next) => {
   }
 };
 
+export const checkPostingRestriction = async (req, res, next) => {
+  try {
+    const effectiveUserId = (req.user && req.user._id) || req.body?.userId;
+
+    const postingRestriction = await getUserPostingRestriction({
+      userId: effectiveUserId,
+    });
+
+    if (!postingRestriction.allowed) {
+      return res.status(postingRestriction.statusCode || 403).json({
+        success: false,
+        message: postingRestriction.message,
+        data: {
+          mutedUntil: postingRestriction.mutedUntil || null,
+          remainingSeconds: postingRestriction.remainingSeconds || 0,
+        },
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: postingRestriction,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const updatePost = async (req, res, next) => {
   try {
     const { title, body, category, media } = req.body;
@@ -243,9 +271,27 @@ export const deletePost = async (req, res, next) => {
 
 export const restorePost = async (req, res, next) => {
   try {
-    const recoveryReason = String(req.body?.recoveryReason || "")
-      .trim()
-      .slice(0, 500);
+    const rawRecoveryReason = req.body?.recoveryReason;
+    const recoveryReason = String(rawRecoveryReason ?? "").trim();
+
+    if (
+      rawRecoveryReason != null &&
+      String(rawRecoveryReason).length > 0 &&
+      !recoveryReason
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Recovery notes cannot be only spaces.",
+      });
+    }
+
+    if (recoveryReason.length > 500) {
+      return res.status(400).json({
+        success: false,
+        message: "Recovery notes cannot exceed 500 characters.",
+      });
+    }
+
     const restored = await postService.restoreHiddenPost(req.params.id);
     if (!restored) {
       return res

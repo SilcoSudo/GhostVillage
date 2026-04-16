@@ -6,7 +6,6 @@ import User from "../../user/userModel.js";
 export const getComments = async (postId, { parentId = null } = {}) => {
   const query = {
     post: postId,
-    isDeleted: false,
     isHiddenByModeration: { $ne: true },
   };
 
@@ -99,17 +98,9 @@ export const deleteComment = async (commentId, userId) => {
     throw new Error("Not authorized to delete this comment");
   }
 
-  // Soft delete
-  comment.isDeleted = true;
+  comment.content = "This comment has been deleted.";
+  comment.isHiddenByModeration = false;
   await comment.save();
-
-  // Decrement post comment count
-  await postService.decrementCommentCount(comment.post);
-
-  // Also soft delete all replies
-  if (!comment.parentId) {
-    await Comment.updateMany({ parentId: commentId }, { isDeleted: true });
-  }
 
   return comment;
 };
@@ -146,7 +137,6 @@ export const listReportedCommentsForAdmin = async ({
   const skip = (p - 1) * l;
 
   const filter = {
-    isDeleted: false,
     isHiddenByModeration: true,
     "reports.0": { $exists: true },
   };

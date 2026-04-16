@@ -47,9 +47,9 @@ class MessageController {
       });
     } catch (error) {
       console.error("Send message error:", error);
-      res.status(500).json({
+      res.status(error.statusCode || 500).json({
         success: false,
-        message: "Failed to send message",
+        message: error.statusCode ? error.message : "Failed to send message",
         error: error.message,
       });
     }

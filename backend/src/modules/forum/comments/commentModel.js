@@ -36,10 +36,6 @@ const commentSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
-    isDeleted: {
-      type: Boolean,
-      default: false,
-    },
     isHiddenByModeration: {
       type: Boolean,
       default: false,

@@ -88,7 +88,7 @@
   align-items: center;
   gap: 4px;
 }
-
+.comment-bubble-deleted {
 .comment-author-name {
   transition: color 0.2s;
   cursor: pointer;
@@ -158,6 +158,17 @@
   word-wrap: break-word;
   white-space: pre-wrap;
   line-height: 1.5;
+}
+
+.comment-text-deleted {
+  color: var(--text-secondary);
+  font-style: italic;
+  opacity: 0.75;
+}
+
+.comment-bubble-deleted {
+  border-style: dashed;
+  opacity: 0.95;
 }
 
 .comment-actions {
