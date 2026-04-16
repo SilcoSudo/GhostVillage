@@ -13,6 +13,7 @@ using System.Collections;
 using Game.Scripts.Gameplay.Result;
 using Game.Domain.Map.Services;
 using Game.Core.Network;
+using Game.Script.UI;
 
 // Lưu ý: Đảm bảo bạn đã có các Enum và file GameplayEvents.cs như đã bàn trước đó
 public class GameManager : MonoBehaviourPunCallbacks
@@ -38,6 +39,7 @@ public class GameManager : MonoBehaviourPunCallbacks
     private MatchDataService _matchDataService;
     private GameplayUIManager _uiManager;
     private MatchStatisticManager _statisticManager;
+    private MoonEventManager _moonManager;
     private MatchRoute _currentMatchRoute = MatchRoute.Lose; // Mặc định là thua
     private bool _isLocalDataReady = false;
 
@@ -58,7 +60,8 @@ public class GameManager : MonoBehaviourPunCallbacks
         GameplayUIManager uiManager,
         MatchStatisticManager statisticManager,
         GameSession session,
-        ProfileService profileService
+        ProfileService profileService,
+        MoonEventManager moonManager
     )
     {
         _mapData = mapData;
@@ -73,6 +76,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         _statisticManager = statisticManager;
         _session = session;
         _profileService = profileService;
+        _moonManager = moonManager;
     }
 
     // --- UNITY LIFECYCLE ---
@@ -100,6 +104,15 @@ public class GameManager : MonoBehaviourPunCallbacks
         // --- GỌI MAP DATA SERVER CHỞ CỤC MEGA DTO VỀ ---
         Debug.Log($"[GameManager] Đang tải Mega Game Data cho map: {mapIdToLoad}");
         AggregatedGameDataDTO dataToLoad = await _mapDataService.FetchGameData(mapIdToLoad);
+
+        if (_moonManager != null && dataToLoad?.stats?.moonEvents != null)
+        {
+            _moonManager.Initialize(dataToLoad.stats.moonEvents);
+        }
+        else
+        {
+            Debug.LogWarning("⚠️ [GameManager] MoonEventManager hoặc dữ liệu MoonEvent chưa sẵn sàng!");
+        }
 
         // Nhét cục Data to vào MapDataManager
         if (_mapData != null && dataToLoad != null)
@@ -151,7 +164,7 @@ public class GameManager : MonoBehaviourPunCallbacks
 
                 // --- TRUYỀN DB VÀO CÁC HÀM SPAWN ---
                 if (_itemSpawner != null) _itemSpawner.SpawnItems(config, _mapData, _resourceDB);
-                if (_monsterSpawner != null) _monsterSpawner.SpawnMonsters(config.monsterSystemConfig, _mapData, _resourceDB);
+                if (_monsterSpawner != null) _monsterSpawner.SpawnMonsters(config.monsterSystemConfig, _mapData, _resourceDB, _moonManager);
                 if (_puzzleSpawner != null) _puzzleSpawner.SpawnPuzzles(config.puzzleConfig, _mapData, _resourceDB);
 
                 _objectiveManager.Initialize();
@@ -159,7 +172,7 @@ public class GameManager : MonoBehaviourPunCallbacks
             else Debug.LogError("[GameManager] Config is NULL!");
 
             // Master chuyển trạng thái sang Chờ Người Chơi
-            UpdateNetworkState(GameState.WaitingForPlayers);
+            UpdateNetworkState(GameState.Playing);
         }
         else
         {
@@ -176,11 +189,32 @@ public class GameManager : MonoBehaviourPunCallbacks
         GameplayEvents.OnAltarActivated += HandleEscapePhaseTrigger;
         GameplayEvents.OnLocalPlayerRequestEscape += HandleLocalPlayerEscapeRequest;
     }
+
+    public override void OnEnable()
+    {
+        base.OnEnable();
+        GameplayEvents.OnAltarActivated += HandleEscapePhaseTrigger;
+        GameplayEvents.OnLocalPlayerRequestEscape += HandleLocalPlayerEscapeRequest;
+
+        // [FIX CHÍ MẠNG]: Dạy GameManager lắng nghe trạng thái sống/chết của Player
+        GameplayEvents.OnPlayerStatusChanged += HandleLocalPlayerStatusChanged;
+    }
+
     public override void OnDisable()
     {
         base.OnDisable();
         GameplayEvents.OnAltarActivated -= HandleEscapePhaseTrigger;
         GameplayEvents.OnLocalPlayerRequestEscape -= HandleLocalPlayerEscapeRequest;
+        GameplayEvents.OnPlayerStatusChanged -= HandleLocalPlayerStatusChanged;
+    }
+
+    private void HandleLocalPlayerStatusChanged(int actorNum, PlayerMatchStatus newStatus)
+    {
+        // Khi thuyền hú "Thằng này bị bỏ lại (Eliminated)", Client tự giác báo lên Master
+        if (PhotonNetwork.LocalPlayer.ActorNumber == actorNum)
+        {
+            ReportStatusChange(actorNum, newStatus);
+        }
     }
 
     // --- NETWORK STATE SYNCHRONIZATION ---
@@ -208,6 +242,7 @@ public class GameManager : MonoBehaviourPunCallbacks
     }
 
     // Hàm xử lý Logic cục bộ khi State thay đổi
+    [System.Obsolete]
     private void SetLocalState(GameState newState)
     {
         if (CurrentState == newState) return;
@@ -218,7 +253,14 @@ public class GameManager : MonoBehaviourPunCallbacks
         switch (newState)
         {
             case GameState.WaitingForPlayers: Debug.Log("[GameManager] Đang chờ người chơi..."); break;
-            case GameState.Playing: Debug.Log("[GameManager] START GAME!"); break;
+            case GameState.Playing:
+                Debug.Log("[GameManager] START GAME!");
+                // var globalUI = FindObjectOfType<GlobalUIManager>();
+                // if (globalUI != null)
+                // {
+                //     globalUI.ShowLoading(false);
+                // }
+                break;
             case GameState.EscapePhase: Debug.Log("[GameManager] RUN NOW!"); break;
             case GameState.Ending:
 
@@ -286,7 +328,10 @@ public class GameManager : MonoBehaviourPunCallbacks
         // Parse Data
         var matchData = JsonUtility.FromJson<SaveMatchRequestDTO>(jsonDTO);
 
-        // TODO: Chỗ này sau này thêm logic reset Voice về Global (Gọi vào VoiceManager)
+        if (_uiManager == null)
+        {
+            _uiManager = Object.FindFirstObjectByType<GameplayUIManager>(FindObjectsInactive.Include);
+        }
 
         // HIỆN UI KẾT QUẢ
         if (_uiManager != null)
@@ -295,7 +340,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
         else
         {
-            Debug.LogError(" GameplayUIManager chưa được Inject vào GameManager!");
+            Debug.LogError(" [CRITICAL] GameplayUIManager không hề tồn tại trong Scene! Không thể bung bảng Result!");
         }
         yield return null;
     }
@@ -331,6 +376,8 @@ public class GameManager : MonoBehaviourPunCallbacks
             startTime = startStr,
             endTime = endStr,
             durationSec = calculatedDuration,
+            moonEventId = _moonManager?.CurrentMoon?.eventId ?? "EVENT_MOON_DEFAULT",
+            moonEventName = _moonManager?.CurrentMoon?.eventName ?? "Trăng Mặc Định",
             playerResults = new List<PlayerResultRequestDTO>()
         };
 
@@ -486,12 +533,15 @@ public class GameManager : MonoBehaviourPunCallbacks
             PhotonNetwork.LocalPlayer.ActorNumber, (int)PlayerMatchStatus.Escaped);
     }
 
+    // --- NETWORK LOGIC (MASTER ONLY) ---
+
     public void ReportStatusChange(int actorNumber, PlayerMatchStatus status)
     {
+        // [FIX BOMB]: Tránh việc gọi gửi Report khi game đã End (Gây spam mạng)
+        if (CurrentState == GameState.Ending) return;
+
         photonView.RPC(nameof(UpdatePlayerStatusRPC), RpcTarget.MasterClient, actorNumber, (int)status);
     }
-
-    // --- NETWORK LOGIC (MASTER ONLY) ---
 
     [PunRPC]
     private void UpdatePlayerStatusRPC(int actorNumber, int statusInt)
@@ -501,14 +551,17 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         PlayerMatchStatus newStatus = (PlayerMatchStatus)statusInt;
 
-        // [FIX CHÍ MẠNG 1]: Lưới bảo hộ! Nếu danh sách chưa có người này thì tự động nạp vào
         if (!_playerStatuses.ContainsKey(actorNumber))
         {
             _playerStatuses[actorNumber] = PlayerMatchStatus.Playing;
         }
 
-        // Validate logic (ví dụ: Đã chết thì không thể thoát)
         var currentStatus = _playerStatuses[actorNumber];
+
+        // [FIX BOMB 1]: NẾU TRẠNG THÁI GIỐNG NHAU THÌ DỪNG LẠI NGAY! (Chống lặp vô tận)
+        if (currentStatus == newStatus) return;
+
+        // Validate logic (ví dụ: Đã chết thì không thể thoát)
         if (currentStatus == PlayerMatchStatus.Eliminated || currentStatus == PlayerMatchStatus.Escaped)
         {
             return; // Đã xong rồi thì thôi
@@ -520,11 +573,7 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         // Đồng bộ lại cho tất cả client biết để cập nhật UI/Spectator
         photonView.RPC(nameof(SyncPlayerStatusRPC), RpcTarget.All, actorNumber, statusInt);
-
-        // Kiểm tra điều kiện kết thúc game
-        CheckEndGameCondition();
     }
-
 
     [PunRPC]
     private void SyncPlayerStatusRPC(int actorNumber, int statusInt)
@@ -540,24 +589,33 @@ public class GameManager : MonoBehaviourPunCallbacks
             if (status == PlayerMatchStatus.Escaped)
             {
                 Debug.Log("<color=green>BẠN ĐÃ THOÁT! CHUYỂN SPECTATOR.</color>");
-                // Logic ẩn nhân vật, bật camera spectator ở đây
             }
             else if (status == PlayerMatchStatus.Eliminated)
             {
                 Debug.Log("<color=red>BẠN ĐÃ BỊ LOẠI! CHUYỂN SPECTATOR.</color>");
             }
         }
+
+        // [FIX BOMB 2]: CHỈ MASTER MỚI ĐƯỢC QUYỀN KIỂM TRA ĐIỀU KIỆN END GAME
+        // Khúc này trước đây sếp để ở ngoài, ai cũng chạy, đâm ra loạn cào cào mạng!
+        if (PhotonNetwork.IsMasterClient)
+        {
+            CheckEndGameCondition();
+        }
     }
 
     private void CheckEndGameCondition()
     {
+        // Chắc ăn thêm phát nữa, chỉ Master mới có quyền phán xét kết thúc game
+        if (!PhotonNetwork.IsMasterClient || CurrentState == GameState.Ending) return;
+
         int activePlayers = 0;
-        bool teamHasEscaped = false; // Thêm biến kiểm tra xem có ai thoát không
+        bool teamHasEscaped = false;
 
         foreach (var status in _playerStatuses.Values)
         {
             // Nếu còn người Đang chơi hoặc Bị nock (còn cứu được) -> Game chưa hết
-            if (status == PlayerMatchStatus.Playing || status == PlayerMatchStatus.Knocked)
+            if (status == PlayerMatchStatus.Playing)
             {
                 activePlayers++;
             }
@@ -575,15 +633,8 @@ public class GameManager : MonoBehaviourPunCallbacks
         {
             Debug.Log(">>> ALL PLAYERS DONE. END GAME. <<<");
 
-            // [FIX] Cập nhật đúng Route trước khi chốt sổ
-            if (teamHasEscaped)
-            {
-                _currentMatchRoute = MatchRoute.Escape; // Đổi sang Win: Escape (150 exp)
-            }
-            else
-            {
-                _currentMatchRoute = MatchRoute.Lose; // Đổi sang Thua
-            }
+            if (teamHasEscaped) _currentMatchRoute = MatchRoute.Escape;
+            else _currentMatchRoute = MatchRoute.Lose;
 
             UpdateNetworkState(GameState.Ending);
         }
@@ -593,10 +644,6 @@ public class GameManager : MonoBehaviourPunCallbacks
     public void OnPlayerReachedExit(int actorNumber)
     {
         Debug.Log($"[GameManager] Player {actorNumber} đã thoát!");
-
-        // Logic kiểm tra điều kiện thắng:
-        // Ví dụ: Nếu tất cả người sống sót đã thoát -> Ending
-        // Hoặc đơn giản là ai thoát thì tính điểm người đó.
 
         if (PhotonNetwork.IsMasterClient)
         {

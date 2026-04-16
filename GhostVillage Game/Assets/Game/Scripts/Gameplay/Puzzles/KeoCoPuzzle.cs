@@ -382,7 +382,7 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         }
 
         // Fallback: nếu túi đầy, bỏ bớt 1 món không phải EscapeTool để nhét phần thưởng key.
-        for (int i = 0; i < inventory.items.Count; i++)
+        for (int i = 0; i < inventory.items.Length; i++)
         {
             var item = inventory.items[i];
             if (item == null || item.itemType == ItemType.EscapeTool) continue;

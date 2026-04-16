@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Quest from "./questModel.js";
 import Player from "../player/playerModel.js"; // <-- Chỉnh lại đường dẫn cho đúng
 
@@ -125,8 +126,37 @@ export const QuestService = {
     const lastReset = new Date(player.lastDailyReset || 0);
 
     if (now.toDateString() !== lastReset.toDateString()) {
-      player.dailyProgress = []; // Xóa sạch tiến độ Daily
+      // 1. Lấy toàn bộ Daily Quest đang active trong kho
+      const allDailyQuests = await Quest.find({
+        isActive: true,
+        questType: "DAILY",
+      }).lean();
+
+      // 2. Random bốc 3 cái
+      const seedString = `${now.getUTCFullYear()}${now.getUTCMonth()}${now.getUTCDate()}`;
+      let seed = 0;
+      for (let i = 0; i < seedString.length; i++) {
+        seed = seedString.charCodeAt(i) + ((seed << 5) - seed);
+      }
+
+      const shuffledDailies = [...allDailyQuests].sort(() => {
+        const x = Math.sin(seed++) * 10000;
+        return x - Math.floor(x) - 0.5;
+      });
+
+      const todaysDailyQuests = shuffledDailies.slice(0, 3);
+
+      // 3. ÉP BUỘC LƯU 3 CÁI NÀY VÀO DB CỦA PLAYER NGAY LẬP TỨC
+      player.dailyProgress = todaysDailyQuests.map((q) => ({
+        questId: q.questId,
+        current: 0,
+        isClaimed: false,
+      }));
+
       player.lastDailyReset = now;
+
+      // Báo cho Mongoose biết mảng đã thay đổi
+      player.markModified("dailyProgress");
       return true;
     }
     return false;
@@ -134,45 +164,67 @@ export const QuestService = {
 
   // --- 2. CỘNG DỒN TIẾN ĐỘ TỪ BẢNG THỐNG KÊ ---
   updateProgressFromStats: async (userId, rawStats) => {
-    const player = await Player.findOne({ userId });
+    const player = await Player.findOne({
+      $or: [
+        { userId: userId },
+        { userId: new mongoose.Types.ObjectId(userId) },
+      ],
+    });
+
     if (!player) throw new Error("Không tìm thấy Player");
 
-    await QuestService.checkAndResetDaily(player);
+    // Nếu qua ngày mới, nó sẽ chạy hàm trên và reset mảng = 3 quest mới
+    const isReset = await QuestService.checkAndResetDaily(player);
 
     const activeQuests = await Quest.find({ isActive: true });
-    let isUpdated = false;
+    let isUpdated = isReset; // Nếu vừa reset thì kiểu gì cũng phải save
 
     activeQuests.forEach((quest) => {
-      const statAmount = rawStats[quest.actionType]; // VD: rawStats["KILL_SMALL_MONSTER"]
+      const statAmount = rawStats[quest.actionType];
 
       if (statAmount && statAmount > 0) {
         const progressArray =
           quest.questType === "DAILY"
             ? player.dailyProgress
             : player.achievementsProgress;
+
         let progressObj = progressArray.find(
           (p) => p.questId === quest.questId,
         );
 
-        if (!progressObj) {
-          progressObj = {
+        // NẾU LÀ ACHIEVEMENT (Chưa có trong mảng thì mới tạo)
+        if (!progressObj && quest.questType === "ACHIEVEMENT") {
+          let newCurrent =
+            statAmount > quest.targetCount ? quest.targetCount : statAmount;
+          progressArray.push({
             questId: quest.questId,
-            current: 0,
+            current: newCurrent,
             isClaimed: false,
-          };
-          progressArray.push(progressObj);
-        }
-
-        if (!progressObj.isClaimed && progressObj.current < quest.targetCount) {
-          progressObj.current += statAmount;
-          if (progressObj.current > quest.targetCount)
-            progressObj.current = quest.targetCount;
+          });
           isUpdated = true;
+        }
+        // NẾU LÀ DAILY HOẶC ACHIEVEMENT ĐÃ CÓ TRONG MẢNG
+        else if (progressObj) {
+          if (
+            !progressObj.isClaimed &&
+            progressObj.current < quest.targetCount
+          ) {
+            progressObj.current += statAmount;
+            if (progressObj.current > quest.targetCount) {
+              progressObj.current = quest.targetCount;
+            }
+            isUpdated = true;
+          }
         }
       }
     });
 
-    if (isUpdated) await player.save();
+    if (isUpdated) {
+      player.markModified("dailyProgress");
+      player.markModified("achievementsProgress");
+      await player.save();
+    }
+
     return {
       daily: player.dailyProgress,
       achievements: player.achievementsProgress,
@@ -181,7 +233,12 @@ export const QuestService = {
 
   // Đặt bên dưới hàm updateProgressFromStats của sếp
   claimQuestReward: async (userId, questId) => {
-    const player = await Player.findOne({ userId });
+    const player = await Player.findOne({
+      $or: [
+        { userId: userId },
+        { userId: new mongoose.Types.ObjectId(userId) },
+      ],
+    });
     const quest = await Quest.findOne({ questId });
 
     if (!player || !quest) throw new Error("Dữ liệu không hợp lệ");

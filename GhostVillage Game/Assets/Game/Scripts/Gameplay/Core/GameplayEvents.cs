@@ -22,6 +22,7 @@ namespace Game.Scripts.Gameplay.Core
         public static Action OnPuzzleSolved;
         // Gọi khi bàn thờ (Altar) được kích hoạt, yêu cầu GameManager chuyển pha.
         public static Action OnAltarActivated;
+        public static Action<Vector3> OnWrongPuzzlePenalty;
 
         // --- CÁC SỰ KIỆN TRẠNG THÁI NGƯỜI CHƠI ---
 

@@ -72,6 +72,10 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    currentSessionId: {
+      type: String,
+      default: null,
+    },
     bookmarks: [
       {
         type: mongoose.Schema.Types.ObjectId,

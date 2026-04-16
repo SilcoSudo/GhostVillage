@@ -12,6 +12,10 @@ public class FPSController : MonoBehaviourPun
     [Header("Internal References")]
     [SerializeField] private Camera _playerCam;
 
+    [Header("Jumpscare Settings")]
+    [SerializeField, Range(0f, 0.5f)] private float jumpscareShakeIntensity = 0.05f; // MỚI: Kéo ra Inspector
+    [SerializeField] private float jumpscareZoomFOV = 35f;
+
     private PlayerStatsManager _stats; // MỚI: Sếp quản lý chỉ số
     private InventoryManager _inventoryManager;
     private LobbyUIManager _uiManager;
@@ -105,6 +109,8 @@ public class FPSController : MonoBehaviourPun
             return;
         }
 
+        if (HintModalUI.IsHintOpen) return;
+
         HandleStateInput();
         HandleMovement();
         HandleRotation();
@@ -130,10 +136,39 @@ public class FPSController : MonoBehaviourPun
 
     private void HandleStateInput()
     {
-        // MỚI: Đọc Input chạy nhanh. (Bro nhớ cài nút Sprint trong Input Actions nhé)
-        _isSprinting = _inputActions.Player.Sprint.IsPressed();
-    }
+        bool isSprintPressed = _inputActions.Player.Sprint.IsPressed();
 
+        if (isSprintPressed)
+        {
+            Vector2 moveInput = _inputActions.Player.Move.ReadValue<Vector2>();
+            bool isMoving = moveInput.magnitude > 0.1f;
+
+            // [MỚI]: Truyền _isSprinting vào để nó biết là đang chạy hay mới bấm
+            if (isMoving && _stats.CanSprint(_isSprinting))
+            {
+                _isSprinting = true;
+                _stats.DrainStaminaForSprint();
+            }
+            else
+            {
+                // [LƯỚI BẢO VỆ]: Nếu đang chạy mà hết sạch máu bị ép dừng -> Gắn cờ mệt mỏi
+                if (_isSprinting)
+                {
+                    _stats.StopSprinting();
+                }
+                _isSprinting = false;
+            }
+        }
+        else
+        {
+            // Nhả phím ra
+            if (_isSprinting)
+            {
+                _stats.StopSprinting();
+            }
+            _isSprinting = false;
+        }
+    }
     private void HandleMovement()
     {
         Vector2 moveInput = _inputActions.Player.Move.ReadValue<Vector2>();
@@ -146,20 +181,16 @@ public class FPSController : MonoBehaviourPun
         // ==========================================
         // 2. KHÚC NÀY BỊ THIẾU NÈ: TRUYỀN TỐC ĐỘ CHO ANIMATOR
         // ==========================================
-        if (_animator != null && photonView.IsMine)
+        if (_animator != null)
         {
             float targetAnimSpeed = 0f;
-
-            // Kiểm tra xem người chơi có đang bấm nút di chuyển (WASD) không
             if (moveInput.magnitude > 0.1f)
             {
-                // Dựa theo Blend Tree của sếp: Walk ngưỡng là 0.5, Run ngưỡng là 1
-                targetAnimSpeed = _isSprinting ? 1f : 0.5f;
+                targetAnimSpeed = _isSprinting ? 1.5f : 1f; // Khớp với Threshold của sếp
             }
 
-            // Dùng Mathf.Lerp để animation chuyển từ từ (Đứng -> Đi -> Chạy) cho nó mượt, không bị giật cục
-            float currentAnimSpeed = _animator.GetFloat(_speedHash);
-            _animator.SetFloat(_speedHash, Mathf.Lerp(currentAnimSpeed, targetAnimSpeed, Time.deltaTime * 10f));
+            // [QUAN TRỌNG]: Không dùng IsMine ở đây để máy khác cũng tính toán được Speed nếu sếp chưa gắn PhotonAnimatorView
+            _animator.SetFloat(_speedHash, targetAnimSpeed);
         }
     }
 
@@ -170,8 +201,10 @@ public class FPSController : MonoBehaviourPun
         // MỚI: Hỏi sếp Stats lấy độ nhạy chuột
         float currentSensitivity = _stats.lookSensitivity;
 
-        float mouseX = lookInput.x * currentSensitivity * Time.deltaTime * 100f;
-        float mouseY = lookInput.y * currentSensitivity * Time.deltaTime * 100f;
+        float mouseMultiplier = 0.1f;
+
+        float mouseX = lookInput.x * currentSensitivity * mouseMultiplier;
+        float mouseY = lookInput.y * currentSensitivity * mouseMultiplier;
 
         _verticalRotation -= mouseY;
         _verticalRotation = Mathf.Clamp(_verticalRotation, -80f, 80f);
@@ -222,7 +255,7 @@ public class FPSController : MonoBehaviourPun
         var invManager = GetComponent<InventoryManager>();
 
         Debug.Log($"[FPS BindInventoryUI] invUI: {(invUI != null ? "" : "")}, invManager: {(invManager != null ? "" : "")}");
-        
+
         if (invUI != null && invManager != null)
         {
             invUI.BindInventory(invManager);
@@ -236,6 +269,85 @@ public class FPSController : MonoBehaviourPun
                 Debug.LogWarning("[FPS] ⚠️ InventoryManager không tìm thấy trên player.");
         }
     }
+
+    #region JUMPSCARE CAMERA EFFECT
+    [PunRPC]
+    public void ReceiveJumpscareRPC(int monsterViewID)
+    {
+        // Nhận lệnh từ Master, nếu đây đúng là máy của nạn nhân thì mới khóa Cam
+        if (photonView.IsMine)
+        {
+            PhotonView monsterPv = PhotonView.Find(monsterViewID);
+            if (monsterPv != null)
+            {
+                StartCoroutine(JumpscareCameraRoutine(monsterPv.transform));
+            }
+        }
+    }
+
+    private System.Collections.IEnumerator JumpscareCameraRoutine(Transform monsterTrans)
+    {
+        // 1. KHÓA TỨ CHI & INPUT CỦA NGƯỜI CHƠI
+        isPlayingMinigame = true; // Khóa logic Update
+        SetLookEnabled(false);    // Khóa xoay chuột
+        _isSprinting = false;
+
+        // Ép nhân vật đứng im
+        if (_animator != null) _animator.SetFloat(_speedHash, 0f);
+
+        // 2. ĐỊNH VỊ MẶT QUÁI (Cao lên khoảng 1.5m so với tâm quái)
+        Vector3 monsterFacePos = monsterTrans.position + Vector3.up * 1.5f;
+
+        float timer = 0f;
+        float duration = 2.5f; // Khớp với JumpscareDuration bên quái
+        float originalFOV = _playerCam.fieldOfView;
+        float targetFOV = 35f; // Zoom giật thót vào mặt
+
+        Quaternion startCamRot = _playerCam.transform.rotation;
+        Vector3 originalCamLocalPos = _playerCam.transform.localPosition;
+
+        while (timer < duration)
+        {
+            timer += Time.deltaTime;
+
+            // Xoay Cam từ từ (Slerp) thẳng vào mắt Ma Da (trong 0.3s đầu để tạo độ mượt)
+            Vector3 dirToFace = monsterFacePos - _playerCam.transform.position;
+            Quaternion targetRot = Quaternion.LookRotation(dirToFace);
+            _playerCam.transform.rotation = Quaternion.Slerp(startCamRot, targetRot, timer / 0.3f);
+
+            // Zoom FOV
+            _playerCam.fieldOfView = Mathf.Lerp(originalFOV, targetFOV, timer / 0.3f);
+
+            // Camera Shake (Rung bần bật)
+            if (timer > 0.2f && jumpscareShakeIntensity > 0f)
+            {
+                float xShake = (Mathf.PerlinNoise(timer * 20f, 0f) - 0.5f) * jumpscareShakeIntensity;
+                float yShake = (Mathf.PerlinNoise(0f, timer * 20f) - 0.5f) * jumpscareShakeIntensity;
+                _playerCam.transform.localPosition = originalCamLocalPos + new Vector3(xShake, yShake, 0f);
+            }
+
+            yield return null;
+        }
+
+        // HẾT JUMPSCARE -> MÀN HÌNH ĐEN HOẶC BÁO CHẾT
+        _playerCam.transform.localPosition = originalCamLocalPos; // Reset chống lệch
+        _playerCam.fieldOfView = originalFOV;
+
+        isPlayingMinigame = false;
+
+        // [KẾT LIỄU]: Gọi thẳng hàm Knock của sếp
+        if (_knockedState != null)
+        {
+            Debug.Log("<color=red>[Jumpscare]</color> Hù xong! Bắt đầu đánh gục Player!");
+
+            // [FIX CHÍ MẠNG]: CHỈ CÁI THẰNG BỊ HÙ (CHỦ XÁC) MỚI ĐƯỢC PHÉP BẤM NÚT "TỰ TỬ"
+            if (photonView.IsMine)
+            {
+                _knockedState.GetKnocked();
+            }
+        }
+    }
+    #endregion
 
     private void LateUpdate()
     {

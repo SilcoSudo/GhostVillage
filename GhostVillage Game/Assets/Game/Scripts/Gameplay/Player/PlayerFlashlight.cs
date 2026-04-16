@@ -184,6 +184,7 @@ public class PlayerFlashlight : MonoBehaviourPun
         Debug.Log($"<color=green>[Flashlight] Đã sạc pin! Hiện tại: {_currentEquippedFlashlight.currentBattery}/{_currentEquippedFlashlight.maxBattery}</color>");
     }
 
+    // TRONG FILE PlayerFlashlight.cs
     private void ShootUVRay()
     {
         if (cameraTransform == null) return;
@@ -193,9 +194,28 @@ public class PlayerFlashlight : MonoBehaviourPun
 
         RaycastHit[] hits = Physics.SphereCastAll(ray, radius, _currentEquippedFlashlight.lightRange, monsterLayer);
 
+        // THÊM LOG ĐỂ BIẾT CÓ CHẠM KHÔNG
+        if (hits.Length > 0)
+        {
+            Debug.Log($"<color=cyan>[Flashlight]</color> Tia UV trúng {hits.Length} mục tiêu thuộc Layer quái!");
+        }
+
         foreach (var hit in hits)
         {
-            Debug.Log($"<color=cyan>[UV Light]</color> Đang rọi tia tím vào mặt con quái: {hit.collider.name}!");
+            // QUAN TRỌNG: Dùng GetComponentInParent để nó tự mò lên thằng cha tìm Script
+            IUVReactable uvTarget = hit.collider.GetComponentInParent<IUVReactable>();
+
+            if (uvTarget != null)
+            {
+                Debug.Log($"<color=green>[Flashlight]</color> Đã tìm thấy interface IUVReactable trên {hit.collider.name}! Đang đốt nó...");
+                uvTarget.OnUVIrradiated(_damageTickRate, photonView.Owner.ActorNumber);
+            }
+            else
+            {
+                Debug.LogWarning($"<color=yellow>[Flashlight]</color> Tia UV trúng {hit.collider.name} nhưng nó không có interface IUVReactable!");
+            }
         }
     }
+
+
 }

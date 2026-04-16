@@ -1,5 +1,8 @@
 ﻿// Import Service dùng chung cho cả Web và Game
+import jwt from "jsonwebtoken";
+import User from "../../user/userModel.js";
 import { AuthService } from "../authService.js";
+import { config } from "../../../config/env.js"; // <--- QUAN TRỌNG: Thêm dòng này
 
 export const loginGame = async (req, res) => {
   try {
@@ -8,7 +11,6 @@ export const loginGame = async (req, res) => {
       req.body.email || req.body.username,
     );
 
-    // Hỗ trợ cả trường email hoặc username từ Unity gửi lên
     const email = req.body.email || req.body.username;
     const { password } = req.body;
 
@@ -18,31 +20,44 @@ export const loginGame = async (req, res) => {
         .json({ success: false, error: "Missing email or password" });
     }
 
-    // BƯỚC 1: Sử dụng logic Login chung (Kiểm tra User, Password, Verification)
+    // 1. Login Web
     const auth = await AuthService.loginWeb(email, password, false);
 
-    // BƯỚC 2: Sử dụng logic Game-specific (Lấy hoặc tự tạo Player Profile)
+    // 2. Sinh Session ID mới và lưu vào DB
+    const newSessionId = Date.now().toString();
+    await User.findByIdAndUpdate(auth.user._id, {
+      currentSessionId: newSessionId,
+    });
+
+    // 3. Tạo Token mới chứa SessionId
+    const tokenPayload = {
+      userId: auth.user._id,
+      role: auth.user.role,
+      sessionId: newSessionId,
+    };
+
+    const newToken = jwt.sign(tokenPayload, config.jwt.secret, {
+      expiresIn: "7d",
+    });
+
+    // 4. Lấy Profile
     const playerProfile = await AuthService.getOrCreatePlayerProfile(
       auth.user._id,
       auth.user.fullname,
     );
 
-    // Trả về đúng format Unity cần: 1 cục data chứa cả Token, User và Player
+    // [FIX]: Trả về đúng biến newToken
     return res.status(200).json({
       success: true,
       data: {
-        token: auth.token,
+        token: newToken,
         user: auth.user,
         player: playerProfile,
       },
     });
   } catch (error) {
     console.error("[Game Login Error]:", error.message);
-    // Luôn trả về 200 kèm success: false để Unity Client dễ xử lý logic
-    return res.status(200).json({
-      success: false,
-      error: error.message,
-    });
+    return res.status(200).json({ success: false, error: error.message });
   }
 };
 
@@ -77,7 +92,7 @@ export const completeProfile = async (req, res) => {
   try {
     console.log("[CompleteProfile] req.user:", req.user);
     console.log("[CompleteProfile] req.user._id:", req.user?._id);
-    
+
     const userId = req.user._id; // From authMiddleware (full user object from DB)
     const { dateOfBirth } = req.body;
 
@@ -101,10 +116,7 @@ export const completeProfile = async (req, res) => {
     const today = new Date();
     let age = today.getFullYear() - dob.getFullYear();
     const monthDiff = today.getMonth() - dob.getMonth();
-    if (
-      monthDiff < 0 ||
-      (monthDiff === 0 && today.getDate() < dob.getDate())
-    ) {
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
       age--;
     }
 
@@ -121,7 +133,7 @@ export const completeProfile = async (req, res) => {
     // Get player profile
     const player = await AuthService.getOrCreatePlayerProfile(
       userId,
-      user.fullname
+      user.fullname,
     );
 
     // Return full login response

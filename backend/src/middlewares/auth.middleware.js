@@ -57,38 +57,42 @@ import User from "../modules/user/userModel.js";
 export const authMiddleware = async (req, res, next) => {
   let token;
 
-  // 1. Lấy token từ header Authorization: "Bearer <token>"
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith("Bearer")
   ) {
     try {
       token = req.headers.authorization.split(" ")[1];
-
-      // 2. Verify Token
       const decoded = jwt.verify(token, config.jwt.secret);
-      console.log("[AuthMiddleware]  TOKEN VERIFIED:");
-      console.log("  decoded.userId:", decoded.userId, typeof decoded.userId);
-      console.log("  decoded.role:", decoded.role);
 
-      // 3. Lấy User từ DB và gắn vào req.user để các controller sau dùng
-      // .select('-password') để không lấy trường password
-      console.log("[AuthMiddleware] 🔍 LOOKING UP USER:", decoded.userId);
-      req.user = await User.findById(decoded.userId).select("-password");
+      // Lấy User từ DB và gán vào req.user
+      const foundUser = await User.findById(decoded.userId).select("-password");
 
-      console.log("[AuthMiddleware] USER LOOKUP RESULT:", req.user ? " FOUND" : " NOT FOUND");
-      if (req.user) {
-        console.log("  _id:", req.user._id);
-        console.log("  email:", req.user.email);
-      }
-
-      if (!req.user) {
-        console.log("[AuthMiddleware] User not found with id:", decoded.userId);
+      if (!foundUser) {
         return res
           .status(401)
           .json({ success: false, message: "User not found" });
       }
 
+      // =============================================================
+      // [FIX CHÍ MẠNG]: Dùng foundUser thay vì user (viết thường)
+      // =============================================================
+      if (
+        decoded.sessionId &&
+        foundUser.currentSessionId &&
+        decoded.sessionId !== foundUser.currentSessionId
+      ) {
+        console.log(
+          `[Auth] User ${foundUser.email} bị kick do đăng nhập nơi khác!`,
+        );
+        return res.status(401).json({
+          success: false,
+          message: "Account logged in from another device. Please login again.",
+          isKicked: true,
+        });
+      }
+
+      req.user = foundUser; // Gán lại cho các controller sau dùng
       next();
     } catch (error) {
       console.error("Auth Middleware Error:", error.message);
@@ -96,9 +100,7 @@ export const authMiddleware = async (req, res, next) => {
         .status(401)
         .json({ success: false, message: "Not authorized, token failed" });
     }
-  }
-
-  if (!token) {
+  } else {
     return res
       .status(401)
       .json({ success: false, message: "Not authorized, no token" });
@@ -126,7 +128,9 @@ export const authorize = (...roles) => {
  */
 export const authenticateSocket = async (socket, next) => {
   try {
-    const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.split(" ")[1];
+    const token =
+      socket.handshake.auth.token ||
+      socket.handshake.headers.authorization?.split(" ")[1];
 
     if (!token) {
       return next(new Error("No token provided"));

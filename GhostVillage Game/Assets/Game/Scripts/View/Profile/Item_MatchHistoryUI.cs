@@ -5,20 +5,23 @@ using System.Collections.Generic;
 using GhostVillage.Domain.Profile;
 using System.Linq;
 
-public class Item_MatchHistoryUI : MonoBehaviour {
+public class Item_MatchHistoryUI : MonoBehaviour
+{
     [SerializeField] private TextMeshProUGUI _txtResult;
     [SerializeField] private TextMeshProUGUI _txtDuration;
     [SerializeField] private TextMeshProUGUI _txtExp;
     [SerializeField] private TextMeshProUGUI _txtCoin;
+    [SerializeField] private TextMeshProUGUI _txtMoonType;
     [SerializeField] private TextMeshProUGUI _txtMap;
 
     [Header("Titles Settings")]
-    [SerializeField] private Image[] _rankTitleSlots; 
-    
+    [SerializeField] private Image[] _rankTitleSlots;
+
     [SerializeField] private List<TitleSpriteMapping> _titleLibrary;
 
     [System.Serializable]
-    public struct TitleSpriteMapping {
+    public struct TitleSpriteMapping
+    {
         public string titleId;
         public Sprite titleIcon;
     }
@@ -33,43 +36,55 @@ public class Item_MatchHistoryUI : MonoBehaviour {
         "HumanSiren"       // Ô 4
     };
 
-    public void Setup(MatchHistoryItemDTO data) {
+    public void Setup(MatchHistoryItemDTO data)
+    {
         _txtResult.text = data.isWin ? "Win" : "Lose";
         _txtResult.color = data.isWin ? Color.green : Color.red;
-        _txtDuration.text = $"{data.durationSec / 60}m";
+        _txtDuration.text = System.TimeSpan.FromSeconds(data.durationSec).ToString(@"mm\:ss");
         _txtExp.text = data.expGained.ToString();
         _txtCoin.text = data.coinGained.ToString();
         _txtMap.text = data.matchId.mapName;
 
+        if (_txtMoonType != null)
+        {
+            string moonName = string.IsNullOrEmpty(data.matchId.moonEventName) ? "Normal Moon" : data.matchId.moonEventName;
+            _txtMoonType.text = moonName;
+        }
+
         // Xử lý Rank Titles theo vị trí cố định
-        for (int i = 0; i < _rankTitleSlots.Length; i++) {
+        for (int i = 0; i < _rankTitleSlots.Length; i++)
+        {
             // Lấy ID tiêu chuẩn cho vị trí ô này
-            if (i >= _fixedTitleOrder.Length) break; 
+            if (i >= _fixedTitleOrder.Length) break;
             string targetTitleId = _fixedTitleOrder[i];
 
             // Kiểm tra xem trong dữ liệu trận đấu (data.rankTitles) có chứa ID này không
             bool hasThisTitle = data.rankTitles.Contains(targetTitleId);
 
-            if (hasThisTitle) {
+            if (hasThisTitle)
+            {
                 // Nếu có: Tìm icon trong thư viện và hiển thị
                 Sprite icon = GetSpriteFromLibrary(targetTitleId);
                 _rankTitleSlots[i].sprite = icon;
                 _rankTitleSlots[i].color = Color.white;
-                
+
                 // Case phòng hờ: Nếu backend gửi ID đúng nhưng thư viện Unity chưa gán sprite
                 if (icon == null) _rankTitleSlots[i].color = Color.black;
-            } else {
+            }
+            else
+            {
                 // Nếu không có: Trả về nền đen
                 _rankTitleSlots[i].sprite = null;
                 _rankTitleSlots[i].color = Color.black;
             }
-            
+
             // Luôn bật object để hiện ô đen hoặc icon
             _rankTitleSlots[i].gameObject.SetActive(true);
         }
     }
 
-    private Sprite GetSpriteFromLibrary(string id) {
+    private Sprite GetSpriteFromLibrary(string id)
+    {
         var mapping = _titleLibrary.Find(x => x.titleId == id);
         return mapping.titleIcon;
     }

@@ -45,10 +45,37 @@ namespace Game.Domain.Map.DTOs
     public class MoonEventGlobalDTO
     {
         public string eventId;
-        public string eventName;
+        public string eventName; // Chú ý: Backend dùng eventName thay vì displayName
         public string uiIcon;
         public int weight;
-        // Thêm các ModifierDTO nếu cần
+
+        // --- THÊM 3 CỤC NÀY ĐỂ HỨNG DATA TỪ SERVER ---
+        public EnvironmentModifiersDTO environmentModifiers;
+        public MonsterBuffMultipliersDTO monsterBuffMultipliers;
+        public RewardMultipliersDTO rewardMultipliers;
+    }
+
+    [Serializable]
+    public class EnvironmentModifiersDTO
+    {
+        public float globalLightIntensity;
+        public float fogDensity;
+    }
+
+    [Serializable]
+    public class MonsterBuffMultipliersDTO
+    {
+        public float speedMultiplier;
+        public float detectionRangeMultiplier;
+        public float chaseRangeMultiplier;
+        public float cooldownMultiplier;
+    }
+
+    [Serializable]
+    public class RewardMultipliersDTO
+    {
+        public float expMultiplier;
+        public float coinMultiplier;
     }
 
     // --- MAP CONFIG (Đã ép cân sạch sẽ) ---
