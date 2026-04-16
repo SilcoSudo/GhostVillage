@@ -18,6 +18,7 @@ import QuestManagementPage from '../pages/QuestManagementPage';
 import ConsumableManagementPage from '../pages/ConsumableManagementPage';
 import CostumeManagementPage from '../pages/CostumeManagementPage';
 import MoonEventManagementPage from '../pages/MoonEventManagementPage';
+import PerkManagementPage from '../pages/PerkManagementPage';
 import ActivityLogPage from '../pages/ActivityLogPage';
 import ProtectedRoute from './router/ProtectedRoute';
 import '../shared/assets/styles/theme.css';
@@ -56,6 +57,7 @@ function AppContent() {
             <Route path="/consumables" element={<ProtectedRoute><ConsumableManagementPage /></ProtectedRoute>} />
             <Route path="/costumes" element={<ProtectedRoute><CostumeManagementPage /></ProtectedRoute>} />
             <Route path="/moon-events" element={<ProtectedRoute><MoonEventManagementPage /></ProtectedRoute>} />
+            <Route path="/perks" element={<ProtectedRoute><PerkManagementPage /></ProtectedRoute>} />
             <Route path="/activity-log" element={<ProtectedRoute><ActivityLogPage /></ProtectedRoute>} />
             <Route path="/reports/posts" element={<ProtectedRoute><ReportedPostPage /></ProtectedRoute>} />
             <Route path="/reports/comments" element={<ProtectedRoute><ReportedCommentPage /></ProtectedRoute>} />

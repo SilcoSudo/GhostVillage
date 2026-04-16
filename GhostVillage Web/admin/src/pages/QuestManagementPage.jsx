@@ -5,7 +5,6 @@ import {
   Trash2,
   Plus,
   Search,
-  Filter,
   Loader2,
   AlertCircle,
   Scroll,
@@ -254,7 +253,6 @@ const QuestManagementPage = () => {
               <div className="filter-actions-group">
                 {/* Status Filter */}
                 <div className="filter-group">
-                  <Filter size={20} className="filter-icon" />
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}

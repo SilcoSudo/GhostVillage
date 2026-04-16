@@ -239,7 +239,7 @@ const seedData = async () => {
       _id: user1_Id,
       email: "hung@ghostvillage.com",
       fullname: "Hùng Đẹp Trai",
-      password: "12345678",
+      password: "12345678An.",
       dateOfBirth: new Date("1995-01-01"),
       avatar: "avatar_default_01",
       bio: "Hùng Đẹp Trai",

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Search,
-  Filter,
   Loader2,
   AlertCircle,
   Activity,
@@ -220,7 +219,6 @@ const ActivityLogPage = () => {
               <div className="filter-actions-group">
                 {/* Action Filter */}
                 <div className="filter-group">
-                  <Filter size={20} className="filter-icon" />
                   <select
                     value={filterAction}
                     onChange={(e) => setFilterAction(e.target.value)}

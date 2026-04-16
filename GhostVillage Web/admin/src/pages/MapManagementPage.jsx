@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import {
   Edit2,
   Search,
-  Filter,
   Loader2,
   AlertCircle,
   Map as MapIcon,
@@ -146,7 +145,6 @@ const MapManagementPage = () => {
 
             {/* Filter */}
             <div className="filter-group">
-              <Filter size={20} className="filter-icon" />
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
