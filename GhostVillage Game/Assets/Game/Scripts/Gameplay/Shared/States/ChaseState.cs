@@ -1,5 +1,6 @@
 using UnityEngine;
 using GhostVillage.Gameplay.Base;
+using Photon.Pun;
 
 namespace GhostVillage.Gameplay.Shared
 {
@@ -18,6 +19,8 @@ namespace GhostVillage.Gameplay.Shared
         private float lastSeenTime = 0f;
         private bool hasLostSight = false; // Để track lần đầu mất player
         private float lastLogTime = 0f; // Để log mỗi 0.5s thay vì mỗi frame
+        private int _currentTargetActorNr = -1;
+        private float _chaseStartTime = 0f;
 
         public ChaseState(MonsterBase monster, float chaseStopDistance = 2f, float chaseLoseRange = 25f)
         {
@@ -31,6 +34,31 @@ namespace GhostVillage.Gameplay.Shared
             Debug.Log("🔴 ChaseState: Bắt đầu đuổi player!");
             hasLostSight = false;
             lastSeenTime = 0f;
+
+            // Reset và bấm giờ
+            _currentTargetActorNr = -1;
+            _chaseStartTime = Time.time;
+
+            if (monster != null && monster.IsPlayerDetected())
+            {
+                // Tìm xem thằng nào đang bị rượt để đánh dấu
+                Vector3 targetPos = monster.GetPlayerPosition();
+                Collider[] hits = Physics.OverlapSphere(targetPos, 2f);
+
+                foreach (var hit in hits)
+                {
+                    if (hit.CompareTag("Player"))
+                    {
+                        Photon.Pun.PhotonView pv = hit.GetComponentInParent<Photon.Pun.PhotonView>();
+                        if (pv != null)
+                        {
+                            _currentTargetActorNr = pv.OwnerActorNr; // Ghi nhớ ID nạn nhân
+                            Debug.Log($"<color=red>[Baiter Tracker]</color> Quái bắt đầu lock mục tiêu vào Player {_currentTargetActorNr}");
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         public void Update()
@@ -103,6 +131,21 @@ namespace GhostVillage.Gameplay.Shared
         {
             Debug.Log("🟢 ChaseState: Dừng đuổi!");
             monster.Stop();
+
+            // [THÊM MỚI]: TÍNH TỔNG THỜI GIAN RƯỢT ĐUỔI VÀ HÚ LOA BÁO CÁO
+            if (_currentTargetActorNr != -1)
+            {
+                int duration = Mathf.RoundToInt(Time.time - _chaseStartTime);
+
+                if (duration > 0)
+                {
+                    // Truyền ID nạn nhân và số giây bị rượt đi
+                    Game.Scripts.Gameplay.Core.GameplayEvents.OnBossTargetedPlayer?.Invoke(_currentTargetActorNr, duration);
+                    Debug.Log($"<color=red>[Baiter Tracker]</color> Đã buông tha Player {_currentTargetActorNr} sau {duration} giây rượt đuổi.");
+                }
+
+                _currentTargetActorNr = -1; // Xóa trí nhớ
+            }
         }
 
         public bool ShouldExit()

@@ -219,6 +219,8 @@ public class PlayerKnockedState : MonoBehaviourPun, IInteractable
                 // Mới bị lần 1: Cho phép revive
                 _gameManager.ReportStatusChange(photonView.Owner.ActorNumber, PlayerMatchStatus.Knocked);
             }
+
+            GameplayEvents.OnPlayerKnocked?.Invoke(photonView.Owner.ActorNumber);
         }
 
         // Bắn RPC cho toàn bản đồ thấy thằng này bị ngã sấp mặt

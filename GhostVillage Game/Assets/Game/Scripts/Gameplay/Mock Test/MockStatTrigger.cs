@@ -66,7 +66,7 @@ namespace Game.Scripts.Test
                     GameplayEvents.OnSmallMonsterKilled?.Invoke(actorNumber);
                     break;
                 case StatTriggerType.TargetedByBoss:
-                    GameplayEvents.OnBossTargetedPlayer?.Invoke(actorNumber);
+                    //GameplayEvents.OnBossTargetedPlayer?.Invoke(actorNumber);
                     break;
                 case StatTriggerType.Scream:
                     GameplayEvents.OnPlayerScreamed?.Invoke(actorNumber);
