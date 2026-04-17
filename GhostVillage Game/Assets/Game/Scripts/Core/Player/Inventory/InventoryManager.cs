@@ -5,6 +5,7 @@ using Game.Core.Player.RayCast;
 using Photon.Pun;
 using ExitGames.Client.Photon;
 using System.Linq;
+using GhostVillage.Gameplay.Shared;
 
 /// <summary>
 /// Quản lý túi đồ của người chơi, bao gồm logic nhặt, dùng, vứt item và đồng bộ mạng.
@@ -227,15 +228,32 @@ public class InventoryManager : MonoBehaviourPun
     /// </summary>
     public void UseItem(int slotIndex)
     {
-        // Fix Count thành Length
         if (slotIndex < 0 || slotIndex >= items.Length || items[slotIndex] == null) return;
 
         ItemDataSO itemToUse = items[slotIndex];
+
+        // ========================================================
+        // GỌI HÀM SỬ DỤNG GỐC CỦA TẤT CẢ CÁC ITEM (Medkit, Đèn Pin, Còi, Cục Pin)
+        // ========================================================
         bool consumed = itemToUse.OnUse(this.gameObject);
 
+        // Nếu hàm OnUse trả về True (Tức là xài thành công, là vật phẩm tiêu hao), thì xóa nó đi
         if (consumed)
         {
             RemoveItem(itemToUse);
+        }
+    }
+
+
+    /// <summary>
+    /// Hàm này được gọi từ file WhistleItemSO thông qua việc móc PhotonView của nhân vật
+    /// </summary>
+    [PunRPC]
+    public void RpcBlowWhistle(Vector3 position)
+    {
+        if (PhotonNetwork.IsMasterClient)
+        {
+            MonsterEvents.AlertPlayerSpotted(position);
         }
     }
 

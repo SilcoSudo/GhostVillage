@@ -167,6 +167,13 @@ public class ReviveQTEManager : MonoBehaviour
             // === HIT! ===
             float actualHeal = 4f;
 
+            // [MỚI]: Check xem trên tay thằng cứu có đang cầm bình máu không
+            if (_saviorInventory != null && _saviorInventory.items[_saviorInventory.currentSlotIndex] is MedkitItemSO medkitData)
+            {
+                actualHeal = medkitData.healAmount; // Lấy chỉ số từ BE!
+                Debug.Log($"<color=cyan>[QTE] Đang xài Medkit xịn! Hồi {actualHeal} máu/nhát.</color>");
+            }
+
             // Check Perk Support: Người Toàn Xá Lợi (Tăng hiệu quả hồi máu)
             if (_saviorFPS != null)
             {
@@ -216,47 +223,58 @@ public class ReviveQTEManager : MonoBehaviour
     }
 
     // GỌI KHI MÁU NẠN NHÂN ĐẦY (Giờ sẽ được gọi ĐÚNG máy của thằng Cứu)
+    // GỌI KHI MÁU NẠN NHÂN ĐẦY (Giờ sẽ được gọi ĐÚNG máy của thằng Cứu)
     public void OnReviveSuccess()
     {
         Debug.Log("<color=yellow>[QTE] CỨU SỐNG THÀNH CÔNG!</color>");
 
         if (_saviorFPS != null && _targetVictim != null)
         {
-            // Lấy ID thằng cứu
             int saviorId = _saviorFPS.GetComponent<PhotonView>().OwnerActorNr;
-
-            // Lấy ID thằng bị nạn
             int victimId = _targetVictim.GetComponent<PhotonView>().OwnerActorNr;
 
             // Bắn loa phát thanh báo hiệu!
             Game.Scripts.Gameplay.Core.GameplayEvents.OnPlayerRescued?.Invoke(saviorId, victimId);
-
             Debug.Log($"<color=cyan>[Tracker] Đã gửi thông báo cứu người lên Server: {saviorId} cứu {victimId}</color>");
-        }
 
-        if (_saviorFPS != null)
-        {
             var stats = _saviorFPS.GetComponent<PlayerStatsManager>();
-            if (stats != null && _saviorInventory != null && _saviorInventory.items.Length > 0)
+            if (stats != null)
             {
-                float keepChance = stats.freeConsumableChance;
-
-                keepChance = 0f; // Tạm tắt perk Túi Vải Chàm để test trừ đồ cho mượt
-
-                if (Random.value >= keepChance)
+                // ==========================================
+                // PERK: RELIC BEARER (Tăng tốc sau khi cứu)
+                // ==========================================
+                if (stats.hasRelicBearer)
                 {
-                    var currentItem = _saviorInventory.items[_saviorInventory.currentSlotIndex];
-                    _saviorInventory.RemoveItem(currentItem);
-                    Debug.Log("<color=red>Đã trừ 1 Medkit khỏi túi!</color>");
+                    Debug.Log("<color=cyan>[Perk] Kích hoạt Relic Bearer! Cả 2 cùng nhận Buff tốc độ 5s!</color>");
+
+                    // 1. Bật Buff cho bản thân (Người Cứu)
+                    stats.TriggerRelicBearerBuff();
+
+                    // 2. Bắn RPC sang máy của Nạn Nhân để họ tự bật Buff
+                    _targetVictim.GetComponent<PhotonView>().RPC("RpcReceiveRelicBearerBuff", RpcTarget.All);
                 }
-                else
-                {
-                    Debug.Log("<color=magenta>HÊN QUÁ! Túi Vải Chàm giữ lại được Medkit!</color>");
-                }
 
-                if (stats.reviveSpeedMultiplier > 1f)
+                // ==========================================
+                // PERK: INDIGO POUCH (Túi Vải Chàm)
+                // ==========================================
+                if (_saviorInventory != null && _saviorInventory.items.Length > 0)
                 {
-                    Debug.Log("<color=cyan>Đã kích hoạt Buff tốc độ chạy 5s!</color>");
+                    // Đảm bảo đang cầm Medkit mới tính tỉ lệ trừ đồ
+                    if (_saviorInventory.items[_saviorInventory.currentSlotIndex] is MedkitItemSO)
+                    {
+                        float keepChance = stats.freeConsumableChance;
+
+                        if (UnityEngine.Random.value >= keepChance)
+                        {
+                            var currentItem = _saviorInventory.items[_saviorInventory.currentSlotIndex];
+                            _saviorInventory.RemoveItem(currentItem);
+                            Debug.Log("<color=red>Đã dùng hết 1 Medkit!</color>");
+                        }
+                        else
+                        {
+                            Debug.Log("<color=magenta>HÊN QUÁ! Túi Vải Chàm phát huy tác dụng, giữ lại được Medkit!</color>");
+                        }
+                    }
                 }
             }
         }

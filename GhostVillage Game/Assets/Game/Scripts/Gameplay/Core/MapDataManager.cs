@@ -70,4 +70,55 @@ public class MapDataManager : MonoBehaviour
             return points;
         return new List<Transform>();
     }
+
+    // THÊM HÀM NÀY VÀO TRONG MAPDATAMANAGER.CS
+    public void OverrideItemStatsFromNetwork(List<ItemStatDTO> networkItems, Game.Core.Database.GameResourceDatabaseSO resourceDB)
+    {
+        if (networkItems == null || resourceDB == null) return;
+
+        int count = 0;
+        foreach (var netItem in networkItems)
+        {
+            // Xin Prefab từ Kho bằng itemId
+            GameObject prefab = resourceDB.GetPrefabById(netItem.itemId);
+
+            if (prefab != null && netItem.stats != null)
+            {
+                // Moi Script ItemPickup trên Prefab ra để lấy ScriptableObject
+                var pickupScript = prefab.GetComponent<Game.Core.Interaction.ItemPickup>();
+                if (pickupScript != null && pickupScript.data != null)
+                {
+                    var so = pickupScript.data;
+
+                    // 1. NẾU LÀ ĐÈN PIN
+                    if (so is FlashlightItemSO flashlightSO)
+                    {
+                        if (netItem.stats.maxBattery > 0) flashlightSO.maxBattery = netItem.stats.maxBattery;
+                        if (netItem.stats.drainRate > 0) flashlightSO.drainRate = netItem.stats.drainRate;
+                        count++;
+                    }
+                    // 2. NẾU LÀ PIN SẠC
+                    else if (so is BatteryItemSO batterySO)
+                    {
+                        if (netItem.stats.rechargeAmount > 0) batterySO.rechargeAmount = netItem.stats.rechargeAmount;
+                        count++;
+                    }
+                    // 3. NẾU LÀ MEDKIT
+                    else if (so is MedkitItemSO medkitSO)
+                    {
+                        if (netItem.stats.healAmount > 0) medkitSO.healAmount = netItem.stats.healAmount;
+                        count++;
+                    }
+                    // 4. NẾU LÀ CÒI
+                    // else if (so is WhistleItemSO whistleSO)
+                    // {
+                    //     // if (netItem.stats.alertRadius > 0) whistleSO.alertRadius = netItem.stats.alertRadius;
+                    //     // count++;
+                    // }
+                }
+            }
+        }
+
+        Debug.Log($"<color=green>[MapData]</color> Đã nạp thành công chỉ số cho {count} SO Items từ Server!");
+    }
 }

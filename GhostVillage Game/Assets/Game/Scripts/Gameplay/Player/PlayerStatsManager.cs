@@ -53,9 +53,9 @@ public class PlayerStatsManager : MonoBehaviourPun
 
     private float _regenTimer = 0f;
 
-    // Tính toán tốc độ hiện tại có cộng dồn Ancestral Vow (nếu có)
-    public float CurrentMoveSpeed => (baseMoveSpeed * speedMultiplier) * (1f + ancestralSpeedBoost);
-    public float CurrentSprintSpeed => (baseSprintSpeed * speedMultiplier) * (1f + ancestralSpeedBoost);
+    // Tính toán tốc độ hiện tại có cộng dồn Ancestral Vow và Relic Bearer Buff
+    public float CurrentMoveSpeed => (baseMoveSpeed * speedMultiplier) * (1f + ancestralSpeedBoost + postReviveSpeedBoost);
+    public float CurrentSprintSpeed => (baseSprintSpeed * speedMultiplier) * (1f + ancestralSpeedBoost + postReviveSpeedBoost);
     public float MaxStamina => baseMaxStamina * maxStaminaMultiplier;
 
     // Hao thể lực lúc chạy (Trừ đi phần tiết kiệm của Ancestral Vow)
@@ -169,15 +169,101 @@ public class PlayerStatsManager : MonoBehaviourPun
             if (props.TryGetValue("P_RelicBearer", out object relicVal)) hasRelicBearer = Convert.ToBoolean(relicVal);
             if (props.TryGetValue("P_AncestralVow", out object vowVal)) hasAncestralVow = Convert.ToBoolean(vowVal);
 
-            // LƯU Ý: Các chỉ số ẩn đặc biệt (như delay hồi sinh, số stack đồng đội chết, thời gian nhìn xuyên tường...)
-            // Không cộng thẳng vào Base Stats mà sẽ được gọi rút trực tiếp từ Photon CustomProperties
-            // lúc sếp viết Logic kích hoạt Skill (ví dụ trong GetKnocked hoặc lúc giải xong Puzzle).
+            CurrentStamina = MaxStamina;
 
-            Debug.Log($"<color=green>[Stats]</color> ✅ Nạp xong! MaxStam: {maxStaminaMultiplier}, StamRegen: {staminaRegenMultiplier}, SprintDrain: {staminaDrainMultiplier}, BattDrain: {batteryDrainMultiplier}");
+            // ==========================================
+            // LOG TOÀN BỘ CHỈ SỐ GỐC & SAU KHI CỘNG PERK
+            // ==========================================
+            string logMsg = "<color=green>✅ [Stats] BÁO CÁO CHỈ SỐ NGƯỜI CHƠI SAU KHI MẶC PERK:</color>\n";
+
+            logMsg += $"🏃 Tốc độ đi bộ: {baseMoveSpeed} -> <b>{CurrentMoveSpeed}</b>\n";
+            logMsg += $"🏃 Tốc độ chạy: {baseSprintSpeed} -> <b>{CurrentSprintSpeed}</b>\n";
+            logMsg += $"🫁 Thể lực Tối đa: {baseMaxStamina} -> <b>{MaxStamina}</b>\n";
+            logMsg += $"🫁 Hồi Thể lực: {baseStaminaRegenRate}/s -> <b>{StaminaRegenRate}/s</b>\n";
+            logMsg += $"🫁 Hao Thể lực (Chạy): {baseStaminaDrainRate}/s -> <b>{StaminaDrainRate}/s</b>\n";
+            logMsg += $"🔋 Hao Pin: Cơ bản x <b>{batteryDrainMultiplier}</b>\n";
+            logMsg += $"🚑 Tốc độ Cứu người: {baseReviveSpeed} -> <b>{ReviveSpeed}</b>\n";
+            logMsg += $"🎒 Tỉ lệ giữ lại vật phẩm (Túi vải chàm): <b>{freeConsumableChance * 100}%</b>\n";
+            logMsg += $"👁️ Tầm nhìn bị quái phát hiện: Cơ bản x <b>{detectionVisibilityMultiplier}</b>\n";
+
+            logMsg += "\n<color=orange>🔥 CÁC KỸ NĂNG ĐẶC BIỆT KÍCH HOẠT:</color>\n";
+            if (hasPropheticSight) logMsg += "- Prophetic Sight (Nhìn xuyên tường)\n";
+            if (hasAutoRevive) logMsg += "- Spectral Reflection (Tự hồi sinh)\n";
+            if (hasRelicBearer) logMsg += "- Relic Bearer (Chạy nhanh sau khi cứu)\n";
+            if (hasAncestralVow) logMsg += "- Ancestral Vow (Nhận buff khi đồng đội chết)\n";
+
+            if (!hasPropheticSight && !hasAutoRevive && !hasRelicBearer && !hasAncestralVow)
+                logMsg += "- Không có kỹ năng đặc biệt nào.\n";
+
+            Debug.Log(logMsg);
+
         }
         catch (Exception e)
         {
             Debug.LogError($"<color=red>[Stats]</color> ❌ Lỗi khi ép kiểu Perk Modifiers:\n{e.Message}");
         }
+    }
+
+    // ========================================================
+    // PERK LOGIC: LẮNG NGHE SỰ KIỆN QUY MÔ TOÀN BẢN ĐỒ
+    // ========================================================
+    private int _ancestralStacks = 0;
+    private Coroutine _relicBuffCoroutine;
+
+    public void OnEnable()
+    {
+        Game.Scripts.Gameplay.Core.GameplayEvents.OnPlayerStatusChanged += HandlePlayerStatusChanged;
+    }
+
+    public void OnDisable()
+    {
+        Game.Scripts.Gameplay.Core.GameplayEvents.OnPlayerStatusChanged -= HandlePlayerStatusChanged;
+    }
+
+    // --- XỬ LÝ ANCESTRAL VOW ---
+    private void HandlePlayerStatusChanged(int actorNum, PlayerMatchStatus status)
+    {
+        if (photonView == null || !photonView.IsMine || !hasAncestralVow) return;
+
+        // Nếu một đồng đội (không phải mình) vừa bị loại (Eliminated)
+        if (status == PlayerMatchStatus.Eliminated && actorNum != photonView.OwnerActorNr)
+        {
+            if (_ancestralStacks < 3) // Tối đa 3 stack
+            {
+                _ancestralStacks++;
+                ancestralSpeedBoost = _ancestralStacks * 0.05f;  // +5% Speed mỗi mạng
+                ancestralStaminaSave = _ancestralStacks * 0.10f; // -10% Hao thể lực mỗi mạng
+                Debug.Log($"<color=orange>[Perk] Lời Thề Tổ Tiên kích hoạt! Đồng đội ngã xuống. Stack: {_ancestralStacks}/3</color>");
+            }
+        }
+    }
+
+    // --- XỬ LÝ RELIC BEARER ---
+    // Hàm này dành cho Người Cứu tự gọi trên máy mình
+    public void TriggerRelicBearerBuff()
+    {
+        if (!photonView.IsMine) return;
+        if (_relicBuffCoroutine != null) StopCoroutine(_relicBuffCoroutine);
+        _relicBuffCoroutine = StartCoroutine(RelicBuffRoutine());
+    }
+
+    // Hàm này dành cho Nạn Nhân nhận RPC từ Người Cứu
+    [PunRPC]
+    public void RpcReceiveRelicBearerBuff()
+    {
+        if (!photonView.IsMine) return; // Đảm bảo máy ai nấy cộng chỉ số
+        if (_relicBuffCoroutine != null) StopCoroutine(_relicBuffCoroutine);
+        _relicBuffCoroutine = StartCoroutine(RelicBuffRoutine());
+    }
+
+    private System.Collections.IEnumerator RelicBuffRoutine()
+    {
+        postReviveSpeedBoost = 0.15f; // Buff 15% tốc độ
+        Debug.Log("<color=cyan>[Buff] Đôi chân thanh thoát! Nhận 15% tốc độ chạy trong 5 giây!</color>");
+
+        yield return new WaitForSeconds(5f); // Đợi 5 giây
+
+        postReviveSpeedBoost = 0f;    // Tắt Buff
+        Debug.Log("<color=cyan>[Buff] Hết thời gian buff tốc độ.</color>");
     }
 }

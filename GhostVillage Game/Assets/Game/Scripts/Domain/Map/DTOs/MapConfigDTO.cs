@@ -37,8 +37,23 @@ namespace Game.Domain.Map.DTOs
         public string itemName;
         public string itemType;
         public string prefabName;
+        public ItemDetailStatsDTO stats;
         // Không còn maxStack nữa
         // stats có thể để kiểu string (raw json) hoặc định nghĩa class cụ thể nếu bro muốn deserialize sâu
+    }
+
+    [Serializable]
+    public class ItemDetailStatsDTO
+    {
+        // 1. CHO PIN SẠC (ITEM_BATTERY)
+        public float rechargeAmount;
+
+        // 2. CHO ĐÈN PIN (ITEM_FLASHLIGHT)
+        public float maxBattery;
+        public float drainRate;
+
+        // 3. CHO BÌNH MÁU (ITEM_MEDKIT)
+        public float healAmount;
     }
 
     [Serializable]

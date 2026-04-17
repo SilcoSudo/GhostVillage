@@ -3,6 +3,9 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "NewMedkit", menuName = "Game Data/Items/Medkit")]
 public class MedkitItemSO : ItemDataSO
 {
+    [Header("Medkit Stats (Từ DB)")]
+    public float healAmount = 25f; // Mặc định, sẽ bị BE ghi đè (VD: 25 là cứu sống luôn nếu max blood = 25)
+
     // Ghi đè nút E (OnUse)
     public override bool OnUse(GameObject character)
     {

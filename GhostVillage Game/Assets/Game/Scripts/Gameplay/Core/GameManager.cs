@@ -118,6 +118,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         if (_mapData != null && dataToLoad != null)
         {
             _mapData.InitializeMap(dataToLoad);
+            _mapData.OverrideItemStatsFromNetwork(dataToLoad.stats.items, _resourceDB);
         }
         else
         {

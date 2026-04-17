@@ -63,19 +63,28 @@ namespace Game.Domain.Settings.Controllers
             _inputService.ApplyOverrides(_currentData.Gameplay.KeyBindings);
         }
 
+        // SỬA HÀM NÀY TRONG SettingsController.cs
         public void StartRebind(string actionName, int bindingIndex, Action<string> onUIUpdate)
         {
             _inputService.StartRebind(actionName, bindingIndex, (newPath, displayStr) =>
             {
-                var overrideData = _currentData.Gameplay.KeyBindings.Find(x => x.ActionName == actionName && x.BindingIndex == bindingIndex);
+                // Tìm xem Action này đã có trong danh sách Overrides chưa
+                var overrideData = _currentData.Gameplay.KeyBindings.Find(x =>
+                    x.ActionName == actionName && x.BindingIndex == bindingIndex);
+
                 if (overrideData == null)
                 {
                     overrideData = new KeyBindingOverride { ActionName = actionName, BindingIndex = bindingIndex };
                     _currentData.Gameplay.KeyBindings.Add(overrideData);
                 }
+
+                // Cập nhật đường dẫn mới (hoặc cũ nếu cancel) vào data
                 overrideData.OverridePath = newPath;
 
+                // Lưu file JSON
                 _saveLoadService.SaveSettings(_currentData);
+
+                // Cập nhật lại chữ trên nút bấm (Xóa dấu "...")
                 onUIUpdate?.Invoke(displayStr);
             });
         }
