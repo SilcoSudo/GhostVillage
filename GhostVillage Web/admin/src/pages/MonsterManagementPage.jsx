@@ -3,16 +3,13 @@ import { useTranslation } from "react-i18next";
 import {
   Edit2,
   Trash2,
-  Plus,
   Search,
-  Filter,
   Loader2,
   AlertCircle,
   Skull,
 } from "lucide-react";
 import monsterService from "../shared/services/monsterService";
 import EditMonsterModal from "./components/EditMonsterModal";
-import CreateMonsterModal from "./components/CreateMonsterModal";
 import DeleteConfirmModal from "./components/DeleteConfirmModal";
 import "./assets/styles/MonsterManagement.css";
 
@@ -31,7 +28,6 @@ const MonsterManagementPage = () => {
   // Modal states
   const [selectedMonster, setSelectedMonster] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Pagination
@@ -77,8 +73,11 @@ const MonsterManagementPage = () => {
    * Xử lý search
    */
   const filteredMonsters = monsters.filter((monster) => {
+    const keyword = searchQuery.toLowerCase();
     const matchSearch =
-      monster.name?.toLowerCase().includes(searchQuery.toLowerCase());
+      monster.monsterName?.toLowerCase().includes(keyword) ||
+      monster.monsterId?.toLowerCase().includes(keyword) ||
+      monster.prefabName?.toLowerCase().includes(keyword);
     return matchSearch;
   });
 
@@ -132,14 +131,6 @@ const MonsterManagementPage = () => {
   };
 
   /**
-   * Xử lý sau khi create thành công
-   */
-  const handleCreateSuccess = () => {
-    fetchMonsters();
-    setIsCreateModalOpen(false);
-  };
-
-  /**
    * Xử lý sau khi delete thành công
    */
   const handleDeleteSuccess = () => {
@@ -156,13 +147,13 @@ const MonsterManagementPage = () => {
             <Skull size={28} />
             Quản lý Quái Vật
           </h1>
-          <p>Quản lý thông tin và chỉ số của các quái vật trong game</p>
+          <p>Quản lý thông tin monster theo schema backend mới</p>
         </div>
 
         {/* Toolbar */}
         <div className="monster-toolbar">
           <div className="toolbar-content">
-            <div className="toolbar-row">
+            <div className="toolbar-row toolbar-row-top">
               {/* Search */}
               <div className="search-wrapper">
                 <Search className="search-icon" size={20} />
@@ -174,11 +165,12 @@ const MonsterManagementPage = () => {
                   className="search-input"
                 />
               </div>
+            </div>
 
+            <div className="toolbar-row toolbar-row-bottom">
               {/* Filter and Create Button */}
               <div className="filter-actions-group">
                 <div className="filter-group">
-                  <Filter size={20} className="filter-icon" />
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
@@ -189,15 +181,6 @@ const MonsterManagementPage = () => {
                     <option value="false">Vô hiệu hóa</option>
                   </select>
                 </div>
-
-                {/* Create Button */}
-                <button
-                  onClick={() => setIsCreateModalOpen(true)}
-                  className="btn-create"
-                >
-                  <Plus size={18} />
-                  <span>Thêm quái vật</span>
-                </button>
               </div>
             </div>
           </div>
@@ -224,11 +207,12 @@ const MonsterManagementPage = () => {
                 <table className="monsters-table">
                   <thead>
                     <tr>
-                      <th>Tên</th>
-                      <th className="center">HP</th>
-                      <th className="center">ATK</th>
-                      <th className="center">DEF</th>
-                      <th className="center">Spawn Rate</th>
+                      <th>Monster ID</th>
+                      <th>Tên quái</th>
+                      <th className="center">Loại</th>
+                      <th>Prefab</th>
+                      <th className="center">Move Speed</th>
+                      <th className="center">Attack CD</th>
                       <th className="center">Trạng thái</th>
                       <th className="center">Thao tác</th>
                     </tr>
@@ -236,7 +220,7 @@ const MonsterManagementPage = () => {
                   <tbody>
                     {filteredMonsters.length === 0 ? (
                       <tr>
-                        <td colSpan="7" className="empty-state">
+                        <td colSpan="8" className="empty-state">
                           <p>Không tìm thấy quái vật nào</p>
                         </td>
                       </tr>
@@ -244,19 +228,22 @@ const MonsterManagementPage = () => {
                       filteredMonsters.map((monster) => (
                         <tr key={monster._id}>
                           <td>
-                            <div className="monster-name">{monster.name}</div>
+                            <code>{monster.monsterId}</code>
+                          </td>
+                          <td>
+                            <div className="monster-name">{monster.monsterName}</div>
                           </td>
                           <td className="center">
-                            <span className="stat-hp">{monster.hp}</span>
+                            <span className="stat-atk">{monster.monsterType}</span>
+                          </td>
+                          <td>
+                            <span className="stat-def">{monster.prefabName}</span>
                           </td>
                           <td className="center">
-                            <span className="stat-atk">{monster.atk}</span>
+                            <span className="stat-spawn">{monster.movementConfig?.moveSpeed ?? "-"}</span>
                           </td>
                           <td className="center">
-                            <span className="stat-def">{monster.def}</span>
-                          </td>
-                          <td className="center">
-                            <span className="stat-spawn">{monster.spawnRate}%</span>
+                            <span className="stat-spawn">{monster.combatConfig?.attackCooldown ?? "-"}</span>
                           </td>
                           <td className="center">
                             <button
@@ -333,17 +320,10 @@ const MonsterManagementPage = () => {
         />
       )}
 
-      {isCreateModalOpen && (
-        <CreateMonsterModal
-          onClose={() => setIsCreateModalOpen(false)}
-          onSuccess={handleCreateSuccess}
-        />
-      )}
-
       {isDeleteModalOpen && (
         <DeleteConfirmModal
           title="Xác nhận xóa quái vật"
-          message={`Bạn có chắc chắn muốn xóa quái vật "${selectedMonster?.name}"? Quái vật sẽ bị vô hiệu hóa.`}
+          message={`Bạn có chắc chắn muốn xóa quái vật "${selectedMonster?.monsterName}"? Quái vật sẽ bị vô hiệu hóa.`}
           onConfirm={async () => {
             try {
               await monsterService.deleteMonster(selectedMonster._id);

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  useFriendList,
   useFriendshipStatus,
   useAddFriend,
   useUnfriend,
@@ -28,6 +29,9 @@ const FriendActions = ({
     targetUserId,
     { enabled: shouldFetch }, // Only fetch if no preloaded status
   );
+  const { data: friends = [] } = useFriendList({
+    enabled: !preloadedStatus && !fetchedStatus,
+  });
   const status = preloadedStatus || fetchedStatus;
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
@@ -44,6 +48,7 @@ const FriendActions = ({
     isAccepting ||
     isRejecting ||
     (isLoading && !preloadedStatus);
+  const hasFriendLimitReached = !status && friends.length >= 20;
 
   const handleUnfriend = () => {
     setIsConfirmOpen(true);
@@ -83,14 +88,15 @@ const FriendActions = ({
       <button
         className={`friend-btn add-friend ${compact ? "compact" : ""}`}
         onClick={() => addFriend(targetUserId)}
-        disabled={isLoadingAction}
-        title="Add Friend"
+        disabled={isLoadingAction || hasFriendLimitReached}
+        title={hasFriendLimitReached ? "Friend limit reached" : "Add Friend"}
       >
         {compact ? (
           <i className="fas fa-user-plus"></i>
         ) : (
           <>
-            <i className="fas fa-user-plus"></i> Add Friend
+            <i className="fas fa-user-plus"></i>
+            {hasFriendLimitReached ? " Friend Limit Reached" : " Add Friend"}
           </>
         )}
       </button>

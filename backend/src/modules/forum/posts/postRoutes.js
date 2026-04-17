@@ -3,6 +3,7 @@ import {
   listPosts,
   getPost,
   createPost,
+  checkPostingRestriction,
   updatePost,
   deletePost,
   restorePost,
@@ -31,6 +32,7 @@ router.get(
 
 // Delete media from Cloudinary - MUST BE BEFORE /:id routes
 router.delete("/delete-media", authMiddleware, deletePostMedia);
+router.get("/posting-restriction", authMiddleware, checkPostingRestriction);
 // Upload endpoint for post media (images/videos)
 router.post("/upload-media", authMiddleware, uploadMedia, uploadPostMedia);
 

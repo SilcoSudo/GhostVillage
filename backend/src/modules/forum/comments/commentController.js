@@ -223,7 +223,7 @@ export const createComment = async (req, res, next) => {
         }
       } else {
         // Top-level comment - notify the post owner
-        const post = await Post.findById(postId);
+        const post = await Post.findById(postId).select("author").lean();
         if (post && String(post.author) !== String(authorId)) {
           await NotificationService.createPostCommentedNotification(
             currentUser,

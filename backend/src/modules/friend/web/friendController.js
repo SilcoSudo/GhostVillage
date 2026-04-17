@@ -104,7 +104,11 @@ class FriendController {
       });
     } catch (error) {
       console.error("Add friend error:", error);
-      res.status(400).json({
+      const isLimitError =
+        error.message?.includes("maximum number of friends") ||
+        error.message?.includes("Friend limit reached");
+      const statusCode = isLimitError ? 409 : 400;
+      res.status(statusCode).json({
         success: false,
         message: error.message || "Failed to send friend request",
       });

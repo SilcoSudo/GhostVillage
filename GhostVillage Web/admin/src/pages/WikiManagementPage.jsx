@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { 
-  Search, Filter, Plus, Edit2, Trash2, Star, 
+  Search, Plus, Edit2, Trash2, Star, 
   BookOpen, Loader2, AlertCircle 
 } from "lucide-react";
 import wikiService from "../shared/services/wikiService";
@@ -213,7 +213,6 @@ const WikiManagementPage = () => {
 
             {/* Category Filter */}
             <div className="filter-group">
-              <Filter size={20} className="filter-icon" />
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}

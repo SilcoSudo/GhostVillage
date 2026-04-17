@@ -5,6 +5,15 @@ import NotificationService from "../../forum/notifications/notificationService.j
 import mongoose from "mongoose";
 
 class FriendService {
+  static async getAcceptedFriendCount(userId) {
+    return Friend.countDocuments({
+      $or: [
+        { userId: userId, status: "accepted" },
+        { friendId: userId, status: "accepted" },
+      ],
+    });
+  }
+
   /**
    * Get friend list (accepted friendships)
    * Returns user objects for all accepted friends
@@ -165,14 +174,20 @@ class FriendService {
         throw new Error("Cannot add yourself as a friend");
       }
 
-      // ========================================================
-      // [FIX]: CHECK GIỚI HẠN 20 BẠN TRƯỚC KHI GỬI LỜI MỜI
-      // ========================================================
-      const countA = await this.getFriendCount(userAId);
-      if (countA >= 20) throw new Error("Bạn đã đạt giới hạn 20 người bạn");
+      const [userAFriendCount, userBFriendCount] = await Promise.all([
+        FriendService.getAcceptedFriendCount(userAId),
+        FriendService.getAcceptedFriendCount(userBId),
+      ]);
 
-      const countB = await this.getFriendCount(userBId);
-      if (countB >= 20) throw new Error("Đối phương đã đầy danh sách bạn bè");
+      if (userAFriendCount >= 20) {
+        throw new Error(
+          "Friend limit reached. You can have at most 20 friends",
+        );
+      }
+
+      if (userBFriendCount >= 20) {
+        throw new Error("This user already has the maximum number of friends");
+      }
 
       // Check if friendship already exists
       const existingFriendship = await Friend.findOne({
@@ -236,16 +251,19 @@ class FriendService {
         throw new Error("Only pending requests can be accepted");
       }
 
-      // ========================================================
-      // [FIX]: CHECK GIỚI HẠN 20 BẠN TRƯỚC KHI CHẤP NHẬN
-      // ========================================================
-      const countA = await this.getFriendCount(friendship.userId._id);
-      const countB = await this.getFriendCount(friendship.friendId._id);
+      const [requesterFriendCount, targetFriendCount] = await Promise.all([
+        FriendService.getAcceptedFriendCount(friendship.userId._id),
+        FriendService.getAcceptedFriendCount(friendship.friendId._id),
+      ]);
 
-      if (countA >= 20 || countB >= 20) {
+      if (requesterFriendCount >= 20) {
         throw new Error(
-          "Không thể chấp nhận vì một trong hai người đã đạt giới hạn 20 bạn bè",
+          "Friend limit reached. You can have at most 20 friends",
         );
+      }
+
+      if (targetFriendCount >= 20) {
+        throw new Error("This user already has the maximum number of friends");
       }
 
       // Update status
@@ -295,16 +313,19 @@ class FriendService {
         throw new Error("Only pending requests can be accepted");
       }
 
-      // ========================================================
-      // [FIX]: CHECK GIỚI HẠN 20 BẠN TRƯỚC KHI CHẤP NHẬN
-      // ========================================================
-      const countA = await this.getFriendCount(friendship.userId._id);
-      const countB = await this.getFriendCount(friendship.friendId._id);
+      const [requesterFriendCount, targetFriendCount] = await Promise.all([
+        FriendService.getAcceptedFriendCount(friendship.userId._id),
+        FriendService.getAcceptedFriendCount(friendship.friendId._id),
+      ]);
 
-      if (countA >= 20 || countB >= 20) {
+      if (requesterFriendCount >= 20) {
         throw new Error(
-          "Không thể chấp nhận vì một trong hai người đã đạt giới hạn 20 bạn bè",
+          "Friend limit reached. You can have at most 20 friends",
         );
+      }
+
+      if (targetFriendCount >= 20) {
+        throw new Error("This user already has the maximum number of friends");
       }
 
       // Update status
