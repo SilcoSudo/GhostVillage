@@ -15,6 +15,8 @@ using Game.Domain.Settings.Services;
 using Game.Domain.Settings.Controllers;
 using GhostVillage.Shop;
 using GhostVillage.Storage;
+using UnityEngine.Audio;
+using Game.Core.Audio;
 
 namespace Game.Core.DI
 {
@@ -27,6 +29,12 @@ namespace Game.Core.DI
         [Header("Network Prefabs")]
         // Kéo Prefab chứa script PhotonNetworkManager vào đây
         [SerializeField] private PhotonNetworkManager _photonPrefab;
+
+        [Header("Audio Settings")]
+        [SerializeField] private AudioMixer _mainMixer;
+
+        [Header("Global Audio")]
+        [SerializeField] private GlobalAudioManager _globalAudioManagerPrefab;
 
         // Kéo Prefab UI (Canvas + Loading) vào đây
         [SerializeField] private GameObject _globalUIPrefab; // ĐÃ TRẢ LẠI THÀNH GAMEOBJECT
@@ -41,6 +49,16 @@ namespace Game.Core.DI
             // 1. Config & Data
             builder.RegisterInstance(_gameConfig);
             builder.RegisterInstance(_shopItemDatabase);
+
+            if (_mainMixer != null)
+            {
+                builder.RegisterInstance(_mainMixer);
+            }
+            else
+            {
+                Debug.LogError("❌ LỖI: Sếp chưa kéo file MainMixer vào AppLifetimeScope!");
+            }
+
             builder.Register<APIClient>(Lifetime.Singleton);
             builder.Register<MapDataService>(Lifetime.Singleton).As<IMapDataService>();
 
@@ -61,7 +79,7 @@ namespace Game.Core.DI
 
             builder.Register<ShopService>(Lifetime.Singleton);
             builder.Register<StorageService>(Lifetime.Singleton);
-            
+
             // 3. NETWORK (Sửa lại: Bắt buộc phải có Prefab)
             if (_photonPrefab != null)
             {
@@ -98,6 +116,19 @@ namespace Game.Core.DI
             else
             {
                 Debug.LogError(" LỖI: Chưa kéo GlobalUI Prefab vào AppLifetimeScope!");
+            }
+
+            if (_globalAudioManagerPrefab != null)
+            {
+                var audioObj = Instantiate(_globalAudioManagerPrefab.gameObject);
+                DontDestroyOnLoad(audioObj);
+                var audioManager = audioObj.GetComponent<Game.Core.Audio.GlobalAudioManager>();
+
+                builder.RegisterInstance(audioManager);
+            }
+            else
+            {
+                Debug.LogError("❌ LỖI: Chưa kéo Prefab GlobalAudioManager vào AppLifetimeScope!");
             }
 
             // Login Controller
