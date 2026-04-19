@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import {
   Edit2,
   Search,
@@ -17,7 +16,6 @@ import "./assets/styles/MapManagement.css";
  * Trang quản lý bản đồ với toggle status và edit metadata
  */
 const MapManagementPage = () => {
-  const { t } = useTranslation();
   const [maps, setMaps] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -218,9 +216,9 @@ const MapManagementPage = () => {
 
                       {/* Required Level */}
                       <div className="required-level">
-                        <span className="required-level-label">Cấp độ yêu cầu:</span>
+                        <span className="required-level-label">Scene:</span>
                         <span className="required-level-badge">
-                          Level {map.identityConfig?.requiredLevel || 1}
+                          {map.identityConfig?.sceneName || "(chưa cấu hình)"}
                         </span>
                       </div>
 
@@ -228,6 +226,28 @@ const MapManagementPage = () => {
                       <p className="map-description">
                         {map.identityConfig?.shortDescription || "Chưa có mô tả"}
                       </p>
+
+                      <div className="required-level" style={{ marginBottom: "10px" }}>
+                        <span className="required-level-label">Boss:</span>
+                        <span className="required-level-badge">
+                          {map.monsterSystemConfig?.bossConfig?.monsterId || "(none)"}
+                        </span>
+                      </div>
+
+                      <div className="required-level" style={{ marginBottom: "10px" }}>
+                        <span className="required-level-label">Minions:</span>
+                        <span className="required-level-badge">
+                          {map.monsterSystemConfig?.minionConfig?.allowedMonsterIds
+                            ?.length || 0}
+                        </span>
+                      </div>
+
+                      <div className="required-level" style={{ marginBottom: "12px" }}>
+                        <span className="required-level-label">Base Reward:</span>
+                        <span className="required-level-badge">
+                          EXP {map.rewardConfig?.baseExp || 0} / Coin {map.rewardConfig?.baseCoin || 0}
+                        </span>
+                      </div>
 
                       {/* Actions */}
                       <div className="map-actions">

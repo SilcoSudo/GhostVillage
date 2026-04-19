@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import {
   Edit2,
   Trash2,
@@ -8,8 +7,6 @@ import {
   Loader2,
   AlertCircle,
   Scroll,
-  Target,
-  Award,
   ChevronDown,
 } from "lucide-react";
 import questService from "../shared/services/questService";
@@ -20,17 +17,15 @@ import "./assets/styles/QuestManagement.css";
 
 /**
  * Quest Management Page
- * Trang quản lý nhiệm vụ với các chức năng CRUD
+ * Trang quản lý nhiệm vụ theo schema quest của game
  */
 const QuestManagementPage = () => {
-  const { t } = useTranslation();
   const [quests, setQuests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [filterQuestLine, setFilterQuestLine] = useState("all");
-  const [filterDifficulty, setFilterDifficulty] = useState("all");
+  const [filterQuestType, setFilterQuestType] = useState("all");
 
   // Modal states
   const [selectedQuest, setSelectedQuest] = useState(null);
@@ -62,8 +57,7 @@ const QuestManagementPage = () => {
         page: currentPage,
         limit: 20,
         isActive: filterStatus,
-        questLine: filterQuestLine === "all" ? undefined : filterQuestLine,
-        difficulty: filterDifficulty === "all" ? undefined : filterDifficulty,
+        questType: filterQuestType === "all" ? undefined : filterQuestType,
         search: searchQuery || undefined,
       });
 
@@ -93,41 +87,27 @@ const QuestManagementPage = () => {
     }
   };
 
-  // Fetch quests khi component mount hoặc filter thay đổi
   useEffect(() => {
     fetchQuests();
-  }, [currentPage, filterStatus, filterQuestLine, filterDifficulty]);
+  }, [currentPage, filterStatus, filterQuestType]);
 
-  // Fetch stats on mount
   useEffect(() => {
     fetchStats();
   }, []);
 
-  /**
-   * Xử lý search khi nhấn Enter hoặc blur
-   */
   const handleSearch = () => {
     setCurrentPage(1);
     fetchQuests();
   };
 
-  /**
-   * Xử lý toggle status
-   */
   const handleToggleStatus = async (quest) => {
     try {
       const newStatus = !quest.isActive;
-      const response = await questService.toggleQuestStatus(
-        quest._id,
-        newStatus
-      );
+      const response = await questService.toggleQuestStatus(quest._id, newStatus);
 
       if (response.success) {
-        // Cập nhật UI
         setQuests((prev) =>
-          prev.map((q) =>
-            q._id === quest._id ? { ...q, isActive: newStatus } : q
-          )
+          prev.map((q) => (q._id === quest._id ? { ...q, isActive: newStatus } : q)),
         );
         fetchStats();
       }
@@ -137,34 +117,22 @@ const QuestManagementPage = () => {
     }
   };
 
-  /**
-   * Xử lý mở modal delete
-   */
   const handleDelete = (quest) => {
     setSelectedQuest(quest);
     setIsDeleteModalOpen(true);
   };
 
-  /**
-   * Xử lý sau khi delete thành công
-   */
   const handleDeleteSuccess = () => {
     fetchQuests();
     fetchStats();
     setIsDeleteModalOpen(false);
   };
 
-  /**
-   * Xử lý mở modal edit
-   */
   const handleEdit = (quest) => {
     setSelectedQuest(quest);
     setIsEditModalOpen(true);
   };
 
-  /**
-   * Xử lý sau khi edit thành công
-   */
   const handleEditSuccess = () => {
     fetchQuests();
     fetchStats();
@@ -172,25 +140,16 @@ const QuestManagementPage = () => {
     setSelectedQuest(null);
   };
 
-  /**
-   * Xử lý mở modal create
-   */
   const handleCreate = () => {
     setIsCreateModalOpen(true);
   };
 
-  /**
-   * Xử lý sau khi create thành công
-   */
   const handleCreateSuccess = () => {
     fetchQuests();
     fetchStats();
     setIsCreateModalOpen(false);
   };
 
-  /**
-   * Toggle expand quest details
-   */
   const toggleExpand = (questId) => {
     setExpandedQuest(expandedQuest === questId ? null : questId);
   };
@@ -198,16 +157,14 @@ const QuestManagementPage = () => {
   return (
     <div className="quest-management-container">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="quest-management-header">
           <h1>
             <Scroll size={28} />
             Quest Management
           </h1>
-          <p>Quản lý nhiệm vụ, objectives, rewards và quest lines</p>
+          <p>Quản lý nhiệm vụ theo schema runtime của game</p>
         </div>
 
-        {/* Statistics Cards */}
         {stats && (
           <div className="quest-stats-grid">
             <div className="quest-stat-card">
@@ -223,19 +180,15 @@ const QuestManagementPage = () => {
               <div className="quest-stat-value inactive">{stats.inactive}</div>
             </div>
             <div className="quest-stat-card">
-              <div className="quest-stat-label">Quest Lines</div>
-              <div className="quest-stat-value lines">
-                {stats.byQuestLine?.length || 0}
-              </div>
+              <div className="quest-stat-label">Quest Types</div>
+              <div className="quest-stat-value lines">{stats.byQuestType?.length || 0}</div>
             </div>
           </div>
         )}
 
-        {/* Toolbar */}
         <div className="quest-toolbar">
           <div className="quest-toolbar-content">
             <div className="quest-toolbar-row">
-              {/* Search */}
               <div className="search-wrapper">
                 <Search className="search-icon" size={20} />
                 <input
@@ -243,15 +196,13 @@ const QuestManagementPage = () => {
                   placeholder="Tìm kiếm quest..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                   onBlur={handleSearch}
                   className="search-input"
                 />
               </div>
 
-              {/* Filters */}
               <div className="filter-actions-group">
-                {/* Status Filter */}
                 <div className="filter-group">
                   <select
                     value={filterStatus}
@@ -264,44 +215,19 @@ const QuestManagementPage = () => {
                   </select>
                 </div>
 
-                {/* Quest Line Filter */}
                 <div className="filter-group">
                   <select
-                    value={filterQuestLine}
-                    onChange={(e) => setFilterQuestLine(e.target.value)}
+                    value={filterQuestType}
+                    onChange={(e) => setFilterQuestType(e.target.value)}
                     className="filter-select"
                   >
-                    <option value="all">Tất cả loại</option>
-                    <option value="Main Story">Main Story</option>
-                    <option value="Side Quest">Side Quest</option>
-                    <option value="Daily">Daily</option>
-                    <option value="Weekly">Weekly</option>
-                    <option value="Event">Event</option>
-                    <option value="Tutorial">Tutorial</option>
+                    <option value="all">Tất cả loại quest</option>
+                    <option value="DAILY">DAILY</option>
+                    <option value="ACHIEVEMENT">ACHIEVEMENT</option>
                   </select>
                 </div>
 
-                {/* Difficulty Filter */}
-                <div className="filter-group">
-                  <select
-                    value={filterDifficulty}
-                    onChange={(e) => setFilterDifficulty(e.target.value)}
-                    className="filter-select"
-                  >
-                    <option value="all">Tất cả độ khó</option>
-                    <option value="Easy">Easy</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Hard">Hard</option>
-                    <option value="Expert">Expert</option>
-                    <option value="Nightmare">Nightmare</option>
-                  </select>
-                </div>
-
-                {/* Create Button */}
-                <button
-                  onClick={handleCreate}
-                  className="btn-create"
-                >
+                <button onClick={handleCreate} className="btn-create">
                   <Plus size={18} />
                   <span>Thêm Quest</span>
                 </button>
@@ -310,7 +236,6 @@ const QuestManagementPage = () => {
           </div>
         </div>
 
-        {/* Error Message */}
         {error && (
           <div className="quest-error-message">
             <AlertCircle size={20} />
@@ -318,14 +243,12 @@ const QuestManagementPage = () => {
           </div>
         )}
 
-        {/* Loading State */}
         {loading ? (
           <div className="quest-loading-state">
             <Loader2 className="quest-spinner" size={40} />
           </div>
         ) : (
           <>
-            {/* Quest Table */}
             <div className="quest-table-wrapper">
               <div className="overflow-x-auto">
                 <table className="quest-table">
@@ -333,11 +256,11 @@ const QuestManagementPage = () => {
                     <tr>
                       <th style={{ width: "30px" }}></th>
                       <th>Quest ID</th>
-                      <th>Title</th>
+                      <th>Quest Name</th>
                       <th className="center">Type</th>
-                      <th className="center">Difficulty</th>
-                      <th className="center">Level</th>
-                      <th className="center">Objectives</th>
+                      <th className="center">Action</th>
+                      <th className="center">Target</th>
+                      <th className="center">Reward</th>
                       <th className="center">Status</th>
                       <th className="center">Actions</th>
                     </tr>
@@ -362,47 +285,51 @@ const QuestManagementPage = () => {
                                 <ChevronDown
                                   size={18}
                                   style={{
-                                    transform: expandedQuest === quest._id ? "rotate(180deg)" : "rotate(0deg)",
-                                    transition: "transform 0.3s ease"
+                                    transform:
+                                      expandedQuest === quest._id
+                                        ? "rotate(180deg)"
+                                        : "rotate(0deg)",
+                                    transition: "transform 0.3s ease",
                                   }}
                                 />
                               </button>
                             </td>
                             <td>
-                              <div className="quest-id">
-                                {quest.questId}
-                              </div>
+                              <div className="quest-id">{quest.questId}</div>
                             </td>
                             <td>
-                              <div className="quest-title">{quest.title}</div>
-                              <div className="quest-description" style={{ maxWidth: "300px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              <div className="quest-title">{quest.questName}</div>
+                              <div
+                                className="quest-description"
+                                style={{
+                                  maxWidth: "300px",
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                }}
+                              >
                                 {quest.description}
                               </div>
                             </td>
                             <td className="center">
                               <span
-                                className={`quest-badge ${quest.questLine.toLowerCase().replace(' ', '-')}`}
+                                className={`quest-badge ${(quest.questType || "unknown")
+                                  .toLowerCase()
+                                  .replace(" ", "-")}`}
                               >
-                                {quest.questLine}
+                                {quest.questType}
                               </span>
                             </td>
                             <td className="center">
-                              <span
-                                className={`quest-badge ${quest.difficulty.toLowerCase()}`}
-                              >
-                                {quest.difficulty}
+                              <span>{quest.actionType}</span>
+                            </td>
+                            <td className="center">
+                              <span>{quest.targetCount || 0}</span>
+                            </td>
+                            <td className="center">
+                              <span>
+                                Coin: {quest.reward?.coin || 0} | EXP: {quest.reward?.exp || 0}
                               </span>
-                            </td>
-                            <td className="center">
-                              <span>Lv.{quest.levelRequired}</span>
-                            </td>
-                            <td className="center">
-                              <div className="quest-objective-count">
-                                <Target size={14} />
-                                <span>
-                                  {quest.objectives?.length || 0}
-                                </span>
-                              </div>
                             </td>
                             <td className="center">
                               <button
@@ -433,96 +360,33 @@ const QuestManagementPage = () => {
                               </div>
                             </td>
                           </tr>
-                          {/* Expanded Detail Row */}
+
                           {expandedQuest === quest._id && (
                             <tr className="quest-details-row">
                               <td colSpan="9" className="quest-details-content">
                                 <div className="quest-details-grid">
-                                  {/* Objectives */}
                                   <div className="quest-details-section">
-                                    <h4 className="quest-details-title">
-                                      <Target size={16} />
-                                      Objectives
-                                    </h4>
-                                    <ul className="quest-objective-list">
-                                      {quest.objectives?.map((obj, idx) => (
-                                        <li key={idx} className="quest-objective-item">
-                                          <span className="quest-objective-bullet">•</span>
-                                          <span>
-                                            <span className="quest-objective-type">{obj.type}:</span>{" "}
-                                            {obj.description} ({obj.required}x)
-                                          </span>
-                                        </li>
-                                      ))}
-                                    </ul>
+                                    <h4 className="quest-details-title">Description</h4>
+                                    <p>{quest.description || "(Không có mô tả)"}</p>
                                   </div>
-
-                                  {/* Rewards */}
                                   <div className="quest-details-section">
-                                    <h4 className="quest-details-title">
-                                      <Award size={16} />
-                                      Rewards
-                                    </h4>
-                                    <div className="quest-reward-grid">
-                                      {quest.rewards?.exp > 0 && (
-                                        <div className="quest-reward-item">
-                                          <span className="quest-reward-label">EXP:</span>
-                                          <span className="quest-reward-value exp">{quest.rewards.exp}</span>
-                                        </div>
-                                      )}
-                                      {quest.rewards?.coin > 0 && (
-                                        <div className="quest-reward-item">
-                                          <span className="quest-reward-label">Coin:</span>
-                                          <span className="quest-reward-value coin">{quest.rewards.coin}</span>
-                                        </div>
-                                      )}
-                                      {quest.rewards?.items?.length > 0 && (
-                                        <div className="quest-reward-item">
-                                          <span className="quest-reward-label">Items:</span>
-                                          <span className="quest-reward-value items">
-                                            {quest.rewards.items.map(item => `${item.itemId} (x${item.quantity})`).join(", ")}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {quest.rewards?.titles?.length > 0 && (
-                                        <div className="quest-reward-item">
-                                          <span className="quest-reward-label">Titles:</span>
-                                          <span className="quest-reward-value titles">{quest.rewards.titles.join(", ")}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Additional Info */}
-                                <div className="quest-details-section" style={{ marginTop: "16px" }}>
-                                  <div className="quest-additional-info">
-                                    {quest.npcGiver && (
+                                    <h4 className="quest-details-title">Reward Details</h4>
+                                    <div className="quest-additional-info">
                                       <div className="quest-info-item">
-                                        <span className="quest-info-label">NPC:</span>
-                                        <span className="quest-info-value">{quest.npcGiver}</span>
+                                        <span className="quest-info-label">Coin:</span>
+                                        <span className="quest-info-value">{quest.reward?.coin || 0}</span>
                                       </div>
-                                    )}
-                                    {quest.location && (
                                       <div className="quest-info-item">
-                                        <span className="quest-info-label">Location:</span>
-                                        <span className="quest-info-value">{quest.location}</span>
+                                        <span className="quest-info-label">EXP:</span>
+                                        <span className="quest-info-value">{quest.reward?.exp || 0}</span>
                                       </div>
-                                    )}
-                                    {quest.isRepeatable && (
                                       <div className="quest-info-item">
-                                        <span className="quest-info-label">Repeatable:</span>
-                                        <span className="quest-info-value" style={{ color: "#4CAF50" }}>
-                                          Yes {quest.cooldown > 0 && `(${quest.cooldown}s CD)`}
+                                        <span className="quest-info-label">Title ID:</span>
+                                        <span className="quest-info-value">
+                                          {quest.reward?.titleId || "(none)"}
                                         </span>
                                       </div>
-                                    )}
-                                    {quest.timeLimit && (
-                                      <div className="quest-info-item">
-                                        <span className="quest-info-label">Time Limit:</span>
-                                        <span className="quest-info-value">{quest.timeLimit}s</span>
-                                      </div>
-                                    )}
+                                    </div>
                                   </div>
                                 </div>
                               </td>
@@ -536,7 +400,6 @@ const QuestManagementPage = () => {
               </div>
             </div>
 
-            {/* Pagination */}
             {pagination.totalPages > 1 && (
               <div className="quest-pagination">
                 <button
@@ -551,9 +414,7 @@ const QuestManagementPage = () => {
                 </span>
                 <button
                   onClick={() =>
-                    setCurrentPage((prev) =>
-                      Math.min(pagination.totalPages, prev + 1)
-                    )
+                    setCurrentPage((prev) => Math.min(pagination.totalPages, prev + 1))
                   }
                   disabled={currentPage === pagination.totalPages}
                   className="quest-pagination-btn"
@@ -566,11 +427,10 @@ const QuestManagementPage = () => {
         )}
       </div>
 
-      {/* Delete Modal */}
       {isDeleteModalOpen && (
         <DeleteConfirmModal
           title="Xác nhận xóa quest"
-          message={`Bạn có chắc chắn muốn xóa quest "${selectedQuest?.title}" (${selectedQuest?.questId})? Hành động này không thể hoàn tác.`}
+          message={`Bạn có chắc chắn muốn xóa quest "${selectedQuest?.questName}" (${selectedQuest?.questId})? Hành động này không thể hoàn tác.`}
           onConfirm={async () => {
             try {
               await questService.deleteQuest(selectedQuest._id);
@@ -583,7 +443,6 @@ const QuestManagementPage = () => {
         />
       )}
 
-      {/* Edit Modal */}
       {isEditModalOpen && selectedQuest && (
         <EditQuestModal
           quest={selectedQuest}
@@ -595,7 +454,6 @@ const QuestManagementPage = () => {
         />
       )}
 
-      {/* Create Modal */}
       {isCreateModalOpen && (
         <CreateQuestModal
           onClose={() => setIsCreateModalOpen(false)}

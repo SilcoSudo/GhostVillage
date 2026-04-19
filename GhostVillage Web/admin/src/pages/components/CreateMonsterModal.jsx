@@ -27,12 +27,8 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
       detectionRange: 15,
       detectionAngle: 120,
     },
-    specialSkillConfig: {
-      skillName: "",
-      pullMaxForce: 12,
-      pullCooldown: 32,
-    },
   });
+  const [specialSkillJson, setSpecialSkillJson] = useState("{}");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -87,7 +83,23 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
       setLoading(true);
       setError(null);
 
-      const response = await monsterService.createMonster(formData);
+      let parsedSpecialSkillConfig = {};
+      if (specialSkillJson.trim()) {
+        try {
+          parsedSpecialSkillConfig = JSON.parse(specialSkillJson);
+        } catch {
+          setError("Special Skill Config phải là JSON hợp lệ");
+          setLoading(false);
+          return;
+        }
+      }
+
+      const payload = {
+        ...formData,
+        specialSkillConfig: parsedSpecialSkillConfig,
+      };
+
+      const response = await monsterService.createMonster(payload);
 
       if (response.success) {
         onSuccess();
@@ -117,6 +129,8 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
           {error && (
             <div className="modal-error">{error}</div>
           )}
+
+          <h3 className="modal-section-title">1) Thông tin cơ bản</h3>
 
           <div className="form-group">
             <label className="form-label">
@@ -178,10 +192,7 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
             </div>
           </div>
 
-          {/* Movement Config */}
-          <div className="form-group">
-            <label className="form-label">Movement Config</label>
-          </div>
+          <h3 className="modal-section-title">2) Movement Config</h3>
           <div className="form-group">
             <div className="stats-grid">
               <div className="form-group">
@@ -220,9 +231,7 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Combat Config</label>
-          </div>
+          <h3 className="modal-section-title">3) Combat Config</h3>
           <div className="stats-grid">
             <div className="form-group">
               <label className="form-label">Chase Range</label>
@@ -261,9 +270,7 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Detection Config</label>
-          </div>
+          <h3 className="modal-section-title">4) Detection Config</h3>
           <div className="stats-grid">
             <div className="form-group">
               <label className="form-label">Detection Range</label>
@@ -289,43 +296,17 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
             </div>
           </div>
 
+          <h3 className="modal-section-title">5) Special Skill Config</h3>
           <div className="form-group">
-            <label className="form-label">Special Skill Config</label>
-          </div>
-          <div className="stats-grid">
-            <div className="form-group">
-              <label className="form-label">Skill Name</label>
-              <input
-                type="text"
-                name="specialSkillConfig.skillName"
-                value={formData.specialSkillConfig.skillName}
-                onChange={handleChange}
-                className="form-input"
-                placeholder="Pull"
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Pull Max Force</label>
-              <input
-                type="number"
-                name="specialSkillConfig.pullMaxForce"
-                value={formData.specialSkillConfig.pullMaxForce}
-                onChange={handleChange}
-                step="0.1"
-                className="form-input"
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Pull Cooldown</label>
-              <input
-                type="number"
-                name="specialSkillConfig.pullCooldown"
-                value={formData.specialSkillConfig.pullCooldown}
-                onChange={handleChange}
-                step="0.1"
-                className="form-input"
-              />
-            </div>
+            <label className="form-label">Special Skill JSON</label>
+            <textarea
+              value={specialSkillJson}
+              onChange={(e) => setSpecialSkillJson(e.target.value)}
+              className="form-textarea"
+              rows={6}
+              placeholder='{}'
+              style={{ fontFamily: "monospace" }}
+            />
           </div>
 
           {/* Actions */}

@@ -354,6 +354,18 @@
   border-color: #ff8a65;
 }
 
+.consumable-badge.consumable {
+  background: rgba(33, 150, 243, 0.15);
+  color: #42a5f5;
+  border-color: #64b5f6;
+}
+
+.consumable-badge.equipment {
+  background: rgba(76, 175, 80, 0.15);
+  color: #66bb6a;
+  border-color: #81c784;
+}
+
 /* Rarity Badges */
 .consumable-badge.common {
   background: rgba(158, 158, 158, 0.15);

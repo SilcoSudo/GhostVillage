@@ -39,6 +39,16 @@ const MonsterManagementPage = () => {
     totalPages: 1,
   });
 
+  const formatDateTime = (value) => {
+    if (!value) return "-";
+    const rawValue = typeof value === "object" && value.$date ? value.$date : value;
+    const parsedDate = new Date(rawValue);
+    if (Number.isNaN(parsedDate.getTime())) return "-";
+    return parsedDate.toLocaleString("vi-VN", {
+      hour12: false,
+    });
+  };
+
   /**
    * Fetch monsters từ API
    */
@@ -211,8 +221,11 @@ const MonsterManagementPage = () => {
                       <th>Tên quái</th>
                       <th className="center">Loại</th>
                       <th>Prefab</th>
-                      <th className="center">Move Speed</th>
-                      <th className="center">Attack CD</th>
+                      <th className="center">Movement</th>
+                      <th className="center">Combat</th>
+                      <th className="center">Detection</th>
+                      <th>Created At</th>
+                      <th>Updated At</th>
                       <th className="center">Trạng thái</th>
                       <th className="center">Thao tác</th>
                     </tr>
@@ -220,7 +233,7 @@ const MonsterManagementPage = () => {
                   <tbody>
                     {filteredMonsters.length === 0 ? (
                       <tr>
-                        <td colSpan="8" className="empty-state">
+                        <td colSpan="11" className="empty-state">
                           <p>Không tìm thấy quái vật nào</p>
                         </td>
                       </tr>
@@ -240,10 +253,25 @@ const MonsterManagementPage = () => {
                             <span className="stat-def">{monster.prefabName}</span>
                           </td>
                           <td className="center">
-                            <span className="stat-spawn">{monster.movementConfig?.moveSpeed ?? "-"}</span>
+                            <span className="stat-spawn">
+                              SPD {monster.movementConfig?.moveSpeed ?? "-"} / STOP {monster.movementConfig?.stoppingDistance ?? "-"} / PATROL {monster.movementConfig?.patrolRadius ?? "-"}
+                            </span>
                           </td>
                           <td className="center">
-                            <span className="stat-spawn">{monster.combatConfig?.attackCooldown ?? "-"}</span>
+                            <span className="stat-spawn">
+                              CHASE {monster.combatConfig?.chaseRange ?? "-"} / ATK {monster.combatConfig?.attackRange ?? "-"} / CD {monster.combatConfig?.attackCooldown ?? "-"}
+                            </span>
+                          </td>
+                          <td className="center">
+                            <span className="stat-spawn">
+                              RNG {monster.detectionConfig?.detectionRange ?? "-"} / ANG {monster.detectionConfig?.detectionAngle ?? "-"}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="stat-spawn">{formatDateTime(monster.createdAt)}</span>
+                          </td>
+                          <td>
+                            <span className="stat-spawn">{formatDateTime(monster.updatedAt)}</span>
                           </td>
                           <td className="center">
                             <button

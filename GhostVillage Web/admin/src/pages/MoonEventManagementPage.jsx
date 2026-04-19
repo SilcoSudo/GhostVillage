@@ -1,40 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit2, Trash2, Moon, Zap } from 'lucide-react';
-import moonEventService from '../shared/services/moonEventService';
-import CreateMoonEventModal from './components/CreateMoonEventModal';
-import EditMoonEventModal from './components/EditMoonEventModal';
-import DeleteConfirmModal from './components/DeleteConfirmModal';
-import './assets/styles/MoonEventManagement.css';
+import React, { useState, useEffect } from "react";
+import { Plus, Search, Edit2, Trash2, Moon, Zap } from "lucide-react";
+import moonEventService from "../shared/services/moonEventService";
+import CreateMoonEventModal from "./components/CreateMoonEventModal";
+import EditMoonEventModal from "./components/EditMoonEventModal";
+import DeleteConfirmModal from "./components/DeleteConfirmModal";
+import "./assets/styles/MoonEventManagement.css";
 
 const MoonEventManagementPage = () => {
   const [moonEvents, setMoonEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filters
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
 
-  // Fetch moon events
   const fetchMoonEvents = async () => {
     try {
       setLoading(true);
-      const data = await moonEventService.getAllMoonEvents({
-        category: categoryFilter,
-        status: statusFilter,
+      const response = await moonEventService.getAllMoonEvents({
+        isActive: statusFilter,
         search: searchQuery,
       });
-      setMoonEvents(data.data || []);
+      setMoonEvents(response.data || []);
       setError(null);
     } catch (err) {
-      setError('Failed to fetch moon events');
+      setError("Failed to fetch moon events");
       console.error(err);
     } finally {
       setLoading(false);
@@ -43,72 +38,56 @@ const MoonEventManagementPage = () => {
 
   useEffect(() => {
     fetchMoonEvents();
-  }, [categoryFilter, statusFilter, searchQuery]);
+  }, [statusFilter, searchQuery]);
 
-  // Handle toggle active
-  const handleToggleActive = async (eventId) => {
+  const handleToggleActive = async (event) => {
     try {
-      await moonEventService.toggleMoonEventActive(eventId);
+      await moonEventService.toggleMoonEventActive(event._id, !event.isActive);
       fetchMoonEvents();
     } catch (err) {
-      console.error('Failed to toggle event active status:', err);
-      alert('Failed to toggle event status');
+      console.error("Failed to toggle event active status:", err);
+      alert("Failed to toggle event status");
     }
   };
 
-  // Handle delete
   const handleDelete = async () => {
     if (!selectedEvent) return;
-    
+
     try {
       await moonEventService.deleteMoonEvent(selectedEvent._id);
       setShowDeleteModal(false);
       setSelectedEvent(null);
       fetchMoonEvents();
     } catch (err) {
-      console.error('Failed to delete moon event:', err);
-      alert('Failed to delete moon event');
+      console.error("Failed to delete moon event:", err);
+      alert("Failed to delete moon event");
     }
   };
 
-  // Handle edit
   const handleEdit = (event) => {
     setSelectedEvent(event);
     setShowEditModal(true);
   };
 
-  // Handle delete click
   const handleDeleteClick = (event) => {
     setSelectedEvent(event);
     setShowDeleteModal(true);
   };
 
-  // Get category badge class
-  const getCategoryBadgeClass = (category) => {
-    switch (category) {
-      case 'MOON_PHASE':
-        return 'category-badge-moon';
-      case 'WEATHER':
-        return 'category-badge-weather';
-      case 'SPECIAL':
-        return 'category-badge-special';
-      default:
-        return 'category-badge-other';
-    }
+  const numberOrDash = (value) => {
+    if (value === undefined || value === null) return "-";
+    return Number(value).toFixed(2);
   };
 
-  // Get category icon
-  const getCategoryIcon = (category) => {
-    switch (category) {
-      case 'MOON_PHASE':
-        return '🌙';
-      case 'WEATHER':
-        return '⛈️';
-      case 'SPECIAL':
-        return '✨';
-      default:
-        return '📌';
-    }
+  const isImageSource = (value) => {
+    if (!value || typeof value !== "string") return false;
+    return (
+      value.startsWith("data:image/") ||
+      value.startsWith("http://") ||
+      value.startsWith("https://") ||
+      value.startsWith("/") ||
+      value.startsWith("blob:")
+    );
   };
 
   return (
@@ -118,32 +97,13 @@ const MoonEventManagementPage = () => {
           <Moon className="header-icon" size={32} />
           <h1>MOON EVENT MANAGEMENT</h1>
         </div>
-        <button
-          className="create-button"
-          onClick={() => setShowCreateModal(true)}
-        >
+        <button className="create-button" onClick={() => setShowCreateModal(true)}>
           <Plus size={20} />
           Create Event
         </button>
       </div>
 
-      {/* Filters */}
       <div className="filters-section">
-        <div className="filter-group">
-          <label>Category:</label>
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">All Categories</option>
-            <option value="MOON_PHASE">Moon Phase</option>
-            <option value="WEATHER">Weather</option>
-            <option value="SPECIAL">Special</option>
-            <option value="OTHER">Other</option>
-          </select>
-        </div>
-
         <div className="filter-group">
           <label>Status:</label>
           <select
@@ -152,8 +112,8 @@ const MoonEventManagementPage = () => {
             className="filter-select"
           >
             <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
           </select>
         </div>
 
@@ -169,7 +129,6 @@ const MoonEventManagementPage = () => {
         </div>
       </div>
 
-      {/* Content */}
       {loading ? (
         <div className="loading">Loading moon events...</div>
       ) : error ? (
@@ -178,10 +137,7 @@ const MoonEventManagementPage = () => {
         <div className="empty-state">
           <Moon size={64} />
           <p>No moon events found</p>
-          <button
-            className="create-button"
-            onClick={() => setShowCreateModal(true)}
-          >
+          <button className="create-button" onClick={() => setShowCreateModal(true)}>
             <Plus size={20} />
             Create First Event
           </button>
@@ -192,10 +148,11 @@ const MoonEventManagementPage = () => {
             <thead>
               <tr>
                 <th>Event ID</th>
-                <th>Display Name</th>
-                <th>Category</th>
-                <th>Effect</th>
-                <th>Multipliers</th>
+                <th>Event Name</th>
+                <th>Weight</th>
+                <th>Environment</th>
+                <th>Monster Buff</th>
+                <th>Reward Multiplier</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -204,47 +161,59 @@ const MoonEventManagementPage = () => {
               {moonEvents.map((event) => (
                 <tr key={event._id}>
                   <td className="event-id-cell">
-                    <span className="event-icon">{event.uiIcon || '🌙'}</span>
+                    {isImageSource(event.uiIcon) ? (
+                      <img src={event.uiIcon} alt="moon icon" className="event-icon-image" />
+                    ) : (
+                      <span className="event-icon">🌙</span>
+                    )}
                     <code>{event.eventId}</code>
                   </td>
                   <td className="event-name-cell">
-                    <strong>{event.displayName}</strong>
+                    <strong>{event.eventName}</strong>
+                    <div className="effect-text">{event.description || "-"}</div>
                   </td>
-                  <td>
-                    <span className={`category-badge ${getCategoryBadgeClass(event.category)}`}>
-                      {getCategoryIcon(event.category)} {event.category.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="effect-cell">
-                    <span className="effect-text">{event.effectDescription || '-'}</span>
+                  <td>{event.weight ?? 10}</td>
+                  <td className="multipliers-cell">
+                    <div className="multipliers">
+                      <span title="Global Light Intensity">
+                        Light x{numberOrDash(event.environmentModifiers?.globalLightIntensity)}
+                      </span>
+                      <span title="Fog Density">
+                        Fog x{numberOrDash(event.environmentModifiers?.fogDensity)}
+                      </span>
+                    </div>
                   </td>
                   <td className="multipliers-cell">
                     <div className="multipliers">
-                      <span className="multiplier-coin" title="Coin Multiplier">
-                        💰 x{event.coinMultiplier}
+                      <span>Speed x{numberOrDash(event.monsterBuffMultipliers?.speedMultiplier)}</span>
+                      <span>Detect x{numberOrDash(event.monsterBuffMultipliers?.detectionRangeMultiplier)}</span>
+                      <span>Chase x{numberOrDash(event.monsterBuffMultipliers?.chaseRangeMultiplier)}</span>
+                      <span>CD x{numberOrDash(event.monsterBuffMultipliers?.cooldownMultiplier)}</span>
+                    </div>
+                  </td>
+                  <td className="multipliers-cell">
+                    <div className="multipliers">
+                      <span className="multiplier-coin">
+                        Coin x{numberOrDash(event.rewardMultipliers?.coinMultiplier)}
                       </span>
-                      <span className="multiplier-exp" title="EXP Multiplier">
-                        ⭐ x{event.expMultiplier}
+                      <span className="multiplier-exp">
+                        EXP x{numberOrDash(event.rewardMultipliers?.expMultiplier)}
                       </span>
                     </div>
                   </td>
                   <td>
                     <button
-                      className={`toggle-btn ${event.isActive ? 'active' : 'inactive'}`}
-                      onClick={() => handleToggleActive(event._id)}
-                      title={event.isActive ? 'Click to deactivate' : 'Click to activate'}
+                      className={`toggle-btn ${event.isActive ? "active" : "inactive"}`}
+                      onClick={() => handleToggleActive(event)}
+                      title={event.isActive ? "Click to deactivate" : "Click to activate"}
                     >
                       <Zap size={16} />
-                      {event.isActive ? 'ACTIVE' : 'INACTIVE'}
+                      {event.isActive ? "ACTIVE" : "INACTIVE"}
                     </button>
                   </td>
                   <td>
                     <div className="action-buttons">
-                      <button
-                        className="edit-btn"
-                        onClick={() => handleEdit(event)}
-                        title="Edit Event"
-                      >
+                      <button className="edit-btn" onClick={() => handleEdit(event)} title="Edit Event">
                         <Edit2 size={16} />
                       </button>
                       <button
@@ -263,7 +232,6 @@ const MoonEventManagementPage = () => {
         </div>
       )}
 
-      {/* Modals */}
       {showCreateModal && (
         <CreateMoonEventModal
           onClose={() => setShowCreateModal(false)}
@@ -285,9 +253,9 @@ const MoonEventManagementPage = () => {
       {showDeleteModal && selectedEvent && (
         <DeleteConfirmModal
           title="Delete Moon Event"
-          message={`Are you sure you want to delete "${selectedEvent.displayName}" (${selectedEvent.eventId})? This action cannot be undone.`}
+          message={`Are you sure you want to delete "${selectedEvent.eventName}" (${selectedEvent.eventId})? This action cannot be undone.`}
           onConfirm={handleDelete}
-          onCancel={() => {
+          onClose={() => {
             setShowDeleteModal(false);
             setSelectedEvent(null);
           }}

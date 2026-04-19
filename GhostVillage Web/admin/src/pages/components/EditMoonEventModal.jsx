@@ -1,42 +1,66 @@
-import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import moonEventService from '../../shared/services/moonEventService';
-import '../assets/styles/Modal.css';
+import React, { useState, useEffect } from "react";
+import { X } from "lucide-react";
+import moonEventService from "../../shared/services/moonEventService";
+import "../assets/styles/Modal.css";
 
 const EditMoonEventModal = ({ event, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
-    eventId: '',
-    displayName: '',
-    description: '',
-    category: 'MOON_PHASE',
-    uiIcon: '',
-    effectDescription: '',
-    coinMultiplier: 1,
-    expMultiplier: 1,
+    eventId: "",
+    eventName: "",
+    description: "",
+    uiIcon: "",
     isActive: true,
-    scheduleType: 'ALWAYS',
-    activeFrom: '',
-    activeTo: '',
+    weight: 10,
+    environmentModifiers: {
+      globalLightIntensity: 1,
+      fogDensity: 1,
+    },
+    monsterBuffMultipliers: {
+      speedMultiplier: 1,
+      detectionRangeMultiplier: 1,
+      chaseRangeMultiplier: 1,
+      cooldownMultiplier: 1,
+    },
+    rewardMultipliers: {
+      expMultiplier: 1,
+      coinMultiplier: 1,
+    },
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const fileToDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("Không thể đọc file ảnh"));
+      reader.readAsDataURL(file);
+    });
+
   useEffect(() => {
     if (event) {
       setFormData({
-        eventId: event.eventId || '',
-        displayName: event.displayName || '',
-        description: event.description || '',
-        category: event.category || 'MOON_PHASE',
-        uiIcon: event.uiIcon || '',
-        effectDescription: event.effectDescription || '',
-        coinMultiplier: event.coinMultiplier || 1,
-        expMultiplier: event.expMultiplier || 1,
+        eventId: event.eventId || "",
+        eventName: event.eventName || "",
+        description: event.description || "",
+        uiIcon: event.uiIcon || "",
         isActive: event.isActive ?? true,
-        scheduleType: event.scheduleType || 'ALWAYS',
-        activeFrom: event.activeFrom ? new Date(event.activeFrom).toISOString().slice(0, 16) : '',
-        activeTo: event.activeTo ? new Date(event.activeTo).toISOString().slice(0, 16) : '',
+        weight: event.weight ?? 10,
+        environmentModifiers: {
+          globalLightIntensity: event.environmentModifiers?.globalLightIntensity ?? 1,
+          fogDensity: event.environmentModifiers?.fogDensity ?? 1,
+        },
+        monsterBuffMultipliers: {
+          speedMultiplier: event.monsterBuffMultipliers?.speedMultiplier ?? 1,
+          detectionRangeMultiplier: event.monsterBuffMultipliers?.detectionRangeMultiplier ?? 1,
+          chaseRangeMultiplier: event.monsterBuffMultipliers?.chaseRangeMultiplier ?? 1,
+          cooldownMultiplier: event.monsterBuffMultipliers?.cooldownMultiplier ?? 1,
+        },
+        rewardMultipliers: {
+          expMultiplier: event.rewardMultipliers?.expMultiplier ?? 1,
+          coinMultiplier: event.rewardMultipliers?.coinMultiplier ?? 1,
+        },
       });
     }
   }, [event]);
@@ -45,8 +69,39 @@ const EditMoonEventModal = ({ event, onClose, onSuccess }) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === "checkbox" ? checked : type === "number" ? Number(value) : value,
     }));
+  };
+
+  const handleNestedChange = (group, field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [group]: {
+        ...prev[group],
+        [field]: Number(value),
+      },
+    }));
+  };
+
+  const handleIconFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Vui lòng chọn file ảnh hợp lệ");
+      return;
+    }
+
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      setFormData((prev) => ({
+        ...prev,
+        uiIcon: dataUrl,
+      }));
+      setError(null);
+    } catch (err) {
+      setError(err.message || "Không thể đọc file ảnh");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -55,21 +110,23 @@ const EditMoonEventModal = ({ event, onClose, onSuccess }) => {
     setError(null);
 
     try {
-      // Convert multipliers to numbers
-      const dataToSubmit = {
-        ...formData,
-        coinMultiplier: parseFloat(formData.coinMultiplier),
-        expMultiplier: parseFloat(formData.expMultiplier),
-        activeFrom: formData.activeFrom || null,
-        activeTo: formData.activeTo || null,
+      const payload = {
+        eventName: formData.eventName.trim(),
+        description: formData.description.trim(),
+        uiIcon: formData.uiIcon || "",
+        isActive: formData.isActive,
+        weight: Number(formData.weight),
+        environmentModifiers: formData.environmentModifiers,
+        monsterBuffMultipliers: formData.monsterBuffMultipliers,
+        rewardMultipliers: formData.rewardMultipliers,
       };
 
-      await moonEventService.updateMoonEvent(event._id, dataToSubmit);
+      await moonEventService.updateMoonEvent(event._id, payload);
       onSuccess();
       onClose();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update moon event');
-      console.error('Error updating moon event:', err);
+      setError(err.response?.data?.message || "Failed to update moon event");
+      console.error("Error updating moon event:", err);
     } finally {
       setLoading(false);
     }
@@ -79,7 +136,7 @@ const EditMoonEventModal = ({ event, onClose, onSuccess }) => {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content moon-event-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>✏️ Edit Moon Event</h2>
+          <h2>Edit Moon Event</h2>
           <button className="modal-close" onClick={onClose}>
             <X size={24} />
           </button>
@@ -89,117 +146,55 @@ const EditMoonEventModal = ({ event, onClose, onSuccess }) => {
           {error && <div className="error-message">{error}</div>}
 
           <div className="form-grid">
-            {/* Event ID */}
             <div className="form-group">
-              <label htmlFor="eventId">Event ID *</label>
-              <input
-                type="text"
-                id="eventId"
-                name="eventId"
-                value={formData.eventId}
-                onChange={handleChange}
-                placeholder="e.g., EVENT_MOON_FULL"
-                required
-                className="form-input"
-              />
-              <small>Uppercase, underscore separated (e.g., EVENT_MOON_FULL)</small>
+              <label htmlFor="eventId">Event ID</label>
+              <input type="text" id="eventId" name="eventId" value={formData.eventId} disabled className="form-input" />
             </div>
 
-            {/* Display Name */}
             <div className="form-group">
-              <label htmlFor="displayName">Display Name *</label>
+              <label htmlFor="eventName">Event Name *</label>
               <input
                 type="text"
-                id="displayName"
-                name="displayName"
-                value={formData.displayName}
+                id="eventName"
+                name="eventName"
+                value={formData.eventName}
                 onChange={handleChange}
-                placeholder="e.g., Trăng Tròn"
                 required
                 className="form-input"
               />
             </div>
 
-            {/* Category */}
-            <div className="form-group">
-              <label htmlFor="category">Category *</label>
-              <select
-                id="category"
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                className="form-select"
-              >
-                <option value="MOON_PHASE">Moon Phase</option>
-                <option value="WEATHER">Weather</option>
-                <option value="SPECIAL">Special</option>
-                <option value="OTHER">Other</option>
-              </select>
-            </div>
-
-            {/* UI Icon */}
             <div className="form-group">
               <label htmlFor="uiIcon">UI Icon</label>
               <input
-                type="text"
+                type="file"
                 id="uiIcon"
                 name="uiIcon"
-                value={formData.uiIcon}
-                onChange={handleChange}
-                placeholder="e.g., moon_full or 🌕"
+                accept="image/*"
+                onChange={handleIconFileChange}
                 className="form-input"
               />
+              {formData.uiIcon ? (
+                <div className="image-preview">
+                  <img src={formData.uiIcon} alt="Moon event icon preview" />
+                </div>
+              ) : null}
             </div>
 
-            {/* Coin Multiplier */}
             <div className="form-group">
-              <label htmlFor="coinMultiplier">Coin Multiplier *</label>
+              <label htmlFor="weight">Weight *</label>
               <input
                 type="number"
-                id="coinMultiplier"
-                name="coinMultiplier"
-                value={formData.coinMultiplier}
+                id="weight"
+                name="weight"
+                value={formData.weight}
                 onChange={handleChange}
-                min="0"
-                step="0.1"
+                min="1"
                 required
                 className="form-input"
               />
             </div>
 
-            {/* EXP Multiplier */}
-            <div className="form-group">
-              <label htmlFor="expMultiplier">EXP Multiplier *</label>
-              <input
-                type="number"
-                id="expMultiplier"
-                name="expMultiplier"
-                value={formData.expMultiplier}
-                onChange={handleChange}
-                min="0"
-                step="0.1"
-                required
-                className="form-input"
-              />
-            </div>
-
-            {/* Schedule Type */}
-            <div className="form-group">
-              <label htmlFor="scheduleType">Schedule Type *</label>
-              <select
-                id="scheduleType"
-                name="scheduleType"
-                value={formData.scheduleType}
-                onChange={handleChange}
-                className="form-select"
-              >
-                <option value="ALWAYS">Always Available</option>
-                <option value="SCHEDULED">Scheduled</option>
-                <option value="MANUAL">Manual Control</option>
-              </select>
-            </div>
-
-            {/* Active Status */}
             <div className="form-group checkbox-group">
               <label className="checkbox-label">
                 <input
@@ -214,7 +209,6 @@ const EditMoonEventModal = ({ event, onClose, onSuccess }) => {
             </div>
           </div>
 
-          {/* Description */}
           <div className="form-group">
             <label htmlFor="description">Description</label>
             <textarea
@@ -222,70 +216,119 @@ const EditMoonEventModal = ({ event, onClose, onSuccess }) => {
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Detailed description of the moon event..."
-              rows="3"
+              rows="2"
               className="form-textarea"
             />
           </div>
 
-          {/* Effect Description */}
-          <div className="form-group">
-            <label htmlFor="effectDescription">Effect Description</label>
-            <input
-              type="text"
-              id="effectDescription"
-              name="effectDescription"
-              value={formData.effectDescription}
-              onChange={handleChange}
-              placeholder="e.g., Sáng, quái nhìn xa hơn"
-              className="form-input"
-            />
-            <small>Short description of gameplay effects</small>
+          <h3>Environment Modifiers</h3>
+          <div className="form-grid">
+            <div className="form-group">
+              <label>Global Light Intensity</label>
+              <input
+                type="number"
+                value={formData.environmentModifiers.globalLightIntensity}
+                onChange={(e) =>
+                  handleNestedChange("environmentModifiers", "globalLightIntensity", e.target.value)
+                }
+                step="0.1"
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label>Fog Density</label>
+              <input
+                type="number"
+                value={formData.environmentModifiers.fogDensity}
+                onChange={(e) => handleNestedChange("environmentModifiers", "fogDensity", e.target.value)}
+                step="0.1"
+                className="form-input"
+              />
+            </div>
           </div>
 
-          {/* Scheduled Date Range (if schedule type is SCHEDULED) */}
-          {formData.scheduleType === 'SCHEDULED' && (
-            <div className="form-grid">
-              <div className="form-group">
-                <label htmlFor="activeFrom">Active From</label>
-                <input
-                  type="datetime-local"
-                  id="activeFrom"
-                  name="activeFrom"
-                  value={formData.activeFrom}
-                  onChange={handleChange}
-                  className="form-input"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="activeTo">Active To</label>
-                <input
-                  type="datetime-local"
-                  id="activeTo"
-                  name="activeTo"
-                  value={formData.activeTo}
-                  onChange={handleChange}
-                  className="form-input"
-                />
-              </div>
+          <h3>Monster Buff Multipliers</h3>
+          <div className="form-grid">
+            <div className="form-group">
+              <label>Speed</label>
+              <input
+                type="number"
+                value={formData.monsterBuffMultipliers.speedMultiplier}
+                onChange={(e) =>
+                  handleNestedChange("monsterBuffMultipliers", "speedMultiplier", e.target.value)
+                }
+                step="0.1"
+                className="form-input"
+              />
             </div>
-          )}
+            <div className="form-group">
+              <label>Detection Range</label>
+              <input
+                type="number"
+                value={formData.monsterBuffMultipliers.detectionRangeMultiplier}
+                onChange={(e) =>
+                  handleNestedChange("monsterBuffMultipliers", "detectionRangeMultiplier", e.target.value)
+                }
+                step="0.1"
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label>Chase Range</label>
+              <input
+                type="number"
+                value={formData.monsterBuffMultipliers.chaseRangeMultiplier}
+                onChange={(e) =>
+                  handleNestedChange("monsterBuffMultipliers", "chaseRangeMultiplier", e.target.value)
+                }
+                step="0.1"
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label>Cooldown</label>
+              <input
+                type="number"
+                value={formData.monsterBuffMultipliers.cooldownMultiplier}
+                onChange={(e) =>
+                  handleNestedChange("monsterBuffMultipliers", "cooldownMultiplier", e.target.value)
+                }
+                step="0.1"
+                className="form-input"
+              />
+            </div>
+          </div>
+
+          <h3>Reward Multipliers</h3>
+          <div className="form-grid">
+            <div className="form-group">
+              <label>EXP</label>
+              <input
+                type="number"
+                value={formData.rewardMultipliers.expMultiplier}
+                onChange={(e) => handleNestedChange("rewardMultipliers", "expMultiplier", e.target.value)}
+                step="0.1"
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label>Coin</label>
+              <input
+                type="number"
+                value={formData.rewardMultipliers.coinMultiplier}
+                onChange={(e) => handleNestedChange("rewardMultipliers", "coinMultiplier", e.target.value)}
+                step="0.1"
+                className="form-input"
+              />
+            </div>
+          </div>
 
           <div className="modal-actions">
-            <button
-              type="button"
-              onClick={onClose}
-              className="cancel-button"
-              disabled={loading}
-            >
+            <button type="button" onClick={onClose} className="cancel-button" disabled={loading}>
               Cancel
             </button>
-            <button
-              type="submit"
-              className="submit-button"
-              disabled={loading}
-            >
-              {loading ? 'Updating...' : 'Update Event'}
+            <button type="submit" className="submit-button" disabled={loading}>
+              {loading ? "Updating..." : "Update Event"}
             </button>
           </div>
         </form>

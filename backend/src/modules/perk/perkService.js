@@ -7,7 +7,13 @@ export const PerkService = {
 
     const filter = {};
     if (isActive !== "all") filter.isActive = isActive === "true";
-    if (search) filter.perkName = { $regex: search, $options: "i" };
+    if (search) {
+      filter.$or = [
+        { perkId: { $regex: search, $options: "i" } },
+        { perkName: { $regex: search, $options: "i" } },
+        { prefabId: { $regex: search, $options: "i" } },
+      ];
+    }
 
     const perks = await Perk.find(filter)
       .select("-__v")

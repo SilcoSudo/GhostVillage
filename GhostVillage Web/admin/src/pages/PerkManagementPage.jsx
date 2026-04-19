@@ -21,6 +21,24 @@ const PerkManagementPage = () => {
   const [selectedPerk, setSelectedPerk] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  const formatDateTime = (value) => {
+    if (!value) return "-";
+    const rawValue = typeof value === "object" && value.$date ? value.$date : value;
+    const parsed = new Date(rawValue);
+    if (Number.isNaN(parsed.getTime())) return "-";
+    return parsed.toLocaleString("vi-VN", { hour12: false });
+  };
+
+  const summarizeModifiers = (modifiers) => {
+    if (!modifiers || typeof modifiers !== "object") return "{}";
+    const entries = Object.entries(modifiers);
+    if (entries.length === 0) return "{}";
+    return entries
+      .slice(0, 3)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join(" | ");
+  };
+
   const fetchPerks = async () => {
     try {
       setLoading(true);
@@ -164,6 +182,9 @@ const PerkManagementPage = () => {
                       <th className="center">Rarity</th>
                       <th className="center">Price</th>
                       <th>Prefab ID</th>
+                      <th>Modifiers</th>
+                      <th>Created At</th>
+                      <th>Updated At</th>
                       <th className="center">Trạng thái</th>
                       <th className="center">Thao tác</th>
                     </tr>
@@ -171,7 +192,7 @@ const PerkManagementPage = () => {
                   <tbody>
                     {filteredPerks.length === 0 ? (
                       <tr>
-                        <td colSpan="7" className="empty-state">
+                        <td colSpan="10" className="empty-state">
                           <p>Không tìm thấy perk nào</p>
                         </td>
                       </tr>
@@ -205,6 +226,15 @@ const PerkManagementPage = () => {
                           </td>
                           <td>
                             <span className="stat-def">{perk.prefabId || "-"}</span>
+                          </td>
+                          <td>
+                            <span className="stat-spawn">{summarizeModifiers(perk.modifiers)}</span>
+                          </td>
+                          <td>
+                            <span className="stat-spawn">{formatDateTime(perk.createdAt)}</span>
+                          </td>
+                          <td>
+                            <span className="stat-spawn">{formatDateTime(perk.updatedAt)}</span>
                           </td>
                           <td className="center">
                             <button
