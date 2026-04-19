@@ -59,11 +59,11 @@ public class BoatEscapeManager : MonoBehaviourPun, IInteractable
         if (count == 3)
         {
             // Tránh người chơi bấm F trước khi Server chuyển phase
-            if (!_isEscapePhaseActive) return "Hệ thống đang đồng bộ... chờ xíu";
-            return "NỔ MÁY TẨU THOÁT! (F)";
+            if (!_isEscapePhaseActive) return "Wating for Server...";
+            return "ESCAPE!";
         }
 
-        return $"Lắp ráp phụ tùng ({count}/3) (F)";
+        return $"Install ({count}/3)";
     }
 
     public void Interact(GameObject actor)

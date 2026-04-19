@@ -71,8 +71,12 @@ namespace GhostVillage.Gameplay.Shared
 
             foreach (var p in players)
             {
-                // 1. CHỐNG BÁM XÁC: Nếu thằng này đang bị Knocked -> Lơ nó đi (Bỏ qua luôn)
-                var ks = p.GetComponent<PlayerKnockedState>();
+                // [FIX CHÍ MẠNG 1]: Quét dọc theo cây object để tìm KnockedState, 
+                // đề phòng tag "Player" nằm ở cả Root lẫn các Hitbox con.
+                var ks = p.GetComponentInParent<PlayerKnockedState>();
+                if (ks == null) ks = p.GetComponentInChildren<PlayerKnockedState>();
+
+                // Nếu tìm thấy và đang Knocked -> Bỏ qua thằng chết luôn
                 if (ks != null && ks.isKnocked) continue;
 
                 Vector3 directionToPlayer = p.transform.position - transform.position;
@@ -117,9 +121,14 @@ namespace GhostVillage.Gameplay.Shared
             }
             else
             {
-                Debug.Log("<color=yellow>[Detector Log]</color> KHÔNG THẤY MỤC TIÊU NÀO TRONG TẦM NHÌN!");
+                if (playerDetected && shouldLog)
+                {
+                    Debug.Log("<color=yellow>[Detector Log]</color> KHÔNG THẤY MỤC TIÊU NÀO CÒN SỐNG TRONG TẦM NHÌN!");
+                    debugLogTimer = Time.time + 1f;
+                }
                 playerDetected = false;
                 // Lưu ý: Đéo set playerTransform = null ở đây để nó còn nhớ điểm cuối cùng mà Investigate
+                playerTransform = null;
             }
         }
 

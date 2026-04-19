@@ -14,7 +14,10 @@ public class PlayerKnockedState : MonoBehaviourPun, IInteractable
     public float maxProgress = 25f;
     [Tooltip("Lượng máu khi vừa bị gục (Để test thì để 10-15, chơi thật để 25)")]
     public float startingProgress = 12.5f;
+    public float knockdownMesh = -3f;
     public float currentProgress;
+    private float _originalMeshLocalY;
+    private bool _hasSavedMeshY = false;
 
     [Header("Physics & Camera Adjustments")]
     [Tooltip("Kéo Camera của Player vào đây")]
@@ -333,37 +336,63 @@ public class PlayerKnockedState : MonoBehaviourPun, IInteractable
         Rigidbody rb = GetComponent<Rigidbody>();
         UnityEngine.AI.NavMeshAgent navAgent = GetComponent<UnityEngine.AI.NavMeshAgent>();
 
+        // TÌM CÁI MESH ĐỂ DÌM NÓ XUỐNG ĐẤT THAY VÌ BÓP COLLIDER
+        Transform playerMeshTransform = transform.Find("Player_BaBa_Base@T-Pose");
+        if (playerMeshTransform == null) playerMeshTransform = _animator.transform; // Fallback nếu đổi tên
+
         if (_capsuleCollider != null)
         {
             if (state) // Lúc bị gục
             {
                 if (rb != null) rb.isKinematic = true;
 
-                // [FIX CHÍ MẠNG LỖI ĐẨY MESH]: Không tắt Agent, nhưng TẮT OBSTACLE AVOIDANCE của nó đi!
                 if (navAgent != null)
                 {
                     navAgent.obstacleAvoidanceType = UnityEngine.AI.ObstacleAvoidanceType.NoObstacleAvoidance;
-                    navAgent.radius = 0.01f; // Bóp vụn bán kính cản đường
+                    navAgent.radius = 0.01f;
                 }
 
+                // [FIX RAYCAST]: Biến thành Trigger để ko cản đường, nhưng GIỮ NGUYÊN CHIỀU CAO để Raycast còn bắn trúng!
                 _capsuleCollider.isTrigger = true;
-                _capsuleCollider.height = 0.8f;
-                _capsuleCollider.center = new Vector3(_capsuleCollider.center.x, 0.2f, _capsuleCollider.center.z);
+
+                // Dìm cái Mesh xuống một đoạn để nhìn giống như đang bò sát mặt đất
+                if (playerMeshTransform != null)
+                {
+
+                    if (!_hasSavedMeshY)
+                    {
+                        _originalMeshLocalY = playerMeshTransform.localPosition.y;
+                        _hasSavedMeshY = true;
+                    }
+
+                    playerMeshTransform.localPosition = new Vector3(
+                        playerMeshTransform.localPosition.x, knockdownMesh, // Tụt xuống đất (Tùy thuộc vào pivot của model sếp, có thể chỉnh -0.5f tới -0.8f)
+                        playerMeshTransform.localPosition.z);
+
+                    Debug.Log("🩸 [PlayerKnocked] Bị Knocked! Dìm xuống đất để tránh bị quái vật nhìn thấy (và để Raycast của quái vẫn trúng!)");
+                }
             }
             else // Lúc đứng lên (Được cứu)
             {
                 if (rb != null) rb.isKinematic = false;
 
-                // Bật lại tránh vật cản như cũ (Dựa theo thông số ảnh sếp chụp)
                 if (navAgent != null)
                 {
                     navAgent.obstacleAvoidanceType = UnityEngine.AI.ObstacleAvoidanceType.MedQualityObstacleAvoidance;
                     navAgent.radius = 0.5f;
                 }
 
+                // [RESTORE]: Tắt Trigger, trả lại Mesh về gốc
                 _capsuleCollider.isTrigger = false;
-                _capsuleCollider.height = _originalCapsuleHeight;
-                _capsuleCollider.center = new Vector3(_capsuleCollider.center.x, _originalCapsuleCenterY, _capsuleCollider.center.z);
+
+                if (playerMeshTransform != null && _hasSavedMeshY)
+                {
+                    // [RESTORE]: Trả về ĐÚNG VỊ TRÍ Y CŨ đã lưu, thay vì hardcode 0f
+                    playerMeshTransform.localPosition = new Vector3(
+                        playerMeshTransform.localPosition.x,
+                        _originalMeshLocalY,
+                        playerMeshTransform.localPosition.z);
+                }
             }
         }
 

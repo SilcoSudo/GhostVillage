@@ -18,19 +18,12 @@ public class WhistleItemSO : ItemDataSO
     {
         Debug.Log("<color=orange>[Whistle] Tuýt tuýt!! Đã thổi còi gọi quái!</color>");
 
-        // Nếu là Master thì chọc thẳng vào AI
-        if (Photon.Pun.PhotonNetwork.IsMasterClient)
+        var pv = character.GetComponent<Photon.Pun.PhotonView>();
+        if (pv != null)
         {
-            MonsterEvents.AlertPlayerSpotted(character.transform.position);
-        }
-        else
-        {
-            // Nếu là Client thì gọi cái hàm RPC mình vừa ném vào InventoryManager
-            var pv = character.GetComponent<Photon.Pun.PhotonView>();
-            if (pv != null)
-            {
-                pv.RPC("RpcBlowWhistle", Photon.Pun.RpcTarget.MasterClient, character.transform.position);
-            }
+            // [FIX CHÍ MẠNG]: Bắn RPC cho TẤT CẢ mọi người để ai cũng nghe thấy tiếng còi!
+            // RPC này sẽ gọi thẳng vào hàm RpcBlowWhistle bên InventoryManager của character đó
+            pv.RPC("RpcBlowWhistle", Photon.Pun.RpcTarget.All, character.transform.position);
         }
 
         // Báo lại cho InventoryManager biết là xài xong rồi, xóa cái còi đi

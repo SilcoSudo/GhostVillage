@@ -6,6 +6,7 @@ using Photon.Pun;
 using ExitGames.Client.Photon;
 using System.Linq;
 using GhostVillage.Gameplay.Shared;
+using Game.Scripts.Gameplay.Core;
 
 /// <summary>
 /// Quản lý túi đồ của người chơi, bao gồm logic nhặt, dùng, vứt item và đồng bộ mạng.
@@ -251,6 +252,38 @@ public class InventoryManager : MonoBehaviourPun
     [PunRPC]
     public void RpcBlowWhistle(Vector3 position)
     {
+        // ========================================================
+        // 1. TẤT CẢ CLIENT ĐỀU PHÁT ÂM THANH TỪ VỊ TRÍ NGƯỜI THỔI CÒI
+        // ========================================================
+        AudioSource audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            // Nếu người chơi chưa có màng loa, gắn cho nó 1 cái loa 3D
+            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.spatialBlend = 1f; // 100% 3D Sound để định vị phương hướng
+            audioSource.minDistance = 5f;
+            audioSource.maxDistance = 50f;
+            audioSource.rolloffMode = AudioRolloffMode.Linear;
+        }
+
+        // Mượn AudioManager để lấy âm thanh còi
+        var audioManager = UnityEngine.Object.FindFirstObjectByType<GameAudioManager>();
+        if (audioManager != null)
+        {
+            AudioClip clip = audioManager.GetClip("Item_Whistle"); // ID âm thanh của sếp
+            if (clip != null)
+            {
+                audioSource.PlayOneShot(clip);
+            }
+            else
+            {
+                Debug.LogWarning("<color=yellow>[Inventory]</color> Không tìm thấy âm thanh 'Item_Whistle' trong AudioManager!");
+            }
+        }
+
+        // ========================================================
+        // 2. CHỈ MASTER CLIENT MỚI ĐƯỢC CHỌC VÀO AI CỦA QUÁI VẬT
+        // ========================================================
         if (PhotonNetwork.IsMasterClient)
         {
             MonsterEvents.AlertPlayerSpotted(position);

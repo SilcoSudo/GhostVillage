@@ -472,6 +472,12 @@ namespace Game.Scripts.UI.Lobby
             }
 
             Debug.Log($"Loading Scene: {playableScene} (requested: {requestedScene})");
+
+            if (_globalUI != null)
+            {
+                _globalUI.ShowLoading(true, "Đang kiến tạo thế giới tâm linh...");
+            }
+
             PhotonNetwork.LoadLevel(playableScene);
         }
 
