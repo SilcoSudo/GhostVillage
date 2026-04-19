@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Bell, Check, X } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { useNotifications } from "../../features/notification/hooks/useSocket";
 import { AuthContext } from "../../app/context/AuthContext";
 import api from "../services/axios";
@@ -12,6 +13,7 @@ import "./NotificationBell.css";
 
 const NotificationBell = () => {
   const { token } = useContext(AuthContext);
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -30,7 +32,7 @@ const NotificationBell = () => {
       return response.data.data;
     },
     enabled: !!token,
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 60000, // Refetch every 60 seconds
   });
 
   // Listen for realtime notifications
@@ -61,6 +63,7 @@ const NotificationBell = () => {
           n.type === "ticket_replied" ||
           n.type === "report_processed" ||
           n.type === "friend_accepted" ||
+          n.type === "friend_rejected" ||
           n.type === "announcement"),
     ) || [];
   const friendRequests =
@@ -179,7 +182,7 @@ const NotificationBell = () => {
       <button
         className={`notification-bell ${isOpen ? "active" : ""}`}
         onClick={() => setIsOpen(!isOpen)}
-        title="Thông báo"
+        title={t("notifications.title")}
       >
         <Bell size={20} />
         {unreadCount > 0 && (
@@ -196,7 +199,7 @@ const NotificationBell = () => {
               className={`tab-btn ${activeTab === "notification" ? "active" : ""}`}
               onClick={() => setActiveTab("notification")}
             >
-              Notification Message
+              {t("notifications.tabs.notifications")}
               {unreadNotificationCount > 0 && (
                 <span className="tab-badge">
                   {unreadNotificationCount > 9 ? "9+" : unreadNotificationCount}
@@ -207,7 +210,7 @@ const NotificationBell = () => {
               className={`tab-btn ${activeTab === "friendRequest" ? "active" : ""}`}
               onClick={() => setActiveTab("friendRequest")}
             >
-              Friend Requests
+              {t("notifications.tabs.friendRequests")}
               {unreadFriendRequestCount > 0 && (
                 <span className="tab-badge">
                   {unreadFriendRequestCount > 9
@@ -234,7 +237,7 @@ const NotificationBell = () => {
                       </p>
                       <span className="notification-time">
                         {new Date(notification.createdAt).toLocaleString(
-                          "vi-VN",
+                          i18n.language?.startsWith("vi") ? "vi-VN" : "en-US",
                         )}
                       </span>
                     </div>
@@ -245,7 +248,7 @@ const NotificationBell = () => {
                 ))
               ) : (
                 <div className="notification-empty">
-                  <p>No notification messages.</p>
+                  <p>{t("notifications.emptyNotifications")}</p>
                 </div>
               )
             ) : friendRequests.length > 0 ? (
@@ -260,7 +263,9 @@ const NotificationBell = () => {
                       {notification.message}
                     </p>
                     <span className="notification-time">
-                      {new Date(notification.createdAt).toLocaleString("vi-VN")}
+                      {new Date(notification.createdAt).toLocaleString(
+                        i18n.language?.startsWith("vi") ? "vi-VN" : "en-US",
+                      )}
                     </span>
                   </div>
                   {(notification.type === "friend_request" ||
@@ -269,14 +274,14 @@ const NotificationBell = () => {
                       <button
                         className="btn-accept"
                         onClick={() => handleAcceptFriendRequest(notification)}
-                        title="Đồng ý"
+                        title={t("notifications.accept")}
                       >
                         <Check size={16} />
                       </button>
                       <button
                         className="btn-reject"
                         onClick={() => handleRejectFriendRequest(notification)}
-                        title="Từ chối"
+                        title={t("notifications.reject")}
                       >
                         <X size={16} />
                       </button>
@@ -289,7 +294,7 @@ const NotificationBell = () => {
               ))
             ) : (
               <div className="notification-empty">
-                <p>No friend requests.</p>
+                <p>{t("notifications.emptyFriendRequests")}</p>
               </div>
             )}
           </div>
@@ -297,19 +302,19 @@ const NotificationBell = () => {
           {allNotifications && allNotifications.length > 5 && (
             <div className="notification-footer">
               <a href="/notifications" className="view-all">
-                Xem tất cả thông báo
+                {t("notifications.viewAll")}
               </a>
             </div>
           )}
 
           <div className="notification-info">
-            <p>Thông báo sau 15 ngày sẽ tự động xóa</p>
+            <p>{t("notifications.autoDeleteNote")}</p>
             <button
               className="read-all-btn"
               onClick={handleMarkAllAsRead}
               disabled={unreadCount === 0}
             >
-              Read all
+              {t("notifications.readAll")}
             </button>
           </div>
         </div>

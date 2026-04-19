@@ -1,6 +1,27 @@
 import * as userService from "./userService.js";
 import * as postService from "../forum/posts/postService.js";
 
+const serializeUserPost = (post) => {
+  const authorName =
+    post?.author?.fullname || post?.author?.username || "Anonymous User";
+
+  return {
+    ...post,
+    author: post?.author
+      ? {
+          _id: post.author._id || post.author,
+          username: authorName,
+          fullname: authorName,
+          avatar: post.author.avatar || null,
+        }
+      : null,
+    likes: Array.isArray(post?.likes) ? post.likes : [],
+    reports: Array.isArray(post?.reports) ? post.reports : [],
+    report: Array.isArray(post?.reports) ? post.reports.length : 0,
+    commentCount: post?.commentCount || 0,
+  };
+};
+
 /**
  * Controller layer - HTTP handling & Validation
  */
@@ -454,6 +475,68 @@ export const getSavedPosts = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: error.message || "Failed to fetch saved posts",
+    });
+  }
+};
+
+/**
+ * GET /web/user/:id/posts
+ * Get the current user's published posts feed
+ */
+export const getUserPostsById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+
+    if (!req.user?._id) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    if (!id || !id.match(/^[0-9a-fA-F]{24}$/i)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid ID format",
+      });
+    }
+
+    const isOwner = String(req.user._id) === String(id);
+    const isAdmin = req.user.role === "admin";
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only view your own posts",
+      });
+    }
+
+    const { posts, pagination } = await userService.getUserPosts(id, {
+      page,
+      limit,
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        posts: posts.map(serializeUserPost),
+        pagination,
+      },
+    });
+  } catch (error) {
+    console.error("Get User Posts error:", error);
+
+    if (error.message === "User not found") {
+      return res.status(404).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to fetch posts",
     });
   }
 };

@@ -73,6 +73,46 @@ class NotificationService {
   }
 
   /**
+   * Tạo notification từ chối lời mời kết bạn
+   */
+  static async createFriendRejectedNotification(
+    userA,
+    userB,
+    friendshipId,
+    io,
+  ) {
+    try {
+      const notification = await Notification.create({
+        userId: userB._id,
+        type: "friend_rejected",
+        title: "Từ chối lời mời kết bạn",
+        message: `${userA.fullname} đã từ chối lời mời kết bạn`,
+        relatedUser: userA._id,
+        relatedEntity: {
+          entityType: "friend",
+          entityId: friendshipId,
+          link: `/profile/${userA._id}`,
+        },
+      });
+
+      if (io) {
+        io.to(`user:${userB._id}`).emit("new_notification", {
+          id: notification._id,
+          title: notification.title,
+          message: notification.message,
+          type: notification.type,
+          link: notification.relatedEntity.link,
+        });
+      }
+
+      return notification;
+    } catch (error) {
+      console.error("Error creating friend rejected notification:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Tạo notification like post
    */
   static async createPostLikedNotification(userA, postOwnerId, postId, io) {

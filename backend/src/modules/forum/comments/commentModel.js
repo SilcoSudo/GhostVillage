@@ -40,6 +40,10 @@ const commentSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isEdited: {
+      type: Boolean,
+      default: false,
+    },
     reports: [
       {
         reporter: {
@@ -91,6 +95,10 @@ const commentSchema = new mongoose.Schema(
         },
       },
     ],
+    editedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

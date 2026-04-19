@@ -9,6 +9,30 @@ export const QUERY_KEYS = {
   USER_POSTS: "userPosts",
 };
 
+const updatePostCollection = (oldData, updatedPost) => {
+  if (
+    !oldData?.data?.posts ||
+    !Array.isArray(oldData.data.posts) ||
+    !updatedPost?._id
+  ) {
+    return oldData;
+  }
+
+  const nextPosts = oldData.data.posts.map((post) =>
+    String(post._id) === String(updatedPost._id)
+      ? { ...post, ...updatedPost }
+      : post,
+  );
+
+  return {
+    ...oldData,
+    data: {
+      ...oldData.data,
+      posts: nextPosts,
+    },
+  };
+};
+
 // Get all posts
 export const usePosts = (params = {}) => {
   return useQuery({
@@ -43,7 +67,8 @@ export const useCreatePost = () => {
   return useMutation({
     mutationFn: postService.createPost,
     onSuccess: () => {
-      queryClient.invalidateQueries([QUERY_KEYS.POSTS]);
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.POSTS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.USER_POSTS] });
     },
   });
 };
@@ -56,8 +81,37 @@ export const useUpdatePost = () => {
     mutationFn: ({ postId, postData }) =>
       postService.updatePost(postId, postData),
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries([QUERY_KEYS.POSTS]);
-      queryClient.invalidateQueries([QUERY_KEYS.POST, variables.postId]);
+      const updatedPost = data?.data;
+
+      if (updatedPost?._id) {
+        queryClient.setQueriesData(
+          { queryKey: [QUERY_KEYS.POSTS] },
+          (oldData) => updatePostCollection(oldData, updatedPost),
+        );
+        queryClient.setQueriesData(
+          { queryKey: [QUERY_KEYS.USER_POSTS] },
+          (oldData) => updatePostCollection(oldData, updatedPost),
+        );
+        queryClient.setQueryData(
+          [QUERY_KEYS.POST, variables.postId],
+          (oldData) => {
+            if (!oldData?.data) return oldData;
+            return {
+              ...oldData,
+              data: {
+                ...oldData.data,
+                ...updatedPost,
+              },
+            };
+          },
+        );
+      }
+
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.POSTS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.USER_POSTS] });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.POST, variables.postId],
+      });
     },
   });
 };
@@ -69,7 +123,8 @@ export const useDeletePost = () => {
   return useMutation({
     mutationFn: postService.deletePost,
     onSuccess: () => {
-      queryClient.invalidateQueries([QUERY_KEYS.POSTS]);
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.POSTS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.USER_POSTS] });
     },
   });
 };
@@ -81,8 +136,8 @@ export const useToggleLike = () => {
   return useMutation({
     mutationFn: postService.toggleLike,
     onSuccess: (data, postId) => {
-      queryClient.invalidateQueries([QUERY_KEYS.POSTS]);
-      queryClient.invalidateQueries([QUERY_KEYS.POST, postId]);
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.POSTS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.POST, postId] });
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || "Failed to like post");
@@ -97,8 +152,8 @@ export const useToggleBookmark = () => {
   return useMutation({
     mutationFn: postService.toggleBookmark,
     onSuccess: (data, postId) => {
-      queryClient.invalidateQueries([QUERY_KEYS.POSTS]);
-      queryClient.invalidateQueries([QUERY_KEYS.POST, postId]);
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.POSTS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.POST, postId] });
 
       // Trigger refetch user to update bookmarks array
       // This will be caught by components using useAuth
@@ -117,8 +172,10 @@ export const useReportPost = () => {
   return useMutation({
     mutationFn: postService.reportPost,
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries([QUERY_KEYS.POSTS]);
-      queryClient.invalidateQueries([QUERY_KEYS.POST, variables.postId]);
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.POSTS] });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.POST, variables.postId],
+      });
       toast.success(data?.message || "Report submitted");
     },
     onError: (error) => {

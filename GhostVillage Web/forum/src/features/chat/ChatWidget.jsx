@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useContext } from "react";
 import { MessageCircle, X, Send, MoreVertical } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { AuthContext } from "../../app/context/AuthContext";
 import { ChatContext } from "../../app/context/ChatContext.jsx";
 import { useFriendList } from "../../shared/hooks/useFriend";
@@ -9,6 +10,7 @@ import "./ChatWidget.css";
 const MAX_MESSAGE_LENGTH = 2000;
 
 const ChatWidget = () => {
+  const { t, i18n } = useTranslation();
   const { user } = useContext(AuthContext);
   const {
     isOpen,
@@ -68,7 +70,7 @@ const ChatWidget = () => {
       const replyMessage = {
         id: Date.now() + 1,
         senderId: selectedFriend._id,
-        text: "Đã nhận tin nhắn của bạn! 👋",
+        text: t("chatWidget.autoReply"),
         timestamp: new Date(),
         isSent: false,
       };
@@ -104,7 +106,7 @@ const ChatWidget = () => {
         <button
           className="chat-widget-btn"
           onClick={() => setIsOpen(true)}
-          title="Messages"
+          title={t("chatWidget.messages")}
         >
           <MessageCircle size={20} />
           {friends.length > 0 && (
@@ -124,18 +126,25 @@ const ChatWidget = () => {
                   <i className="fas fa-chevron-left"></i>
                 </button>
               )}
-              <h3>{selectedFriend ? selectedFriend.fullname : "Messages"}</h3>
+              <h3>
+                {selectedFriend
+                  ? selectedFriend.fullname
+                  : t("chatWidget.messages")}
+              </h3>
             </div>
             <div className="chat-header-right">
               {selectedFriend && (
-                <button className="icon-btn" title="More options">
+                <button
+                  className="icon-btn"
+                  title={t("chatWidget.moreOptions")}
+                >
                   <MoreVertical size={16} />
                 </button>
               )}
               <button
                 className="close-btn"
                 onClick={() => setIsOpen(false)}
-                title="Close"
+                title={t("chatWidget.close")}
               >
                 <X size={18} />
               </button>
@@ -147,7 +156,7 @@ const ChatWidget = () => {
             <div className="friends-list-chat">
               {friends.length === 0 ? (
                 <div className="no-friends-chat">
-                  <p>Không có bạn bè nào</p>
+                  <p>{t("chatWidget.noFriends")}</p>
                 </div>
               ) : (
                 friends.map((friend) => (
@@ -197,10 +206,13 @@ const ChatWidget = () => {
                   >
                     <div className="message-bubble">{msg.text}</div>
                     <span className="message-time">
-                      {new Date(msg.timestamp).toLocaleTimeString("vi-VN", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {new Date(msg.timestamp).toLocaleTimeString(
+                        i18n.language?.startsWith("vi") ? "vi-VN" : "en-US",
+                        {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        },
+                      )}
                     </span>
                   </div>
                 ))}
@@ -211,7 +223,7 @@ const ChatWidget = () => {
               <div className="chat-input-area">
                 <textarea
                   className="message-input"
-                  placeholder="Nhập tin nhắn..."
+                  placeholder={t("chatWidget.placeholder")}
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
                   maxLength={MAX_MESSAGE_LENGTH}

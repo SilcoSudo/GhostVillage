@@ -10,25 +10,25 @@ const ReportPostModal = ({ show, onHide, onSubmit, isSubmitting = false }) => {
   const minReasonLength = 15;
 
   const reasonOptions = [
-    { value: "SPAM", label: t("posts.reasonSpam") || "Spam or repetitive ads" },
-    { value: "SCAM", label: t("posts.reasonScam") || "Scam or phishing" },
+    { value: "SPAM", label: t("posts.reasonSpam") },
+    { value: "SCAM", label: t("posts.reasonScam") },
     {
       value: "ABUSE",
-      label: t("posts.reasonAbuse") || "Harassment, hate speech, or threats",
+      label: t("posts.reasonAbuse"),
     },
     {
       value: "ADULT",
-      label: t("posts.reasonAdult") || "Adult or explicit content",
+      label: t("posts.reasonAdult"),
     },
     {
       value: "MISINFO",
-      label: t("posts.reasonMisinfo") || "Harmful misinformation",
+      label: t("posts.reasonMisinfo"),
     },
     {
       value: "OFF_TOPIC",
-      label: t("posts.reasonOffTopic") || "Off-topic or irrelevant content",
+      label: t("posts.reasonOffTopic"),
     },
-    { value: "OTHER", label: t("posts.reasonOther") || "Other" },
+    { value: "OTHER", label: t("posts.reasonOther") },
   ];
 
   useEffect(() => {
@@ -59,7 +59,7 @@ const ReportPostModal = ({ show, onHide, onSubmit, isSubmitting = false }) => {
         <div className="report-fullscreen-loading">
           <div className="report-fullscreen-loading-content">
             <Spinner animation="border" role="status" />
-            <p>{t("posts.reportProcessing") || "Đang xử lý báo cáo..."}</p>
+            <p>{t("posts.reportProcessing")}</p>
           </div>
         </div>
       )}
@@ -71,16 +71,14 @@ const ReportPostModal = ({ show, onHide, onSubmit, isSubmitting = false }) => {
         <Form onSubmit={handleSubmit}>
           <Modal.Body>
             <Form.Group>
-              <Form.Label>{t("posts.reportReason") || "Reason"}</Form.Label>
+              <Form.Label>{t("posts.reportReason")}</Form.Label>
               <Form.Control
                 as="select"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 required
               >
-                <option value="">
-                  {t("posts.selectReason") || "Select a reason"}
-                </option>
+                <option value="">{t("posts.selectReason")}</option>
                 {reasonOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -91,18 +89,13 @@ const ReportPostModal = ({ show, onHide, onSubmit, isSubmitting = false }) => {
 
             {isOtherReason && (
               <Form.Group className="mt-3">
-                <Form.Label>
-                  {t("posts.reportReasonDetail") || "Please describe details"}
-                </Form.Label>
+                <Form.Label>{t("posts.reportReasonDetail")}</Form.Label>
                 <Form.Control
                   as="textarea"
                   rows={4}
                   value={customReason}
                   onChange={(e) => setCustomReason(e.target.value)}
-                  placeholder={
-                    t("posts.reportReasonPlaceholder") ||
-                    "Describe clearly why you are reporting this post"
-                  }
+                  placeholder={t("posts.reportReasonPlaceholder")}
                   minLength={minReasonLength}
                   maxLength={500}
                   required={isOtherReason}
@@ -119,7 +112,7 @@ const ReportPostModal = ({ show, onHide, onSubmit, isSubmitting = false }) => {
               onClick={onHide}
               disabled={isSubmitting}
             >
-              {t("common.cancel") || "Cancel"}
+              {t("common.cancel")}
             </Button>
             <Button
               className="report-submit-btn"
@@ -130,9 +123,7 @@ const ReportPostModal = ({ show, onHide, onSubmit, isSubmitting = false }) => {
                 (isOtherReason && customReason.trim().length < minReasonLength)
               }
             >
-              {isSubmitting
-                ? t("common.loading") || "Submitting..."
-                : t("posts.report")}
+              {isSubmitting ? t("common.loading") : t("posts.report")}
             </Button>
           </Modal.Footer>
         </Form>

@@ -9,6 +9,14 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const clearSession = () => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
+    clearAllAvatarCaches();
+  };
+
   // Auto-login from saved token on mount
   // Token expiry is handled by JWT verification on backend
   useEffect(() => {
@@ -35,6 +43,18 @@ export const AuthProvider = ({ children }) => {
     } else {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      clearSession();
+    };
+
+    window.addEventListener("auth:unauthorized", handleUnauthorized);
+
+    return () => {
+      window.removeEventListener("auth:unauthorized", handleUnauthorized);
+    };
   }, []);
 
   const login = async (credentials, rememberMe = false) => {
@@ -84,16 +104,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    await authService.logout();
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem("token");
-    sessionStorage.removeItem("token");
-    // Clear all cached avatars on logout
-    clearAllAvatarCaches();
-
-    // Redirect về home sau khi logout
-    window.location.href = "/";
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error("Logout request failed:", error);
+    } finally {
+      clearSession();
+      window.location.replace("/");
+    }
   };
 
   const forgotPassword = async (email) => {

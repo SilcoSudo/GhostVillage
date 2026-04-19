@@ -12,6 +12,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { vi, enUS } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../app/context/AuthContext";
 import {
   useDeleteComment,
@@ -24,8 +25,15 @@ import ReportPostModal from "./ReportPostModal";
 import { getAvatarUrl, cacheAvatar } from "../../../shared/utils/avatarCache";
 import "./Comment.css";
 
-const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
+const Comment = ({
+  comment,
+  postId,
+  level = 0,
+  topLevelCommentId = null,
+  onNavigateProfile,
+}) => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyText, setReplyText] = useState("");
@@ -51,6 +59,20 @@ const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
   const locale = i18n.language === "vi" ? vi : enUS;
   const replies = repliesData?.data || [];
   const replyCount = replies.length;
+  const isCommentEdited = Boolean(
+    !isDeletedComment && (comment?.isEdited || comment?.editedAt),
+  );
+
+  const handleOpenProfile = (profileId) => {
+    if (!profileId) return;
+
+    if (onNavigateProfile) {
+      onNavigateProfile(profileId);
+      return;
+    }
+
+    navigate(`/profile/${profileId}`);
+  };
 
   const handleDelete = async () => {
     if (window.confirm(t("posts.confirmDeleteComment"))) {
@@ -140,20 +162,23 @@ const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
         >
           <div className="comment-header">
             <span className="comment-author">
-              <span className="comment-author-name">
+              <button
+                type="button"
+                className="comment-author-name"
+                onClick={() => handleOpenProfile(comment.author._id)}
+              >
                 {comment.author.username}
-              </span>
+              </button>
               {comment.replyTo && (
                 <>
                   <span className="reply-arrow"> ▸ </span>
-                  <span
+                  <button
+                    type="button"
                     className="reply-to-name"
-                    onClick={() =>
-                      (window.location.href = `/profile/${comment.replyTo._id}`)
-                    }
+                    onClick={() => handleOpenProfile(comment.replyTo._id)}
                   >
                     {comment.replyTo.username}
-                  </span>
+                  </button>
                 </>
               )}
             </span>
@@ -252,6 +277,12 @@ const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
               locale,
             })}
           </span>
+
+          {isCommentEdited && (
+            <span className="comment-edited-indicator">
+              {t("common.edited")}
+            </span>
+          )}
         </div>
 
         {/* Reply Form */}
@@ -301,6 +332,7 @@ const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
                 postId={postId}
                 level={1}
                 topLevelCommentId={rootCommentId}
+                onNavigateProfile={onNavigateProfile}
               />
             ))}
           </div>

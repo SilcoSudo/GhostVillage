@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
@@ -28,6 +29,7 @@ const TiptapEditor = ({
   onImageUpload,
   onVideoUpload,
 }) => {
+  const { t } = useTranslation();
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -74,7 +76,7 @@ const TiptapEditor = ({
 
   const setLink = useCallback(() => {
     const previousUrl = editor.getAttributes("link").href;
-    const url = prompt("Enter URL:", previousUrl);
+    const url = prompt(t("editor.linkPrompt"), previousUrl);
 
     if (url === null) return;
 
@@ -97,7 +99,7 @@ const TiptapEditor = ({
           type="button"
           onClick={() => editor.chain().focus().toggleBold().run()}
           className={editor.isActive("bold") ? "is-active" : ""}
-          title="Bold (Ctrl+B)"
+          title={t("editor.toolbar.bold")}
         >
           <Bold size={16} />
         </button>
@@ -105,7 +107,7 @@ const TiptapEditor = ({
           type="button"
           onClick={() => editor.chain().focus().toggleItalic().run()}
           className={editor.isActive("italic") ? "is-active" : ""}
-          title="Italic (Ctrl+I)"
+          title={t("editor.toolbar.italic")}
         >
           <Italic size={16} />
         </button>
@@ -113,7 +115,7 @@ const TiptapEditor = ({
           type="button"
           onClick={() => editor.chain().focus().toggleUnderline().run()}
           className={editor.isActive("underline") ? "is-active" : ""}
-          title="Underline (Ctrl+U)"
+          title={t("editor.toolbar.underline")}
         >
           <UnderlineIcon size={16} />
         </button>
@@ -121,7 +123,7 @@ const TiptapEditor = ({
           type="button"
           onClick={() => editor.chain().focus().toggleStrike().run()}
           className={editor.isActive("strike") ? "is-active" : ""}
-          title="Strikethrough"
+          title={t("editor.toolbar.strikethrough")}
         >
           <Strikethrough size={16} />
         </button>
@@ -129,7 +131,10 @@ const TiptapEditor = ({
         <span className="toolbar-divider"></span>
 
         <div className="color-picker-wrapper">
-          <label className="color-picker-button" title="Text Color">
+          <label
+            className="color-picker-button"
+            title={t("editor.toolbar.textColor")}
+          >
             <span
               style={{
                 color:
@@ -163,7 +168,7 @@ const TiptapEditor = ({
           type="button"
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           className={editor.isActive("bulletList") ? "is-active" : ""}
-          title="Bullet List"
+          title={t("editor.toolbar.bulletList")}
         >
           <List size={16} />
         </button>
@@ -171,7 +176,7 @@ const TiptapEditor = ({
           type="button"
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
           className={editor.isActive("orderedList") ? "is-active" : ""}
-          title="Numbered List"
+          title={t("editor.toolbar.numberedList")}
         >
           <ListOrdered size={16} />
         </button>
@@ -182,7 +187,7 @@ const TiptapEditor = ({
           type="button"
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
           className={editor.isActive("blockquote") ? "is-active" : ""}
-          title="Quote"
+          title={t("editor.toolbar.quote")}
         >
           <Quote size={16} />
         </button>
@@ -193,18 +198,26 @@ const TiptapEditor = ({
           type="button"
           onClick={setLink}
           className={editor.isActive("link") ? "is-active" : ""}
-          title="Add Link"
+          title={t("editor.toolbar.addLink")}
         >
           <Link2 size={16} />
         </button>
 
         <span className="toolbar-divider"></span>
 
-        <button type="button" onClick={onImageUpload} title="Add Image">
+        <button
+          type="button"
+          onClick={onImageUpload}
+          title={t("editor.toolbar.addImage")}
+        >
           <ImagePlus size={16} />
         </button>
 
-        <button type="button" onClick={onVideoUpload} title="Add Video">
+        <button
+          type="button"
+          onClick={onVideoUpload}
+          title={t("editor.toolbar.addVideo")}
+        >
           <Video size={16} />
         </button>
         {/* Image/Video upload moved from CreatePostModal */}

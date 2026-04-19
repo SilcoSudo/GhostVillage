@@ -1,4 +1,16 @@
 /* Saved Posts Page Styles */
+.primary-color-text {
+  color: var(--primary-color);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.posts-page-wrapper {
+  background: var(--bg-secondary);
+  min-height: 100vh;
+  padding-top: 70px;
+}
+
 .posts-page {
   min-height: 100vh;
   padding: 24px 0;

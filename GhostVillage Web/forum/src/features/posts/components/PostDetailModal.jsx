@@ -21,6 +21,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { vi, enUS } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../app/context/AuthContext";
 import CreatePostModal from "./CreatePostModal";
 import ShareModal from "./ShareModal";
@@ -47,6 +48,8 @@ const PostDetailModal = ({
   scrollToComments = false,
 }) => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -132,6 +135,29 @@ const PostDetailModal = ({
   const toggleLikeMutation = useToggleLike();
   const toggleBookmarkMutation = useToggleBookmark();
   const reportPostMutation = useReportPost();
+  const authorDisplayName =
+    post?.author?.username || post?.author?.fullname || t("posts.anonymous");
+  const isPostEdited = Boolean(post?.isEdited || post?.editedAt);
+
+  const handleOpenProfile = (profileId) => {
+    if (!profileId) return;
+
+    const nextSearchParams = new URLSearchParams(location.search);
+    nextSearchParams.set("postId", postId);
+    nextSearchParams.set("scrollToComments", "1");
+
+    navigate(
+      {
+        pathname: location.pathname,
+        search: `?${nextSearchParams.toString()}`,
+      },
+      { replace: true },
+    );
+
+    window.setTimeout(() => {
+      navigate(`/profile/${profileId}`);
+    }, 0);
+  };
 
   const handleDelete = async () => {
     try {
@@ -244,7 +270,7 @@ const PostDetailModal = ({
               {post?.author?.avatar && !failedAvatars[post.author._id] ? (
                 <img
                   src={getAvatarUrl(post.author._id, post.author.avatar)}
-                  alt={post.author.username}
+                  alt={authorDisplayName}
                   className="post-avatar"
                   onError={() => handleAvatarError(post.author._id)}
                   onLoad={() =>
@@ -258,9 +284,17 @@ const PostDetailModal = ({
                 </div>
               )}
               <div className="post-author-details">
-                <div className="post-author-name">
-                  {post?.author?.username || t("posts.anonymous")}
-                </div>
+                {post?.author?._id ? (
+                  <button
+                    type="button"
+                    className="post-author-name"
+                    onClick={() => handleOpenProfile(post.author._id)}
+                  >
+                    {authorDisplayName}
+                  </button>
+                ) : (
+                  <div className="post-author-name">{authorDisplayName}</div>
+                )}
                 <div className="post-meta">
                   <span className="post-date">
                     {formatDistanceToNow(new Date(post?.createdAt), {
@@ -275,6 +309,11 @@ const PostDetailModal = ({
                         ☀️ {post.temperature}°C
                       </span>
                     </>
+                  )}
+                  {isPostEdited && (
+                    <span className="post-edited-indicator">
+                      {t("common.edited")}
+                    </span>
                   )}
                 </div>
               </div>
@@ -480,6 +519,7 @@ const PostDetailModal = ({
                     key={comment._id}
                     comment={comment}
                     postId={post._id}
+                    onNavigateProfile={handleOpenProfile}
                   />
                 ))
               ) : (
