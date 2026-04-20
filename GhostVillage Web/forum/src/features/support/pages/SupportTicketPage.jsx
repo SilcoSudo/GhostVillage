@@ -5,13 +5,13 @@ import {
   Row,
   Col,
   Card,
-  Accordion,
   Form,
   Button,
   Alert,
   Spinner,
   Badge,
 } from "react-bootstrap";
+import { ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../app/hooks/useAuth";
 import { uploadMedia } from "../../posts/services/uploadService";
@@ -23,6 +23,8 @@ import "./SupportTicketPage.css";
 
 const MAX_ATTACHMENTS = 5;
 const MAX_IMAGE_SIZE_MB = 5;
+const INITIAL_HISTORY_LIMIT = 10;
+const HISTORY_LOAD_MORE_STEP = 10;
 const ACTIVE_TICKET_STATUSES = ["OPEN", "IN_PROGRESS"];
 const ARCHIVED_TICKET_STATUSES = ["RESOLVED", "CLOSED"];
 
@@ -35,11 +37,13 @@ const SupportTicketPage = () => {
   const { t } = useTranslation();
   const { user, loading } = useAuth();
   const createTicketMutation = useCreateSupportTicket();
+  const [historyLimit, setHistoryLimit] = useState(INITIAL_HISTORY_LIMIT);
   const {
     data: historyData,
     isLoading: isHistoryLoading,
+    isFetching: isHistoryFetching,
     isError: isHistoryError,
-  } = useMySupportTickets({ page: 1, limit: 20 });
+  } = useMySupportTickets({ page: 1, limit: historyLimit });
 
   const [formData, setFormData] = useState(defaultForm);
   const fileInputRef = useRef(null);
@@ -51,11 +55,15 @@ const SupportTicketPage = () => {
   const subjectLength = formData.subject.trim().length;
   const messageLength = formData.message.trim().length;
   const tickets = historyData?.data?.tickets || [];
+  const historyPagination = historyData?.data?.pagination || null;
   const activeTickets = tickets.filter((ticket) =>
     ACTIVE_TICKET_STATUSES.includes(ticket?.status),
   );
   const archivedTickets = tickets.filter((ticket) =>
     ARCHIVED_TICKET_STATUSES.includes(ticket?.status),
+  );
+  const hasMoreTickets = Boolean(
+    historyPagination?.total && tickets.length < historyPagination.total,
   );
 
   const formatDate = (value) => {
@@ -149,6 +157,10 @@ const SupportTicketPage = () => {
     });
   };
 
+  const handleLoadMoreTickets = () => {
+    setHistoryLimit((prev) => prev + HISTORY_LOAD_MORE_STEP);
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setValidationError("");
@@ -220,21 +232,8 @@ const SupportTicketPage = () => {
     setSubmittedTicketId(response?.data?._id || "");
   };
 
-  const renderTicketItem = (ticket) => (
-    <div key={ticket._id} className="support-ticket-history-item">
-      <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
-        <div>
-          <h6 className="mb-1">{ticket.subject}</h6>
-          <div className="text-muted small">
-            {t("support.ticketId")} #{ticket._id}
-          </div>
-        </div>
-
-        <Badge bg={getStatusVariant(ticket.status)}>
-          {t(`support.status.${ticket.status}`)}
-        </Badge>
-      </div>
-
+  const renderTicketBody = (ticket) => (
+    <>
       <p className="mb-2 mt-2 support-ticket-message">{ticket.message}</p>
 
       {Array.isArray(ticket.attachments) && ticket.attachments.length > 0 && (
@@ -260,7 +259,7 @@ const SupportTicketPage = () => {
       {Array.isArray(ticket.adminReplies) && ticket.adminReplies.length > 0 && (
         <div className="support-ticket-replies">
           <div className="support-ticket-replies-title">
-            {t("support.adminReplies") || "Admin replies"}
+            {t("support.adminReplies", { defaultValue: "Admin replies" })}
           </div>
 
           <div className="support-ticket-replies-list">
@@ -278,8 +277,7 @@ const SupportTicketPage = () => {
                   <div className="support-ticket-reply-meta">
                     <span className="support-ticket-reply-author">
                       {reply?.repliedBy?.fullname ||
-                        t("support.admin") ||
-                        "Admin"}
+                        t("support.admin", { defaultValue: "Admin" })}
                     </span>
                     <span className="support-ticket-reply-time">
                       {formatDate(reply?.repliedAt)}
@@ -297,7 +295,60 @@ const SupportTicketPage = () => {
       <div className="text-muted small">
         {t("support.createdAt")} {formatDate(ticket.createdAt)}
       </div>
+    </>
+  );
+
+  const renderTicketItem = (ticket) => (
+    <div
+      key={ticket._id}
+      className="support-ticket-history-item support-ticket-history-item-full"
+    >
+      <div className="support-ticket-history-card-header">
+        <div>
+          <h6 className="mb-1">{ticket.subject}</h6>
+          <div className="text-muted small">
+            {t("support.ticketId")} #{ticket._id}
+          </div>
+        </div>
+
+        <Badge bg={getStatusVariant(ticket.status)}>
+          {t(`support.status.${ticket.status}`)}
+        </Badge>
+      </div>
+
+      {renderTicketBody(ticket)}
     </div>
+  );
+
+  const renderArchivedTicketItem = (ticket) => (
+    <details
+      key={ticket._id}
+      className="support-ticket-history-item support-ticket-history-item-collapsible"
+    >
+      <summary className="support-ticket-history-summary">
+        <div className="support-ticket-history-card-header support-ticket-history-summary-header">
+          <div className="support-ticket-history-summary-info">
+            <h6 className="mb-1">{ticket.subject}</h6>
+            <div className="support-ticket-history-summary-line text-muted small">
+              <span>
+                {t("support.ticketId")} #{ticket._id}
+              </span>
+            </div>
+          </div>
+
+          <div className="support-ticket-history-summary-meta">
+            <Badge bg={getStatusVariant(ticket.status)}>
+              {t(`support.status.${ticket.status}`)}
+            </Badge>
+            <ChevronDown size={16} className="support-ticket-summary-chevron" />
+          </div>
+        </div>
+      </summary>
+
+      <div className="support-ticket-history-item-body">
+        {renderTicketBody(ticket)}
+      </div>
+    </details>
   );
 
   if (loading) {
@@ -455,13 +506,6 @@ const SupportTicketPage = () => {
                   {t("support.historyTitle")}
                 </h4>
 
-                {isHistoryLoading && (
-                  <div className="d-flex align-items-center gap-2 text-muted">
-                    <Spinner animation="border" size="sm" />
-                    <span>{t("support.historyLoading")}</span>
-                  </div>
-                )}
-
                 {isHistoryError && (
                   <Alert variant="danger" className="mb-0">
                     {t("support.historyError")}
@@ -476,43 +520,106 @@ const SupportTicketPage = () => {
                     </p>
                   )}
 
+                {isHistoryLoading && tickets.length === 0 && (
+                  <div className="d-flex align-items-center gap-2 text-muted">
+                    <Spinner animation="border" size="sm" />
+                    <span>{t("support.historyLoading")}</span>
+                  </div>
+                )}
+
                 {!isHistoryLoading && !isHistoryError && tickets.length > 0 && (
                   <div className="support-history-content">
-                    <div className="support-history-group mb-3">
-                      <h6 className="support-history-group-title mb-2">
-                        {t("support.activeTicketsTitle")}
-                      </h6>
-
-                      {activeTickets.length === 0 ? (
-                        <p className="text-muted mb-0">
-                          {t("support.activeTicketsEmpty")}
-                        </p>
-                      ) : (
-                        <div className="support-ticket-history-list">
-                          {activeTickets.map(renderTicketItem)}
+                    <section className="support-history-group support-history-group-active">
+                      <div className="support-history-group-header">
+                        <div className="support-history-group-heading">
+                          <h6 className="support-history-group-title mb-0">
+                            {t("support.activeTicketsTitle")}
+                          </h6>
+                          <p className="support-history-group-subtitle mb-0">
+                            {t("support.activeTicketsHint", {
+                              defaultValue:
+                                "These tickets are still being handled.",
+                            })}
+                          </p>
                         </div>
-                      )}
-                    </div>
 
-                    <Accordion className="support-history-accordion">
-                      <Accordion.Item eventKey="0">
-                        <Accordion.Header>
-                          {t("support.archivedTicketsTitle")} (
-                          {archivedTickets.length})
-                        </Accordion.Header>
-                        <Accordion.Body>
-                          {archivedTickets.length === 0 ? (
-                            <p className="text-muted mb-0">
-                              {t("support.archivedTicketsEmpty")}
-                            </p>
-                          ) : (
-                            <div className="support-ticket-history-list">
-                              {archivedTickets.map(renderTicketItem)}
-                            </div>
-                          )}
-                        </Accordion.Body>
-                      </Accordion.Item>
-                    </Accordion>
+                        <Badge
+                          bg={
+                            activeTickets.length > 0 ? "warning" : "secondary"
+                          }
+                          className="support-history-group-count"
+                        >
+                          {activeTickets.length}
+                        </Badge>
+                      </div>
+
+                      <div className="support-history-group-body">
+                        {activeTickets.length === 0 ? (
+                          <p className="support-history-group-empty mb-0">
+                            {t("support.activeTicketsEmpty")}
+                          </p>
+                        ) : (
+                          <div className="support-ticket-history-list">
+                            {activeTickets.map(renderTicketItem)}
+                          </div>
+                        )}
+                      </div>
+                    </section>
+
+                    <section className="support-history-group support-history-group-archived">
+                      <div className="support-history-group-header">
+                        <div className="support-history-group-heading">
+                          <h6 className="support-history-group-title mb-0">
+                            {t("support.archivedTicketsTitle")}
+                          </h6>
+                          <p className="support-history-group-subtitle mb-0">
+                            {t("support.archivedTicketsHint", {
+                              defaultValue:
+                                "Click a ticket to open the full conversation.",
+                            })}
+                          </p>
+                        </div>
+
+                        <Badge
+                          bg="secondary"
+                          className="support-history-group-count"
+                        >
+                          {archivedTickets.length}
+                        </Badge>
+                      </div>
+
+                      <div className="support-history-group-body">
+                        {archivedTickets.length === 0 ? (
+                          <p className="support-history-group-empty mb-0">
+                            {t("support.archivedTicketsEmpty")}
+                          </p>
+                        ) : (
+                          <div className="support-ticket-history-list">
+                            {archivedTickets.map(renderArchivedTicketItem)}
+                          </div>
+                        )}
+                      </div>
+                    </section>
+
+                    {hasMoreTickets && (
+                      <div className="support-history-load-more-row">
+                        <Button
+                          type="button"
+                          variant="outline-light"
+                          className="support-history-load-more-btn"
+                          onClick={handleLoadMoreTickets}
+                          disabled={isHistoryFetching}
+                        >
+                          {isHistoryFetching
+                            ? t("common.loading", {
+                                defaultValue: "Loading...",
+                              })
+                            : t("common.loadMore", {
+                                defaultValue: "Load More",
+                              })}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </Card.Body>

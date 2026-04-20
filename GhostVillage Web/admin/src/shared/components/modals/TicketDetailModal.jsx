@@ -9,7 +9,6 @@ import {
   XCircle,
   User,
   CalendarDays,
-  RefreshCw,
   ImageOff,
   Send,
   Shield,
@@ -24,14 +23,25 @@ const STATUS_META = {
   CLOSED: { cls: "status-closed", Icon: XCircle },
 };
 
-const formatLabel = (status) =>
-  String(status || "OPEN")
-    .replace(/_/g, " ")
-    .toLowerCase()
-    .replace(/(^\w|\s\w)/g, (m) => m.toUpperCase());
+const getStatusLabel = (status, t) => {
+  switch (String(status || "OPEN").toUpperCase()) {
+    case "OPEN":
+      return t("tickets.statusLabels.open", { defaultValue: "Open" });
+    case "IN_PROGRESS":
+      return t("tickets.statusLabels.inProgress", {
+        defaultValue: "In Progress",
+      });
+    case "RESOLVED":
+      return t("tickets.statusLabels.resolved", { defaultValue: "Resolved" });
+    case "CLOSED":
+      return t("tickets.statusLabels.closed", { defaultValue: "Closed" });
+    default:
+      return String(status || "OPEN");
+  }
+};
 
-const formatDateTime = (value) =>
-  new Date(value).toLocaleString("en-US", {
+const formatDateTime = (value, locale) =>
+  new Date(value).toLocaleString(locale, {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -39,7 +49,7 @@ const formatDateTime = (value) =>
     minute: "2-digit",
   });
 
-const AttachmentImage = ({ url, index }) => {
+const AttachmentImage = ({ url, index, t }) => {
   const [broken, setBroken] = useState(false);
 
   return (
@@ -48,17 +58,17 @@ const AttachmentImage = ({ url, index }) => {
       target="_blank"
       rel="noreferrer"
       className="td-attachment-item"
-      title={`Attachment ${index + 1}`}
+      title={t("tickets.attachmentLabel", { index: index + 1 })}
     >
       {broken ? (
         <span className="td-attachment-broken">
           <ImageOff size={24} />
-          <span>Unable to load</span>
+          <span>{t("tickets.unableToLoadAttachment")}</span>
         </span>
       ) : (
         <img
           src={url}
-          alt={`Attachment ${index + 1}`}
+          alt={t("tickets.attachmentLabel", { index: index + 1 })}
           className="td-attachment-img"
           onError={() => setBroken(true)}
         />
@@ -67,13 +77,21 @@ const AttachmentImage = ({ url, index }) => {
   );
 };
 
-const buildConversationTimeline = (ticket, attachments, replies) => {
+const buildConversationTimeline = (
+  ticket,
+  attachments,
+  replies,
+  labels = {},
+) => {
+  const userLabel = labels.user || "User";
+  const adminLabel = labels.admin || "Admin";
+
   const timeline = [
     {
       id: `ticket-msg-${ticket.id || ticket._id || "unknown"}`,
       role: "user",
       isOriginal: true,
-      author: ticket.userName || "User",
+      author: ticket.userName || userLabel,
       content: ticket.message || "",
       createdAt: ticket.createdAt,
       attachments,
@@ -86,7 +104,7 @@ const buildConversationTimeline = (ticket, attachments, replies) => {
         id: String(reply?._id || `reply-${index}`),
         role: "admin",
         isOriginal: false,
-        author: reply?.repliedBy?.fullname || "Admin",
+        author: reply?.repliedBy?.fullname || adminLabel,
         content: reply?.content || "",
         createdAt: reply?.repliedAt || ticket.updatedAt,
         attachments: [],
@@ -103,7 +121,7 @@ const buildConversationTimeline = (ticket, attachments, replies) => {
 };
 
 const TicketDetailModal = ({ isOpen, ticket, onClose, onReplySent }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
   const [replyError, setReplyError] = useState("");
@@ -117,14 +135,20 @@ const TicketDetailModal = ({ isOpen, ticket, onClose, onReplySent }) => {
   const adminReplies = Array.isArray(ticket.adminReplies)
     ? ticket.adminReplies
     : [];
+  const dateLocale = i18n.language?.startsWith("vi") ? "vi-VN" : "en-US";
   const conversation = buildConversationTimeline(
     ticket,
     attachmentList,
     adminReplies,
+    {
+      user: t("tickets.labels.user", { defaultValue: "User" }),
+      admin: t("tickets.labels.admin", { defaultValue: "Admin" }),
+    },
   );
 
   const meta = STATUS_META[ticket.status] || STATUS_META.OPEN;
   const StatusIcon = meta.Icon;
+  const statusLabel = getStatusLabel(ticket.status, t);
 
   const handleClose = () => {
     setReplyText("");
@@ -149,7 +173,9 @@ const TicketDetailModal = ({ isOpen, ticket, onClose, onReplySent }) => {
     } catch (err) {
       setReplyError(
         err?.response?.data?.message ||
-          "Failed to send reply. Please try again.",
+          t("tickets.replyFailed", {
+            defaultValue: "Failed to send reply. Please try again.",
+          }),
       );
     } finally {
       setSending(false);
@@ -165,12 +191,12 @@ const TicketDetailModal = ({ isOpen, ticket, onClose, onReplySent }) => {
         <div className="modal-header">
           <div className="header-title">
             <MessageCircle size={20} className="header-icon" />
-            <h2>{t("tickets.ticketDetail") || "Ticket Details"}</h2>
+            <h2>{t("tickets.ticketDetail")}</h2>
           </div>
           <button
             className="modal-close-btn"
             onClick={handleClose}
-            aria-label="Close"
+            aria-label={t("common.close")}
           >
             <X size={20} />
           </button>
@@ -184,7 +210,7 @@ const TicketDetailModal = ({ isOpen, ticket, onClose, onReplySent }) => {
             </div>
             <span className={`td-status-badge ${meta.cls}`}>
               <StatusIcon size={14} />
-              {formatLabel(ticket.status)}
+              {statusLabel}
             </span>
           </div>
 
@@ -194,7 +220,7 @@ const TicketDetailModal = ({ isOpen, ticket, onClose, onReplySent }) => {
                 <User size={13} />
               </span>
               <div>
-                <p className="td-meta-label">{t("tickets.user") || "User"}</p>
+                <p className="td-meta-label">{t("tickets.user")}</p>
                 <p className="td-meta-value">
                   {ticket.userName || ticket.userId}
                 </p>
@@ -208,35 +234,15 @@ const TicketDetailModal = ({ isOpen, ticket, onClose, onReplySent }) => {
                 <CalendarDays size={13} />
               </span>
               <div>
-                <p className="td-meta-label">
-                  {t("tickets.created") || "Created"}
-                </p>
+                <p className="td-meta-label">{t("tickets.created")}</p>
                 <p className="td-meta-value">
-                  {formatDateTime(ticket.createdAt)}
-                </p>
-              </div>
-            </div>
-            <div className="td-meta-item">
-              <span className="td-meta-icon">
-                <RefreshCw size={13} />
-              </span>
-              <div>
-                <p className="td-meta-label">
-                  {t("tickets.updated") || "Last Updated"}
-                </p>
-                <p className="td-meta-value">
-                  {formatDateTime(ticket.updatedAt)}
+                  {formatDateTime(ticket.createdAt, dateLocale)}
                 </p>
               </div>
             </div>
           </div>
 
           <div className="td-section">
-            <h3 className="td-section-title">
-              <MessageCircle size={13} />
-              {t("tickets.conversation") || "Conversation"}
-            </h3>
-
             <div className="td-conversation-list">
               {conversation.map((entry, index) => (
                 <div
@@ -254,14 +260,14 @@ const TicketDetailModal = ({ isOpen, ticket, onClose, onReplySent }) => {
                         {entry.author}
                       </span>
                       <span className="td-chat-time">
-                        {formatDateTime(entry.createdAt)}
+                        {formatDateTime(entry.createdAt, dateLocale)}
                       </span>
                     </div>
                   )}
 
                   {entry.isOriginal && (
                     <span className="td-chat-original-tag">
-                      {t("tickets.originalMessage") || "Original Message"}
+                      {t("tickets.originalMessage")}
                     </span>
                   )}
 
@@ -278,6 +284,7 @@ const TicketDetailModal = ({ isOpen, ticket, onClose, onReplySent }) => {
                           key={`${entry.id}-img-${i}`}
                           url={item.url}
                           index={i}
+                          t={t}
                         />
                       ))}
                     </div>
@@ -290,16 +297,13 @@ const TicketDetailModal = ({ isOpen, ticket, onClose, onReplySent }) => {
           <div className="td-section td-reply-block">
             <h3 className="td-section-title">
               <Send size={13} />
-              {t("tickets.sendReply") || "Send Reply"}
+              {t("tickets.sendReply")}
             </h3>
 
             <div className="td-reply-form">
               <textarea
                 className="td-reply-textarea"
-                placeholder={
-                  t("tickets.typeReply") ||
-                  "Type your reply... (Ctrl+Enter to send)"
-                }
+                placeholder={t("tickets.typeReply")}
                 value={replyText}
                 maxLength={2000}
                 rows={4}
@@ -319,9 +323,7 @@ const TicketDetailModal = ({ isOpen, ticket, onClose, onReplySent }) => {
                   disabled={!replyText.trim() || sending}
                 >
                   <Send size={14} />
-                  {sending
-                    ? t("common.sending") || "Sending..."
-                    : t("tickets.sendReply") || "Send Reply"}
+                  {sending ? t("common.sending") : t("tickets.sendReply")}
                 </button>
               </div>
             </div>
@@ -330,7 +332,7 @@ const TicketDetailModal = ({ isOpen, ticket, onClose, onReplySent }) => {
 
         <div className="modal-footer">
           <button className="modal-btn btn-cancel" onClick={handleClose}>
-            {t("common.close") || "Close"}
+            {t("common.close")}
           </button>
         </div>
       </div>

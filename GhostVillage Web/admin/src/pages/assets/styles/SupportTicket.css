@@ -4,6 +4,7 @@
   width: 100%;
   min-height: 100vh;
   padding: 20px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(
     135deg,
     var(--bg-primary) 0%,
@@ -46,7 +47,6 @@
   color: var(--primary-light);
   text-transform: uppercase;
   letter-spacing: 1px;
-  font-family: "Courier New", Courier, monospace;
 }
 
 .support-ticket-header-text p {
@@ -63,7 +63,6 @@
   margin-top: 8px;
   font-size: 11px;
   color: var(--text-secondary);
-  font-family: "Courier New", Courier, monospace;
 }
 
 .st-header-search {
@@ -125,7 +124,6 @@
   background: rgba(26, 26, 26, 0.85);
   color: var(--text-primary);
   font-size: 13px;
-  font-family: "Courier New", Courier, monospace;
   cursor: pointer;
 }
 
@@ -204,7 +202,6 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  font-family: "Courier New", Courier, monospace;
   font-size: 11px;
   border-right: 1px solid rgba(255, 255, 255, 0.12);
   user-select: none;
@@ -275,7 +272,6 @@
   color: var(--text-secondary);
   border-right: 1px solid rgba(82, 0, 0, 0.1);
   vertical-align: middle;
-  font-family: "Courier New", Courier, monospace;
 }
 
 .support-tickets-table td:last-child {

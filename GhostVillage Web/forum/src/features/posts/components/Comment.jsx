@@ -42,6 +42,13 @@ const Comment = ({
   const [editText, setEditText] = useState(comment.content);
   const [showReportModal, setShowReportModal] = useState(false);
   const isDeletedComment = comment.content === "This comment has been deleted.";
+  const isModerationHiddenComment = Boolean(comment.isHiddenByModeration);
+  const visibleCommentContent = isModerationHiddenComment
+    ? t("posts.hiddenCommentPlaceholder", {
+        defaultValue:
+          "This comment was hidden for violating community guidelines.",
+      })
+    : comment.content;
 
   const deleteCommentMutation = useDeleteComment(postId);
   const createCommentMutation = useCreateComment(postId);
@@ -60,7 +67,9 @@ const Comment = ({
   const replies = repliesData?.data || [];
   const replyCount = replies.length;
   const isCommentEdited = Boolean(
-    !isDeletedComment && (comment?.isEdited || comment?.editedAt),
+    !isDeletedComment &&
+    !isModerationHiddenComment &&
+    (comment?.isEdited || comment?.editedAt),
   );
 
   const handleOpenProfile = (profileId) => {
@@ -75,17 +84,19 @@ const Comment = ({
   };
 
   const handleDelete = async () => {
+    if (isModerationHiddenComment) return;
+
     if (window.confirm(t("posts.confirmDeleteComment"))) {
       await deleteCommentMutation.mutateAsync(comment._id);
     }
   };
 
   useEffect(() => {
-    if (isDeletedComment) {
+    if (isDeletedComment || isModerationHiddenComment) {
       setIsEditing(false);
       setEditText(comment.content);
     }
-  }, [isDeletedComment, comment.content]);
+  }, [isDeletedComment, isModerationHiddenComment, comment.content]);
 
   const handleReply = () => {
     setShowReplyForm(!showReplyForm);
@@ -110,6 +121,12 @@ const Comment = ({
   };
 
   const handleSaveEdit = async () => {
+    if (isModerationHiddenComment) {
+      setIsEditing(false);
+      setEditText(comment.content);
+      return;
+    }
+
     if (!editText.trim() || editText === comment.content) {
       setIsEditing(false);
       return;
@@ -127,6 +144,7 @@ const Comment = ({
   };
 
   const isAuthor = user?._id === comment.author._id;
+  const canShowCommentMenu = !isModerationHiddenComment;
 
   const handleSubmitReport = async ({ reason, customReason }) => {
     await reportCommentMutation.mutateAsync({
@@ -158,7 +176,11 @@ const Comment = ({
       )}
       <div className="comment-content-wrapper">
         <div
-          className={`comment-bubble ${isDeletedComment ? "comment-bubble-deleted" : ""}`}
+          className={`comment-bubble ${
+            isDeletedComment || isModerationHiddenComment
+              ? "comment-bubble-deleted"
+              : ""
+          }`}
         >
           <div className="comment-header">
             <span className="comment-author">
@@ -182,33 +204,35 @@ const Comment = ({
                 </>
               )}
             </span>
-            <Dropdown align="end" className="comment-menu">
-              <Dropdown.Toggle variant="link" bsPrefix="p-0">
-                <MoreVertical size={16} />
-              </Dropdown.Toggle>
-              <Dropdown.Menu>
-                {!isDeletedComment && isAuthor ? (
-                  <>
-                    <Dropdown.Item onClick={() => setIsEditing(true)}>
-                      <Edit2 size={14} />
-                      {t("posts.edit")}
+            {canShowCommentMenu && (
+              <Dropdown align="end" className="comment-menu">
+                <Dropdown.Toggle variant="link" bsPrefix="p-0">
+                  <MoreVertical size={16} />
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  {!isDeletedComment && isAuthor ? (
+                    <>
+                      <Dropdown.Item onClick={() => setIsEditing(true)}>
+                        <Edit2 size={14} />
+                        {t("posts.edit")}
+                      </Dropdown.Item>
+                      <Dropdown.Item
+                        className="text-danger"
+                        onClick={handleDelete}
+                      >
+                        <Trash2 size={14} />
+                        {t("posts.delete")}
+                      </Dropdown.Item>
+                    </>
+                  ) : (
+                    <Dropdown.Item onClick={() => setShowReportModal(true)}>
+                      <Flag size={14} />
+                      {t("posts.report")}
                     </Dropdown.Item>
-                    <Dropdown.Item
-                      className="text-danger"
-                      onClick={handleDelete}
-                    >
-                      <Trash2 size={14} />
-                      {t("posts.delete")}
-                    </Dropdown.Item>
-                  </>
-                ) : (
-                  <Dropdown.Item onClick={() => setShowReportModal(true)}>
-                    <Flag size={14} />
-                    {t("posts.report")}
-                  </Dropdown.Item>
-                )}
-              </Dropdown.Menu>
-            </Dropdown>
+                  )}
+                </Dropdown.Menu>
+              </Dropdown>
+            )}
           </div>
           {isEditing ? (
             <Form.Control
@@ -221,9 +245,13 @@ const Comment = ({
             />
           ) : (
             <p
-              className={`comment-text ${isDeletedComment ? "comment-text-deleted" : ""}`}
+              className={`comment-text ${
+                isDeletedComment || isModerationHiddenComment
+                  ? "comment-text-deleted"
+                  : ""
+              }`}
             >
-              {comment.content}
+              {visibleCommentContent}
             </p>
           )}
         </div>

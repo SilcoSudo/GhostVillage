@@ -11,7 +11,7 @@ const MAX_MESSAGE_LENGTH = 2000;
 
 const ChatWidget = () => {
   const { t, i18n } = useTranslation();
-  const { user } = useContext(AuthContext);
+  const { user, loading: authLoading } = useContext(AuthContext);
   const {
     isOpen,
     setIsOpen,
@@ -23,7 +23,9 @@ const ChatWidget = () => {
     closeChat,
     goBackToList,
   } = useContext(ChatContext);
-  const { data: friends = [] } = useFriendList();
+  const { data: friends = [] } = useFriendList({
+    enabled: !authLoading && !!user,
+  });
   const [messages, setMessages] = useState({});
   const [messageInput, setMessageInput] = useState("");
   const messagesEndRef = useRef(null);
@@ -98,6 +100,10 @@ const ChatWidget = () => {
   const currentMessages = selectedFriend
     ? messages[selectedFriend._id] || []
     : [];
+
+  if (authLoading || !user) {
+    return null;
+  }
 
   return (
     <div className="chat-widget-container">

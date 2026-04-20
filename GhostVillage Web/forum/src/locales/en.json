@@ -362,8 +362,10 @@
     "historyError": "Failed to load ticket history",
     "historyEmpty": "You have no support tickets yet.",
     "activeTicketsTitle": "In Progress",
+    "activeTicketsHint": "These tickets are still being handled.",
     "activeTicketsEmpty": "No tickets are being processed right now.",
     "archivedTicketsTitle": "Closed / Completed",
+    "archivedTicketsHint": "Click a ticket to open the full conversation.",
     "archivedTicketsEmpty": "No tickets in this section yet.",
     "ticketId": "Ticket ID:",
     "createdAt": "Created at:",
@@ -426,11 +428,81 @@
     },
     "emptyNotifications": "No notification messages.",
     "emptyFriendRequests": "No friend requests.",
-    "viewAll": "View all notifications",
     "autoDeleteNote": "Notifications after 15 days will be deleted automatically.",
     "readAll": "Read all",
     "accept": "Accept",
     "reject": "Reject",
+    "contexts": {
+      "post": "Post",
+      "comment": "Comment",
+      "ticket": "Support ticket",
+      "content": "Content"
+    },
+    "entityTypes": {
+      "post": "post",
+      "comment": "comment",
+      "ticket": "support ticket"
+    },
+    "items": {
+      "default": {
+        "actor": "Someone",
+        "title": "Notification",
+        "message": "You have a new notification."
+      },
+      "friendRequest": {
+        "title": "New friend request",
+        "message": "{{name}} sent you a friend request."
+      },
+      "friendAccepted": {
+        "title": "Friend request accepted",
+        "message": "{{name}} accepted your friend request."
+      },
+      "friendRejected": {
+        "title": "Friend request declined",
+        "message": "{{name}} declined your friend request."
+      },
+      "postLiked": {
+        "title": "Post liked",
+        "message": "{{name}} liked your post."
+      },
+      "postCommented": {
+        "title": "New comment",
+        "message": "{{name}} commented on your post."
+      },
+      "commentReplied": {
+        "title": "New reply",
+        "message": "{{name}} replied to your comment."
+      },
+      "reportProcessed": {
+        "reporter": {
+          "title": "Report update",
+          "keep": {
+            "message": "We reviewed the {{entityType}} you reported and no further action is needed."
+          },
+          "remove": {
+            "message": "We reviewed the {{entityType}} you reported and removed it under community guidelines."
+          }
+        },
+        "moderationNotice": {
+          "title": "Moderation notice",
+          "noViolation": "Your {{entityType}} was reviewed and no clear violation was found.",
+          "warning": "Your {{entityType}} was reviewed under community guidelines. A reminder has been applied to your account in line with community guidelines.",
+          "mute": "Your account is temporarily restricted from posting and commenting for {{duration}}.",
+          "mergedHideOnly": "Some of your content visibility has been limited to protect the community.",
+          "default": "Please follow community guidelines to avoid stricter moderation actions."
+        }
+      },
+      "contentRestored": {
+        "title": "Content restored",
+        "message": "Your {{entityType}} has been restored by {{moderatorName}}.",
+        "messageWithNote": "Your {{entityType}} has been restored by {{moderatorName}}. Moderator note: \"{{recoveryReason}}\""
+      },
+      "ticketReplied": {
+        "title": "Support ticket updated",
+        "message": "{{name}} replied to your support ticket.",
+        "messageWithSubject": "{{name}} replied to your support ticket: \"{{subject}}\"."
+      }
+    },
     "toasts": {
       "friendRequest": "You have a new friend request.",
       "friendAccepted": "Your friend request was accepted.",
@@ -570,6 +642,8 @@
     "title": "My Friends",
     "count": "{{count}} friends",
     "empty": "You don't have any friends yet.",
+    "guestTitle": "Friends are for logged-in users",
+    "guestMessage": "Log in to see your friends list and chat features.",
     "unfriend": "Unfriend",
     "openChat": "Open chat"
   },
@@ -718,6 +792,31 @@
     "reasonMisinfo": "Harmful misinformation",
     "reasonOffTopic": "Off-topic or irrelevant content",
     "reasonOther": "Other",
+    "loading": "Loading post...",
+    "comments": "Comments",
+    "writeComment": "Write a comment...",
+    "noComments": "No comments yet.",
+    "hiddenCommentPlaceholder": "This comment was hidden for violating community guidelines.",
+    "replyTo": "Reply to",
+    "reply": "Reply",
+    "replies": "Replies",
+    "actions": {
+      "reply": "Reply"
+    },
+    "confirmDeleteComment": "Are you sure you want to delete this comment?",
+    "deleting": "Deleting...",
+    "confirmDelete": {
+      "post": {
+        "title": "Delete post?",
+        "message": "Are you sure you want to delete this post? This action cannot be undone."
+      },
+      "comment": {
+        "title": "Delete comment?",
+        "message": "Are you sure you want to delete this comment? This action cannot be undone."
+      }
+    },
+    "mediaSlideAlt": "Slide {{index}}",
+    "mediaVideoTitle": "Video {{index}}",
     "categories": {
       "general": "General",
       "discussion": "Discussion",
@@ -805,6 +904,8 @@
         "maxVideosReached": "You can only add up to {{max}} video per post.",
         "uploadFailed": "Failed to upload {{name}}: {{message}}",
         "uploadFailedFallback": "Upload failed",
+        "postingRestricted": "You are temporarily restricted from posting for {{duration}}.",
+        "postingRestrictedFallback": "You are temporarily restricted from posting.",
         "saveFailed": "Failed to save post",
         "invalidImageType": "{{name}}: Invalid type. Allowed: {{types}}",
         "imageTooLarge": "{{name}}: Too large. Max {{maxSize}}MB.",

@@ -288,7 +288,6 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage, onOpenDetail }) => {
                   <Dropdown.Item onClick={() => setShowReportModal(true)}>
                     {t("posts.report")}
                   </Dropdown.Item>
-                  <Dropdown.Item>{t("posts.hide")}</Dropdown.Item>
                 </>
               )}
             </Dropdown.Menu>
@@ -339,20 +338,6 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage, onOpenDetail }) => {
                     ) {
                       blocks.push(content);
                       if (blocks.length === 3) break;
-                    }
-                  }
-                  if (blocks.length < 3) {
-                    for (let child of doc.body.childNodes) {
-                      const content = child.textContent;
-                      if (
-                        !blockTags.includes(child.nodeName) &&
-                        child.nodeType === 3 &&
-                        content &&
-                        content.trim()
-                      ) {
-                        blocks.push(content);
-                        if (blocks.length === 3) break;
-                      }
                     }
                   }
                   // Đếm số block thực sự có nội dung
@@ -411,7 +396,7 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage, onOpenDetail }) => {
                     <img
                       className="carousel-image"
                       src={src}
-                      alt={`Slide ${index + 1}`}
+                      alt={t("posts.mediaSlideAlt", { index: index + 1 })}
                       onClick={() => openDetailModal(false)}
                     />
                     {mediaImages.length > 1 && (
@@ -431,7 +416,9 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage, onOpenDetail }) => {
                 <div key={index} className="video-wrapper">
                   <video
                     src={src}
-                    title={`Video ${index + 1}`}
+                    title={t("posts.mediaVideoTitle", {
+                      index: index + 1,
+                    })}
                     controls
                     preload="metadata"
                     playsInline

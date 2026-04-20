@@ -363,7 +363,6 @@ const PostDetailModal = ({
                         <Dropdown.Item onClick={() => setShowReportModal(true)}>
                           {t("posts.report")}
                         </Dropdown.Item>
-                        <Dropdown.Item>{t("posts.hide")}</Dropdown.Item>
                       </>
                     )}
                   </Dropdown.Menu>
@@ -397,7 +396,7 @@ const PostDetailModal = ({
                       <img
                         className="carousel-image"
                         src={src}
-                        alt={`Slide ${index + 1}`}
+                        alt={t("posts.mediaSlideAlt", { index: index + 1 })}
                       />
                       {mediaImages.length > 1 && (
                         <div className="image-counter">
@@ -417,7 +416,9 @@ const PostDetailModal = ({
                   <div key={index} className="video-wrapper">
                     <iframe
                       src={src}
-                      title={`Video ${index + 1}`}
+                      title={t("posts.mediaVideoTitle", {
+                        index: index + 1,
+                      })}
                       frameBorder="0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen

@@ -1,6 +1,8 @@
 import { useContext, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { User } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../../app/hooks/useAuth";
 import { ChatContext } from "../../app/context/ChatContext.jsx";
 import { useFriendList, useUnfriend } from "../../shared/hooks/useFriend.js";
 import { getAvatarUrl, cacheAvatar } from "../../shared/utils/avatarCache";
@@ -10,6 +12,7 @@ import "./FriendList.css";
 const FriendList = () => {
   const { t } = useTranslation();
   const { openChat } = useContext(ChatContext);
+  const { user, loading: authLoading } = useAuth();
   const { data: friends, isLoading, error } = useFriendList();
   const { mutate: unfriend, isPending: isUnfriending } = useUnfriend();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -71,6 +74,32 @@ const FriendList = () => {
       );
     });
   }, [friends, unreadByFriend, latestMessageAtByFriend]);
+
+  if (authLoading) {
+    return (
+      <div className="friend-list">
+        <div className="loading">
+          <p>{t("friendList.loading")}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="friend-list">
+        <div className="guest-friends-prompt">
+          <p className="guest-friends-title">{t("friendList.guestTitle")}</p>
+          <p className="guest-friends-message">
+            {t("friendList.guestMessage")}
+          </p>
+          <Link to="/login" className="friend-btn add-friend guest-login-btn">
+            {t("auth.login")}
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

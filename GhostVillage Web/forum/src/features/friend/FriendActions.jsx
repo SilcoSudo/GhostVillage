@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../../app/hooks/useAuth";
 import {
   useFriendList,
   useFriendshipStatus,
@@ -25,6 +26,7 @@ const FriendActions = ({
   preloadedStatus = null,
 }) => {
   const { t } = useTranslation();
+  const { user, loading: authLoading } = useAuth();
   // Use preloaded status if provided, otherwise fetch
   const shouldFetch = !preloadedStatus;
   const { data: fetchedStatus, isLoading } = useFriendshipStatus(
@@ -51,6 +53,14 @@ const FriendActions = ({
     isRejecting ||
     (isLoading && !preloadedStatus);
   const hasFriendLimitReached = !status && friends.length >= 20;
+
+  if (authLoading) {
+    return null;
+  }
+
+  if (!user) {
+    return null;
+  }
 
   const handleUnfriend = () => {
     setIsConfirmOpen(true);

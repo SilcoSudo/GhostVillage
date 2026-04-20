@@ -6,7 +6,6 @@ import User from "../../user/userModel.js";
 export const getComments = async (postId, { parentId = null } = {}) => {
   const query = {
     post: postId,
-    isHiddenByModeration: { $ne: true },
   };
 
   if (parentId === "null" || parentId === null || parentId === undefined) {
