@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { X, AlertTriangle, Loader2 } from "lucide-react";
 import "../assets/styles/Modal.css";
 
@@ -7,6 +8,7 @@ import "../assets/styles/Modal.css";
  * Modal xác nhận xóa (reusable)
  */
 const DeleteConfirmModal = ({ title, message, onConfirm, onClose }) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
   const handleConfirm = async () => {
@@ -51,7 +53,7 @@ const DeleteConfirmModal = ({ title, message, onConfirm, onClose }) => {
             className="modal-btn modal-btn-cancel"
             disabled={loading}
           >
-            Hủy
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -62,10 +64,10 @@ const DeleteConfirmModal = ({ title, message, onConfirm, onClose }) => {
             {loading ? (
               <>
                 <Loader2 className="spinner" size={18} />
-                <span>Đang xóa...</span>
+                <span>{t("common.deleting")}</span>
               </>
             ) : (
-              <span>Xác nhận xóa</span>
+              <span>{t("common.confirmDelete")}</span>
             )}
           </button>
         </div>

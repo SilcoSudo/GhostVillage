@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Edit2,
   Search,
@@ -16,6 +17,7 @@ import "./assets/styles/MapManagement.css";
  * Trang quản lý bản đồ với toggle status và edit metadata
  */
 const MapManagementPage = () => {
+  const { t } = useTranslation();
   const [maps, setMaps] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -42,7 +44,7 @@ const MapManagementPage = () => {
       }
     } catch (err) {
       console.error("Error fetching maps:", err);
-      setError(err.response?.data?.message || "Lỗi khi tải danh sách bản đồ");
+      setError(err.response?.data?.message || t("map.errors.loadList"));
     } finally {
       setLoading(false);
     }
@@ -94,7 +96,7 @@ const MapManagementPage = () => {
       }
     } catch (err) {
       console.error("Error toggling map status:", err);
-      alert(err.response?.data?.message || "Lỗi khi cập nhật trạng thái");
+      alert(err.response?.data?.message || t("map.errors.toggleStatus"));
     }
   };
 
@@ -121,9 +123,9 @@ const MapManagementPage = () => {
         <div className="map-management-header">
           <h1>
             <MapIcon size={28} />
-            Quản lý Bản Đồ
+            {t("map.title")}
           </h1>
-          <p>Quản lý trạng thái và thông tin metadata của các bản đồ trong game</p>
+          <p>{t("map.subtitle")}</p>
         </div>
 
         {/* Toolbar */}
@@ -134,7 +136,7 @@ const MapManagementPage = () => {
               <Search className="search-icon" size={20} />
               <input
                 type="text"
-                placeholder="Tìm kiếm bản đồ..."
+                placeholder={t("map.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="search-input"
@@ -148,9 +150,9 @@ const MapManagementPage = () => {
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="filter-select"
               >
-                <option value="all">Tất cả</option>
-                <option value="true">Đang hoạt động</option>
-                <option value="false">Vô hiệu hóa</option>
+                <option value="all">{t("common.all")}</option>
+                <option value="true">{t("common.active")}</option>
+                <option value="false">{t("common.inactive")}</option>
               </select>
             </div>
           </div>
@@ -175,7 +177,7 @@ const MapManagementPage = () => {
             <div className="maps-grid">
               {filteredMaps.length === 0 ? (
                 <div className="empty-state">
-                  <p>Không tìm thấy bản đồ nào</p>
+                  <p>{t("map.empty")}</p>
                 </div>
               ) : (
                 filteredMaps.map((map) => (
@@ -198,7 +200,7 @@ const MapManagementPage = () => {
                       
                       {/* Status Badge */}
                       <span className={`status-badge ${map.identityConfig?.isActive ? "active" : "inactive"}`}>
-                        {map.identityConfig?.isActive ? "Hoạt động" : "Vô hiệu"}
+                        {map.identityConfig?.isActive ? t("common.active") : t("common.inactive")}
                       </span>
                     </div>
 
@@ -206,7 +208,7 @@ const MapManagementPage = () => {
                     <div className="map-info">
                       {/* Map Name */}
                       <h3 className="map-name">
-                        {map.identityConfig?.displayName || "Chưa có tên"}
+                        {map.identityConfig?.displayName || t("map.notConfiguredName")}
                       </h3>
 
                       {/* Map ID */}
@@ -216,26 +218,26 @@ const MapManagementPage = () => {
 
                       {/* Required Level */}
                       <div className="required-level">
-                        <span className="required-level-label">Scene:</span>
+                        <span className="required-level-label">{t("map.sceneLabel")}:</span>
                         <span className="required-level-badge">
-                          {map.identityConfig?.sceneName || "(chưa cấu hình)"}
+                          {map.identityConfig?.sceneName || t("map.notConfigured")}
                         </span>
                       </div>
 
                       {/* Description */}
                       <p className="map-description">
-                        {map.identityConfig?.shortDescription || "Chưa có mô tả"}
+                        {map.identityConfig?.shortDescription || t("map.noDescription")}
                       </p>
 
                       <div className="required-level" style={{ marginBottom: "10px" }}>
-                        <span className="required-level-label">Boss:</span>
+                        <span className="required-level-label">{t("map.bossLabel")}:</span>
                         <span className="required-level-badge">
-                          {map.monsterSystemConfig?.bossConfig?.monsterId || "(none)"}
+                          {map.monsterSystemConfig?.bossConfig?.monsterId || t("map.none")}
                         </span>
                       </div>
 
                       <div className="required-level" style={{ marginBottom: "10px" }}>
-                        <span className="required-level-label">Minions:</span>
+                        <span className="required-level-label">{t("map.minionsLabel")}:</span>
                         <span className="required-level-badge">
                           {map.monsterSystemConfig?.minionConfig?.allowedMonsterIds
                             ?.length || 0}
@@ -243,7 +245,7 @@ const MapManagementPage = () => {
                       </div>
 
                       <div className="required-level" style={{ marginBottom: "12px" }}>
-                        <span className="required-level-label">Base Reward:</span>
+                        <span className="required-level-label">{t("map.baseRewardLabel")}:</span>
                         <span className="required-level-badge">
                           EXP {map.rewardConfig?.baseExp || 0} / Coin {map.rewardConfig?.baseCoin || 0}
                         </span>
@@ -253,7 +255,7 @@ const MapManagementPage = () => {
                       <div className="map-actions">
                         {/* Toggle Switch */}
                         <div className="toggle-group">
-                          <span className="toggle-label">Trạng thái:</span>
+                          <span className="toggle-label">{t("common.status")}:</span>
                           <ToggleSwitch
                             checked={map.identityConfig?.isActive || false}
                             onChange={(checked) => handleToggleStatus(map, checked)}
@@ -264,10 +266,10 @@ const MapManagementPage = () => {
                         <button
                           onClick={() => handleEdit(map)}
                           className="btn-edit"
-                          title="Chỉnh sửa"
+                          title={t("common.edit")}
                         >
                           <Edit2 size={16} />
-                          <span>Sửa</span>
+                          <span>{t("common.edit")}</span>
                         </button>
                       </div>
                     </div>

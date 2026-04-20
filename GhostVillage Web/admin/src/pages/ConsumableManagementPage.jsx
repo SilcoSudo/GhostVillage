@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Edit2,
   Trash2,
@@ -15,6 +16,7 @@ import EditConsumableModal from "./components/EditConsumableModal";
 import "./assets/styles/ConsumableManagement.css";
 
 const ConsumableManagementPage = () => {
+  const { t } = useTranslation();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -54,7 +56,7 @@ const ConsumableManagementPage = () => {
       }
     } catch (err) {
       console.error("Error fetching items:", err);
-      setError(err.response?.data?.message || "Lỗi khi tải danh sách item");
+      setError(err.response?.data?.message || t("item.errors.loadList"));
     } finally {
       setLoading(false);
     }
@@ -86,7 +88,7 @@ const ConsumableManagementPage = () => {
       }
     } catch (err) {
       console.error("Error toggling item status:", err);
-      alert(err.response?.data?.message || "Lỗi khi cập nhật trạng thái");
+      alert(err.response?.data?.message || t("item.errors.toggleStatus"));
     }
   };
 
@@ -135,9 +137,9 @@ const ConsumableManagementPage = () => {
         <div className="consumable-management-header">
           <h1>
             <Package size={28} />
-            Item Management
+            {t("item.title")}
           </h1>
-          <p>Quản lý item theo schema game: itemId, itemName, itemType, prefabName, stats</p>
+          <p>{t("item.subtitle")}</p>
         </div>
 
         <div className="consumable-toolbar">
@@ -147,7 +149,7 @@ const ConsumableManagementPage = () => {
                 <Search className="search-icon" size={20} />
                 <input
                   type="text"
-                  placeholder="Tìm kiếm item..."
+                  placeholder={t("item.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleSearch()}
@@ -163,9 +165,9 @@ const ConsumableManagementPage = () => {
                     onChange={(e) => setFilterStatus(e.target.value)}
                     className="filter-select"
                   >
-                    <option value="all">Tất cả trạng thái</option>
-                    <option value="true">Hoạt động</option>
-                    <option value="false">Vô hiệu hóa</option>
+                    <option value="all">{t("common.all")}</option>
+                    <option value="true">{t("common.active")}</option>
+                    <option value="false">{t("common.inactive")}</option>
                   </select>
                 </div>
 
@@ -175,7 +177,7 @@ const ConsumableManagementPage = () => {
                     onChange={(e) => setFilterType(e.target.value)}
                     className="filter-select"
                   >
-                    <option value="all">Tất cả loại</option>
+                    <option value="all">{t("item.allTypes")}</option>
                     <option value="CONSUMABLE">CONSUMABLE</option>
                     <option value="EQUIPMENT">EQUIPMENT</option>
                   </select>
@@ -183,7 +185,7 @@ const ConsumableManagementPage = () => {
 
                 <button onClick={handleCreate} className="btn-create">
                   <Plus size={18} />
-                  <span>Thêm Item</span>
+                  <span>{t("item.add")}</span>
                 </button>
               </div>
             </div>
@@ -209,19 +211,19 @@ const ConsumableManagementPage = () => {
                   <thead>
                     <tr>
                       <th>Item ID</th>
-                      <th>Tên Item</th>
-                      <th className="center">Loại</th>
+                      <th>{t("item.columns.name")}</th>
+                      <th className="center">{t("item.columns.type")}</th>
                       <th>Prefab</th>
                       <th>Stats</th>
-                      <th className="center">Trạng thái</th>
-                      <th className="center">Thao tác</th>
+                      <th className="center">{t("common.status")}</th>
+                      <th className="center">{t("common.actions")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {items.length === 0 ? (
                       <tr>
                         <td colSpan="7" className="consumable-empty-state">
-                          <p>Không tìm thấy item nào</p>
+                          <p>{t("item.empty")}</p>
                         </td>
                       </tr>
                     ) : (
@@ -255,7 +257,7 @@ const ConsumableManagementPage = () => {
                                 item.isActive ? "active" : "inactive"
                               }`}
                             >
-                              {item.isActive ? "Active" : "Inactive"}
+                              {item.isActive ? t("common.active") : t("common.inactive")}
                             </button>
                           </td>
                           <td>
@@ -263,14 +265,14 @@ const ConsumableManagementPage = () => {
                               <button
                                 onClick={() => handleEdit(item)}
                                 className="consumable-action-btn edit"
-                                title="Chỉnh sửa"
+                                title={t("common.edit")}
                               >
                                 <Edit2 size={16} />
                               </button>
                               <button
                                 onClick={() => handleDelete(item)}
                                 className="consumable-action-btn delete"
-                                title="Xóa"
+                                title={t("common.delete")}
                               >
                                 <Trash2 size={16} />
                               </button>
@@ -291,10 +293,10 @@ const ConsumableManagementPage = () => {
                   disabled={currentPage === 1}
                   className="consumable-pagination-btn"
                 >
-                  Trước
+                  {t("common.previous")}
                 </button>
                 <span className="consumable-pagination-info">
-                  Trang {currentPage} / {pagination.totalPages}
+                  {t("common.pageOf", { page: currentPage, total: pagination.totalPages })}
                 </span>
                 <button
                   onClick={() =>
@@ -305,7 +307,7 @@ const ConsumableManagementPage = () => {
                   disabled={currentPage === pagination.totalPages}
                   className="consumable-pagination-btn"
                 >
-                  Sau
+                  {t("common.next")}
                 </button>
               </div>
             )}
@@ -315,14 +317,17 @@ const ConsumableManagementPage = () => {
 
       {isDeleteModalOpen && (
         <DeleteConfirmModal
-          title="Xác nhận xóa item"
-          message={`Bạn có chắc chắn muốn xóa item "${selectedItem?.itemName}" (${selectedItem?.itemId})?`}
+          title={t("item.deleteTitle")}
+          message={t("item.deleteMessage", {
+            name: selectedItem?.itemName || "",
+            id: selectedItem?.itemId || "",
+          })}
           onConfirm={async () => {
             try {
               await consumableService.deleteConsumable(selectedItem._id);
               handleDeleteSuccess();
             } catch (err) {
-              alert(err.response?.data?.message || "Lỗi khi xóa item");
+              alert(err.response?.data?.message || t("item.errors.delete"));
             }
           }}
           onClose={() => setIsDeleteModalOpen(false)}

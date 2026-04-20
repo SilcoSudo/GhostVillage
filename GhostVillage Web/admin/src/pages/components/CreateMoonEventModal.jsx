@@ -1,14 +1,15 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import moonEventService from "../../shared/services/moonEventService";
 import "../assets/styles/Modal.css";
 
 const CreateMoonEventModal = ({ onClose, onSuccess }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     eventId: "",
     eventName: "",
     description: "",
-    uiIcon: "",
     isActive: true,
     weight: 10,
     environmentModifiers: {
@@ -30,14 +31,6 @@ const CreateMoonEventModal = ({ onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fileToDataUrl = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(new Error("Không thể đọc file ảnh"));
-      reader.readAsDataURL(file);
-    });
-
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -56,27 +49,6 @@ const CreateMoonEventModal = ({ onClose, onSuccess }) => {
     }));
   };
 
-  const handleIconFileChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      setError("Vui lòng chọn file ảnh hợp lệ");
-      return;
-    }
-
-    try {
-      const dataUrl = await fileToDataUrl(file);
-      setFormData((prev) => ({
-        ...prev,
-        uiIcon: dataUrl,
-      }));
-      setError(null);
-    } catch (err) {
-      setError(err.message || "Không thể đọc file ảnh");
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -88,14 +60,13 @@ const CreateMoonEventModal = ({ onClose, onSuccess }) => {
         eventId: formData.eventId.trim().toUpperCase(),
         eventName: formData.eventName.trim(),
         description: formData.description.trim(),
-        uiIcon: formData.uiIcon || "",
       };
 
       await moonEventService.createMoonEvent(payload);
       onSuccess();
       onClose();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to create moon event");
+      setError(err.response?.data?.message || t("moonEvent.errors.create"));
       console.error("Error creating moon event:", err);
     } finally {
       setLoading(false);
@@ -106,7 +77,7 @@ const CreateMoonEventModal = ({ onClose, onSuccess }) => {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content moon-event-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Create Moon Event</h2>
+          <h2>{t("moonEvent.create")}</h2>
           <button className="modal-close" onClick={onClose}>
             <X size={24} />
           </button>
@@ -117,7 +88,7 @@ const CreateMoonEventModal = ({ onClose, onSuccess }) => {
 
           <div className="form-grid">
             <div className="form-group">
-              <label htmlFor="eventId">Event ID *</label>
+              <label htmlFor="eventId">{t("moonEvent.columns.eventId")} *</label>
               <input
                 type="text"
                 id="eventId"
@@ -131,7 +102,7 @@ const CreateMoonEventModal = ({ onClose, onSuccess }) => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="eventName">Event Name *</label>
+              <label htmlFor="eventName">{t("moonEvent.columns.name")} *</label>
               <input
                 type="text"
                 id="eventName"
@@ -145,24 +116,7 @@ const CreateMoonEventModal = ({ onClose, onSuccess }) => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="uiIcon">UI Icon</label>
-              <input
-                type="file"
-                id="uiIcon"
-                name="uiIcon"
-                accept="image/*"
-                onChange={handleIconFileChange}
-                className="form-input"
-              />
-              {formData.uiIcon ? (
-                <div className="image-preview">
-                  <img src={formData.uiIcon} alt="Moon event icon preview" />
-                </div>
-              ) : null}
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="weight">Weight *</label>
+              <label htmlFor="weight">{t("moonEvent.columns.weight")} *</label>
               <input
                 type="number"
                 id="weight"
@@ -184,13 +138,13 @@ const CreateMoonEventModal = ({ onClose, onSuccess }) => {
                   onChange={handleChange}
                   className="form-checkbox"
                 />
-                <span>Active</span>
+                <span>{t("common.active")}</span>
               </label>
             </div>
           </div>
 
           <div className="form-group">
-            <label htmlFor="description">Description</label>
+            <label htmlFor="description">{t("common.description")}</label>
             <textarea
               id="description"
               name="description"
@@ -202,10 +156,10 @@ const CreateMoonEventModal = ({ onClose, onSuccess }) => {
             />
           </div>
 
-          <h3>Environment Modifiers</h3>
+          <h3>{t("moonEvent.environmentModifiers")}</h3>
           <div className="form-grid">
             <div className="form-group">
-              <label>Global Light Intensity</label>
+              <label>{t("moonEvent.globalLightIntensity")}</label>
               <input
                 type="number"
                 value={formData.environmentModifiers.globalLightIntensity}
@@ -217,7 +171,7 @@ const CreateMoonEventModal = ({ onClose, onSuccess }) => {
               />
             </div>
             <div className="form-group">
-              <label>Fog Density</label>
+              <label>{t("moonEvent.fogDensity")}</label>
               <input
                 type="number"
                 value={formData.environmentModifiers.fogDensity}
@@ -228,10 +182,10 @@ const CreateMoonEventModal = ({ onClose, onSuccess }) => {
             </div>
           </div>
 
-          <h3>Monster Buff Multipliers</h3>
+          <h3>{t("moonEvent.monsterBuffMultipliers")}</h3>
           <div className="form-grid">
             <div className="form-group">
-              <label>Speed</label>
+              <label>{t("moonEvent.speed")}</label>
               <input
                 type="number"
                 value={formData.monsterBuffMultipliers.speedMultiplier}
@@ -243,7 +197,7 @@ const CreateMoonEventModal = ({ onClose, onSuccess }) => {
               />
             </div>
             <div className="form-group">
-              <label>Detection Range</label>
+              <label>{t("moonEvent.detectionRange")}</label>
               <input
                 type="number"
                 value={formData.monsterBuffMultipliers.detectionRangeMultiplier}
@@ -255,7 +209,7 @@ const CreateMoonEventModal = ({ onClose, onSuccess }) => {
               />
             </div>
             <div className="form-group">
-              <label>Chase Range</label>
+              <label>{t("moonEvent.chaseRange")}</label>
               <input
                 type="number"
                 value={formData.monsterBuffMultipliers.chaseRangeMultiplier}
@@ -267,7 +221,7 @@ const CreateMoonEventModal = ({ onClose, onSuccess }) => {
               />
             </div>
             <div className="form-group">
-              <label>Cooldown</label>
+              <label>{t("moonEvent.cooldown")}</label>
               <input
                 type="number"
                 value={formData.monsterBuffMultipliers.cooldownMultiplier}
@@ -280,7 +234,7 @@ const CreateMoonEventModal = ({ onClose, onSuccess }) => {
             </div>
           </div>
 
-          <h3>Reward Multipliers</h3>
+          <h3>{t("moonEvent.rewardMultipliers")}</h3>
           <div className="form-grid">
             <div className="form-group">
               <label>EXP</label>
@@ -293,7 +247,7 @@ const CreateMoonEventModal = ({ onClose, onSuccess }) => {
               />
             </div>
             <div className="form-group">
-              <label>Coin</label>
+              <label>{t("moonEvent.coin")}</label>
               <input
                 type="number"
                 value={formData.rewardMultipliers.coinMultiplier}
@@ -306,10 +260,10 @@ const CreateMoonEventModal = ({ onClose, onSuccess }) => {
 
           <div className="modal-actions">
             <button type="button" onClick={onClose} className="cancel-button" disabled={loading}>
-              Cancel
+              {t("common.cancel")}
             </button>
             <button type="submit" className="submit-button" disabled={loading}>
-              {loading ? "Creating..." : "Create Event"}
+              {loading ? t("moonEvent.creating") : t("moonEvent.create")}
             </button>
           </div>
         </form>

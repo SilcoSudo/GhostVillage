@@ -2,11 +2,12 @@ import Perk from "./perkModel.js";
 
 export const PerkService = {
   getAllPerks: async (query) => {
-    const { page = 1, limit = 20, isActive = "all", search } = query;
+    const { page = 1, limit = 20, isActive = "all", rarity = "all", search } = query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const filter = {};
     if (isActive !== "all") filter.isActive = isActive === "true";
+    if (rarity !== "all") filter.rarity = rarity;
     if (search) {
       filter.$or = [
         { perkId: { $regex: search, $options: "i" } },

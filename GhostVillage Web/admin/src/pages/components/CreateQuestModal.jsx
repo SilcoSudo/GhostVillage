@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { X, Loader2, Plus } from "lucide-react";
 import questService from "../../shared/services/questService";
 import "../assets/styles/Modal.css";
@@ -18,6 +19,7 @@ const ACTION_TYPES = [
  * Modal tạo quest theo schema runtime của game
  */
 const CreateQuestModal = ({ onClose, onSuccess }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     questId: "",
     questName: "",
@@ -64,22 +66,22 @@ const CreateQuestModal = ({ onClose, onSuccess }) => {
     e.preventDefault();
 
     if (!formData.questId.trim()) {
-      setError("Quest ID không được để trống");
+      setError(t("questModal.errors.questIdRequired"));
       return;
     }
 
     if (!formData.questName.trim()) {
-      setError("Quest Name không được để trống");
+      setError(t("questModal.errors.questNameRequired"));
       return;
     }
 
     if (!formData.actionType.trim()) {
-      setError("Action Type không được để trống");
+      setError(t("questModal.errors.actionTypeRequired"));
       return;
     }
 
     if (formData.targetCount < 1) {
-      setError("Target Count phải lớn hơn 0");
+      setError(t("questModal.errors.targetCount"));
       return;
     }
 
@@ -107,7 +109,7 @@ const CreateQuestModal = ({ onClose, onSuccess }) => {
       }
     } catch (err) {
       console.error("Error creating quest:", err);
-      setError(err.response?.data?.message || "Lỗi khi tạo quest");
+      setError(err.response?.data?.message || t("questModal.errors.createFailed"));
     } finally {
       setLoading(false);
     }
@@ -117,7 +119,7 @@ const CreateQuestModal = ({ onClose, onSuccess }) => {
     <div className="modal-overlay">
       <div className="modal-container" style={{ maxWidth: "44rem" }}>
         <div className="modal-header">
-          <h2>Tạo Quest Mới</h2>
+          <h2>{t("questModal.createTitle")}</h2>
           <button onClick={onClose} className="modal-close-btn">
             <X size={24} />
           </button>
@@ -144,7 +146,7 @@ const CreateQuestModal = ({ onClose, onSuccess }) => {
 
             <div className="form-group">
               <label className="form-label">
-                Quest Type <span className="required">*</span>
+                {t("quest.columns.type")} <span className="required">*</span>
               </label>
               <select
                 name="questType"
@@ -160,7 +162,7 @@ const CreateQuestModal = ({ onClose, onSuccess }) => {
 
             <div className="form-group">
               <label className="form-label">
-                Action Type <span className="required">*</span>
+                {t("quest.columns.action")} <span className="required">*</span>
               </label>
               <select
                 name="actionType"
@@ -179,7 +181,7 @@ const CreateQuestModal = ({ onClose, onSuccess }) => {
 
             <div className="form-group">
               <label className="form-label">
-                Target Count <span className="required">*</span>
+                {t("quest.columns.target")} <span className="required">*</span>
               </label>
               <input
                 type="number"
@@ -195,7 +197,7 @@ const CreateQuestModal = ({ onClose, onSuccess }) => {
 
           <div className="form-group">
             <label className="form-label">
-              Quest Name <span className="required">*</span>
+              {t("quest.columns.name")} <span className="required">*</span>
             </label>
             <input
               type="text"
@@ -209,7 +211,7 @@ const CreateQuestModal = ({ onClose, onSuccess }) => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Description</label>
+            <label className="form-label">{t("common.description")}</label>
             <textarea
               name="description"
               value={formData.description}
@@ -231,7 +233,7 @@ const CreateQuestModal = ({ onClose, onSuccess }) => {
                 letterSpacing: "1px",
               }}
             >
-              Reward
+              {t("questModal.reward")}
             </h3>
 
             <div className="stats-grid">
@@ -291,7 +293,7 @@ const CreateQuestModal = ({ onClose, onSuccess }) => {
                 onChange={handleChange}
                 style={{ cursor: "pointer" }}
               />
-              Kích hoạt quest ngay sau khi tạo
+              {t("questModal.activateAfterCreate")}
             </label>
           </div>
 
@@ -302,7 +304,7 @@ const CreateQuestModal = ({ onClose, onSuccess }) => {
               className="modal-btn modal-btn-cancel"
               disabled={loading}
             >
-              Hủy
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
@@ -312,12 +314,12 @@ const CreateQuestModal = ({ onClose, onSuccess }) => {
               {loading ? (
                 <>
                   <Loader2 className="spinner" size={18} />
-                  <span>Đang tạo...</span>
+                  <span>{t("questModal.creating")}</span>
                 </>
               ) : (
                 <>
                   <Plus size={18} />
-                  <span>Tạo Quest</span>
+                  <span>{t("questModal.createButton")}</span>
                 </>
               )}
             </button>

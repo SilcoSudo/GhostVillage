@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { X, Loader2, Plus } from "lucide-react";
 import monsterService from "../../shared/services/monsterService";
 import "../assets/styles/Modal.css";
@@ -8,6 +9,7 @@ import "../assets/styles/Modal.css";
  * Modal để tạo quái vật mới
  */
 const CreateMonsterModal = ({ onClose, onSuccess }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     monsterId: "",
     monsterName: "",
@@ -65,17 +67,17 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
     
     // Validation
     if (!formData.monsterId.trim()) {
-      setError("Monster ID không được để trống");
+      setError(t("monsterModal.errors.monsterIdRequired"));
       return;
     }
 
     if (!formData.monsterName.trim()) {
-      setError("Tên quái vật không được để trống");
+      setError(t("monsterModal.errors.monsterNameRequired"));
       return;
     }
 
     if (!formData.prefabName.trim()) {
-      setError("Prefab Name không được để trống");
+      setError(t("monsterModal.errors.prefabRequired"));
       return;
     }
 
@@ -88,7 +90,7 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
         try {
           parsedSpecialSkillConfig = JSON.parse(specialSkillJson);
         } catch {
-          setError("Special Skill Config phải là JSON hợp lệ");
+          setError(t("monsterModal.errors.specialSkillJson"));
           setLoading(false);
           return;
         }
@@ -106,7 +108,7 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
       }
     } catch (err) {
       console.error("Error creating monster:", err);
-      setError(err.response?.data?.message || "Lỗi khi tạo quái vật");
+      setError(err.response?.data?.message || t("monsterModal.errors.createFailed"));
     } finally {
       setLoading(false);
     }
@@ -117,7 +119,7 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
       <div className="modal-container" style={{ maxWidth: "760px" }}>
         {/* Header */}
         <div className="modal-header">
-          <h2>Tạo quái vật mới</h2>
+          <h2>{t("monsterModal.createTitle")}</h2>
           <button onClick={onClose} className="modal-close-btn">
             <X size={24} />
           </button>
@@ -130,7 +132,7 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
             <div className="modal-error">{error}</div>
           )}
 
-          <h3 className="modal-section-title">1) Thông tin cơ bản</h3>
+          <h3 className="modal-section-title">{t("monsterModal.sections.basic")}</h3>
 
           <div className="form-group">
             <label className="form-label">
@@ -149,7 +151,7 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
 
           <div className="form-group">
             <label className="form-label">
-              Tên quái <span className="required">*</span>
+              {t("monsterModal.monsterName")} <span className="required">*</span>
             </label>
             <input
               type="text"
@@ -157,7 +159,7 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
               value={formData.monsterName}
               onChange={handleChange}
               className="form-input"
-              placeholder="Ông Kẹ"
+              placeholder={t("monsterModal.monsterNamePlaceholder")}
               required
             />
           </div>
@@ -192,7 +194,7 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
             </div>
           </div>
 
-          <h3 className="modal-section-title">2) Movement Config</h3>
+          <h3 className="modal-section-title">{t("monsterModal.sections.movement")}</h3>
           <div className="form-group">
             <div className="stats-grid">
               <div className="form-group">
@@ -231,7 +233,7 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
             </div>
           </div>
 
-          <h3 className="modal-section-title">3) Combat Config</h3>
+          <h3 className="modal-section-title">{t("monsterModal.sections.combat")}</h3>
           <div className="stats-grid">
             <div className="form-group">
               <label className="form-label">Chase Range</label>
@@ -270,7 +272,7 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
             </div>
           </div>
 
-          <h3 className="modal-section-title">4) Detection Config</h3>
+          <h3 className="modal-section-title">{t("monsterModal.sections.detection")}</h3>
           <div className="stats-grid">
             <div className="form-group">
               <label className="form-label">Detection Range</label>
@@ -296,7 +298,7 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
             </div>
           </div>
 
-          <h3 className="modal-section-title">5) Special Skill Config</h3>
+          <h3 className="modal-section-title">{t("monsterModal.sections.specialSkill")}</h3>
           <div className="form-group">
             <label className="form-label">Special Skill JSON</label>
             <textarea
@@ -317,7 +319,7 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
               className="modal-btn modal-btn-cancel"
               disabled={loading}
             >
-              Hủy
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
@@ -327,12 +329,12 @@ const CreateMonsterModal = ({ onClose, onSuccess }) => {
               {loading ? (
                 <>
                   <Loader2 className="spinner" size={18} />
-                  <span>Đang tạo...</span>
+                  <span>{t("monsterModal.creating")}</span>
                 </>
               ) : (
                 <>
                   <Plus size={18} />
-                  <span>Tạo quái vật</span>
+                  <span>{t("monsterModal.createButton")}</span>
                 </>
               )}
             </button>

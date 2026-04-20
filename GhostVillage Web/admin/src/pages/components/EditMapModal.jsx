@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { X, Loader2, Save } from "lucide-react";
 import mapService from "../../shared/services/mapService";
 import "../assets/styles/Modal.css";
@@ -34,6 +35,7 @@ const parseJsonObject = (label, value) => {
  * Chỉnh map theo đúng 5 phần schema JSON runtime
  */
 const EditMapModal = ({ map, onClose, onSuccess }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     // 1) identityConfig
     mapId: "",
@@ -116,17 +118,17 @@ const EditMapModal = ({ map, onClose, onSuccess }) => {
     e.preventDefault();
 
     if (!formData.displayName.trim()) {
-      setError("displayName không được để trống");
+      setError(t("mapModal.errors.displayNameRequired"));
       return;
     }
 
     if (!formData.sceneName.trim()) {
-      setError("sceneName không được để trống");
+      setError(t("mapModal.errors.sceneNameRequired"));
       return;
     }
 
     if (formData.baseExp < 0 || formData.baseCoin < 0) {
-      setError("baseExp/baseCoin không được âm");
+      setError(t("mapModal.errors.rewardNonNegative"));
       return;
     }
 
@@ -189,7 +191,7 @@ const EditMapModal = ({ map, onClose, onSuccess }) => {
       if (response.success) onSuccess();
     } catch (err) {
       console.error("Error updating map:", err);
-      setError(err.response?.data?.message || err.message || "Lỗi khi cập nhật map");
+      setError(err.response?.data?.message || err.message || t("mapModal.errors.updateFailed"));
     } finally {
       setLoading(false);
     }
@@ -200,7 +202,7 @@ const EditMapModal = ({ map, onClose, onSuccess }) => {
       <div className="modal-container" style={{ maxWidth: "64rem" }}>
         <div className="modal-header">
           <div>
-            <h2>Chỉnh sửa map theo JSON</h2>
+            <h2>{t("mapModal.title")}</h2>
             <div className="map-id">{formData.mapId}</div>
           </div>
           <button onClick={onClose} className="modal-close-btn">
@@ -212,7 +214,7 @@ const EditMapModal = ({ map, onClose, onSuccess }) => {
           {error && <div className="modal-error">{error}</div>}
 
           <h3 style={{ color: "#B5A642", marginBottom: "10px", fontSize: "0.95rem" }}>
-            1) identityConfig
+            {t("mapModal.sections.identity")}
           </h3>
           <div className="stats-grid">
             <div className="form-group">
@@ -281,7 +283,7 @@ const EditMapModal = ({ map, onClose, onSuccess }) => {
           </div>
 
           <h3 style={{ color: "#B5A642", marginBottom: "10px", fontSize: "0.95rem" }}>
-            2) consumableConfig
+            {t("mapModal.sections.consumable")}
           </h3>
           <div className="form-group">
             <label className="form-label">mandatoryItems (JSON Array)</label>
@@ -305,7 +307,7 @@ const EditMapModal = ({ map, onClose, onSuccess }) => {
           </div>
 
           <h3 style={{ color: "#B5A642", marginBottom: "10px", fontSize: "0.95rem" }}>
-            3) equipmentConfig
+            {t("mapModal.sections.equipment")}
           </h3>
           <div className="form-group">
             <label className="form-label">mandatoryEquipment (JSON Array)</label>
@@ -329,7 +331,7 @@ const EditMapModal = ({ map, onClose, onSuccess }) => {
           </div>
 
           <h3 style={{ color: "#B5A642", marginBottom: "10px", fontSize: "0.95rem" }}>
-            4) monsterSystemConfig
+            {t("mapModal.sections.monsterSystem")}
           </h3>
           <div className="form-group">
             <label className="form-label">bossConfig.monsterId</label>
@@ -354,7 +356,7 @@ const EditMapModal = ({ map, onClose, onSuccess }) => {
           </div>
 
           <h3 style={{ color: "#B5A642", marginBottom: "10px", fontSize: "0.95rem" }}>
-            5) rewardConfig
+            {t("mapModal.sections.reward")}
           </h3>
           <div className="stats-grid" style={{ marginBottom: "20px" }}>
             <div className="form-group">
@@ -388,7 +390,7 @@ const EditMapModal = ({ map, onClose, onSuccess }) => {
               className="modal-btn modal-btn-cancel"
               disabled={loading}
             >
-              Hủy
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
@@ -398,12 +400,12 @@ const EditMapModal = ({ map, onClose, onSuccess }) => {
               {loading ? (
                 <>
                   <Loader2 className="spinner" size={18} />
-                  <span>Đang lưu...</span>
+                  <span>{t("mapModal.saving")}</span>
                 </>
               ) : (
                 <>
                   <Save size={18} />
-                  <span>Lưu theo JSON</span>
+                  <span>{t("mapModal.saveJson")}</span>
                 </>
               )}
             </button>

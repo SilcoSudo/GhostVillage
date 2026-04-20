@@ -17,10 +17,47 @@
     "administration": "Quản trị",
     "collapse": "Thu gọn thanh bên",
     "expand": "Mở rộng thanh bên",
-    "viewProfile": "Xem hồ sơ"
+    "viewProfile": "Xem hồ sơ",
+    "game": "Game"
+  },
+  "language": {
+    "switchLanguage": "Chuyển ngôn ngữ"
+  },
+  "gameNav": {
+    "monsters": "Quản lý Quái vật",
+    "maps": "Quản lý Bản đồ",
+    "quests": "Quản lý Nhiệm vụ",
+    "items": "Quản lý Vật phẩm",
+    "perks": "Quản lý Perk",
+    "moonEvents": "Quản lý Sự kiện Trăng"
   },
   "common": {
-    "logout": "Đăng xuất"
+    "logout": "Đăng xuất",
+    "changePassword": "Đổi mật khẩu",
+    "all": "Tất cả",
+    "active": "Hoạt động",
+    "inactive": "Vô hiệu",
+    "status": "Trạng thái",
+    "actions": "Thao tác",
+    "view": "Xem",
+    "edit": "Sửa",
+    "delete": "Xóa",
+    "create": "Tạo mới",
+    "cancel": "Hủy",
+    "save": "Lưu",
+    "close": "Đóng",
+    "confirm": "Xác nhận",
+    "confirmDelete": "Xác nhận xóa",
+    "previous": "Trước",
+    "next": "Sau",
+    "pageOf": "Trang {{page}} / {{total}}",
+    "description": "Mô tả",
+    "search": "Tìm kiếm...",
+    "noData": "Không có dữ liệu",
+    "loading": "Đang tải...",
+    "deleting": "Đang xóa...",
+    "error": "Lỗi",
+    "success": "Thành công"
   },
   "dashboard": {
     "title": "Bảng Điều Khiển Admin",
@@ -47,8 +84,12 @@
     "reportBugDesc": "Báo cáo lỗi và vấn đề"
   },
   "users": {
+    "managementTitle": "Quản lý Người dùng",
     "searchPlaceholder": "Tìm kiếm người dùng theo tên hoặc email...",
     "totalUsers": "Tổng: {{count}} người dùng",
+    "loading": "Đang tải người dùng...",
+    "accountStatus": "Trạng thái tài khoản",
+    "restoreAction": "Khôi phục quyền đăng bài và bình luận",
     "active": "Hoạt động",
     "banned": "Bị khóa",
     "joinDate": "Ngày tham gia",
@@ -58,7 +99,17 @@
     "ban": "Khóa",
     "unban": "Mở khóa",
     "muteReason": "Lý do tắt tiếng",
-    "noUsersFound": "Không tìm thấy người dùng nào"
+    "noUsersFound": "Không tìm thấy người dùng nào",
+    "status": {
+      "remaining": "Còn lại: {{time}}",
+      "restricted": "Đang bị hạn chế",
+      "noRestriction": "Không bị hạn chế",
+      "expired": "Hết hạn"
+    },
+    "errors": {
+      "loadList": "Không thể tải danh sách người dùng",
+      "unmute": "Không thể gỡ tắt tiếng"
+    }
   },
   "announcements": {
     "title": "Tiêu đề",
@@ -79,6 +130,373 @@
     "deleteAnnouncement": "Xóa thông báo",
     "content": "Nội dung",
     "excerpt": "Trích đoạn",
-    "coverImage": "Ảnh bìa"
+    "coverImage": "Ảnh bìa",
+    "modal": {
+      "titleLabel": "Tiêu đề thông báo",
+      "titlePlaceholder": "Nhập tiêu đề thông báo...",
+      "contentPlaceholder": "Nhập nội dung thông báo... (trình soạn thảo Rich Text sẽ được tích hợp tại đây)",
+      "contentShortPlaceholder": "Nhập nội dung thông báo...",
+      "excerptPlaceholder": "Tóm tắt ngắn (để trống để tự động tạo từ nội dung)",
+      "briefSummary": "Tóm tắt ngắn",
+      "richTextHint": "Tích hợp Rich Text Editor sẽ có sớm",
+      "optional": "không bắt buộc",
+      "previewAlt": "Xem trước",
+      "uploadCover": "Nhấn để tải ảnh bìa",
+      "uploadFormats": "JPG, PNG, GIF, WEBP (tối đa 5MB)",
+      "pinAnnouncement": "Ghim thông báo này",
+      "setActive": "Đặt ở trạng thái hoạt động",
+      "uploading": "Đang tải ảnh...",
+      "creating": "Đang tạo...",
+      "saving": "Đang lưu...",
+      "createButton": "Tạo thông báo",
+      "saveChanges": "Lưu thay đổi",
+      "deleteWarning": "Bạn có chắc muốn xóa thông báo này? Hành động này không thể hoàn tác.",
+      "anonymous": "Ẩn danh",
+      "deleteInfo": "Thông báo \"{{title}}\" sẽ bị xóa vĩnh viễn.",
+      "errors": {
+        "titleRequired": "Tiêu đề là bắt buộc",
+        "contentRequired": "Nội dung là bắt buộc",
+        "uploadImageFailed": "Không thể tải ảnh lên"
+      }
+    }
+  },
+  "wiki": {
+    "title": "Wiki Game",
+    "subtitle": "Quản lý quái vật, vật phẩm và bản đồ",
+    "search": "Tìm kiếm wiki...",
+    "managementTitle": "Quản lý Wiki",
+    "managementSubtitle": "Quản lý bài wiki, hướng dẫn và dữ liệu",
+    "allCategories": "Tất cả danh mục",
+    "createNew": "Tạo Wiki mới",
+    "titleColumn": "Tiêu đề",
+    "categoryColumn": "Danh mục",
+    "authorColumn": "Tác giả",
+    "createdColumn": "Ngày tạo",
+    "unknownAuthor": "Không rõ",
+    "addFeatured": "Thêm vào nổi bật",
+    "removeFeatured": "Bỏ khỏi nổi bật",
+    "deleteTitle": "Xóa Wiki",
+    "deleteMessage": "Bạn có chắc chắn muốn xóa wiki \"{{title}}\"? Hành động này không thể hoàn tác.",
+    "monsters": "Quái vật",
+    "items": "Vật phẩm",
+    "maps": "Bản đồ",
+    "name": "Tên",
+    "description": "Mô tả",
+    "create": "Tạo mới",
+    "view": "Xem chi tiết",
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa",
+    "noData": "Không tìm thấy wiki nào",
+    "status": {
+      "published": "Đã xuất bản",
+      "draft": "Bản nháp",
+      "archived": "Lưu trữ"
+    },
+    "errors": {
+      "loadList": "Lỗi khi tải danh sách wiki",
+      "toggleFeatured": "Lỗi khi đổi trạng thái nổi bật",
+      "delete": "Lỗi khi xóa wiki"
+    }
+  },
+  "monster": {
+    "title": "Quản lý Quái Vật",
+    "subtitle": "Quản lý thông tin quái vật theo schema backend mới",
+    "searchPlaceholder": "Tìm kiếm quái vật...",
+    "empty": "Không tìm thấy quái vật nào",
+    "deleteTitle": "Xác nhận xóa quái vật",
+    "deleteMessage": "Bạn có chắc chắn muốn xóa quái vật \"{{name}}\"? Quái vật sẽ bị vô hiệu hóa.",
+    "columns": {
+      "name": "Tên quái",
+      "type": "Loại",
+      "movement": "Di chuyển",
+      "combat": "Chiến đấu",
+      "detection": "Phát hiện"
+    },
+    "errors": {
+      "loadList": "Lỗi khi tải danh sách quái vật",
+      "toggleStatus": "Lỗi khi cập nhật trạng thái",
+      "delete": "Lỗi khi xóa quái vật"
+    }
+  },
+  "map": {
+    "title": "Quản lý Bản Đồ",
+    "subtitle": "Quản lý trạng thái và metadata của bản đồ trong game",
+    "searchPlaceholder": "Tìm kiếm bản đồ...",
+    "empty": "Không tìm thấy bản đồ nào",
+    "sceneLabel": "Scene",
+    "bossLabel": "Boss",
+    "minionsLabel": "Minions",
+    "baseRewardLabel": "Thưởng cơ bản",
+    "noDescription": "Chưa có mô tả",
+    "notConfiguredName": "Chưa có tên",
+    "notConfigured": "(chưa cấu hình)",
+    "none": "(none)",
+    "errors": {
+      "loadList": "Lỗi khi tải danh sách bản đồ",
+      "toggleStatus": "Lỗi khi cập nhật trạng thái"
+    }
+  },
+  "quest": {
+    "title": "Quản lý Nhiệm vụ",
+    "subtitle": "Quản lý nhiệm vụ theo schema runtime của game",
+    "searchPlaceholder": "Tìm kiếm quest...",
+    "allTypes": "Tất cả loại quest",
+    "add": "Thêm Quest",
+    "empty": "Không tìm thấy quest nào",
+    "rewardDetails": "Chi tiết thưởng",
+    "noDescription": "(Không có mô tả)",
+    "coinLabel": "Coin",
+    "expLabel": "EXP",
+    "titleIdLabel": "Title ID",
+    "none": "(none)",
+    "deleteTitle": "Xác nhận xóa quest",
+    "deleteMessage": "Bạn có chắc chắn muốn xóa quest \"{{name}}\" ({{id}})? Hành động này không thể hoàn tác.",
+    "stats": {
+      "total": "Tổng Quest",
+      "types": "Loại Quest"
+    },
+    "columns": {
+      "name": "Tên Quest",
+      "type": "Loại",
+      "action": "Hành động",
+      "target": "Mục tiêu",
+      "reward": "Phần thưởng"
+    },
+    "errors": {
+      "loadList": "Lỗi khi tải danh sách quest",
+      "toggleStatus": "Lỗi khi cập nhật trạng thái",
+      "delete": "Lỗi khi xóa quest"
+    }
+  },
+  "item": {
+    "title": "Quản lý Vật Phẩm",
+    "subtitle": "Quản lý item theo schema game: itemId, itemName, itemType, prefabName, stats",
+    "searchPlaceholder": "Tìm kiếm item...",
+    "allTypes": "Tất cả loại",
+    "add": "Thêm Item",
+    "empty": "Không tìm thấy item nào",
+    "deleteTitle": "Xác nhận xóa item",
+    "deleteMessage": "Bạn có chắc chắn muốn xóa item \"{{name}}\" ({{id}})?",
+    "columns": {
+      "name": "Tên Item",
+      "type": "Loại"
+    },
+    "errors": {
+      "loadList": "Lỗi khi tải danh sách item",
+      "toggleStatus": "Lỗi khi cập nhật trạng thái",
+      "delete": "Lỗi khi xóa item"
+    }
+  },
+  "perk": {
+    "title": "Quản lý Perk",
+    "subtitle": "Quản lý danh sách perk, chỉnh sửa thông tin và bật/tắt kích hoạt",
+    "searchPlaceholder": "Tìm perk theo ID, tên hoặc prefab...",
+    "allRarity": "Tất cả rarity",
+    "empty": "Không tìm thấy perk nào",
+    "columns": {
+      "name": "Tên Perk"
+    },
+    "errors": {
+      "loadList": "Lỗi khi tải danh sách perk",
+      "toggleStatus": "Lỗi khi cập nhật trạng thái perk"
+    }
+  },
+  "moonEvent": {
+    "title": "QUẢN LÝ SỰ KIỆN TRĂNG",
+    "create": "Tạo Sự Kiện",
+    "update": "Cập nhật Sự Kiện",
+    "creating": "Đang tạo...",
+    "updating": "Đang cập nhật...",
+    "editTitle": "Chỉnh sửa Sự Kiện Trăng",
+    "createFirst": "Tạo Sự Kiện Đầu Tiên",
+    "searchPlaceholder": "Tìm theo Event ID hoặc tên...",
+    "loading": "Đang tải sự kiện trăng...",
+    "empty": "Không tìm thấy sự kiện trăng",
+    "environmentModifiers": "Điều chỉnh môi trường",
+    "globalLightIntensity": "Cường độ ánh sáng toàn cục",
+    "fogDensity": "Mật độ sương mù",
+    "monsterBuffMultipliers": "Hệ số tăng sức mạnh quái vật",
+    "speed": "Tốc độ",
+    "detectionRange": "Phạm vi phát hiện",
+    "chaseRange": "Phạm vi truy đuổi",
+    "cooldown": "Hồi chiêu",
+    "detect": "Phát hiện",
+    "chase": "Truy đuổi",
+    "rewardMultipliers": "Hệ số phần thưởng",
+    "coin": "Coin",
+    "activate": "Bấm để kích hoạt",
+    "deactivate": "Bấm để vô hiệu",
+    "deleteTitle": "Xóa Sự Kiện Trăng",
+    "deleteMessage": "Bạn có chắc chắn muốn xóa \"{{name}}\" ({{id}})? Hành động này không thể hoàn tác.",
+    "columns": {
+      "eventId": "Event ID",
+      "name": "Tên Sự Kiện",
+      "weight": "Trọng số"
+    },
+    "errors": {
+      "loadList": "Không thể tải danh sách sự kiện trăng",
+      "toggleStatus": "Không thể đổi trạng thái sự kiện",
+      "delete": "Không thể xóa sự kiện trăng",
+      "create": "Không thể tạo sự kiện trăng",
+      "update": "Không thể cập nhật sự kiện trăng"
+    }
+  },
+  "activityLog": {
+    "title": "Nhật ký Hoạt động",
+    "subtitle": "Theo dõi lịch sử hệ thống, thao tác admin và lỗi",
+    "searchPlaceholder": "Tìm kiếm logs...",
+    "empty": "Không tìm thấy logs nào",
+    "system": "Hệ thống",
+    "na": "N/A",
+    "detailTitle": "Chi tiết Log",
+    "stats": {
+      "total": "Tổng Logs",
+      "today": "Hôm nay",
+      "week": "Tuần này",
+      "errors": "Lỗi"
+    },
+    "filters": {
+      "allActions": "Tất cả actions",
+      "allEntities": "Tất cả entities",
+      "allSeverity": "Tất cả severity"
+    },
+    "columns": {
+      "timestamp": "Thời gian",
+      "action": "Hành động",
+      "entityType": "Loại đối tượng",
+      "entityId": "ID đối tượng",
+      "entityName": "Tên đối tượng",
+      "severity": "Mức độ",
+      "user": "Người dùng",
+      "ipAddress": "Địa chỉ IP",
+      "metadata": "Metadata"
+    },
+    "errors": {
+      "loadList": "Lỗi khi tải danh sách logs"
+    }
+  },
+  "monsterModal": {
+    "createTitle": "Tạo quái vật mới",
+    "editTitle": "Chỉnh sửa quái vật",
+    "createButton": "Tạo quái vật",
+    "creating": "Đang tạo...",
+    "saving": "Đang lưu...",
+    "monsterName": "Tên quái",
+    "monsterNamePlaceholder": "Ông Kẹ",
+    "monsterNameInput": "Nhập tên quái vật",
+    "monsterIdReadonly": "Monster ID (không thể chỉnh sửa)",
+    "sections": {
+      "basic": "1) Thông tin cơ bản",
+      "movement": "2) Movement Config",
+      "combat": "3) Combat Config",
+      "detection": "4) Detection Config",
+      "specialSkill": "5) Special Skill Config"
+    },
+    "errors": {
+      "monsterIdRequired": "Monster ID không được để trống",
+      "monsterNameRequired": "Tên quái vật không được để trống",
+      "prefabRequired": "Prefab Name không được để trống",
+      "specialSkillJson": "Special Skill Config phải là JSON hợp lệ",
+      "createFailed": "Lỗi khi tạo quái vật",
+      "updateFailed": "Lỗi khi cập nhật quái vật"
+    }
+  },
+  "mapModal": {
+    "title": "Chỉnh sửa map theo JSON",
+    "saveJson": "Lưu theo JSON",
+    "saving": "Đang lưu...",
+    "sections": {
+      "identity": "1) identityConfig",
+      "consumable": "2) consumableConfig",
+      "equipment": "3) equipmentConfig",
+      "monsterSystem": "4) monsterSystemConfig",
+      "reward": "5) rewardConfig"
+    },
+    "errors": {
+      "displayNameRequired": "displayName không được để trống",
+      "sceneNameRequired": "sceneName không được để trống",
+      "rewardNonNegative": "baseExp/baseCoin không được âm",
+      "updateFailed": "Lỗi khi cập nhật map"
+    }
+  },
+  "questModal": {
+    "createTitle": "Tạo Quest Mới",
+    "editTitle": "Chỉnh sửa Quest",
+    "createButton": "Tạo Quest",
+    "creating": "Đang tạo...",
+    "saving": "Đang lưu...",
+    "reward": "Phần thưởng",
+    "activateAfterCreate": "Kích hoạt quest ngay sau khi tạo",
+    "activeLabel": "Quest đang kích hoạt",
+    "errors": {
+      "questIdRequired": "Quest ID không được để trống",
+      "questNameRequired": "Quest Name không được để trống",
+      "actionTypeRequired": "Action Type không được để trống",
+      "targetCount": "Target Count phải lớn hơn 0",
+      "createFailed": "Lỗi khi tạo quest",
+      "updateFailed": "Lỗi khi cập nhật quest"
+    }
+  },
+  "itemModal": {
+    "createTitle": "Tạo Item Mới",
+    "editTitle": "Chỉnh sửa Item",
+    "createButton": "Tạo item",
+    "creating": "Đang tạo...",
+    "saving": "Đang lưu...",
+    "activeLabel": "Kích hoạt item",
+    "itemIdReadonly": "Item ID (không thể chỉnh sửa)",
+    "sections": {
+      "basic": "1) Thông tin cơ bản",
+      "stats": "2) Stats JSON"
+    },
+    "errors": {
+      "itemIdRequired": "Item ID không được để trống",
+      "itemNameRequired": "Tên item không được để trống",
+      "prefabRequired": "Prefab Name không được để trống",
+      "statsJson": "Stats phải là JSON hợp lệ",
+      "createFailed": "Lỗi khi tạo item",
+      "updateFailed": "Lỗi khi cập nhật item"
+    }
+  },
+  "perkModal": {
+    "editTitle": "Chỉnh sửa Perk",
+    "saving": "Đang lưu...",
+    "perkIdReadonly": "Perk ID (không thể chỉnh sửa)",
+    "errors": {
+      "nameRequired": "Tên perk không được để trống",
+      "prefabRequired": "Prefab ID không được để trống",
+      "modifiersJson": "Modifiers phải là JSON hợp lệ",
+      "updateFailed": "Lỗi khi cập nhật perk"
+    }
+  },
+  "wikiModal": {
+    "createTitle": "Tạo Wiki mới",
+    "editTitle": "Chỉnh sửa Wiki",
+    "createButton": "Tạo Wiki",
+    "creating": "Đang tạo...",
+    "saving": "Đang lưu...",
+    "titlePlaceholder": "Nhập tiêu đề wiki",
+    "slugHelper": "URL-friendly version của tiêu đề",
+    "excerpt": "Mô tả ngắn (Excerpt)",
+    "excerptPlaceholder": "Mô tả ngắn về nội dung wiki",
+    "charCount": "{{count}}/{{max}} ký tự",
+    "uploadImage": "Upload ảnh",
+    "uploading": "Đang tải...",
+    "contentPlaceholder": "Nhập nội dung wiki (hỗ trợ Markdown)",
+    "markdownHelp": "Hỗ trợ Markdown: **bold**, *italic*, [link](url), ![image](url)",
+    "tags": "Tags",
+    "tagsPlaceholder": "Nhập tag và nhấn Enter hoặc dấu phẩy",
+    "featured": "Featured (Nổi bật)",
+    "public": "Công khai",
+    "errors": {
+      "imageType": "Vui lòng chọn file ảnh",
+      "imageSize": "Kích thước ảnh không được vượt quá 5MB",
+      "uploadFailed": "Lỗi khi upload ảnh",
+      "titleRequired": "Tiêu đề không được để trống",
+      "slugRequired": "Slug không được để trống",
+      "contentRequired": "Nội dung không được để trống",
+      "createFailed": "Lỗi khi tạo wiki",
+      "updateFailed": "Lỗi khi cập nhật wiki"
+    }
   }
 }

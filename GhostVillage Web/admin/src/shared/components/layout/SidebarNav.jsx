@@ -73,12 +73,12 @@ const SidebarNav = () => {
   ];
 
   const gameLinks = [ 
-    { icon: Skull, label: 'Monster Management', path: '/monsters', color: 'red' },
-    { icon: Map, label: 'Map Management', path: '/maps', color: 'blue' },
-    { icon: Scroll, label: 'Quest Management', path: '/quests', color: 'purple' },
-    { icon: Pill, label: 'Item Managment', path: '/consumables', color: 'green' },
-    { icon: Sparkles, label: 'Perk Management', path: '/perks', color: 'indigo' },
-    { icon: Moon, label: 'Moon Event Management', path: '/moon-events', color: 'yellow' },
+    { icon: Skull, label: t('gameNav.monsters'), path: '/monsters', color: 'red' },
+    { icon: Map, label: t('gameNav.maps'), path: '/maps', color: 'blue' },
+    { icon: Scroll, label: t('gameNav.quests'), path: '/quests', color: 'purple' },
+    { icon: Pill, label: t('gameNav.items'), path: '/consumables', color: 'green' },
+    { icon: Sparkles, label: t('gameNav.perks'), path: '/perks', color: 'indigo' },
+    { icon: Moon, label: t('gameNav.moonEvents'), path: '/moon-events', color: 'yellow' },
     { icon: Activity, label: t('dashboard.activityLog'), path: '/activity-log', color: 'gray' },
     { icon: Package, label: t('dashboard.gameVersion'), path: '/game-versions', color: 'indigo' },
   ]

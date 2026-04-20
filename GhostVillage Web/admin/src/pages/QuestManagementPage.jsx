@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Edit2,
   Trash2,
@@ -20,6 +21,7 @@ import "./assets/styles/QuestManagement.css";
  * Trang quản lý nhiệm vụ theo schema quest của game
  */
 const QuestManagementPage = () => {
+  const { t } = useTranslation();
   const [quests, setQuests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -67,7 +69,7 @@ const QuestManagementPage = () => {
       }
     } catch (err) {
       console.error("Error fetching quests:", err);
-      setError(err.response?.data?.message || "Lỗi khi tải danh sách quest");
+      setError(err.response?.data?.message || t("quest.errors.loadList"));
     } finally {
       setLoading(false);
     }
@@ -113,7 +115,7 @@ const QuestManagementPage = () => {
       }
     } catch (err) {
       console.error("Error toggling quest status:", err);
-      alert(err.response?.data?.message || "Lỗi khi cập nhật trạng thái");
+      alert(err.response?.data?.message || t("quest.errors.toggleStatus"));
     }
   };
 
@@ -160,27 +162,27 @@ const QuestManagementPage = () => {
         <div className="quest-management-header">
           <h1>
             <Scroll size={28} />
-            Quest Management
+            {t("quest.title")}
           </h1>
-          <p>Quản lý nhiệm vụ theo schema runtime của game</p>
+          <p>{t("quest.subtitle")}</p>
         </div>
 
         {stats && (
           <div className="quest-stats-grid">
             <div className="quest-stat-card">
-              <div className="quest-stat-label">Total Quests</div>
+              <div className="quest-stat-label">{t("quest.stats.total")}</div>
               <div className="quest-stat-value total">{stats.total}</div>
             </div>
             <div className="quest-stat-card">
-              <div className="quest-stat-label">Active</div>
+              <div className="quest-stat-label">{t("common.active")}</div>
               <div className="quest-stat-value active">{stats.active}</div>
             </div>
             <div className="quest-stat-card">
-              <div className="quest-stat-label">Inactive</div>
+              <div className="quest-stat-label">{t("common.inactive")}</div>
               <div className="quest-stat-value inactive">{stats.inactive}</div>
             </div>
             <div className="quest-stat-card">
-              <div className="quest-stat-label">Quest Types</div>
+              <div className="quest-stat-label">{t("quest.stats.types")}</div>
               <div className="quest-stat-value lines">{stats.byQuestType?.length || 0}</div>
             </div>
           </div>
@@ -193,7 +195,7 @@ const QuestManagementPage = () => {
                 <Search className="search-icon" size={20} />
                 <input
                   type="text"
-                  placeholder="Tìm kiếm quest..."
+                  placeholder={t("quest.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -209,9 +211,9 @@ const QuestManagementPage = () => {
                     onChange={(e) => setFilterStatus(e.target.value)}
                     className="filter-select"
                   >
-                    <option value="all">Tất cả trạng thái</option>
-                    <option value="true">Hoạt động</option>
-                    <option value="false">Vô hiệu hóa</option>
+                    <option value="all">{t("common.all")}</option>
+                    <option value="true">{t("common.active")}</option>
+                    <option value="false">{t("common.inactive")}</option>
                   </select>
                 </div>
 
@@ -221,7 +223,7 @@ const QuestManagementPage = () => {
                     onChange={(e) => setFilterQuestType(e.target.value)}
                     className="filter-select"
                   >
-                    <option value="all">Tất cả loại quest</option>
+                    <option value="all">{t("quest.allTypes")}</option>
                     <option value="DAILY">DAILY</option>
                     <option value="ACHIEVEMENT">ACHIEVEMENT</option>
                   </select>
@@ -229,7 +231,7 @@ const QuestManagementPage = () => {
 
                 <button onClick={handleCreate} className="btn-create">
                   <Plus size={18} />
-                  <span>Thêm Quest</span>
+                  <span>{t("quest.add")}</span>
                 </button>
               </div>
             </div>
@@ -256,20 +258,20 @@ const QuestManagementPage = () => {
                     <tr>
                       <th style={{ width: "30px" }}></th>
                       <th>Quest ID</th>
-                      <th>Quest Name</th>
-                      <th className="center">Type</th>
-                      <th className="center">Action</th>
-                      <th className="center">Target</th>
-                      <th className="center">Reward</th>
-                      <th className="center">Status</th>
-                      <th className="center">Actions</th>
+                      <th>{t("quest.columns.name")}</th>
+                      <th className="center">{t("quest.columns.type")}</th>
+                      <th className="center">{t("quest.columns.action")}</th>
+                      <th className="center">{t("quest.columns.target")}</th>
+                      <th className="center">{t("quest.columns.reward")}</th>
+                      <th className="center">{t("common.status")}</th>
+                      <th className="center">{t("common.actions")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {quests.length === 0 ? (
                       <tr>
                         <td colSpan="9" className="quest-empty-state">
-                          <p>Không tìm thấy quest nào</p>
+                          <p>{t("quest.empty")}</p>
                         </td>
                       </tr>
                     ) : (
@@ -280,7 +282,7 @@ const QuestManagementPage = () => {
                               <button
                                 onClick={() => toggleExpand(quest._id)}
                                 className="quest-expand-btn"
-                                title="Xem chi tiết"
+                                title={t("common.view")}
                               >
                                 <ChevronDown
                                   size={18}
@@ -338,7 +340,7 @@ const QuestManagementPage = () => {
                                   quest.isActive ? "active" : "inactive"
                                 }`}
                               >
-                                {quest.isActive ? "Active" : "Inactive"}
+                                {quest.isActive ? t("common.active") : t("common.inactive")}
                               </button>
                             </td>
                             <td>
@@ -346,14 +348,14 @@ const QuestManagementPage = () => {
                                 <button
                                   onClick={() => handleEdit(quest)}
                                   className="quest-action-btn edit"
-                                  title="Chỉnh sửa"
+                                  title={t("common.edit")}
                                 >
                                   <Edit2 size={16} />
                                 </button>
                                 <button
                                   onClick={() => handleDelete(quest)}
                                   className="quest-action-btn delete"
-                                  title="Xóa"
+                                  title={t("common.delete")}
                                 >
                                   <Trash2 size={16} />
                                 </button>
@@ -366,24 +368,24 @@ const QuestManagementPage = () => {
                               <td colSpan="9" className="quest-details-content">
                                 <div className="quest-details-grid">
                                   <div className="quest-details-section">
-                                    <h4 className="quest-details-title">Description</h4>
-                                    <p>{quest.description || "(Không có mô tả)"}</p>
+                                    <h4 className="quest-details-title">{t("common.description")}</h4>
+                                    <p>{quest.description || t("quest.noDescription")}</p>
                                   </div>
                                   <div className="quest-details-section">
-                                    <h4 className="quest-details-title">Reward Details</h4>
+                                    <h4 className="quest-details-title">{t("quest.rewardDetails")}</h4>
                                     <div className="quest-additional-info">
                                       <div className="quest-info-item">
-                                        <span className="quest-info-label">Coin:</span>
+                                        <span className="quest-info-label">{t("quest.coinLabel")}:</span>
                                         <span className="quest-info-value">{quest.reward?.coin || 0}</span>
                                       </div>
                                       <div className="quest-info-item">
-                                        <span className="quest-info-label">EXP:</span>
+                                        <span className="quest-info-label">{t("quest.expLabel")}:</span>
                                         <span className="quest-info-value">{quest.reward?.exp || 0}</span>
                                       </div>
                                       <div className="quest-info-item">
-                                        <span className="quest-info-label">Title ID:</span>
+                                        <span className="quest-info-label">{t("quest.titleIdLabel")}:</span>
                                         <span className="quest-info-value">
-                                          {quest.reward?.titleId || "(none)"}
+                                          {quest.reward?.titleId || t("quest.none")}
                                         </span>
                                       </div>
                                     </div>
@@ -407,10 +409,10 @@ const QuestManagementPage = () => {
                   disabled={currentPage === 1}
                   className="quest-pagination-btn"
                 >
-                  Trước
+                  {t("common.previous")}
                 </button>
                 <span className="quest-pagination-info">
-                  Trang {currentPage} / {pagination.totalPages}
+                  {t("common.pageOf", { page: currentPage, total: pagination.totalPages })}
                 </span>
                 <button
                   onClick={() =>
@@ -419,7 +421,7 @@ const QuestManagementPage = () => {
                   disabled={currentPage === pagination.totalPages}
                   className="quest-pagination-btn"
                 >
-                  Sau
+                  {t("common.next")}
                 </button>
               </div>
             )}
@@ -429,14 +431,17 @@ const QuestManagementPage = () => {
 
       {isDeleteModalOpen && (
         <DeleteConfirmModal
-          title="Xác nhận xóa quest"
-          message={`Bạn có chắc chắn muốn xóa quest "${selectedQuest?.questName}" (${selectedQuest?.questId})? Hành động này không thể hoàn tác.`}
+          title={t("quest.deleteTitle")}
+          message={t("quest.deleteMessage", {
+            name: selectedQuest?.questName || "",
+            id: selectedQuest?.questId || "",
+          })}
           onConfirm={async () => {
             try {
               await questService.deleteQuest(selectedQuest._id);
               handleDeleteSuccess();
             } catch (err) {
-              alert(err.response?.data?.message || "Lỗi khi xóa quest");
+              alert(err.response?.data?.message || t("quest.errors.delete"));
             }
           }}
           onClose={() => setIsDeleteModalOpen(false)}

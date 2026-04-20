@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { X, Loader2, Save } from "lucide-react";
 import consumableService from "../../shared/services/consumableService";
 import "../assets/styles/Modal.css";
 
 const EditConsumableModal = ({ consumable, onClose, onSuccess }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     itemName: "",
     itemType: "CONSUMABLE",
@@ -38,12 +40,12 @@ const EditConsumableModal = ({ consumable, onClose, onSuccess }) => {
     e.preventDefault();
 
     if (!formData.itemName.trim()) {
-      setError("Tên item không được để trống");
+      setError(t("itemModal.errors.itemNameRequired"));
       return;
     }
 
     if (!formData.prefabName.trim()) {
-      setError("Prefab Name không được để trống");
+      setError(t("itemModal.errors.prefabRequired"));
       return;
     }
 
@@ -52,7 +54,7 @@ const EditConsumableModal = ({ consumable, onClose, onSuccess }) => {
       try {
         parsedStats = JSON.parse(statsJson);
       } catch {
-        setError("Stats phải là JSON hợp lệ");
+        setError(t("itemModal.errors.statsJson"));
         return;
       }
     }
@@ -76,7 +78,7 @@ const EditConsumableModal = ({ consumable, onClose, onSuccess }) => {
       }
     } catch (err) {
       console.error("Error updating item:", err);
-      setError(err.response?.data?.message || "Lỗi khi cập nhật item");
+      setError(err.response?.data?.message || t("itemModal.errors.updateFailed"));
     } finally {
       setLoading(false);
     }
@@ -86,7 +88,7 @@ const EditConsumableModal = ({ consumable, onClose, onSuccess }) => {
     <div className="modal-overlay">
       <div className="modal-container" style={{ maxWidth: "760px" }}>
         <div className="modal-header">
-          <h2>Chỉnh sửa Item</h2>
+          <h2>{t("itemModal.editTitle")}</h2>
           <button onClick={onClose} className="modal-close-btn">
             <X size={24} />
           </button>
@@ -95,10 +97,10 @@ const EditConsumableModal = ({ consumable, onClose, onSuccess }) => {
         <form onSubmit={handleSubmit} className="modal-form">
           {error && <div className="modal-error">{error}</div>}
 
-          <h3 className="modal-section-title">1) Thông tin cơ bản</h3>
+          <h3 className="modal-section-title">{t("itemModal.sections.basic")}</h3>
 
           <div className="form-group">
-            <label className="form-label">Item ID (không thể chỉnh sửa)</label>
+            <label className="form-label">{t("itemModal.itemIdReadonly")}</label>
             <input
               type="text"
               value={consumable?.itemId || ""}
@@ -109,7 +111,7 @@ const EditConsumableModal = ({ consumable, onClose, onSuccess }) => {
 
           <div className="form-group">
             <label className="form-label">
-              Tên Item <span className="required">*</span>
+              {t("item.columns.name")} <span className="required">*</span>
             </label>
             <input
               type="text"
@@ -147,7 +149,7 @@ const EditConsumableModal = ({ consumable, onClose, onSuccess }) => {
                   checked={formData.isActive}
                   onChange={handleChange}
                 />
-                <span>Kích hoạt item</span>
+                <span>{t("itemModal.activeLabel")}</span>
               </label>
             </div>
           </div>
@@ -167,7 +169,7 @@ const EditConsumableModal = ({ consumable, onClose, onSuccess }) => {
             />
           </div>
 
-          <h3 className="modal-section-title">2) Stats JSON</h3>
+          <h3 className="modal-section-title">{t("itemModal.sections.stats")}</h3>
 
           <div className="form-group">
             <label className="form-label">Stats object</label>
@@ -188,7 +190,7 @@ const EditConsumableModal = ({ consumable, onClose, onSuccess }) => {
               className="modal-btn modal-btn-cancel"
               disabled={loading}
             >
-              Hủy
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
@@ -198,12 +200,12 @@ const EditConsumableModal = ({ consumable, onClose, onSuccess }) => {
               {loading ? (
                 <>
                   <Loader2 className="spinner" size={18} />
-                  <span>Đang lưu...</span>
+                  <span>{t("itemModal.saving")}</span>
                 </>
               ) : (
                 <>
                   <Save size={18} />
-                  <span>Lưu thay đổi</span>
+                  <span>{t("common.save")}</span>
                 </>
               )}
             </button>
