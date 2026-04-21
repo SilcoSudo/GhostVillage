@@ -34,5 +34,9 @@ MonoBehaviour:
     prefab: {fileID: 8126756268081071111, guid: f0aa56b0f0b6cab4480a1f0f89562a60, type: 3}
   - entityId: PUZZLE_FIX_LIGHT
     prefab: {fileID: 8891307657192998306, guid: abe4dd02f1be2524f8b7e1bdbe4194dd, type: 3}
-  - entityId: PUZZLE_CHICKEN_HUNT
+  - entityId: PUZZLE_BatGa
     prefab: {fileID: 6453574431910901216, guid: 71719b55dcaa8644297cb3dba014dc7f, type: 3}
+  - entityId: PUZZLE_KeoCo
+    prefab: {fileID: 5770537936977570188, guid: 3318fa6afc809b948b658dbc0b457a25, type: 3}
+  - entityId: PUZZLE_Sliding
+    prefab: {fileID: 5770537936977570188, guid: 3318fa6afc809b948b658dbc0b457a25, type: 3}
