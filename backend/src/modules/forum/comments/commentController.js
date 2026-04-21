@@ -97,6 +97,7 @@ const serializeComment = (comment, userId = null) => {
     userLiked,
     isEdited: Boolean(c.isEdited),
     editedAt: c.editedAt || null,
+    isHiddenByModeration: Boolean(c.isHiddenByModeration),
     createdAt: c.createdAt,
     updatedAt: c.updatedAt,
   };

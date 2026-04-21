@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../../../app/context/AuthContext";
 import authService from "../services/authService";
 import { Spinner } from "react-bootstrap";
@@ -19,6 +20,10 @@ const CompleteProfilePage = () => {
   const [dateOfBirth, setDateOfBirth] = useState(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPasswords, setShowPasswords] = useState({
+    password: false,
+    confirm: false,
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [errors, setErrors] = useState({});
@@ -149,6 +154,13 @@ const CompleteProfilePage = () => {
     }
   };
 
+  const toggleShowPassword = (field) => {
+    setShowPasswords((prev) => ({
+      ...prev,
+      [field]: !prev[field],
+    }));
+  };
+
   if (fetchingUser) {
     return (
       <div className="login-page">
@@ -203,13 +215,34 @@ const CompleteProfilePage = () => {
 
             <div className="form-group">
               <label>{t("auth.completeProfilePage.passwordLabel")}</label>
-              <input
-                type="password"
-                name="password"
-                placeholder={t("auth.completeProfilePage.passwordPlaceholder")}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <div className="password-input-wrapper">
+                <input
+                  type={showPasswords.password ? "text" : "password"}
+                  name="password"
+                  placeholder={t(
+                    "auth.completeProfilePage.passwordPlaceholder",
+                  )}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="password-input"
+                />
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => toggleShowPassword("password")}
+                  aria-label={
+                    showPasswords.password
+                      ? t("auth.hidePassword")
+                      : t("auth.showPassword")
+                  }
+                >
+                  {showPasswords.password ? (
+                    <EyeOff size={18} />
+                  ) : (
+                    <Eye size={18} />
+                  )}
+                </button>
+              </div>
               {errors.password && (
                 <div className="text-danger">{errors.password}</div>
               )}
@@ -219,15 +252,34 @@ const CompleteProfilePage = () => {
               <label>
                 {t("auth.completeProfilePage.confirmPasswordLabel")}
               </label>
-              <input
-                type="password"
-                name="confirmPassword"
-                placeholder={t(
-                  "auth.completeProfilePage.confirmPasswordPlaceholder",
-                )}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
+              <div className="password-input-wrapper">
+                <input
+                  type={showPasswords.confirm ? "text" : "password"}
+                  name="confirmPassword"
+                  placeholder={t(
+                    "auth.completeProfilePage.confirmPasswordPlaceholder",
+                  )}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="password-input"
+                />
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => toggleShowPassword("confirm")}
+                  aria-label={
+                    showPasswords.confirm
+                      ? t("auth.hidePassword")
+                      : t("auth.showPassword")
+                  }
+                >
+                  {showPasswords.confirm ? (
+                    <EyeOff size={18} />
+                  ) : (
+                    <Eye size={18} />
+                  )}
+                </button>
+              </div>
               {errors.confirmPassword && (
                 <div className="text-danger">{errors.confirmPassword}</div>
               )}

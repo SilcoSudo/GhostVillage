@@ -9,9 +9,9 @@ const CommentDetailModal = ({ isOpen, comment, onClose }) => {
   if (!isOpen || !comment) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay comment-detail-overlay" onClick={onClose}>
       <div
-        className="modal-content comment-detail-modal"
+        className="modal-content comment-detail-shell comment-detail-modal"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-header">
@@ -24,105 +24,10 @@ const CommentDetailModal = ({ isOpen, comment, onClose }) => {
           </button>
         </div>
 
-        <div className="modal-body">
-          {/* Comment Text */}
-          <div className="detail-section">
-            <h3 className="detail-label">
-              {t("comments.commentText") || "Comment"}
-            </h3>
-            <div className="comment-content-box">
-              {comment.content || comment.commentText}
-            </div>
+        <div className="modal-body comment-detail-body">
+          <div className="comment-content-box comment-only-box">
+            {comment.content || comment.commentText}
           </div>
-
-          {/* Author & Post Info */}
-          <div className="detail-row">
-            <div className="detail-section">
-              <h3 className="detail-label">
-                {t("comments.author") || "Author"}
-              </h3>
-              <p className="detail-value">{comment.author}</p>
-            </div>
-            <div className="detail-section">
-              <h3 className="detail-label">
-                {t("comments.postTitle") || "Post"}
-              </h3>
-              <p className="detail-value post-name">{comment.postTitle}</p>
-            </div>
-          </div>
-
-          {/* Report Info */}
-          <div className="detail-row">
-            <div className="detail-section">
-              <h3 className="detail-label">
-                {t("comments.reportedBy") || "Reported By"}
-              </h3>
-              <p className="detail-value">
-                {comment.reportedBy || `${comment.reportCount || 0} users`}
-              </p>
-            </div>
-            <div className="detail-section">
-              <h3 className="detail-label">
-                {t("comments.reason") || "Reason"}
-              </h3>
-              <p className="detail-value reason-text">{comment.reason}</p>
-            </div>
-          </div>
-
-          {/* Report Count & Date */}
-          <div className="detail-row">
-            <div className="detail-section">
-              <h3 className="detail-label">
-                {t("comments.reportCount") || "Total Reports"}
-              </h3>
-              <div className="report-count-display">{comment.reportCount}</div>
-            </div>
-            <div className="detail-section">
-              <h3 className="detail-label">
-                {t("comments.reportedDate") || "Reported Date"}
-              </h3>
-              <p className="detail-value">
-                {new Date(
-                  comment.reportedDate || comment.hiddenAt || comment.createdAt,
-                ).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </p>
-            </div>
-          </div>
-
-          {/* Comment Metadata */}
-          <div className="detail-row">
-            <div className="detail-section">
-              <h3 className="detail-label">
-                {t("comments.createdDate") || "Created Date"}
-              </h3>
-              <p className="detail-value">
-                {new Date(comment.createdAt).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </p>
-            </div>
-            <div className="detail-section">
-              <h3 className="detail-label">
-                {t("comments.status") || "Status"}
-              </h3>
-              <span className="status-badge pending">
-                {(comment.status || "hidden").charAt(0).toUpperCase() +
-                  (comment.status || "hidden").slice(1)}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="modal-footer">
-          <button className="modal-btn btn-cancel" onClick={onClose}>
-            {t("common.close") || "Close"}
-          </button>
         </div>
       </div>
     </div>

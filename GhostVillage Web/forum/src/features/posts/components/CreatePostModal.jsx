@@ -23,8 +23,50 @@ const getMediaCounts = (mediaList = []) => {
   return { imageCount, videoCount };
 };
 
+const formatRestrictedDuration = (remainingSeconds, language) => {
+  const seconds = Math.max(0, Math.ceil(Number(remainingSeconds) || 0));
+  if (!seconds) return "";
+
+  const isVietnamese = String(language || "")
+    .toLowerCase()
+    .startsWith("vi");
+  const hours = Math.max(1, Math.ceil(seconds / 3600));
+
+  if (isVietnamese) {
+    return `${hours} giờ`;
+  }
+
+  return `${hours} ${hours === 1 ? "hour" : "hours"}`;
+};
+
+const getSubmitErrorMessage = (error, t, language) => {
+  const response = error?.response;
+  const responseData = response?.data || {};
+  const nestedData = responseData?.data || {};
+
+  const remainingSeconds =
+    nestedData.remainingSeconds ??
+    nestedData.lockSeconds ??
+    responseData.remainingSeconds ??
+    responseData.lockSeconds ??
+    0;
+
+  if (response?.status === 403) {
+    const durationLabel = formatRestrictedDuration(remainingSeconds, language);
+    if (durationLabel) {
+      return t("post.create.errors.postingRestricted", {
+        duration: durationLabel,
+      });
+    }
+
+    return t("post.create.errors.postingRestrictedFallback");
+  }
+
+  return responseData?.message || t("post.create.errors.saveFailed");
+};
+
 const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const createPostMutation = useCreatePost();
   const updatePostMutation = useUpdatePost();
   const isEditMode = mode === "edit" && post;
@@ -206,7 +248,7 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
     } catch (error) {
       setIsUploading(false);
       console.error("Failed to save post:", error);
-      toast.error(t("post.create.errors.saveFailed"));
+      toast.error(getSubmitErrorMessage(error, t, i18n.language));
     }
   };
 

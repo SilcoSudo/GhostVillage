@@ -362,8 +362,10 @@
     "historyError": "Không thể tải lịch sử ticket",
     "historyEmpty": "Bạn chưa có ticket hỗ trợ nào.",
     "activeTicketsTitle": "Đang xử lý",
+    "activeTicketsHint": "Những ticket này vẫn đang được xử lý.",
     "activeTicketsEmpty": "Hiện chưa có ticket nào đang xử lý.",
     "archivedTicketsTitle": "Đã đóng / Đã xong",
+    "archivedTicketsHint": "Bấm vào ticket để mở toàn bộ nội dung.",
     "archivedTicketsEmpty": "Chưa có ticket nào trong mục này.",
     "ticketId": "Mã ticket:",
     "createdAt": "Thời gian tạo:",
@@ -426,11 +428,81 @@
     },
     "emptyNotifications": "Không có thông báo nào.",
     "emptyFriendRequests": "Không có lời mời kết bạn nào.",
-    "viewAll": "Xem tất cả thông báo",
     "autoDeleteNote": "Thông báo sau 15 ngày sẽ tự động xóa.",
     "readAll": "Đánh dấu tất cả đã đọc",
     "accept": "Đồng ý",
     "reject": "Từ chối",
+    "contexts": {
+      "post": "Bài viết",
+      "comment": "Bình luận",
+      "ticket": "Phiếu hỗ trợ",
+      "content": "Nội dung"
+    },
+    "entityTypes": {
+      "post": "bài viết",
+      "comment": "bình luận",
+      "ticket": "phiếu hỗ trợ"
+    },
+    "items": {
+      "default": {
+        "actor": "Ai đó",
+        "title": "Thông báo",
+        "message": "Bạn có một thông báo mới."
+      },
+      "friendRequest": {
+        "title": "Lời mời kết bạn mới",
+        "message": "{{name}} đã gửi lời mời kết bạn cho bạn."
+      },
+      "friendAccepted": {
+        "title": "Lời mời kết bạn đã được chấp nhận",
+        "message": "{{name}} đã chấp nhận lời mời kết bạn của bạn."
+      },
+      "friendRejected": {
+        "title": "Lời mời kết bạn đã bị từ chối",
+        "message": "{{name}} đã từ chối lời mời kết bạn của bạn."
+      },
+      "postLiked": {
+        "title": "Bài viết được thích",
+        "message": "{{name}} đã thích bài viết của bạn."
+      },
+      "postCommented": {
+        "title": "Bình luận mới",
+        "message": "{{name}} đã bình luận vào bài viết của bạn."
+      },
+      "commentReplied": {
+        "title": "Phản hồi mới",
+        "message": "{{name}} đã trả lời bình luận của bạn."
+      },
+      "reportProcessed": {
+        "reporter": {
+          "title": "Cập nhật báo cáo",
+          "keep": {
+            "message": "Chúng tôi đã xem xét {{entityType}} bạn báo cáo và hiện không cần xử lý thêm."
+          },
+          "remove": {
+            "message": "Chúng tôi đã xem xét {{entityType}} bạn báo cáo và đã gỡ nội dung theo quy định cộng đồng."
+          }
+        },
+        "moderationNotice": {
+          "title": "Thông báo kiểm duyệt",
+          "noViolation": "{{entityType}} của bạn đã được xem xét và không phát hiện vi phạm rõ ràng.",
+          "warning": "{{entityType}} của bạn đã được xem xét theo quy định cộng đồng. Một lời nhắc đã được áp dụng cho tài khoản của bạn theo quy định cộng đồng.",
+          "mute": "Tài khoản của bạn hiện bị hạn chế tạm thời việc đăng bài và bình luận trong {{duration}}.",
+          "mergedHideOnly": "Một phần hiển thị nội dung của bạn đã bị hạn chế để bảo vệ cộng đồng.",
+          "default": "Vui lòng tuân thủ quy định cộng đồng để tránh các biện pháp kiểm duyệt nghiêm ngặt hơn."
+        }
+      },
+      "contentRestored": {
+        "title": "Nội dung đã được khôi phục",
+        "message": "{{moderatorName}} đã khôi phục {{entityType}} của bạn.",
+        "messageWithNote": "{{moderatorName}} đã khôi phục {{entityType}} của bạn. Ghi chú kiểm duyệt: \"{{recoveryReason}}\""
+      },
+      "ticketReplied": {
+        "title": "Phiếu hỗ trợ đã được cập nhật",
+        "message": "{{name}} đã phản hồi phiếu hỗ trợ của bạn.",
+        "messageWithSubject": "{{name}} đã phản hồi phiếu hỗ trợ của bạn: \"{{subject}}\"."
+      }
+    },
     "toasts": {
       "friendRequest": "Bạn có một lời mời kết bạn mới.",
       "friendAccepted": "Lời mời kết bạn của bạn đã được chấp nhận.",
@@ -570,6 +642,8 @@
     "title": "Bạn bè của tôi",
     "count": "{{count}} bạn bè",
     "empty": "Bạn chưa có người bạn nào.",
+    "guestTitle": "Phần bạn bè chỉ dành cho tài khoản đã đăng nhập",
+    "guestMessage": "Đăng nhập để xem danh sách bạn bè và tính năng chat.",
     "unfriend": "Hủy kết bạn",
     "openChat": "Mở chat"
   },
@@ -718,6 +792,31 @@
     "reasonMisinfo": "Thông tin sai lệch gây hại",
     "reasonOffTopic": "Nội dung không liên quan hoặc lạc đề",
     "reasonOther": "Khác",
+    "loading": "Đang tải bài viết...",
+    "comments": "Bình luận",
+    "writeComment": "Viết bình luận...",
+    "noComments": "Chưa có bình luận nào.",
+    "hiddenCommentPlaceholder": "Bình luận này đã bị ẩn vì vi phạm quy định cộng đồng.",
+    "replyTo": "Trả lời",
+    "reply": "Phản hồi",
+    "replies": "Phản hồi",
+    "actions": {
+      "reply": "Trả lời"
+    },
+    "confirmDeleteComment": "Bạn có chắc muốn xóa bình luận này không?",
+    "deleting": "Đang xóa...",
+    "confirmDelete": {
+      "post": {
+        "title": "Xóa bài viết?",
+        "message": "Bạn có chắc muốn xóa bài viết này không? Hành động này không thể hoàn tác."
+      },
+      "comment": {
+        "title": "Xóa bình luận?",
+        "message": "Bạn có chắc muốn xóa bình luận này không? Hành động này không thể hoàn tác."
+      }
+    },
+    "mediaSlideAlt": "Ảnh {{index}}",
+    "mediaVideoTitle": "Video {{index}}",
     "categories": {
       "general": "Chung",
       "discussion": "Thảo luận",
@@ -805,6 +904,8 @@
         "maxVideosReached": "Bạn chỉ có thể thêm tối đa {{max}} video cho mỗi bài viết.",
         "uploadFailed": "Không thể tải lên {{name}}: {{message}}",
         "uploadFailedFallback": "Tải lên thất bại",
+        "postingRestricted": "Bạn đang bị hạn chế đăng bài trong {{duration}}.",
+        "postingRestrictedFallback": "Bạn đang bị hạn chế đăng bài.",
         "saveFailed": "Không thể lưu bài viết",
         "invalidImageType": "{{name}}: Định dạng không hợp lệ. Cho phép: {{types}}",
         "imageTooLarge": "{{name}}: Quá lớn. Tối đa {{maxSize}}MB.",

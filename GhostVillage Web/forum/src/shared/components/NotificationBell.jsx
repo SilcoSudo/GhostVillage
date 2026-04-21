@@ -9,6 +9,7 @@ import {
   useAcceptFriendRequest,
   useRejectFriendRequest,
 } from "../hooks/useFriend";
+import { getLocalizedNotificationText } from "../utils/notificationLocalization";
 import "./NotificationBell.css";
 
 const NotificationBell = () => {
@@ -17,14 +18,12 @@ const NotificationBell = () => {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [activeTab, setActiveTab] = useState("notification"); // 'notification' or 'friendRequest'
-  const [processedNotifications, setProcessedNotifications] = useState([]); // Track processed notifications
+  const [activeTab, setActiveTab] = useState("notification");
+  const [processedNotifications, setProcessedNotifications] = useState([]);
 
-  // Friend request mutations
   const { mutate: acceptFriendRequest } = useAcceptFriendRequest();
   const { mutate: rejectFriendRequest } = useRejectFriendRequest();
 
-  // Fetch all notifications (both read and unread)
   const { data: allNotifications, refetch: refetchNotifications } = useQuery({
     queryKey: ["notifications"],
     queryFn: async () => {
@@ -32,62 +31,59 @@ const NotificationBell = () => {
       return response.data.data;
     },
     enabled: !!token,
-    refetchInterval: 60000, // Refetch every 60 seconds
+    refetchInterval: 60000,
   });
 
-  // Listen for realtime notifications
-  useNotifications((notification) => {
+  useNotifications(() => {
     setUnreadCount((prev) => prev + 1);
     refetchNotifications();
   });
 
-  // Update unread count (count only isRead: false)
   useEffect(() => {
     if (allNotifications) {
-      const unread = allNotifications.filter((n) => !n.isRead);
+      const unread = allNotifications.filter(
+        (notification) => !notification.isRead,
+      );
       setUnreadCount(unread.length);
     }
   }, [allNotifications]);
 
-  // Separate notifications by type (exclude processed ones)
   const notificationMessages =
     allNotifications?.filter(
-      (n) =>
-        !processedNotifications.includes(n._id) &&
-        (n.type === "postLiked" ||
-          n.type === "postCommented" ||
-          n.type === "post_commented" ||
-          n.type === "commentReplied" ||
-          n.type === "comment_replied" ||
-          n.type === "ticketReplied" ||
-          n.type === "ticket_replied" ||
-          n.type === "report_processed" ||
-          n.type === "friend_accepted" ||
-          n.type === "friend_rejected" ||
-          n.type === "announcement"),
-    ) || [];
-  const friendRequests =
-    allNotifications?.filter(
-      (n) =>
-        !processedNotifications.includes(n._id) &&
-        (n.type === "friendRequest" || n.type === "friend_request"),
+      (notification) =>
+        !processedNotifications.includes(notification._id) &&
+        (notification.type === "postLiked" ||
+          notification.type === "postCommented" ||
+          notification.type === "post_commented" ||
+          notification.type === "commentReplied" ||
+          notification.type === "comment_replied" ||
+          notification.type === "ticketReplied" ||
+          notification.type === "ticket_replied" ||
+          notification.type === "report_processed" ||
+          notification.type === "friend_accepted" ||
+          notification.type === "friend_rejected" ||
+          notification.type === "announcement"),
     ) || [];
 
-  // Count unread for each tab
+  const friendRequests =
+    allNotifications?.filter(
+      (notification) =>
+        !processedNotifications.includes(notification._id) &&
+        (notification.type === "friendRequest" ||
+          notification.type === "friend_request"),
+    ) || [];
+
   const unreadNotificationCount = notificationMessages.filter(
-    (n) => !n.isRead,
+    (notification) => !notification.isRead,
   ).length;
   const unreadFriendRequestCount = friendRequests.filter(
-    (n) => !n.isRead,
+    (notification) => !notification.isRead,
   ).length;
 
   const handleMarkAsRead = async (notificationId) => {
     try {
       await api.patch(`/web/notifications/${notificationId}/read`);
-      // Invalidate cache and refetch
-      await queryClient.invalidateQueries({
-        queryKey: ["notifications"],
-      });
+      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
@@ -96,10 +92,7 @@ const NotificationBell = () => {
   const handleMarkAllAsRead = async () => {
     try {
       await api.patch("/web/notifications/read-all");
-      // Invalidate cache and refetch
-      await queryClient.invalidateQueries({
-        queryKey: ["notifications"],
-      });
+      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
     } catch (error) {
       console.error("Error marking all as read:", error);
     }
@@ -121,7 +114,6 @@ const NotificationBell = () => {
       return;
     }
 
-    // Create request data - use friendshipId if available, otherwise use relatedUserId
     const requestData = {
       ...(friendshipId && { friendshipId }),
       ...(relatedUserId && !friendshipId && { relatedUserId }),
@@ -131,13 +123,9 @@ const NotificationBell = () => {
 
     acceptFriendRequest(requestData, {
       onSuccess: () => {
-        // Mark notification as processed (will be hidden from UI)
         setProcessedNotifications((prev) => [...prev, notification._id]);
-        // Mark notification as read
         handleMarkAsRead(notification._id);
-        // Refetch notifications
         refetchNotifications();
-        // Invalidate friends query
         queryClient.invalidateQueries({ queryKey: ["friends"] });
       },
       onError: (error) => {
@@ -156,7 +144,6 @@ const NotificationBell = () => {
       return;
     }
 
-    // Create request data - use friendshipId if available, otherwise use relatedUserId
     const requestData = {
       ...(friendshipId && { friendshipId }),
       ...(relatedUserId && !friendshipId && { relatedUserId }),
@@ -164,11 +151,8 @@ const NotificationBell = () => {
 
     rejectFriendRequest(requestData, {
       onSuccess: () => {
-        // Mark notification as processed (will be hidden from UI)
         setProcessedNotifications((prev) => [...prev, notification._id]);
-        // Mark notification as read
         handleMarkAsRead(notification._id);
-        // Refetch notifications
         refetchNotifications();
       },
       onError: (error) => {
@@ -224,88 +208,140 @@ const NotificationBell = () => {
           <div className="notification-list">
             {activeTab === "notification" ? (
               notificationMessages.length > 0 ? (
-                notificationMessages.slice(0, 5).map((notification) => (
-                  <div
-                    key={notification._id}
-                    className="notification-item"
-                    onClick={() => handleMarkAsRead(notification._id)}
-                  >
-                    <div className="notification-content">
-                      <p className="notification-title">{notification.title}</p>
-                      <p className="notification-message">
-                        {notification.message}
-                      </p>
-                      <span className="notification-time">
-                        {new Date(notification.createdAt).toLocaleString(
-                          i18n.language?.startsWith("vi") ? "vi-VN" : "en-US",
+                notificationMessages.slice(0, 5).map((notification) => {
+                  const { title, message, contextLines } =
+                    getLocalizedNotificationText(
+                      notification,
+                      t,
+                      i18n.language,
+                    );
+
+                  return (
+                    <div
+                      key={notification._id}
+                      className="notification-item"
+                      onClick={() => handleMarkAsRead(notification._id)}
+                    >
+                      <div className="notification-content">
+                        <p className="notification-title">{title}</p>
+                        <p className="notification-message">{message}</p>
+                        {contextLines.length > 0 && (
+                          <div className="notification-context">
+                            {contextLines.map((line, index) => (
+                              <p
+                                key={`${notification._id}-${index}-${line.label}-${line.value}`}
+                                className="notification-context-line"
+                              >
+                                {line.label ? (
+                                  <>
+                                    <span className="notification-context-label">
+                                      {line.label}:
+                                    </span>{" "}
+                                    <span className="notification-context-value">
+                                      {line.value}
+                                    </span>
+                                  </>
+                                ) : (
+                                  line.value
+                                )}
+                              </p>
+                            ))}
+                          </div>
                         )}
-                      </span>
+                        <span className="notification-time">
+                          {new Date(notification.createdAt).toLocaleString(
+                            i18n.language?.startsWith("vi") ? "vi-VN" : "en-US",
+                          )}
+                        </span>
+                      </div>
+                      {!notification.isRead && (
+                        <div className="notification-dot"></div>
+                      )}
                     </div>
-                    {!notification.isRead && (
-                      <div className="notification-dot"></div>
-                    )}
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="notification-empty">
                   <p>{t("notifications.emptyNotifications")}</p>
                 </div>
               )
             ) : friendRequests.length > 0 ? (
-              friendRequests.slice(0, 5).map((notification) => (
-                <div
-                  key={notification._id}
-                  className="notification-item friend-request-item"
-                >
-                  <div className="notification-content">
-                    <p className="notification-title">{notification.title}</p>
-                    <p className="notification-message">
-                      {notification.message}
-                    </p>
-                    <span className="notification-time">
-                      {new Date(notification.createdAt).toLocaleString(
-                        i18n.language?.startsWith("vi") ? "vi-VN" : "en-US",
+              friendRequests.slice(0, 5).map((notification) => {
+                const { title, message, contextLines } =
+                  getLocalizedNotificationText(notification, t, i18n.language);
+
+                return (
+                  <div
+                    key={notification._id}
+                    className="notification-item friend-request-item"
+                  >
+                    <div className="notification-content">
+                      <p className="notification-title">{title}</p>
+                      <p className="notification-message">{message}</p>
+                      {contextLines.length > 0 && (
+                        <div className="notification-context">
+                          {contextLines.map((line, index) => (
+                            <p
+                              key={`${notification._id}-${index}-${line.label}-${line.value}`}
+                              className="notification-context-line"
+                            >
+                              {line.label ? (
+                                <>
+                                  <span className="notification-context-label">
+                                    {line.label}:
+                                  </span>{" "}
+                                  <span className="notification-context-value">
+                                    {line.value}
+                                  </span>
+                                </>
+                              ) : (
+                                line.value
+                              )}
+                            </p>
+                          ))}
+                        </div>
                       )}
-                    </span>
-                  </div>
-                  {(notification.type === "friend_request" ||
-                    notification.type === "friendRequest") && (
-                    <div className="friend-request-actions">
-                      <button
-                        className="btn-accept"
-                        onClick={() => handleAcceptFriendRequest(notification)}
-                        title={t("notifications.accept")}
-                      >
-                        <Check size={16} />
-                      </button>
-                      <button
-                        className="btn-reject"
-                        onClick={() => handleRejectFriendRequest(notification)}
-                        title={t("notifications.reject")}
-                      >
-                        <X size={16} />
-                      </button>
+                      <span className="notification-time">
+                        {new Date(notification.createdAt).toLocaleString(
+                          i18n.language?.startsWith("vi") ? "vi-VN" : "en-US",
+                        )}
+                      </span>
                     </div>
-                  )}
-                  {!notification.isRead && (
-                    <div className="notification-dot"></div>
-                  )}
-                </div>
-              ))
+                    {(notification.type === "friend_request" ||
+                      notification.type === "friendRequest") && (
+                      <div className="friend-request-actions">
+                        <button
+                          className="btn-accept"
+                          onClick={() =>
+                            handleAcceptFriendRequest(notification)
+                          }
+                          title={t("notifications.accept")}
+                        >
+                          <Check size={16} />
+                        </button>
+                        <button
+                          className="btn-reject"
+                          onClick={() =>
+                            handleRejectFriendRequest(notification)
+                          }
+                          title={t("notifications.reject")}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    )}
+                    {!notification.isRead && (
+                      <div className="notification-dot"></div>
+                    )}
+                  </div>
+                );
+              })
             ) : (
               <div className="notification-empty">
                 <p>{t("notifications.emptyFriendRequests")}</p>
               </div>
             )}
           </div>
-
-          {allNotifications && allNotifications.length > 5 && (
-            <div className="notification-footer">
-              <a href="/notifications" className="view-all">
-                {t("notifications.viewAll")}
-              </a>
-            </div>
-          )}
 
           <div className="notification-info">
             <p>{t("notifications.autoDeleteNote")}</p>

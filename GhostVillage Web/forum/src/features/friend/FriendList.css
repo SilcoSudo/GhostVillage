@@ -42,6 +42,34 @@
   margin: 8px 0;
 }
 
+.guest-friends-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.guest-friends-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.guest-friends-message {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.guest-login-btn {
+  width: fit-content;
+  text-decoration: none;
+}
+
 .friends-list {
   display: flex;
   flex-direction: column;

@@ -31,6 +31,39 @@ const notificationSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    i18n: {
+      titleKey: {
+        type: String,
+        default: null,
+      },
+      titleParams: {
+        type: mongoose.Schema.Types.Mixed,
+        default: {},
+      },
+      messageKey: {
+        type: String,
+        default: null,
+      },
+      messageParams: {
+        type: mongoose.Schema.Types.Mixed,
+        default: {},
+      },
+    },
+    context: {
+      type: [
+        {
+          labelKey: {
+            type: String,
+            default: null,
+          },
+          value: {
+            type: String,
+            default: null,
+          },
+        },
+      ],
+      default: [],
+    },
     relatedUser: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
