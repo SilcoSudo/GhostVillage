@@ -75,6 +75,14 @@
   color: var(--text-secondary, #a68b6a);
 }
 
+.chat-status.online {
+  color: var(--text-secondary, #a68b6a);
+}
+
+.chat-status.offline {
+  color: var(--text-tertiary, #6b5d4d);
+}
+
 .chat-header-actions {
   display: flex;
   gap: 6px;

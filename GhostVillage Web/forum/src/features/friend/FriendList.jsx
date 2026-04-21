@@ -5,15 +5,20 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../../app/hooks/useAuth";
 import { ChatContext } from "../../app/context/ChatContext.jsx";
 import { useFriendList, useUnfriend } from "../../shared/hooks/useFriend.js";
+import { useFriendPresence } from "../../shared/hooks/useFriendPresence.js";
 import { getAvatarUrl, cacheAvatar } from "../../shared/utils/avatarCache";
 import UnfriendConfirmModal from "./UnfriendConfirmModal.jsx";
 import "./FriendList.css";
+
+const getFriendOnlineStatus = (friend, presenceByUserId) =>
+  presenceByUserId.get(String(friend._id)) ?? friend.isOnline ?? false;
 
 const FriendList = () => {
   const { t } = useTranslation();
   const { openChat } = useContext(ChatContext);
   const { user, loading: authLoading } = useAuth();
   const { data: friends, isLoading, error } = useFriendList();
+  const presenceByUserId = useFriendPresence();
   const { mutate: unfriend, isPending: isUnfriending } = useUnfriend();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [selectedFriend, setSelectedFriend] = useState(null);
@@ -51,6 +56,13 @@ const FriendList = () => {
     if (!friends?.length) return [];
 
     return [...friends].sort((friendA, friendB) => {
+      const onlineA = getFriendOnlineStatus(friendA, presenceByUserId);
+      const onlineB = getFriendOnlineStatus(friendB, presenceByUserId);
+
+      if (onlineA !== onlineB) {
+        return Number(onlineB) - Number(onlineA);
+      }
+
       const unreadA = unreadByFriend[friendA._id] || 0;
       const unreadB = unreadByFriend[friendB._id] || 0;
 
@@ -73,7 +85,7 @@ const FriendList = () => {
         },
       );
     });
-  }, [friends, unreadByFriend, latestMessageAtByFriend]);
+  }, [friends, unreadByFriend, latestMessageAtByFriend, presenceByUserId]);
 
   if (authLoading) {
     return (
@@ -165,50 +177,66 @@ const FriendList = () => {
           </div>
         ) : (
           <div className="friends-list">
-            {sortedFriends.map((friend) => (
-              <div
-                key={friend._id}
-                className={`friend-item ${unreadByFriend[friend._id] ? "has-unread" : ""}`}
-                onClick={() => handleSendMessage(friend)}
-                title={t("friendList.openChat")}
-              >
-                <div className="friend-avatar-small">
-                  {friend.avatar ? (
-                    <img
-                      src={getAvatarUrl(friend._id, friend.avatar)}
-                      alt={friend.fullname}
-                      onLoad={() => cacheAvatar(friend._id, friend.avatar)}
-                      crossOrigin="anonymous"
-                    />
-                  ) : (
-                    <div className="avatar-fallback">
-                      <User size={18} strokeWidth={1.5} />
-                    </div>
-                  )}
-                </div>
+            {sortedFriends.map((friend) => {
+              const isFriendOnline = getFriendOnlineStatus(
+                friend,
+                presenceByUserId,
+              );
 
-                <div className="friend-info-small">
-                  <h4 className="friend-name-small">{friend.fullname}</h4>
-                  {unreadByFriend[friend._id] ? (
-                    <span className="friend-unread-badge">
-                      {unreadByFriend[friend._id] > 99
-                        ? "99+"
-                        : unreadByFriend[friend._id]}
-                    </span>
-                  ) : null}
-                </div>
-
-                <div className="friend-actions-small">
-                  <button
-                    className="btn-icon btn-danger"
-                    onClick={(event) => handleUnfriend(event, friend)}
-                    title={t("friendList.unfriend")}
+              return (
+                <div
+                  key={friend._id}
+                  className={`friend-item ${!isFriendOnline ? "is-offline" : ""} ${unreadByFriend[friend._id] ? "has-unread" : ""}`}
+                  onClick={() => handleSendMessage(friend)}
+                  title={t("friendList.openChat")}
+                >
+                  <Link
+                    to={`/profile/${friend._id}`}
+                    className="friend-avatar-link"
+                    onClick={(event) => event.stopPropagation()}
+                    title={t("friendList.viewProfile")}
                   >
-                    <i className="fas fa-user-minus"></i>
-                  </button>
+                    <div className="friend-avatar-small">
+                      {friend.avatar ? (
+                        <img
+                          src={getAvatarUrl(friend._id, friend.avatar)}
+                          alt={friend.fullname}
+                          onLoad={() => cacheAvatar(friend._id, friend.avatar)}
+                          crossOrigin="anonymous"
+                        />
+                      ) : (
+                        <div className="avatar-fallback">
+                          <User size={18} strokeWidth={1.5} />
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+
+                  <div className="friend-info-small">
+                    <div className="friend-name-row">
+                      <h4 className="friend-name-small">{friend.fullname}</h4>
+                      {unreadByFriend[friend._id] ? (
+                        <span className="friend-unread-badge">
+                          {unreadByFriend[friend._id] > 99
+                            ? "99+"
+                            : unreadByFriend[friend._id]}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="friend-actions-small">
+                    <button
+                      className="btn-icon btn-danger"
+                      onClick={(event) => handleUnfriend(event, friend)}
+                      title={t("friendList.unfriend")}
+                    >
+                      <i className="fas fa-user-minus"></i>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

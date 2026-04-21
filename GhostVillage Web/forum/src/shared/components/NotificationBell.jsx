@@ -124,7 +124,6 @@ const NotificationBell = () => {
     acceptFriendRequest(requestData, {
       onSuccess: () => {
         setProcessedNotifications((prev) => [...prev, notification._id]);
-        handleMarkAsRead(notification._id);
         refetchNotifications();
         queryClient.invalidateQueries({ queryKey: ["friends"] });
       },
@@ -152,7 +151,6 @@ const NotificationBell = () => {
     rejectFriendRequest(requestData, {
       onSuccess: () => {
         setProcessedNotifications((prev) => [...prev, notification._id]);
-        handleMarkAsRead(notification._id);
         refetchNotifications();
       },
       onError: (error) => {

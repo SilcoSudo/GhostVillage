@@ -644,6 +644,7 @@
     "empty": "You don't have any friends yet.",
     "guestTitle": "Friends are for logged-in users",
     "guestMessage": "Log in to see your friends list and chat features.",
+    "viewProfile": "View profile",
     "unfriend": "Unfriend",
     "openChat": "Open chat"
   },
@@ -704,6 +705,7 @@
   },
   "chatModal": {
     "activeNow": "Active now",
+    "offline": "Offline",
     "close": "Close",
     "loadingMessages": "Loading messages...",
     "connectedMessage": "You're now connected on GhostVillage",

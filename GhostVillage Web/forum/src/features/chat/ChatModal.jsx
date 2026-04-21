@@ -7,6 +7,7 @@ import {
   useSendMessage,
   useGetConversation,
 } from "../../shared/hooks/useMessage";
+import { useFriendPresence } from "../../shared/hooks/useFriendPresence.js";
 import { getAvatarUrl } from "../../shared/utils/avatarCache";
 import { io } from "socket.io-client";
 import "./ChatModal.css";
@@ -18,11 +19,18 @@ const ChatModal = () => {
   const { user } = useContext(AuthContext);
   const { token } = useContext(AuthContext);
   const { isOpen, selectedFriend, closeChat } = useContext(ChatContext);
+  const presenceByUserId = useFriendPresence();
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef(null);
   const socketRef = useRef(null);
+
+  const isFriendOnline = selectedFriend
+    ? (presenceByUserId.get(String(selectedFriend._id)) ??
+      selectedFriend.isOnline ??
+      false)
+    : false;
 
   // Get conversation history
   const { data: conversationData, isLoading } = useGetConversation(
@@ -174,7 +182,13 @@ const ChatModal = () => {
           />
           <div className="chat-header-info">
             <h3>{selectedFriend?.fullname}</h3>
-            <p className="chat-status">{t("chatModal.activeNow")}</p>
+            <p
+              className={`chat-status ${isFriendOnline ? "online" : "offline"}`}
+            >
+              {isFriendOnline
+                ? t("chatModal.activeNow")
+                : t("chatModal.offline")}
+            </p>
           </div>
         </div>
         <div className="chat-header-actions">

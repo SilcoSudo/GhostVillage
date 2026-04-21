@@ -1,5 +1,15 @@
 import * as userService from "./userService.js";
 import * as postService from "../forum/posts/postService.js";
+import FriendService from "../friend/web/friendService.js";
+
+const getProfileFriends = async (userId) => {
+  try {
+    return await FriendService.getFriendList(userId);
+  } catch (error) {
+    console.warn("Error fetching profile friends:", error);
+    return [];
+  }
+};
 
 const serializeUserPost = (post) => {
   const authorName =
@@ -42,14 +52,15 @@ export const getMyProfile = async (req, res) => {
       });
     }
 
-    // Get user's posts
-    const { posts, pagination } = await userService.getUserPosts(user._id, {
-      page,
-      limit,
-    });
+    // Get user's posts and accepted friends in parallel
+    const [{ posts, pagination }, friends] = await Promise.all([
+      userService.getUserPosts(user._id, { page, limit }),
+      getProfileFriends(user._id),
+    ]);
 
     const profileData = {
       ...userService.formatUserProfile(user),
+      friends,
       posts: posts.map((post) => ({
         _id: post._id,
         title: post.title,
@@ -110,14 +121,15 @@ export const getUserIdProfile = async (req, res) => {
       });
     }
 
-    // Get user's posts
-    const { posts, pagination } = await userService.getUserPosts(id, {
-      page,
-      limit,
-    });
+    // Get user's posts and accepted friends in parallel
+    const [{ posts, pagination }, friends] = await Promise.all([
+      userService.getUserPosts(id, { page, limit }),
+      getProfileFriends(id),
+    ]);
 
     const profileData = {
       ...userService.formatPublicProfile(user),
+      friends,
       posts: posts.map((post) => ({
         _id: post._id,
         title: post.title,

@@ -184,6 +184,33 @@
   overflow-y: auto;
   max-height: 380px;
   flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-secondary) var(--bg-secondary);
+  scrollbar-gutter: stable;
+}
+
+.notification-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.notification-list::-webkit-scrollbar-track {
+  background: linear-gradient(
+    180deg,
+    var(--bg-secondary) 0%,
+    var(--bg-tertiary) 100%
+  );
+  border-left: 1px solid var(--border-subtle);
+}
+
+.notification-list::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #d8c98a 0%, var(--text-primary) 100%);
+  border-radius: 999px;
+  border: 2px solid var(--bg-secondary);
+  box-shadow: 0 0 8px rgba(181, 166, 66, 0.22);
+}
+
+.notification-list::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #e4d79f 0%, var(--text-primary) 100%);
 }
 
 .notification-item {

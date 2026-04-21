@@ -1,13 +1,18 @@
-import { useState, useRef, useEffect, useContext } from "react";
+import { useState, useRef, useEffect, useContext, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { MessageCircle, X, Send, MoreVertical } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { AuthContext } from "../../app/context/AuthContext";
 import { ChatContext } from "../../app/context/ChatContext.jsx";
 import { useFriendList } from "../../shared/hooks/useFriend";
+import { useFriendPresence } from "../../shared/hooks/useFriendPresence.js";
 import { getAvatarUrl, cacheAvatar } from "../../shared/utils/avatarCache";
 import "./ChatWidget.css";
 
 const MAX_MESSAGE_LENGTH = 2000;
+
+const getFriendOnlineStatus = (friend, presenceByUserId) =>
+  presenceByUserId.get(String(friend._id)) ?? friend.isOnline ?? false;
 
 const ChatWidget = () => {
   const { t, i18n } = useTranslation();
@@ -26,9 +31,33 @@ const ChatWidget = () => {
   const { data: friends = [] } = useFriendList({
     enabled: !authLoading && !!user,
   });
+  const presenceByUserId = useFriendPresence();
   const [messages, setMessages] = useState({});
   const [messageInput, setMessageInput] = useState("");
   const messagesEndRef = useRef(null);
+
+  const sortedFriends = useMemo(() => {
+    if (!friends.length) {
+      return [];
+    }
+
+    return [...friends].sort((friendA, friendB) => {
+      const onlineA = getFriendOnlineStatus(friendA, presenceByUserId);
+      const onlineB = getFriendOnlineStatus(friendB, presenceByUserId);
+
+      if (onlineA !== onlineB) {
+        return Number(onlineB) - Number(onlineA);
+      }
+
+      return (friendA.fullname || "").localeCompare(
+        friendB.fullname || "",
+        "vi",
+        {
+          sensitivity: "base",
+        },
+      );
+    });
+  }, [friends, presenceByUserId]);
 
   // Auto scroll to bottom when messages change
   useEffect(() => {
@@ -165,40 +194,56 @@ const ChatWidget = () => {
                   <p>{t("chatWidget.noFriends")}</p>
                 </div>
               ) : (
-                friends.map((friend) => (
-                  <div
-                    key={friend._id}
-                    className="friend-item-chat"
-                    onClick={() => handleSelectFriend(friend)}
-                  >
-                    <div className="friend-avatar-chat">
-                      {friend.avatar ? (
-                        <img
-                          src={getAvatarUrl(friend._id, friend.avatar)}
-                          alt={friend.fullname}
-                          onLoad={() => cacheAvatar(friend._id, friend.avatar)}
-                          crossOrigin="anonymous"
-                        />
-                      ) : (
-                        <div className="avatar-fallback-chat">
-                          {friend.fullname.charAt(0).toUpperCase()}
+                sortedFriends.map((friend) => {
+                  const isFriendOnline = getFriendOnlineStatus(
+                    friend,
+                    presenceByUserId,
+                  );
+
+                  return (
+                    <div
+                      key={friend._id}
+                      className={`friend-item-chat ${!isFriendOnline ? "is-offline" : ""}`}
+                      onClick={() => handleSelectFriend(friend)}
+                    >
+                      <Link
+                        to={`/profile/${friend._id}`}
+                        className="friend-avatar-link"
+                        onClick={(event) => event.stopPropagation()}
+                        title={t("friendList.viewProfile")}
+                      >
+                        <div className="friend-avatar-chat">
+                          {friend.avatar ? (
+                            <img
+                              src={getAvatarUrl(friend._id, friend.avatar)}
+                              alt={friend.fullname}
+                              onLoad={() =>
+                                cacheAvatar(friend._id, friend.avatar)
+                              }
+                              crossOrigin="anonymous"
+                            />
+                          ) : (
+                            <div className="avatar-fallback-chat">
+                              {friend.fullname.charAt(0).toUpperCase()}
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </Link>
+                      <div className="friend-info-chat">
+                        <h4>{friend.fullname}</h4>
+                        {messages[friend._id] &&
+                          messages[friend._id].length > 0 && (
+                            <p className="last-message">
+                              {messages[friend._id][
+                                messages[friend._id].length - 1
+                              ].text.substring(0, 30)}
+                              ...
+                            </p>
+                          )}
+                      </div>
                     </div>
-                    <div className="friend-info-chat">
-                      <h4>{friend.fullname}</h4>
-                      {messages[friend._id] &&
-                        messages[friend._id].length > 0 && (
-                          <p className="last-message">
-                            {messages[friend._id][
-                              messages[friend._id].length - 1
-                            ].text.substring(0, 30)}
-                            ...
-                          </p>
-                        )}
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           ) : (
