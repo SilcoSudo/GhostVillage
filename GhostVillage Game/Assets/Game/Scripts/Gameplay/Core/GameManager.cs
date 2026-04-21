@@ -393,101 +393,104 @@ public class GameManager : MonoBehaviourPunCallbacks
             bool isWin = status == PlayerMatchStatus.Escaped; // Cập nhật logic thắng tùy theo yêu cầu của bạn
             string outcome = isWin ? "ESCAPED" : "DEAD";
 
-            string mockMongoID = "659d4b1e9d3e2a1b3c4d5e6f"; // [TODO] Đổi ID thật
-            if (p.CustomProperties.ContainsKey("UserId"))
-                mockMongoID = (string)p.CustomProperties["UserId"];
+            string actualMongoID = "000000000000000000000000"; // [TODO] Đổi ID thật
+
+            if (p.CustomProperties.ContainsKey("UID"))
+                actualMongoID = (string)p.CustomProperties["UID"];
+            else
+                Debug.LogWarning($"<color=orange>[GameManager] ĐẠI CA ƠI! Thằng {p.NickName} bị mất UID rồi, nó đang xài ID rác kìa!</color>");
 
             // 2. GỌI STATISTIC MANAGER ĐỂ LẤY KẾT QUẢ ĐÃ TÍNH TOÁN
             if (_statisticManager != null)
             {
-                var playerResult = _statisticManager.GetFinalResultForPlayer(p, mockMongoID, isWin, outcome, _currentMatchRoute);
+                var playerResult = _statisticManager.GetFinalResultForPlayer(p, actualMongoID, isWin, outcome, _currentMatchRoute);
                 dto.playerResults.Add(playerResult);
             }
         }
         return dto;
     }
 
-    // --- [NEW] LOGIC GỬI MOCK DATA VỀ SERVER ---
-    // --- [NEW] LOGIC GỬI MOCK DATA VỀ SERVER ---
-    private async UniTaskVoid SendMockMatchReport()
-    {
-        var endTime = System.DateTime.UtcNow;
-        var duration = (int)(endTime - _matchStartTime).TotalSeconds;
-        if (duration < 10) duration = 600;
+    // // --- [NEW] LOGIC GỬI MOCK DATA VỀ SERVER ---
+    // // --- [NEW] LOGIC GỬI MOCK DATA VỀ SERVER ---
+    // private async UniTaskVoid SendMockMatchReport()
+    // {
+    //     var endTime = System.DateTime.UtcNow;
+    //     var duration = (int)(endTime - _matchStartTime).TotalSeconds;
+    //     if (duration < 10) duration = 600;
 
-        // 1. Tạo DTO Request cho Match
-        var matchRequest = new SaveMatchRequestDTO
-        {
-            mapId = _mapData.CurrentMapConfig != null ? _mapData.CurrentMapConfig.identityConfig.mapId : "MAP_MOCK_TEST",
-            sessionId = PhotonNetwork.CurrentRoom != null ? PhotonNetwork.CurrentRoom.Name : "Room_Offline_Test",
-            startTime = _matchStartTime.ToString("o"),
-            endTime = endTime.ToString("o"),
-            durationSec = duration,
-            playerResults = new List<PlayerResultRequestDTO>()
-        };
+    //     // 1. Tạo DTO Request cho Match
+    //     var matchRequest = new SaveMatchRequestDTO
+    //     {
+    //         mapId = _mapData.CurrentMapConfig != null ? _mapData.CurrentMapConfig.identityConfig.mapId : "MAP_MOCK_TEST",
+    //         sessionId = PhotonNetwork.CurrentRoom != null ? PhotonNetwork.CurrentRoom.Name : "Room_Offline_Test",
+    //         startTime = _matchStartTime.ToString("o"),
+    //         endTime = endTime.ToString("o"),
+    //         durationSec = duration,
+    //         playerResults = new List<PlayerResultRequestDTO>()
+    //     };
 
-        foreach (var p in PhotonNetwork.PlayerList)
-        {
-            PlayerMatchStatus status = _playerStatuses.ContainsKey(p.ActorNumber)
-                ? _playerStatuses[p.ActorNumber]
-                : PlayerMatchStatus.Playing;
+    //     foreach (var p in PhotonNetwork.PlayerList)
+    //     {
+    //         PlayerMatchStatus status = _playerStatuses.ContainsKey(p.ActorNumber)
+    //             ? _playerStatuses[p.ActorNumber]
+    //             : PlayerMatchStatus.Playing;
 
-            bool isPlayerWin = status == PlayerMatchStatus.Escaped;
-            string mockUserId = p.IsLocal ? "659d4b1e9d3e2a1b3c4d5e6f" : "696da0d5a6e42a937b80aaff";
+    //         bool isPlayerWin = status == PlayerMatchStatus.Escaped;
+    //         string mockUserId = p.IsLocal ? "659d4b1e9d3e2a1b3c4d5e6f" : "696da0d5a6e42a937b80aaff";
 
-            var playerResult = new PlayerResultRequestDTO
-            {
-                userId = mockUserId,
-                nickname = p.NickName,
-                isWin = isPlayerWin,
-                outcome = isPlayerWin ? "ESCAPED" : "DEAD",
-                rewards = new MatchRewardDTO
-                {
-                    exp = isPlayerWin ? 1000 : 100,
-                    coin = isPlayerWin ? 500 : 50
-                },
-                titles = new List<string> { "Tester", "BugHunter" }
-            };
+    //         var playerResult = new PlayerResultRequestDTO
+    //         {
+    //             userId = mockUserId,
+    //             nickname = p.NickName,
+    //             isWin = isPlayerWin,
+    //             outcome = isPlayerWin ? "ESCAPED" : "DEAD",
+    //             rewards = new MatchRewardDTO
+    //             {
+    //                 exp = isPlayerWin ? 1000 : 100,
+    //                 coin = isPlayerWin ? 500 : 50
+    //             },
+    //             titles = new List<string> { "Tester", "BugHunter" }
+    //         };
 
-            matchRequest.playerResults.Add(playerResult);
-        }
+    //         matchRequest.playerResults.Add(playerResult);
+    //     }
 
-        // ===============================================
-        // 2. CHUẨN BỊ RAW STATS CHO QUEST API
-        // ===============================================
-        PlayerMatchStatus myStatus = _playerStatuses.ContainsKey(PhotonNetwork.LocalPlayer.ActorNumber)
-                ? _playerStatuses[PhotonNetwork.LocalPlayer.ActorNumber]
-                : PlayerMatchStatus.Playing;
-        bool isWin = myStatus == PlayerMatchStatus.Escaped;
+    //     // ===============================================
+    //     // 2. CHUẨN BỊ RAW STATS CHO QUEST API
+    //     // ===============================================
+    //     PlayerMatchStatus myStatus = _playerStatuses.ContainsKey(PhotonNetwork.LocalPlayer.ActorNumber)
+    //             ? _playerStatuses[PhotonNetwork.LocalPlayer.ActorNumber]
+    //             : PlayerMatchStatus.Playing;
+    //     bool isWin = myStatus == PlayerMatchStatus.Escaped;
 
-        string questPayloadJson = "";
-        if (_statisticManager != null)
-        {
-            // Lấy JSON string trực tiếp từ hàm chuẩn hóa
-            questPayloadJson = _statisticManager.GetRawStatsPayloadForQuestAPI(isWin);
-            Debug.Log($"<color=yellow>[GameManager] Đóng gói Quest Payload: {questPayloadJson}</color>");
-        }
+    //     string questPayloadJson = "";
+    //     if (_statisticManager != null)
+    //     {
+    //         // Lấy JSON string trực tiếp từ hàm chuẩn hóa
+    //         questPayloadJson = _statisticManager.GetRawStatsPayloadForQuestAPI(isWin);
+    //         Debug.Log($"<color=yellow>[GameManager] Đóng gói Quest Payload: {questPayloadJson}</color>");
+    //     }
 
-        // ===============================================
-        // 3. BẮN 2 SÚNG SONG SONG (BỎ DÒNG ĐỢI AWAIT CŨ)
-        // ===============================================
-        Debug.Log("<color=orange>[GameManager] Đang gửi kết quả Match & Quest lên Server...</color>");
+    //     // ===============================================
+    //     // 3. BẮN 2 SÚNG SONG SONG (BỎ DÒNG ĐỢI AWAIT CŨ)
+    //     // ===============================================
+    //     Debug.Log("<color=orange>[GameManager] Đang gửi kết quả Match & Quest lên Server...</color>");
 
-        // Task 1: Gửi Match History (Giữ dùng Service của sếp)
-        var matchTask = _matchDataService.ReportMatchResultAsync(matchRequest);
+    //     // Task 1: Gửi Match History (Giữ dùng Service của sếp)
+    //     var matchTask = _matchDataService.ReportMatchResultAsync(matchRequest);
 
-        // Task 2: Gửi Quest Stats (Chọc thẳng APIClient hoặc tạo QuestDataService tuỳ sếp)
-        // Ở đây tui ví dụ gọi qua APIClient (nhớ Inject APIClient vào GameManager nếu chưa có)
-        // var questTask = _apiClient.PostAsyncWithAuth<object>("/api/quests/update-progress", questPayloadJson, _session.Token);
+    //     // Task 2: Gửi Quest Stats (Chọc thẳng APIClient hoặc tạo QuestDataService tuỳ sếp)
+    //     // Ở đây tui ví dụ gọi qua APIClient (nhớ Inject APIClient vào GameManager nếu chưa có)
+    //     // var questTask = _apiClient.PostAsyncWithAuth<object>("/api/quests/update-progress", questPayloadJson, _session.Token);
 
-        // Chờ cả 2 xong
-        // await UniTask.WhenAll(matchTask, questTask);
+    //     // Chờ cả 2 xong
+    //     // await UniTask.WhenAll(matchTask, questTask);
 
-        // NẾU SẾP CHƯA TẠO API CHO QUEST THÌ CỨ ĐỂ MỘT MÌNH MATCH TASK CHẠY TRƯỚC:
-        await matchTask;
+    //     // NẾU SẾP CHƯA TẠO API CHO QUEST THÌ CỨ ĐỂ MỘT MÌNH MATCH TASK CHẠY TRƯỚC:
+    //     await matchTask;
 
-        Debug.Log("<color=green>[GameManager] Xong! Đã gửi toàn bộ thông tin lên Server!</color>");
-    }
+    //     Debug.Log("<color=green>[GameManager] Xong! Đã gửi toàn bộ thông tin lên Server!</color>");
+    // }
 
     // --- GAMEPLAY LOGIC FLOW ---
 

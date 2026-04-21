@@ -132,7 +132,7 @@ namespace GhostVillage.Gameplay.Monsters.Mada
             else
             {
                 Debug.Log($"<color=cyan>[Ma Da]</color> Xa quá, lặn qua vũng nước {bestPuddlePos} cho lẹ!");
-                _pv.RPC(nameof(RpcDoTeleportSequence), RpcTarget.All, bestPuddlePos);
+                _pv.RPC(nameof(RpcDoTeleportSequence), RpcTarget.All, bestPuddlePos, targetPos);
             }
         }
 
@@ -175,13 +175,13 @@ namespace GhostVillage.Gameplay.Monsters.Mada
             }
 
             // 2. Bắn lệnh RPC cho toàn bộ Client cùng xem cảnh lặn/trồi
-            _pv.RPC(nameof(RpcDoTeleportSequence), RpcTarget.All, bestPuddlePos);
+            _pv.RPC(nameof(RpcDoTeleportSequence), RpcTarget.All, bestPuddlePos, targetPos);
         }
 
         [PunRPC]
-        private void RpcDoTeleportSequence(Vector3 newPuddlePos)
+        private void RpcDoTeleportSequence(Vector3 newPuddlePos, Vector3 originalTargetPos)
         {
-            StartCoroutine(TeleportRoutine(newPuddlePos));
+            StartCoroutine(TeleportRoutine(newPuddlePos, originalTargetPos));
         }
 
         public Animator GetAnimator() => _animator;
@@ -208,7 +208,7 @@ namespace GhostVillage.Gameplay.Monsters.Mada
             }
         }
 
-        private IEnumerator TeleportRoutine(Vector3 newPuddlePos)
+        private IEnumerator TeleportRoutine(Vector3 newPuddlePos, Vector3 originalTargetPos)
         {
             // 1. KHÓA STATE, DỪNG LẠI (IDLE)
             currentStateType = MaDaStateType.Teleporting;
@@ -282,7 +282,7 @@ namespace GhostVillage.Gameplay.Monsters.Mada
             // Master Client giao lại quyền đi điều tra quanh vũng nước
             if (PhotonNetwork.IsMasterClient)
             {
-                ChangeStateType(MaDaStateType.Investigate, newPuddlePos);
+                ChangeStateType(MaDaStateType.Investigate, originalTargetPos);
             }
         }
 

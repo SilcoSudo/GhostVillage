@@ -9,7 +9,7 @@ public class WellFuelPuzzleManager : MonoBehaviourPun
     [Header("=== TRỤC DI CHUYỂN ===")]
     [Tooltip("Kéo cục Water_System vào đây")]
     public Transform waterSystem;
-    
+
     [Tooltip("Kéo cục Fake_JerryCan vào đây để lát tắt nó đi")]
     public GameObject fakeJerryCan;
 

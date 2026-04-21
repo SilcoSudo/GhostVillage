@@ -40,6 +40,7 @@ namespace Game.Boot
 
         public void Start() => RunFlow().Forget();
 
+        [System.Obsolete]
         private async UniTaskVoid RunFlow()
         {
             _settingsController.Initialize();
@@ -92,14 +93,20 @@ namespace Game.Boot
                 }
                 else
                 {
-                    // ========================================================
-                    // [FIX CHÍ MẠNG]: Bơm đúng UID 8 số vào Session để toàn game xài kết bạn!
-                    // ========================================================
-                    if (!string.IsNullOrEmpty(profileCheck.uid))
+                    if (profileCheck.profile != null)
                     {
-                        _session.UID = profileCheck.uid;
+                        _session.UID = profileCheck.uid; // Cất 8 số xài cho kết bạn
                         _session.DisplayName = profileCheck.profile.displayName;
-                        Debug.Log($"<color=green>[AppManager] Đã lưu UID chuẩn vào Session: {_session.UID}</color>");
+
+                        string finalMongoId = !string.IsNullOrEmpty(profileCheck.userId)
+                                              ? profileCheck.userId
+                                              : profileCheck.uid;
+
+                        // Ép lưu MongoID 24 ký tự xuống máy để xíu nữa Photon bốc lên xài
+                        PlayerPrefs.SetString("UserId", finalMongoId);
+                        PlayerPrefs.Save();
+
+                        Debug.Log($"<color=green>[AppManager] Đã lưu UID: {_session.UID} | MongoID: {finalMongoId}</color>");
                     }
                 }
 

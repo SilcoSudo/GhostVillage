@@ -115,7 +115,7 @@ namespace Game.Script.UI
         private void ExecuteJoinRoom(string roomName)
         {
             _pendingRoomToJoin = roomName;
-            ShowLoading(true, "Đang vào phòng của bạn bè...");
+            ShowLoading(true, "Joining friend's room...");
 
             IsBypassPassword = true;
 
@@ -130,7 +130,7 @@ namespace Game.Script.UI
             else
             {
                 // Thay vì chỉ ShowError, giờ dùng SafeReturn luôn
-                HandleLoadingCrash("Lỗi Mạng", "Bạn chưa kết nối vào Server!");
+                HandleLoadingCrash("Network Error", "You are not connected to the server!");
             }
         }
 
@@ -159,7 +159,7 @@ namespace Game.Script.UI
             if (!string.IsNullOrEmpty(_pendingRoomToJoin))
             {
                 _pendingRoomToJoin = string.Empty;
-                HandleLoadingCrash("Vào phòng thất bại", "Phòng đã đầy, đang chơi, hoặc không tồn tại!");
+                HandleLoadingCrash("Failed to join room", "The room is full, in progress, or does not exist!");
             }
         }
 
@@ -316,9 +316,9 @@ namespace Game.Script.UI
                 await UniTask.Delay((int)(LOADING_TIMEOUT * 1000), cancellationToken: token);
                 if (_loadingPanel != null && _loadingPanel.activeInHierarchy)
                 {
-                    Debug.LogWarning($"⚠️ Loading timeout sau {LOADING_TIMEOUT}s. Kích hoạt Safe Return.");
+                    Debug.LogWarning($"⚠️ Loading timeout sau {LOADING_TIMEOUT}s. Activating Safe Return.");
                     // Nếu quá 30 giây mà đơ -> Tự động kích hoạt cơ chế rút lui an toàn
-                    HandleLoadingCrash("Mất Kết Nối", "Thời gian tải quá lâu. Đang quay về sảnh...");
+                    HandleLoadingCrash("Connection Lost", "Time out while loading. Returning to main menu...");
                 }
             }
             catch (System.OperationCanceledException) { }
@@ -339,7 +339,7 @@ namespace Game.Script.UI
         /// </summary>
         public void HandleLoadingCrash(string errorTitle, string errorMessage, string safeScene = "MainMenu")
         {
-            Debug.LogError($"[SafeReturn] Khởi chạy! Lỗi: {errorTitle} - {errorMessage}");
+            Debug.LogError($"[SafeReturn] Initiated! Error: {errorTitle} - {errorMessage}");
 
             // 1. Tắt Loading
             ShowLoading(false);

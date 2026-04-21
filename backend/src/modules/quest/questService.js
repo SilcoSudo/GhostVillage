@@ -125,7 +125,11 @@ export const QuestService = {
     const now = new Date();
     const lastReset = new Date(player.lastDailyReset || 0);
 
-    if (now.toDateString() !== lastReset.toDateString()) {
+    if (
+      now.toDateString() !== lastReset.toDateString() ||
+      !player.dailyProgress ||
+      player.dailyProgress.length === 0
+    ) {
       // 1. Lấy toàn bộ Daily Quest đang active trong kho
       const allDailyQuests = await Quest.find({
         isActive: true,

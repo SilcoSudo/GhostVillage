@@ -8,7 +8,7 @@ namespace GhostVillage.Domain.Profile
     {
         // [FIX CHÍ MẠNG 1]: Thêm dòng này để hứng cái mã 8 số từ Backend!
         public string uid;
-
+        public string userId;
         public PlayerProfile profile;
         public List<string> selectedMedals;
 
@@ -29,7 +29,6 @@ namespace GhostVillage.Domain.Profile
         public int nextLevelExp = 100;
         public int coin;
         public string avatar;
-        public string userId = "N/A";
         public int totalMatches;
     }
 

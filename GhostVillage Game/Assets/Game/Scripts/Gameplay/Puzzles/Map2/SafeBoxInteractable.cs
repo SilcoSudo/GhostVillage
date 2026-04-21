@@ -7,62 +7,62 @@ public class SafeBoxInteractable : MonoBehaviourPun, IInteractable
     [Header("Puzzle Reference")]
     public FishPoolPuzzleManager puzzleManager;
 
-    [Tooltip("Không kéo cũng được, nó sẽ tự lùng sục cái SafeBoxUI trong Canvas HUD")]
+    [Tooltip("Optional. It will automatically search for the SafeBoxUI in the Canvas HUD if left empty.")]
     public SafeBoxUI safeBoxUI;
 
     [Header("Reward Spawning")]
-    [Tooltip("Cục Empty nằm trước miệng két sắt để rơi Bugi ra")]
+    [Tooltip("Empty GameObject placed in front of the safe to spawn the Spark Plug.")]
     public Transform itemSpawnPoint;
-    public string itemPrefabName = "World_Bugi"; // Tên file Prefab Bugi_Pickup trong folder Resources
+    public string itemPrefabName = "World_Bugi"; // The prefab file name of the Spark Plug in the Resources folder
 
     private bool _isOpened = false;
 
     private void Start()
     {
-        // Tự động tìm UI Két Sắt dưới nền
+        // Automatically find the SafeBox UI in the background
         if (safeBoxUI == null)
         {
             safeBoxUI = Object.FindFirstObjectByType<SafeBoxUI>(FindObjectsInactive.Include);
 
-            // THÊM LOG CHECK TÌM UI
+            // ADD UI SEARCH LOG CHECK
             if (safeBoxUI != null)
             {
-                Debug.Log($"<color=green>[SafeBox] OK! Đã rà quét và tự động nối dây thành công với UI tên là: {safeBoxUI.gameObject.name}</color>");
+                Debug.Log($"<color=green>[SafeBox] OK! Successfully scanned and connected to UI named: {safeBoxUI.gameObject.name}</color>");
             }
             else
             {
-                Debug.LogWarning("<color=orange>[SafeBox] Chú ý: Lúc Start() chưa tìm thấy SafeBoxUI. Có thể do UI HUD đẻ ra chậm hơn Két sắt. Sẽ thử tìm lại lúc ấn F!</color>");
+                Debug.LogWarning("<color=orange>[SafeBox] Warning: SafeBoxUI not found during Start(). The HUD UI might spawn slower than the Safe. Will try searching again when pressing F!</color>");
             }
         }
     }
 
-    public string GetPromptMessage() => _isOpened ? "Két sắt đã mở" : "Nhập mật khẩu Két Sắt (F)";
+    public string GetPromptMessage() => _isOpened ? "Safe is open" : "Enter Safe Password (F)";
 
     public void Interact(GameObject actor)
     {
-        Debug.Log($"<color=magenta>[SafeBox] Player {actor.name} vừa ấn F vào Két Sắt!</color>");
+        Debug.Log($"<color=magenta>[SafeBox] Player {actor.name} just pressed F on the Safe!</color>");
 
         if (_isOpened)
         {
-            Debug.Log("[SafeBox] Két mở rồi, không cho tương tác nữa.");
+            Debug.Log("[SafeBox] Safe is already open, interaction disabled.");
             return;
         }
 
-        // LƯỚI BẢO HỘ: Nếu Start() tìm trượt do UI sinh ra sau, thì lúc ấn F tao tìm lại 1 lần nữa!
+        // SAFETY NET: If Start() missed it because the UI spawned later, try searching again upon pressing F!
         if (safeBoxUI == null)
         {
-            Debug.Log("[SafeBox] Lúc Start chưa có UI, giờ lùng sục lại lần 2...");
+            Debug.Log("[SafeBox] UI not found at Start, searching again for the 2nd time...");
             safeBoxUI = Object.FindFirstObjectByType<SafeBoxUI>(FindObjectsInactive.Include);
         }
 
         if (safeBoxUI != null)
         {
-            Debug.Log($"<color=yellow>[SafeBox] Đang gọi lệnh OpenUI() của GameObject: {safeBoxUI.gameObject.name}</color>");
+            Debug.Log($"<color=yellow>[SafeBox] Calling OpenUI() on GameObject: {safeBoxUI.gameObject.name}</color>");
             safeBoxUI.OpenUI(this, actor);
         }
         else
         {
-            Debug.LogError("<color=red>[SafeBox] CHỊU! Đã tìm 2 lần vẫn không thấy SafeBoxUI trên màn hình HUD! Sếp check lại xem prefab UI có chứa SafeBoxUI.cs chưa?</color>");
+            Debug.LogError("<color=red>[SafeBox] FAILED! Searched twice but still cannot find SafeBoxUI on the HUD! Please check if the UI prefab contains SafeBoxUI.cs.</color>");
         }
     }
 
@@ -74,7 +74,7 @@ public class SafeBoxInteractable : MonoBehaviourPun, IInteractable
 
         if (isCorrect)
         {
-            // SỬA DÒNG NÀY LẠI THÀNH DẠNG CHUỖI NHƯ SAU:
+            // CHANGED THIS LINE TO A STRING FORMAT AS FOLLOWS:
             photonView.RPC("RpcOpenSafeAndSpawnItem", RpcTarget.MasterClient);
         }
     }
@@ -92,6 +92,6 @@ public class SafeBoxInteractable : MonoBehaviourPun, IInteractable
     public void RpcSyncSafeOpened()
     {
         _isOpened = true;
-        Debug.Log("<color=yellow>[SafeBox] TẠCH! Két đã mở! Lòi cục Bugi ra rồi!</color>");
+        Debug.Log("<color=yellow>[SafeBox] CLICK! The safe is open! The spark plug has popped out!</color>");
     }
 }

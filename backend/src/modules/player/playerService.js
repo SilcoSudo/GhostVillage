@@ -44,6 +44,7 @@ export const PlayerService = {
 
     // 3. Trả về đúng cấu cục mà Frontend DTO mong đợi
     return {
+      userId: player.userId,
       uid: player.uid,
       profile: player.profile,
       selectedMedals: player.selectedMedals || [],

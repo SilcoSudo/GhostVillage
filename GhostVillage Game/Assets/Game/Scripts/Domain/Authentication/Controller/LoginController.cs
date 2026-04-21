@@ -39,7 +39,7 @@ namespace Game.UI.Login
             // 1. Check rỗng
             if (string.IsNullOrWhiteSpace(email))
             {
-                _globalUI.ShowError("Lỗi nhập liệu", "Email không được để trống!");
+                _globalUI.ShowError("Error", "Email cannot be empty!");
                 return false;
             }
 
@@ -47,28 +47,28 @@ namespace Game.UI.Login
             string emailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
             if (!Regex.IsMatch(email, emailPattern))
             {
-                _globalUI.ShowError("Lỗi nhập liệu", "Định dạng Email không hợp lệ!");
+                _globalUI.ShowError("Error", "Invalid email format!");
                 return false;
             }
 
             // 3. Check mật khẩu rỗng
             if (string.IsNullOrWhiteSpace(password))
             {
-                _globalUI.ShowError("Lỗi nhập liệu", "Mật khẩu không được để trống!");
+                _globalUI.ShowError("Error", "Password cannot be empty!");
                 return false;
             }
 
             // 4. Check độ dài tối thiểu của mật khẩu (Ví dụ Backend set min là 6)
             if (password.Length < 6)
             {
-                _globalUI.ShowError("Lỗi nhập liệu", "Mật khẩu phải có ít nhất 6 ký tự!");
+                _globalUI.ShowError("Error", "Password must be at least 6 characters long!");
                 return false;
             }
 
             // Có thể thêm check độ dài tối đa để chống spam input quá dài
             if (password.Length > 32)
             {
-                _globalUI.ShowError("Lỗi nhập liệu", "Mật khẩu không được vượt quá 32 ký tự!");
+                _globalUI.ShowError("Error", "Password must not exceed 32 characters!");
                 return false;
             }
 
@@ -87,7 +87,7 @@ namespace Game.UI.Login
             }
 
             view.SetInteractable(false);
-            _globalUI.ShowLoading(true, "Đang xác thực thông tin..."); // Bật bảng loading che màn hình
+            _globalUI.ShowLoading(true, "Validating..."); // Bật bảng loading che màn hình
 
             try
             {
@@ -98,10 +98,25 @@ namespace Game.UI.Login
                 {
                     view.gameObject.SetActive(false);
 
-                    _globalUI.ShowLoading(true, "Đang tải dữ liệu nhân vật...");
+                    // [FIX CỰC KỲ QUAN TRỌNG]: Phải lưu Token VÀO TRƯỚC rồi mới Fetch, nếu không hàm Fetch sẽ lấy Token cũ!
+                    _session.Token = response.token;
+                    _authService.SaveToken(response.token);
+
+                    _globalUI.ShowLoading(true, "Fetching character data...");
                     var profileResponse = await _authService.FetchMyProfileAsync();
 
-                    _globalUI.ShowLoading(true, "Đang kết nối Máy Chủ Trò Chơi...");
+                    if (profileResponse != null && profileResponse.profile != null)
+                    {
+                        _session.DisplayName = profileResponse.profile.displayName;
+                        _session.UID = profileResponse.uid;
+                        _session.Token = response.token;
+
+                        _authService.SaveToken(response.token);
+                        PlayerPrefs.SetString("UserId", profileResponse.userId);
+                        PlayerPrefs.Save();
+                    }
+
+                    _globalUI.ShowLoading(true, "Connecting to Server...");
 
                     string nickName = (profileResponse != null && profileResponse.profile != null)
                                       ? profileResponse.profile.displayName
@@ -119,7 +134,7 @@ namespace Game.UI.Login
                         // Lỗi kết nối Photon
                         _globalUI.ShowLoading(false);
                         view.gameObject.SetActive(true);
-                        _globalUI.ShowError("Lỗi kết nối", "Không thể kết nối đến máy chủ Photon. Vui lòng thử lại!");
+                        _globalUI.ShowError("Error", "Can not connect to Photon Server. Please try again!");
                         view.SetInteractable(true);
                     }
                 }
@@ -127,7 +142,7 @@ namespace Game.UI.Login
                 {
                     // TRƯỜNG HỢP BE TRẢ VỀ {success: false} (Sai pass, chưa verify...) => response bị null
                     _globalUI.ShowLoading(false);
-                    _globalUI.ShowError("Đăng nhập thất bại", "Sai Email/Mật khẩu hoặc Tài khoản chưa xác thực!");
+                    _globalUI.ShowError("Login failed", "Wrong Email/Password or Account not verified!");
                     view.SetInteractable(true);
                 }
             }
@@ -136,19 +151,19 @@ namespace Game.UI.Login
                 // TRƯỜNG HỢP SERVER BE CHẾT NGẮC HOẶC MẤT MẠNG INTERNET
                 _globalUI.ShowLoading(false);
 
-                string errorMessage = "Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại mạng hoặc Server đang bảo trì!";
+                string errorMessage = "Cannot connect to server. Please check your internet connection or try again later!";
 
                 // Vớt vát thêm nếu Exception có chứa text lỗi sâu hơn từ APIClient
                 if (ex.Message.Contains("Invalid password") || ex.Message.Contains("User not found"))
                 {
-                    errorMessage = "Sai Email hoặc Mật khẩu!";
+                    errorMessage = "Wrong Email or Password!";
                 }
                 else if (ex.Message.Contains("ACCOUNT_NOT_VERIFIED"))
                 {
-                    errorMessage = "Tài khoản chưa được xác thực Email!";
+                    errorMessage = "Account not verified!";
                 }
 
-                _globalUI.ShowError("Lỗi Hệ Thống", errorMessage);
+                _globalUI.ShowError("System Error", errorMessage);
                 view.SetInteractable(true);
             }
         }
@@ -237,7 +252,7 @@ namespace Game.UI.Login
                     if (view != null) view.gameObject.SetActive(false);
 
                     // --- BƯỚC MỚI: FETCH PROFILE BẰNG TOKEN TỪ GOOGLE LOGIN ---
-                    _globalUI.ShowLoading(true, "Đang tải dữ liệu nhân vật...");
+                    _globalUI.ShowLoading(true, "Fetching character data...");
 
                     // Lưu token vào session trước để hàm Fetch có thể dùng
                     _session.Token = authToken;
@@ -247,7 +262,7 @@ namespace Game.UI.Login
 
                     var profileResponse = await _authService.FetchMyProfileAsync();
 
-                    _globalUI.ShowLoading(true, "Đang kết nối Máy Chủ Trò Chơi...");
+                    _globalUI.ShowLoading(true, "Connecting to Server...");
 
                     // Lấy nickname từ profile vừa fetch
                     string nickName = (profileResponse != null && profileResponse.profile != null)
@@ -258,6 +273,21 @@ namespace Game.UI.Login
                     if (profileResponse != null && profileResponse.profile != null)
                     {
                         _session.DisplayName = profileResponse.profile.displayName;
+                        // [FIX Ở ĐÂY]: Ép buộc cập nhật lại UID mới vào Session
+                        // (Tùy thuộc vào model DTO của sếp đặt tên là userId hay uid)
+                        _session.UID = profileResponse.uid; // Hoặc profileResponse.uid nếu BE trả về kiểu đó
+
+                        if (!string.IsNullOrEmpty(response?.token))
+                            _session.Token = response.token;
+
+                        _authService.SaveToken(_session.Token);
+
+                        // [FIX BẤT TỬ]
+                        string finalMongoId = profileResponse.userId;
+
+
+                        PlayerPrefs.SetString("UserId", finalMongoId);
+                        PlayerPrefs.Save();
                     }
 
                     // Connect Photon
