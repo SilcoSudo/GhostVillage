@@ -11,6 +11,20 @@ public class PuzzleSpawnerManager : MonoBehaviour
     {
         if (!PhotonNetwork.IsMasterClient) return;
 
+        Debug.Log($"[PuzzleSpawner] ====== DEBUG INFO ======");
+        Debug.Log($"[PuzzleSpawner] Config: {(config == null ? "NULL" : "NOT NULL")}");
+        Debug.Log($"[PuzzleSpawner] puzzlePoolIds: {(config?.puzzlePoolIds == null ? "NULL" : $"Count = {config.puzzlePoolIds.Count}")}");
+        
+        if (config?.puzzlePoolIds != null && config.puzzlePoolIds.Count > 0)
+        {
+            Debug.Log($"[PuzzleSpawner] puzzlePoolIds content:");
+            for (int i = 0; i < config.puzzlePoolIds.Count; i++)
+            {
+                Debug.Log($"  [{i}] = {config.puzzlePoolIds[i]}");
+            }
+        }
+        Debug.Log($"[PuzzleSpawner] ====== END DEBUG ======");
+
         if (config == null || config.puzzlePoolIds == null || config.puzzlePoolIds.Count == 0)
         {
             Debug.LogWarning("⚠️ [PuzzleSpawner] Map này không có Puzzle hoặc thiếu config Puzzle.");

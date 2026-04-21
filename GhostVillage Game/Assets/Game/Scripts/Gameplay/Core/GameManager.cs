@@ -178,7 +178,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         {
             Debug.Log("<color=blue>[GameManager]</color> Tôi là Client thường, chờ Master điều phối...");
             // Client con: Nếu vào sau, tự động đồng bộ State từ Server về
-            if (PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey(KEY_GAME_STATE))
+            if (PhotonNetwork.CurrentRoom != null && PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey(KEY_GAME_STATE))
             {
                 GameState serverState = (GameState)(int)PhotonNetwork.CurrentRoom.CustomProperties[KEY_GAME_STATE];
                 SetLocalState(serverState);

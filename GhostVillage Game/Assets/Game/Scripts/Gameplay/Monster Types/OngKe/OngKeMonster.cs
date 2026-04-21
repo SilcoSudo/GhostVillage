@@ -2,6 +2,10 @@ using UnityEngine;
 using GhostVillage.Gameplay.Base;
 using GhostVillage.Gameplay.Shared;
 using UnityEngine.InputSystem;
+using Photon.Pun;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine.SceneManagement;
 
 namespace GhostVillage.Gameplay.Monsters.OngKe
 {
@@ -13,15 +17,23 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
     public class OngKeMonster : MonsterBase
     {
         [Header("--- Patrol ---")]
-        [Tooltip("Các tâm vùng patrol. Để trống = chỉ dùng spawn point.")]
+        [Tooltip("Các tâm vùng patrol. Để trống = tự tìm via tag 'WayPoint'")]
         [SerializeField] private Transform[] patrolZones;
+        [Tooltip("Tự tìm zone trong scene bằng tag 'WayPoint' nếu patrolZones đang rỗng")]
+        [SerializeField] private bool autoFindPatrolZonesFromScene = true;
         [Tooltip("Bán kính di chuyển ngẫu nhiên quanh mỗi zone")]
         [SerializeField] private float patrolRadius = 25f;
+        [Tooltip("Phần bán kính bị trừ ở mép zone để tránh bám sát tường/rìa collider")]
+        [SerializeField] private float patrolEdgePadding = 2f;
+        [Tooltip("Layer vật cản dùng để loại bỏ target patrol bị chặn bởi collider")]
+        [SerializeField] private LayerMask patrolObstacleMask = default;
 
         [Header("--- Combat ---")]
         [SerializeField] private float chaseRange = 60f;
         [SerializeField] private float attackRange = 1.5f;
         [SerializeField] private float attackCooldown = 1f;
+        [Tooltip("Bật để đòn đánh của Ông Kẹ dùng jumpscare camera trước khi knock")]
+        [SerializeField] private bool useJumpscareAttack = true;
 
         [Header("--- Pull Skill ---")]
         [Tooltip("Tầm xa của nón hút")]
@@ -50,6 +62,9 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
         private float chaseTimer = 0f;
         private bool hasResetChaseLostSight = false;
         private bool investigateExitWasPlayerDetected = false;
+        private PhotonView _photonView;
+        private PhotonTransformView _photonTransformView;
+        private PhotonAnimatorView _photonAnimatorView;
 
         // ── Forced Chase (triggered bởi Puzzle thua) ──────────────────────
         private Transform _forcedChaseTarget = null;
@@ -73,6 +88,88 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
         {
             base.Awake();
             monsterName = "Ông Kẹ";
+            EnsurePhotonSyncComponents();
+        }
+
+        private void EnsurePhotonSyncComponents()
+        {
+            _photonView = GetComponent<PhotonView>();
+            if (_photonView == null)
+            {
+                _photonView = gameObject.AddComponent<PhotonView>();
+            }
+
+            _photonTransformView = GetComponent<PhotonTransformView>();
+            if (_photonTransformView == null)
+            {
+                _photonTransformView = gameObject.AddComponent<PhotonTransformView>();
+            }
+
+            Animator localAnimator = GetComponent<Animator>();
+
+            _photonAnimatorView = GetComponent<PhotonAnimatorView>();
+            if (localAnimator == null)
+            {
+                // Không có Animator thì tắt sync animator để tránh MissingComponentException.
+                if (_photonAnimatorView != null)
+                {
+                    _photonAnimatorView.enabled = false;
+                }
+            }
+            else
+            {
+                if (_photonAnimatorView == null)
+                {
+                    _photonAnimatorView = gameObject.AddComponent<PhotonAnimatorView>();
+                }
+
+                // Mirror MaDa/Drowned setup: layer 0 continuous + Speed float continuous when present.
+                _photonAnimatorView.SetLayerSynchronized(0, PhotonAnimatorView.SynchronizeType.Continuous);
+                if (HasAnimatorFloatParameter("Speed"))
+                {
+                    _photonAnimatorView.SetParameterSynchronized(
+                        "Speed",
+                        PhotonAnimatorView.ParameterType.Float,
+                        PhotonAnimatorView.SynchronizeType.Continuous);
+                }
+            }
+
+            if (_photonView.ObservedComponents == null)
+            {
+                _photonView.ObservedComponents = new List<Component>();
+            }
+
+            if (!_photonView.ObservedComponents.Contains(_photonTransformView))
+            {
+                _photonView.ObservedComponents.Add(_photonTransformView);
+            }
+
+            if (_photonAnimatorView != null && _photonAnimatorView.enabled && !_photonView.ObservedComponents.Contains(_photonAnimatorView))
+            {
+                _photonView.ObservedComponents.Add(_photonAnimatorView);
+            }
+
+            _photonView.Synchronization = ViewSynchronization.UnreliableOnChange;
+        }
+
+        private bool HasAnimatorFloatParameter(string parameterName)
+        {
+            Animator localAnimator = GetComponent<Animator>();
+            if (localAnimator == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < localAnimator.parameters.Length; i++)
+            {
+                var parameter = localAnimator.parameters[i];
+                if (parameter.name == parameterName && parameter.type == AnimatorControllerParameterType.Float)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -103,27 +200,56 @@ namespace GhostVillage.Gameplay.Monsters.OngKe
 
         private void Start()
         {
-            Debug.Log($" OngKeMonster.Start() called");
+            Debug.Log($"[OngKe] Start() called");
+
+            if (autoFindPatrolZonesFromScene && (patrolZones == null || patrolZones.Length == 0))
+            {
+                Debug.Log($"[OngKe] 🔍 Searching for patrol zones via tag 'WayPoint'...");
+                
+                // Tìm tất cả GameObjects có tag 'WayPoint' (giống MaDa)
+                GameObject[] wpObjects = GameObject.FindGameObjectsWithTag("WayPoint");
+                if (wpObjects != null && wpObjects.Length > 0)
+                {
+                    patrolZones = wpObjects.Select(go => go.transform).ToArray();
+                    Debug.Log($"[OngKe] ✓ Found {patrolZones.Length} waypoints via tag 'WayPoint'");
+                    for (int i = 0; i < patrolZones.Length; i++)
+                    {
+                        Debug.Log($"[OngKe]   └─ WayPoint {i}: {patrolZones[i].name} at {patrolZones[i].position}");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"[OngKe] ❌ NO WAYPOINTS FOUND! Please tag patrol zone GameObjects with tag 'WayPoint'");
+                }
+            }
+
+            if (patrolZones != null)
+            {
+                patrolZones = System.Array.FindAll(patrolZones, t => t != null);
+            }
+
+            Debug.Log($"[OngKe] patrolObstacleMask value: {patrolObstacleMask.value} (tên layer được check: {(patrolObstacleMask == default ? "Wall,Boundary" : "Custom set")})");
 
             if (patrolZones != null && patrolZones.Length > 0)
             {
                 Vector3[] zonePositions = System.Array.ConvertAll(patrolZones, t => t.position);
-                patrolState = new RandomPatrolState(this, zonePositions, patrolRadius);
-                Debug.Log($"✓ Patrol zones: {patrolZones.Length} zone(s), radius: {patrolRadius}m");
+                patrolState = new RandomPatrolState(this, zonePositions, patrolRadius, 1.2f, 1.5f, patrolEdgePadding, patrolObstacleMask);
+                Debug.Log($"[OngKe] ✓ Patrol zones: {patrolZones.Length} zone(s), radius: {patrolRadius}m, edgePadding: {patrolEdgePadding}m");
             }
             else
             {
-                patrolState = new RandomPatrolState(this, transform.position, patrolRadius);
-                Debug.Log($"✓ Patrol zone: spawn point, radius: {patrolRadius}m");
+                Debug.LogError($"[OngKe] ❌ NO PATROL ZONES FOUND! Ông Kẹ needs patrol zones to work properly. Please setup 'Patrol zone' GameObject with children zones in the scene.");
+                enabled = false;
+                return;
             }
             chaseState = new ChaseState(this, 2f, chaseRange);
-            attackState = new AttackState(this, attackRange, attackCooldown);
+            attackState = new AttackState(this, attackRange, attackCooldown, useJumpscareAttack);
             sirenState = new SirenState(this);
             pullSkill = new PullSkill(transform, pullActivationRange, pullConeHalfAngle, pullMaxForce, pullMinForce, pullCastTime, pullDuration, pullCooldown);
 
-            Debug.Log($"✓ States initialized");
-            Debug.Log($"✓ PatrolOrigin: {transform.position} | Radius: {patrolRadius}m");
-            Debug.Log($"✓ NavMeshAgent: {GetComponent<UnityEngine.AI.NavMeshAgent>()}");
+            Debug.Log($"[OngKe] ✓ States initialized");
+            Debug.Log($"[OngKe] ✓ PatrolOrigin: {transform.position} | Radius: {patrolRadius}m");
+            Debug.Log($"[OngKe] ✓ NavMeshAgent: {GetComponent<UnityEngine.AI.NavMeshAgent>()}");
 
             ChangeStateType(OngKeStateType.Patrol);
 

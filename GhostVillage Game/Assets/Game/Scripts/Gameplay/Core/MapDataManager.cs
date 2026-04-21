@@ -49,7 +49,23 @@ public class MapDataManager : MonoBehaviour
                 Transform[] allTransforms = FindObjectsByType<Transform>(FindObjectsSortMode.None);
                 foreach (var t in allTransforms)
                 {
-                    if (t != null && t.name.StartsWith(tag))
+                    if (t == null) continue;
+
+                    bool matchByPrefix = t.name.StartsWith(tag);
+                    bool matchPuzzleAlias = false;
+
+                    if (tag == "SP_Puzzle")
+                    {
+                        matchPuzzleAlias = t.name.Contains("PuzzleSpawn") || t.name.Contains("SP_Puzzle");
+
+                        if (!matchPuzzleAlias && t.parent != null)
+                        {
+                            string parentName = t.parent.name;
+                            matchPuzzleAlias = parentName.Contains("PuzzleSpawn") || parentName.Contains("SP_Puzzle");
+                        }
+                    }
+
+                    if (matchByPrefix || matchPuzzleAlias)
                     {
                         transforms.Add(t);
                     }

@@ -37,6 +37,15 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
     [SerializeField] private TextMeshProUGUI resultText;
     [Tooltip("Hiển thị UI kéo co bằng overlay code (không phụ thuộc Canvas setup)")]
     [SerializeField] private bool useRuntimeOverlayUI = true;
+    [Tooltip("Ép Canvas về RenderMode chỉ định khi bắt đầu minigame")]
+    [SerializeField] private bool forceCanvasRenderMode = true;
+    [Tooltip("RenderMode sẽ dùng nếu forceCanvasRenderMode bật")]
+    [SerializeField] private RenderMode minigameCanvasRenderMode = RenderMode.ScreenSpaceOverlay;
+    [Tooltip("Ép override sorting/sorting order khi bắt đầu minigame")]
+    [SerializeField] private bool forceCanvasSorting = true;
+    [SerializeField] private int minigameCanvasSortingOrder = 500;
+    [Tooltip("Ép localScale của Canvas về Vector3.one khi bắt đầu minigame")]
+    [SerializeField] private bool forceCanvasScaleOne = true;
 
     // ─── Vòng Nhi ─────────────────────────────────────────────
     [Header("--- Vòng Nhi ---")]
@@ -602,13 +611,22 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
             t = t.parent;
         }
 
-        // Ép kiểu hiển thị để tránh trường hợp canvas world-space bị lệch/cực nhỏ
-        keoCoCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        keoCoCanvas.overrideSorting = true;
-        keoCoCanvas.sortingOrder = 500;
+        // Cho phép designer kiểm soát cách hiển thị Canvas từ Inspector.
+        if (forceCanvasRenderMode)
+        {
+            keoCoCanvas.renderMode = minigameCanvasRenderMode;
+        }
 
-        // Reset canvas scale để tránh trường hợp bị lưu thành 0,0,0
-        keoCoCanvas.transform.localScale = Vector3.one;
+        if (forceCanvasSorting)
+        {
+            keoCoCanvas.overrideSorting = true;
+            keoCoCanvas.sortingOrder = minigameCanvasSortingOrder;
+        }
+
+        if (forceCanvasScaleOne)
+        {
+            keoCoCanvas.transform.localScale = Vector3.one;
+        }
 
         var canvasGroup = keoCoCanvas.GetComponent<CanvasGroup>();
         if (canvasGroup != null)
@@ -922,12 +940,19 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
 
         if (!string.IsNullOrEmpty(vongNhiTag))
         {
-            GameObject tagged = GameObject.FindGameObjectWithTag(vongNhiTag);
-            if (tagged != null)
+            try
             {
-                vongNhi = tagged.GetComponent<VongNhiMonster>();
-                if (vongNhi != null)
-                    return;
+                GameObject tagged = GameObject.FindGameObjectWithTag(vongNhiTag);
+                if (tagged != null)
+                {
+                    vongNhi = tagged.GetComponent<VongNhiMonster>();
+                    if (vongNhi != null)
+                        return;
+                }
+            }
+            catch (UnityException)
+            {
+                // Tag chưa được define trong TagManager: fallback qua FindObjectOfType.
             }
         }
 
@@ -1071,6 +1096,8 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
 
         if (roundResultDisplayTime < 0.1f)
             roundResultDisplayTime = 0.1f;
+
+        minigameCanvasSortingOrder = Mathf.Clamp(minigameCanvasSortingOrder, -10000, 10000);
 
         playerWinLine = Mathf.Clamp(playerWinLine, 0.55f, 0.98f);
         vongNhiWinLine = Mathf.Clamp(vongNhiWinLine, 0.02f, 0.45f);

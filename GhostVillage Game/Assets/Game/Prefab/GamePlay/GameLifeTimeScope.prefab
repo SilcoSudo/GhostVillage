@@ -500,6 +500,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7671640777973979212}
   - component: {fileID: 416868282540842857}
+  - component: {fileID: 901234567890123456}
   m_Layer: 0
   m_Name: PuzzleSpawnerManager
   m_TagString: Untagged
@@ -534,6 +535,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3929d36b5503de14fbc24fd3e3b31919, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PuzzleSpawnerManager
+--- !u!114 &901234567890123456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8360186681429180301}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f5e2c6fea9cfcac48be8a41e5a4a29cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RandomPuzzleSpawnController
+  resourceDatabase: {fileID: 0}
+  puzzleSpawnTag: SP_Puzzle
+  maxSpawnCountOverride: -1
+  disableCorePuzzleSpawner: 0
+  spawnOnlyOncePerRoom: 1
+  roomSpawnedKey: RndPuzzleSpawned
+  roomSeedKey: RndPuzzleSeed
+  useFixedSeedForDebug: 0
+  fixedSeed: 12345
+  waitForMapDataTimeout: 10
 --- !u!1 &8460216163400397040
 GameObject:
   m_ObjectHideFlags: 0

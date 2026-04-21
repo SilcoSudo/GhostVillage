@@ -24,12 +24,15 @@ public class ChickenCandidateInteractable : Interactable
 
     public override void Interact(GameObject actor)
     {
+        Debug.Log($"[ChickenCandidate] Interact called! Actor: {actor.name}, IsReal: {_isRealChicken}");
+        
         if (_owner == null)
         {
             Debug.LogWarning("[ChickenCandidate] Owner puzzle is missing.");
             return;
         }
 
+        Debug.Log($"[ChickenCandidate] Calling OnCandidateInteracted on owner {_owner.gameObject.name}");
         _owner.OnCandidateInteracted(this, actor);
     }
 

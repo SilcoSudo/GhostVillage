@@ -1,5 +1,6 @@
 using UnityEngine;
 using GhostVillage.Gameplay.Base;
+using Photon.Pun;
 
 namespace GhostVillage.Gameplay.Shared
 {
@@ -11,17 +12,21 @@ namespace GhostVillage.Gameplay.Shared
         private readonly MonsterBase monster;
         private readonly float attackRange = 1.5f; // Tầm tấn công
         private readonly float attackCooldown = 1f; // Cooldown tấn công (giây)
+        private readonly bool useJumpscareAttack;
 
         private float lastAttackTime = 0f;
         private bool hasAttackedThisFrame = false;
         private float lastDebugLogTime = 0f; // Để tránh spam log
         private bool isFirstEnter = true; // Track lần Enter đầu tiên
+        private float activeJumpscareUntil = 0f;
+        private int activeVictimViewId = -1;
 
-        public AttackState(MonsterBase monster, float attackRange = 1.5f, float attackCooldown = 1f)
+        public AttackState(MonsterBase monster, float attackRange = 1.5f, float attackCooldown = 1f, bool useJumpscareAttack = false)
         {
             this.monster = monster;
             this.attackRange = attackRange;
             this.attackCooldown = attackCooldown;
+            this.useJumpscareAttack = useJumpscareAttack;
         }
 
         public void Enter()
@@ -120,8 +125,15 @@ namespace GhostVillage.Gameplay.Shared
             {
                 if (!knockedState.isKnocked)
                 {
-                    knockedState.GetKnocked();
-                    Debug.Log($"✓ Player knocked: {knockedState.name}");
+                    if (useJumpscareAttack)
+                    {
+                        TriggerJumpscareAttack(knockedState);
+                    }
+                    else
+                    {
+                        knockedState.GetKnocked();
+                        Debug.Log($"✓ Player knocked: {knockedState.name}");
+                    }
                 }
             }
             else
@@ -152,6 +164,35 @@ namespace GhostVillage.Gameplay.Shared
             }
 
             return null;
+        }
+
+        private void TriggerJumpscareAttack(PlayerKnockedState knockedState)
+        {
+            PhotonView monsterPv = monster.GetComponent<PhotonView>();
+            PhotonView victimPv = knockedState.GetComponent<PhotonView>();
+
+            if (monsterPv == null || victimPv == null)
+            {
+                // Fallback để không bị mất sát thương nếu prefab thiếu PhotonView.
+                knockedState.GetKnocked();
+                Debug.LogWarning("⚠️ AttackState: Thiếu PhotonView, fallback sang knock trực tiếp.");
+                return;
+            }
+
+            bool sameVictimStillInProgress =
+                activeVictimViewId == victimPv.ViewID &&
+                Time.time < activeJumpscareUntil;
+
+            if (sameVictimStillInProgress)
+            {
+                return;
+            }
+
+            victimPv.RPC("ReceiveJumpscareRPC", RpcTarget.All, monsterPv.ViewID);
+            activeVictimViewId = victimPv.ViewID;
+            activeJumpscareUntil = Time.time + 2.6f;
+
+            Debug.Log($"👁️ AttackState: Trigger jumpscare for {knockedState.name}");
         }
     }
 }

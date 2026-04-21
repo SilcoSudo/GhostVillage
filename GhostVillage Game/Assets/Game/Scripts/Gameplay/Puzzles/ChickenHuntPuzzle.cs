@@ -7,8 +7,13 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.UI;
+using ExitGames.Client.Photon;
+using System.Linq;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
-public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
+public class ChickenHuntPuzzle : MonoBehaviourPunCallbacks, IPuzzleInteractTarget
 {
     private sealed class ChickenMoverState
     {
@@ -16,9 +21,16 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         public Transform Transform;
         public Rigidbody Rb;
         public NavMeshAgent Agent;
+        public Animator Animator;
         public bool IsReal;
         public Vector3 ManualTarget;
         public float NextRepathTime;
+        public Vector3 NetworkTargetPosition;
+        public Quaternion NetworkTargetRotation;
+        public bool HasNetworkTarget;
+        public List<Vector3> PatrolPoints;
+        public int PatrolPointIndex;
+        public bool IsRunningAnimation;
     }
 
     [Header("Reward")]
@@ -29,6 +41,19 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
 
     [Header("Chicken Setup")]
     [SerializeField] private List<ChickenCandidateInteractable> candidates = new List<ChickenCandidateInteractable>();
+    [SerializeField] private bool autoBuildCandidateFlock = false;  // Set to false - use only predefined chickens
+    [SerializeField] private bool useDedicatedRealAndFakePrefabs = true;
+    [SerializeField] private GameObject realChickenPrefab;
+    [SerializeField] private GameObject fakeChickenPrefab;
+    [SerializeField] private string defaultRealChickenPrefabPath = "Assets/Game/Prefab/Map/Map_1/Puzzles/Chicken.prefab";
+    [SerializeField] private string defaultFakeChickenPrefabPath = "Assets/Game/Prefab/Map/Map_1/Puzzles/ChickenFake.prefab";
+    [SerializeField] private int flockSize = 8;
+    [SerializeField] private ChickenCandidateInteractable candidateTemplate;
+    [SerializeField] private float flockSpawnRadius = 2.5f;
+    [SerializeField] private float flockSpawnHeightOffset = 0f;
+    [SerializeField] private bool randomizePuzzleSpawnByCoop = true;
+    [SerializeField] private string coopSpawnTag = "SP_ChickenCoop";
+    [SerializeField] private bool randomizeRealChickenEachMatch = true;
     [SerializeField] private int realChickenIndex = 0;
 
     [Header("Catch Rules")]
@@ -41,8 +66,8 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
     [SerializeField] private float fakeChickenAlarmCooldown = 1.2f;
 
     [Header("Real Chicken Movement")]
-    [SerializeField] private bool useNavMeshForRealChicken = true;
-    [SerializeField] private float coopRoamRadius = 10f;
+    [SerializeField] private bool useNavMeshForRealChicken = false;
+    [SerializeField] private float centerRoamRadius = 3.5f;
     [SerializeField] private float roamSpeed = 1.4f;
     [SerializeField] private float evadeSpeed = 3.8f;
     [SerializeField] private float roamRepathInterval = 2.2f;
@@ -50,6 +75,21 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
     [SerializeField] private float fleeTurnSpeed = 10f;
     [SerializeField] private Transform arenaCenter;
     [SerializeField] private float arenaRadius = 10f;
+    [SerializeField] private float coopRoamRadius = 10f;
+
+    [Header("Online Movement Sync")]
+    [SerializeField] private bool syncMovementOnline = true;
+    [SerializeField] private float movementSyncInterval = 0.08f;
+    [SerializeField] private float movementLerpSpeed = 16f;
+
+    [Header("Chicken Animation")]
+    [SerializeField] private bool enableChickenAnimation = true;
+    [SerializeField] private string idleStateName = "Idle";
+    [SerializeField] private string runStateName = "Run";
+    [SerializeField] private string runBoolParameter = "IsRun";
+    [SerializeField] private string speedFloatParameter = "Speed";
+    [SerializeField] private float animationMoveThreshold = 0.05f;
+    [SerializeField] private float animationCrossfadeDuration = 0.08f;
 
     [Header("UI (optional)")]
     [SerializeField] private Slider captureProgressSlider;
@@ -66,6 +106,11 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
     private bool _isInitialized;
     private float _nextFakeAlarmAllowedTime;
     private bool _rewardPickupSpawned;
+    private const string RoomKeyRuntimeViewId = "CHH_RuntimeViewId";
+    private bool _spawnPointSynced;
+    private bool _realChickenIndexSynced;
+    private float _nextMovementSyncTime;
+    private bool _flockPrepared;
 
     private bool CanUsePhotonRpc => PhotonNetwork.IsConnectedAndReady && photonView != null && photonView.ViewID != 0;
 
@@ -73,7 +118,106 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
     {
         _ongKeMonster = FindObjectOfType<OngKeMonster>();
 
+        EnsureRuntimePhotonViewForOnline();
+
         InitializeCandidates();
+    }
+
+    private void Start()
+    {
+        EnsureRuntimePhotonViewForOnline();
+        SyncSpawnPointOnline();
+        SyncRealChickenIndexOnline();
+    }
+
+    public override void OnJoinedRoom()
+    {
+        base.OnJoinedRoom();
+        EnsureRuntimePhotonViewForOnline();
+        SyncSpawnPointOnline();
+        SyncRealChickenIndexOnline();
+    }
+
+    public override void OnRoomPropertiesUpdate(Hashtable propertiesThatChanged)
+    {
+        base.OnRoomPropertiesUpdate(propertiesThatChanged);
+        TryApplyRuntimeViewIdFromRoomProps(propertiesThatChanged);
+        SyncSpawnPointOnline();
+        SyncRealChickenIndexOnline();
+    }
+
+    private void EnsureRuntimePhotonViewForOnline()
+    {
+        if (!PhotonNetwork.IsConnectedAndReady)
+        {
+            return;
+        }
+
+        PhotonView pv = photonView;
+        if (pv == null)
+        {
+            pv = GetComponent<PhotonView>();
+        }
+
+        if (pv == null)
+        {
+            pv = gameObject.AddComponent<PhotonView>();
+        }
+
+        if (pv.ViewID > 0)
+        {
+            return;
+        }
+
+        if (PhotonNetwork.IsMasterClient)
+        {
+            if (PhotonNetwork.AllocateViewID(pv))
+            {
+                Hashtable props = new Hashtable
+                {
+                    { RoomKeyRuntimeViewId, pv.ViewID }
+                };
+                PhotonNetwork.CurrentRoom?.SetCustomProperties(props);
+            }
+            else
+            {
+                Debug.LogWarning("[ChickenHunt] Failed to allocate runtime PhotonView ID.");
+            }
+        }
+        else
+        {
+            TryApplyRuntimeViewIdFromRoomProps(PhotonNetwork.CurrentRoom?.CustomProperties);
+        }
+    }
+
+    private void TryApplyRuntimeViewIdFromRoomProps(Hashtable props)
+    {
+        if (props == null || !props.ContainsKey(RoomKeyRuntimeViewId))
+        {
+            return;
+        }
+
+        PhotonView pv = photonView;
+        if (pv == null)
+        {
+            pv = GetComponent<PhotonView>();
+        }
+
+        if (pv == null)
+        {
+            return;
+        }
+
+        if (pv.ViewID != 0)
+        {
+            return;
+        }
+
+        int syncedViewId = (int)props[RoomKeyRuntimeViewId];
+        if (syncedViewId > 0)
+        {
+            pv.ViewID = syncedViewId;
+        }
     }
 
     public void ConfigureCandidates(List<ChickenCandidateInteractable> runtimeCandidates, int runtimeRealChickenIndex)
@@ -105,16 +249,56 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         _isInitialized = false;
         _realChickenTf = null;
         _movers.Clear();
+        _fakeChickens.Clear();
 
+        // NOTE: PrepareCandidateFlockIfNeeded() is skipped - use predefined chickens from scene only
+        // PrepareCandidateFlockIfNeeded();
+
+        // Get all ChickenCandidateInteractable components that are already placed in the scene
         if (candidates.Count == 0)
         {
             candidates.AddRange(GetComponentsInChildren<ChickenCandidateInteractable>(true));
         }
 
+        // If still not found, manually search children transforms (fallback for prefab initialization timing issues)
         if (candidates.Count == 0)
         {
-            Debug.LogWarning("[ChickenHunt] No chicken candidates assigned.");
+            Debug.Log("[ChickenHunt] GetComponentsInChildren returned 0, searching manually through children...");
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                var child = transform.GetChild(i);
+                var candidate = child.GetComponent<ChickenCandidateInteractable>();
+                if (candidate != null)
+                {
+                    candidates.Add(candidate);
+                }
+            }
+        }
+
+        if (candidates.Count == 0)
+        {
+            Debug.LogWarning($"[ChickenHunt] No chicken candidates found in scene. Searched {transform.childCount} children manually. Please ensure chickens have ChickenCandidateInteractable component.");
             return;
+        }
+
+        Debug.Log($"[ChickenHunt] Found {candidates.Count} chickens in scene");
+
+        // Ensure all chickens have necessary components (Rigidbody for physics)
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            GameObject chickenGO = candidates[i].gameObject;
+            
+            // Add Rigidbody if missing
+            if (chickenGO.GetComponent<Rigidbody>() == null)
+            {
+                Rigidbody rb = chickenGO.AddComponent<Rigidbody>();
+                rb.useGravity = true;
+                rb.isKinematic = false;
+                rb.angularDamping = 8f;
+                rb.linearDamping = 2f;
+                rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+                Debug.Log($"[ChickenHunt] Added Rigidbody to {chickenGO.name}");
+            }
         }
 
         realChickenIndex = Mathf.Clamp(realChickenIndex, 0, candidates.Count - 1);
@@ -130,6 +314,10 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
             {
                 _realChickenTf = candidate.transform;
             }
+            else
+            {
+                _fakeChickens.Add(candidate);
+            }
 
             _movers.Add(CreateMoverState(candidate, isReal));
         }
@@ -140,13 +328,141 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         UpdateUI();
     }
 
+    // Removed PrepareCandidateFlockIfNeeded() and TryBuildFlockFromDedicatedPrefabs()
+    // These methods are no longer needed - we now use only predefined chickens placed in the scene
+
+    // Removed EnsureCandidateInteractable() - no longer needed, chickens are predefined in scene
+
+    // Removed RepositionFlockDeterministically() - not needed for predefined chickens
+
+    private void SyncRealChickenIndexOnline()
+    {
+        if (!_isInitialized || candidates.Count == 0 || _realChickenIndexSynced)
+        {
+            return;
+        }
+
+        if (!PhotonNetwork.IsConnectedAndReady)
+        {
+            if (randomizeRealChickenEachMatch)
+            {
+                realChickenIndex = Random.Range(0, candidates.Count);
+                InitializeCandidates();
+            }
+
+            _realChickenIndexSynced = true;
+            return;
+        }
+
+        if (!CanUsePhotonRpc)
+        {
+            return;
+        }
+
+        if (PhotonNetwork.IsMasterClient)
+        {
+            int chosenIndex = randomizeRealChickenEachMatch
+                ? Random.Range(0, candidates.Count)
+                : Mathf.Clamp(realChickenIndex, 0, candidates.Count - 1);
+
+            photonView.RPC(nameof(SyncRealChickenIndexRPC), RpcTarget.AllBuffered, chosenIndex);
+        }
+    }
+
+    private void SyncSpawnPointOnline()
+    {
+        if (!_isInitialized || _spawnPointSynced || !randomizePuzzleSpawnByCoop)
+        {
+            return;
+        }
+
+        List<Transform> coopPoints = ResolveCoopSpawnPoints();
+        if (coopPoints.Count == 0)
+        {
+            _spawnPointSynced = true;
+            return;
+        }
+
+        if (!PhotonNetwork.IsConnectedAndReady)
+        {
+            int offlineIndex = Random.Range(0, coopPoints.Count);
+            SyncSpawnPointRPC(offlineIndex);
+            return;
+        }
+
+        if (!CanUsePhotonRpc)
+        {
+            return;
+        }
+
+        if (PhotonNetwork.IsMasterClient)
+        {
+            int selectedIndex = Random.Range(0, coopPoints.Count);
+            photonView.RPC(nameof(SyncSpawnPointRPC), RpcTarget.AllBuffered, selectedIndex);
+        }
+    }
+
+    [PunRPC]
+    private void SyncSpawnPointRPC(int selectedIndex)
+    {
+        List<Transform> coopPoints = ResolveCoopSpawnPoints();
+        if (coopPoints.Count == 0)
+        {
+            _spawnPointSynced = true;
+            return;
+        }
+
+        int clampedIndex = Mathf.Clamp(selectedIndex, 0, coopPoints.Count - 1);
+        Transform targetPoint = coopPoints[clampedIndex];
+        if (targetPoint != null)
+        {
+            transform.SetPositionAndRotation(targetPoint.position, targetPoint.rotation);
+        }
+
+        _spawnPointSynced = true;
+        InitializeCandidates();
+    }
+
+    private List<Transform> ResolveCoopSpawnPoints()
+    {
+        GameObject[] coopObjects = GameObject.FindGameObjectsWithTag(coopSpawnTag);
+        if (coopObjects == null || coopObjects.Length == 0)
+        {
+            return new List<Transform>();
+        }
+
+        return coopObjects
+            .Where(x => x != null)
+            .OrderBy(x => x.name)
+            .ThenBy(x => x.transform.position.x)
+            .ThenBy(x => x.transform.position.z)
+            .Select(x => x.transform)
+            .ToList();
+    }
+
+    [PunRPC]
+    private void SyncRealChickenIndexRPC(int syncedIndex)
+    {
+        realChickenIndex = Mathf.Clamp(syncedIndex, 0, Mathf.Max(0, candidates.Count - 1));
+        _realChickenIndexSynced = true;
+        InitializeCandidates();
+    }
+
     private void Update()
     {
         if (_isSolved) return;
 
-        if (!PhotonNetwork.IsConnectedAndReady || PhotonNetwork.IsMasterClient)
+        bool isOnline = PhotonNetwork.IsConnectedAndReady;
+        bool isMasterAuthority = !isOnline || PhotonNetwork.IsMasterClient;
+
+        if (isMasterAuthority)
         {
             UpdateChickenMovement();
+            TryBroadcastChickenMovementSnapshot();
+        }
+        else
+        {
+            ApplySyncedChickenMovement();
         }
     }
 
@@ -158,9 +474,14 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
             Transform = candidate.transform,
             Rb = candidate.GetComponent<Rigidbody>(),
             Agent = null,
+            Animator = candidate.GetComponentInChildren<Animator>(true),
             IsReal = isReal,
             ManualTarget = candidate.transform.position,
-            NextRepathTime = 0f
+            NextRepathTime = 0f,
+            NetworkTargetPosition = candidate.transform.position,
+            NetworkTargetRotation = candidate.transform.rotation,
+            HasNetworkTarget = false,
+            IsRunningAnimation = false
         };
 
         if (state.Rb == null)
@@ -168,12 +489,15 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
             state.Rb = candidate.gameObject.AddComponent<Rigidbody>();
         }
 
-        state.Rb.useGravity = true;
+        state.Rb.useGravity = false;
         state.Rb.angularDamping = 8f;
         state.Rb.linearDamping = 2f;
         state.Rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        state.Rb.isKinematic = false;
 
-        if (useNavMeshForRealChicken)
+        // All chickens use manual script movement for consistency
+        // Real chicken uses NavMesh ONLY if enabled via flag AND isReal
+        if (isReal && useNavMeshForRealChicken)
         {
             state.Agent = candidate.GetComponent<NavMeshAgent>();
             if (state.Agent == null)
@@ -189,11 +513,140 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
             state.Agent.updateUpAxis = true;
             state.Agent.updateRotation = true;
 
-            // Avoid physics and NavMesh fighting each other.
+            // NavMesh controls movement, physics just for collision
             state.Rb.isKinematic = true;
+            Debug.Log($"[ChickenHunt] Real chicken using NavMesh movement");
+        }
+        else
+        {
+            // All fake chickens + real chicken (if useNavMeshForRealChicken=false) use script-based movement
+            state.Rb.useGravity = true;  // Enable gravity for realistic falling
+            state.Rb.isKinematic = false; // Physics collision enabled
+            
+            if (isReal)
+            {
+                Debug.Log($"[ChickenHunt] Real chicken using manual script movement");
+            }
         }
 
+        state.PatrolPoints = BuildPatrolPoints(candidate.transform.position, Mathf.Max(1f, coopRoamRadius * 0.6f));
+        state.PatrolPointIndex = 0;
+        SetChickenAnimation(state, false);
+
         return state;
+    }
+
+    private void TryBroadcastChickenMovementSnapshot()
+    {
+        if (!syncMovementOnline || !CanUsePhotonRpc || !PhotonNetwork.IsMasterClient)
+        {
+            return;
+        }
+
+        if (Time.time < _nextMovementSyncTime)
+        {
+            return;
+        }
+
+        if (_movers.Count == 0)
+        {
+            return;
+        }
+
+        float[] snapshot = new float[_movers.Count * 7];
+        int cursor = 0;
+        for (int i = 0; i < _movers.Count; i++)
+        {
+            var mover = _movers[i];
+            Vector3 pos = mover != null && mover.Transform != null ? mover.Transform.position : Vector3.zero;
+            Quaternion rot = mover != null && mover.Transform != null ? mover.Transform.rotation : Quaternion.identity;
+
+            snapshot[cursor++] = pos.x;
+            snapshot[cursor++] = pos.y;
+            snapshot[cursor++] = pos.z;
+            snapshot[cursor++] = rot.x;
+            snapshot[cursor++] = rot.y;
+            snapshot[cursor++] = rot.z;
+            snapshot[cursor++] = rot.w;
+        }
+
+        photonView.RPC(nameof(SyncChickenMovementSnapshotRPC), RpcTarget.Others, snapshot);
+        _nextMovementSyncTime = Time.time + Mathf.Max(0.02f, movementSyncInterval);
+    }
+
+    [PunRPC]
+    private void SyncChickenMovementSnapshotRPC(float[] snapshot)
+    {
+        if (snapshot == null || snapshot.Length == 0)
+        {
+            return;
+        }
+
+        if (!PhotonNetwork.IsConnectedAndReady || PhotonNetwork.IsMasterClient)
+        {
+            return;
+        }
+
+        int expected = _movers.Count * 7;
+        if (expected <= 0 || snapshot.Length < expected)
+        {
+            return;
+        }
+
+        int cursor = 0;
+        for (int i = 0; i < _movers.Count; i++)
+        {
+            var mover = _movers[i];
+            if (mover == null || mover.Transform == null)
+            {
+                cursor += 7;
+                continue;
+            }
+
+            Vector3 pos = new Vector3(snapshot[cursor], snapshot[cursor + 1], snapshot[cursor + 2]);
+            Quaternion rot = new Quaternion(snapshot[cursor + 3], snapshot[cursor + 4], snapshot[cursor + 5], snapshot[cursor + 6]);
+            cursor += 7;
+
+            mover.NetworkTargetPosition = pos;
+            mover.NetworkTargetRotation = rot;
+            mover.HasNetworkTarget = true;
+        }
+    }
+
+    private void ApplySyncedChickenMovement()
+    {
+        if (_movers.Count == 0)
+        {
+            return;
+        }
+
+        float t = Mathf.Clamp01(Time.deltaTime * Mathf.Max(1f, movementLerpSpeed));
+        for (int i = 0; i < _movers.Count; i++)
+        {
+            var mover = _movers[i];
+            if (mover == null || mover.Transform == null || !mover.HasNetworkTarget)
+            {
+                continue;
+            }
+
+            if (mover.Agent != null && mover.Agent.isOnNavMesh)
+            {
+                mover.Agent.ResetPath();
+            }
+
+            if (mover.Rb != null)
+            {
+                mover.Rb.linearVelocity = Vector3.zero;
+                mover.Rb.angularVelocity = Vector3.zero;
+            }
+
+            mover.Transform.position = Vector3.Lerp(mover.Transform.position, mover.NetworkTargetPosition, t);
+            mover.Transform.rotation = Quaternion.Slerp(mover.Transform.rotation, mover.NetworkTargetRotation, t);
+
+            bool isMoving = (mover.NetworkTargetPosition - mover.Transform.position).sqrMagnitude
+                > animationMoveThreshold * animationMoveThreshold;
+            SetChickenAnimation(mover, isMoving);
+        }
     }
 
     private void EnsureMovementCenterDefaults()
@@ -240,6 +693,12 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
     {
         if (mover == null || mover.Transform == null) return;
 
+        if (mover.PatrolPoints == null || mover.PatrolPoints.Count == 0)
+        {
+            mover.PatrolPoints = BuildPatrolPoints(mover.Transform.position, Mathf.Max(1f, coopRoamRadius * 0.6f));
+            mover.PatrolPointIndex = 0;
+        }
+
         if (mover.Agent != null && mover.Agent.isOnNavMesh)
         {
             mover.Agent.speed = roamSpeed;
@@ -250,8 +709,7 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
 
             if (shouldPickNewDestination)
             {
-                Vector3 roamCenter = arenaCenter != null ? arenaCenter.position : transform.position;
-                if (TryGetNavMeshPointInRadius(roamCenter, Mathf.Max(1f, coopRoamRadius), out Vector3 roamTarget))
+                if (TryGetNextPatrolPoint(mover, out Vector3 roamTarget))
                 {
                     mover.Agent.SetDestination(roamTarget);
                 }
@@ -259,18 +717,124 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
                 mover.NextRepathTime = Time.time + Mathf.Max(0.2f, roamRepathInterval);
             }
 
+            bool isMoving = mover.Agent.hasPath
+                && mover.Agent.velocity.sqrMagnitude > animationMoveThreshold * animationMoveThreshold;
+            SetChickenAnimation(mover, isMoving);
+
             return;
         }
 
+        // For manual movement: check for obstacles ahead
         if (Time.time >= mover.NextRepathTime || Vector3.Distance(mover.Transform.position, mover.ManualTarget) < 0.35f)
         {
-            Vector3 roamCenter = arenaCenter != null ? arenaCenter.position : transform.position;
-            Vector2 random2D = Random.insideUnitCircle * Mathf.Max(1f, coopRoamRadius);
-            mover.ManualTarget = ClampToArena(roamCenter + new Vector3(random2D.x, 0f, random2D.y));
+            if (!TryGetNextPatrolPoint(mover, out Vector3 manualTarget))
+            {
+                Vector3 roamCenter = arenaCenter != null ? arenaCenter.position : transform.position;
+                Vector2 random2D = Random.insideUnitCircle * Mathf.Max(1f, coopRoamRadius);
+                manualTarget = ClampToArena(roamCenter + new Vector3(random2D.x, 0f, random2D.y));
+            }
+
+            mover.ManualTarget = manualTarget;
             mover.NextRepathTime = Time.time + Mathf.Max(0.25f, roamRepathInterval);
         }
 
+        // Check for obstacles ahead using raycast
+        Vector3 dirToTarget = (mover.ManualTarget - mover.Transform.position).normalized;
+        if (CheckObstacleAhead(mover, dirToTarget, 1.5f))
+        {
+            // Obstacle detected - pick new patrol point
+            Debug.Log($"[Chicken] Obstacle detected ahead, picking new patrol point");
+            mover.NextRepathTime = 0f; // Force repath immediately
+            return;
+        }
+
         MoveMoverTowards(mover, mover.ManualTarget, roamSpeed);
+        bool manualMoving = (mover.ManualTarget - mover.Transform.position).sqrMagnitude
+            > animationMoveThreshold * animationMoveThreshold;
+        SetChickenAnimation(mover, manualMoving);
+    }
+
+    private bool TryGetNextPatrolPoint(ChickenMoverState mover, out Vector3 patrolPoint)
+    {
+        patrolPoint = Vector3.zero;
+
+        if (mover == null || mover.PatrolPoints == null || mover.PatrolPoints.Count == 0)
+        {
+            Debug.LogWarning("[ChickenHunt] No patrol points available!");
+            return false;
+        }
+
+        int count = mover.PatrolPoints.Count;
+        for (int attempt = 0; attempt < count; attempt++)
+        {
+            int index = (mover.PatrolPointIndex + attempt) % count;
+            Vector3 candidate = mover.PatrolPoints[index];
+
+            if (TryGetNavMeshPointNear(candidate, 2.5f, out Vector3 navTarget))
+            {
+                mover.PatrolPointIndex = (index + 1) % count;
+                patrolPoint = navTarget;
+                Debug.Log($"[ChickenHunt] Using patrol point: {navTarget}");
+                return true;
+            }
+            else
+            {
+                Debug.LogWarning($"[ChickenHunt] Candidate {candidate} not on NavMesh, trying next...");
+            }
+        }
+
+        Debug.LogError($"[ChickenHunt] Failed to find ANY valid patrol point!");
+        return false;
+    }
+
+    private List<Vector3> BuildPatrolPoints(Vector3 center, float radius)
+    {
+        float actualRadius = Mathf.Max(0.5f, centerRoamRadius);
+        Vector3 baseCenter = arenaCenter != null ? arenaCenter.position : center;
+
+        List<Vector3> points = new List<Vector3>();
+        
+        // Generate 4 cardinal waypoints around center
+        Vector3[] candidatePoints = new Vector3[]
+        {
+            baseCenter + new Vector3( actualRadius, 0f,  0f),
+            baseCenter + new Vector3( 0f, 0f,  actualRadius),
+            baseCenter + new Vector3(-actualRadius, 0f,  0f),
+            baseCenter + new Vector3( 0f, 0f, -actualRadius),
+        };
+
+        // Validate each candidate to ensure it's on NavMesh
+        foreach (Vector3 candidate in candidatePoints)
+        {
+            Vector3 clamped = ClampToArena(candidate);
+            
+            // Check if this point is reachable on NavMesh
+            if (NavMesh.SamplePosition(clamped, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+            {
+                points.Add(hit.position);
+                Debug.Log($"[ChickenHunt] Valid patrol point: {hit.position}");
+            }
+            else
+            {
+                Debug.LogWarning($"[ChickenHunt] Point {clamped} NOT on NavMesh! Skipping.");
+                // Use center + small offset as fallback
+                if (NavMesh.SamplePosition(baseCenter, out NavMeshHit centerHit, 3f, NavMesh.AllAreas))
+                {
+                    points.Add(centerHit.position);
+                }
+            }
+        }
+
+        if (points.Count == 0)
+        {
+            Debug.LogError("[ChickenHunt] No valid patrol points! Using center only.");
+            if (NavMesh.SamplePosition(baseCenter, out NavMeshHit fallback, 3f, NavMesh.AllAreas))
+            {
+                points.Add(fallback.position);
+            }
+        }
+
+        return points;
     }
 
     private void UpdateEvadeMovement(ChickenMoverState mover)
@@ -298,6 +862,10 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
                 mover.NextRepathTime = Time.time + Mathf.Max(0.15f, evadeRepathInterval);
             }
 
+            bool isMoving = mover.Agent.hasPath
+                && mover.Agent.velocity.sqrMagnitude > animationMoveThreshold * animationMoveThreshold;
+            SetChickenAnimation(mover, isMoving);
+
             return;
         }
 
@@ -307,6 +875,7 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         Vector3 target = mover.Transform.position + evadeDir * Mathf.Max(3f, coopRoamRadius * 0.7f);
         target = ClampToArena(target);
         MoveMoverTowards(mover, target, evadeSpeed);
+        SetChickenAnimation(mover, true);
     }
 
     private void MoveMoverTowards(ChickenMoverState mover, Vector3 target, float moveSpeed)
@@ -314,7 +883,7 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         if (mover == null || mover.Transform == null) return;
 
         Vector3 delta = target - mover.Transform.position;
-        delta.y = 0f;
+        delta.y = 0f;  // Keep Y from gravity
         if (delta.sqrMagnitude < 0.0001f) return;
 
         Vector3 dir = delta.normalized;
@@ -326,13 +895,23 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
 
         if (mover.Rb != null && !mover.Rb.isKinematic)
         {
-            mover.Rb.MovePosition(nextPos);
+            // Use physics for horizontal movement only, let gravity handle Y
+            Vector3 currentVel = mover.Rb.linearVelocity;
+            Vector3 newVel = (nextPos - mover.Transform.position) / Time.deltaTime;
+            newVel.y = currentVel.y;  // Preserve gravity velocity
+            
+            mover.Rb.linearVelocity = newVel;
             mover.Rb.MoveRotation(nextRot);
             return;
         }
 
         mover.Transform.position = nextPos;
         mover.Transform.rotation = nextRot;
+    }
+
+    private void DisableChickenCollisions(ChickenCandidateInteractable candidate)
+    {
+        // Removed - now allowing physics collisions between chickens
     }
 
     private void StopMover(ChickenMoverState mover)
@@ -343,6 +922,95 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         {
             mover.Agent.ResetPath();
         }
+
+        SetChickenAnimation(mover, false);
+    }
+
+    /// <summary>
+    /// Check if there's an obstacle ahead using raycast
+    /// </summary>
+    private bool CheckObstacleAhead(ChickenMoverState mover, Vector3 direction, float checkDistance)
+    {
+        if (mover == null || mover.Transform == null) return false;
+
+        Vector3 rayStart = mover.Transform.position + Vector3.up * 0.3f;
+        LayerMask obstacleMask = LayerMask.GetMask("Wall", "Boundary", "Default");
+
+        if (Physics.Raycast(rayStart, direction, out RaycastHit hit, checkDistance, obstacleMask, QueryTriggerInteraction.Ignore))
+        {
+            Debug.DrawLine(rayStart, hit.point, Color.red, 0.1f);
+            Debug.Log($"[Chicken] Raycast HIT obstacle '{hit.collider.name}' at distance {hit.distance:F2}m");
+            return true;
+        }
+
+        Debug.DrawRay(rayStart, direction * checkDistance, Color.green, 0.05f);
+        return false;
+    }
+
+    private void SetChickenAnimation(ChickenMoverState mover, bool isRunning)
+    {
+        if (!enableChickenAnimation || mover == null || mover.Animator == null)
+        {
+            return;
+        }
+
+        Animator animator = mover.Animator;
+
+        if (HasAnimatorParameter(animator, runBoolParameter, AnimatorControllerParameterType.Bool))
+        {
+            animator.SetBool(runBoolParameter, isRunning);
+        }
+
+        if (HasAnimatorParameter(animator, speedFloatParameter, AnimatorControllerParameterType.Float))
+        {
+            animator.SetFloat(speedFloatParameter, isRunning ? 1f : 0f);
+        }
+
+        if (mover.IsRunningAnimation == isRunning)
+        {
+            return;
+        }
+
+        string targetState = isRunning ? runStateName : idleStateName;
+        if (string.IsNullOrWhiteSpace(targetState))
+        {
+            mover.IsRunningAnimation = isRunning;
+            return;
+        }
+
+        string fullPath = $"Base Layer.{targetState}";
+        int fullHash = Animator.StringToHash(fullPath);
+        int shortHash = Animator.StringToHash(targetState);
+
+        if (animator.HasState(0, fullHash))
+        {
+            animator.CrossFade(fullPath, Mathf.Max(0f, animationCrossfadeDuration), 0);
+        }
+        else if (animator.HasState(0, shortHash))
+        {
+            animator.CrossFade(targetState, Mathf.Max(0f, animationCrossfadeDuration), 0);
+        }
+
+        mover.IsRunningAnimation = isRunning;
+    }
+
+    private bool HasAnimatorParameter(Animator animator, string parameterName, AnimatorControllerParameterType type)
+    {
+        if (animator == null || string.IsNullOrWhiteSpace(parameterName))
+        {
+            return false;
+        }
+
+        AnimatorControllerParameter[] parameters = animator.parameters;
+        for (int i = 0; i < parameters.Length; i++)
+        {
+            if (parameters[i].type == type && parameters[i].name == parameterName)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public void Interact(GameObject actor)
@@ -431,25 +1099,18 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
     {
         if (!_isCatchPhase || _realChickenTf == null || actor == null) return;
 
-        float dist = Vector3.Distance(actor.transform.position, _realChickenTf.position);
-        Debug.Log($"[ChickenHunt] TryAddCaptureProgressByInteract - distance to real chicken: {dist:F2}, captureDistance: {captureDistance}");
-
-        if (dist > captureDistance)
-        {
-            Debug.Log($"[ChickenHunt]  Too far from real chicken to capture");
-            return;
-        }
-
         int actorNumber = PhotonNetwork.IsConnectedAndReady ? PhotonNetwork.LocalPlayer.ActorNumber : 0;
+        PhotonView actorPv = actor.GetComponent<PhotonView>();
+        int actorViewId = actorPv != null ? actorPv.ViewID : -1;
         Debug.Log($"[ChickenHunt]  Adding capture progress, actor: {actorNumber}");
 
         if (CanUsePhotonRpc)
         {
-            photonView.RPC(nameof(AddCaptureProgressRPC), RpcTarget.MasterClient, spacePressContribution, actorNumber);
+            photonView.RPC(nameof(AddCaptureProgressRPC), RpcTarget.MasterClient, spacePressContribution, actorNumber, actorViewId);
         }
         else
         {
-            AddCaptureProgressRPC(spacePressContribution, actorNumber);
+            AddCaptureProgressRPC(spacePressContribution, actorNumber, actorViewId);
         }
     }
 
@@ -579,7 +1240,7 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
     }
 
     [PunRPC]
-    private void AddCaptureProgressRPC(float amount, int actorNumber)
+    private void AddCaptureProgressRPC(float amount, int actorNumber, int actorViewId)
     {
         Debug.Log($"[ChickenHunt] AddCaptureProgressRPC called - amount: {amount}, progress before: {_captureProgress:F2}");
 
@@ -592,6 +1253,23 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         {
             Debug.Log("[ChickenHunt] AddCaptureProgressRPC: not master client");
             return;
+        }
+
+        if (PhotonNetwork.IsConnectedAndReady)
+        {
+            PhotonView actorView = actorViewId > 0 ? PhotonView.Find(actorViewId) : null;
+            if (actorView == null)
+            {
+                Debug.LogWarning("[ChickenHunt] AddCaptureProgressRPC rejected: actor view not found on master.");
+                return;
+            }
+
+            float masterDistance = Vector3.Distance(actorView.transform.position, _realChickenTf.position);
+            if (masterDistance > captureDistance)
+            {
+                Debug.Log($"[ChickenHunt] AddCaptureProgressRPC rejected: master distance {masterDistance:F2} > {captureDistance:F2}");
+                return;
+            }
         }
 
         _captureProgress = Mathf.Clamp01(_captureProgress + Mathf.Max(0.001f, amount));
@@ -1036,6 +1714,18 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
 #if UNITY_EDITOR
     private void OnValidate()
     {
+        if (realChickenPrefab == null && !string.IsNullOrWhiteSpace(defaultRealChickenPrefabPath))
+        {
+            realChickenPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(defaultRealChickenPrefabPath);
+        }
+
+        if (fakeChickenPrefab == null && !string.IsNullOrWhiteSpace(defaultFakeChickenPrefabPath))
+        {
+            fakeChickenPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(defaultFakeChickenPrefabPath);
+        }
+
+        if (flockSize < 1) flockSize = 1;
+        if (flockSpawnRadius < 0.5f) flockSpawnRadius = 0.5f;
         if (captureRequired <= 0f) captureRequired = 1f;
         if (spacePressContribution <= 0f) spacePressContribution = 0.01f;
         if (captureDistance < 0.5f) captureDistance = 0.5f;
@@ -1049,6 +1739,8 @@ public class ChickenHuntPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         if (arenaRadius < 0f) arenaRadius = 0f;
         if (fakeChickenAlarmCooldown < 0f) fakeChickenAlarmCooldown = 0f;
         if (rewardDropHeight < 0f) rewardDropHeight = 0f;
+        if (animationMoveThreshold < 0.005f) animationMoveThreshold = 0.005f;
+        if (animationCrossfadeDuration < 0f) animationCrossfadeDuration = 0f;
     }
 #endif
 }

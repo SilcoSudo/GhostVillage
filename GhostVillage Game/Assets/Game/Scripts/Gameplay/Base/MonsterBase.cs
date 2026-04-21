@@ -42,6 +42,7 @@ namespace GhostVillage.Gameplay.Base
             if (navMeshAgent == null)
             {
                 navMeshAgent = gameObject.AddComponent<NavMeshAgent>();
+                navMeshAgent.agentTypeID = 0; // Humanoid type
             }
 
             // Cấu hình NavMeshAgent
@@ -149,6 +150,38 @@ namespace GhostVillage.Gameplay.Base
             {
                 navMeshAgent.SetDestination(destination);
             }
+        }
+
+        /// <summary>
+        /// Kiểm tra xem vị trí đích có reachable bằng NavMesh path hoàn chỉnh không.
+        /// </summary>
+        public bool CanReachDestination(Vector3 destination, float sampleDistance = 1.5f)
+        {
+            return TryGetReachableDestination(destination, out _, sampleDistance);
+        }
+
+        /// <summary>
+        /// Tìm một điểm đi được trên NavMesh gần vị trí mong muốn.
+        /// </summary>
+        public bool TryGetReachableDestination(Vector3 destination, out Vector3 reachableDestination, float sampleDistance = 1.5f)
+        {
+            reachableDestination = destination;
+
+            if (navMeshAgent == null || !navMeshAgent.isOnNavMesh)
+                return false;
+
+            if (!NavMesh.SamplePosition(destination, out NavMeshHit hit, sampleDistance, NavMesh.AllAreas))
+                return false;
+
+            NavMeshPath path = new NavMeshPath();
+            if (!navMeshAgent.CalculatePath(hit.position, path))
+                return false;
+
+            if (path.status != NavMeshPathStatus.PathComplete)
+                return false;
+
+            reachableDestination = hit.position;
+            return true;
         }
 
         /// <summary>

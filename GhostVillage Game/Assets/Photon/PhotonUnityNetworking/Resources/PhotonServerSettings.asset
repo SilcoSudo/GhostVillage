@@ -93,6 +93,9 @@ MonoBehaviour:
   - RpcDoTeleportSequence
   - ReceiveJumpscareRPC
   - RpcPlayJumpscareEffect
+  - SyncChickenMovementSnapshotRPC
+  - SyncRealChickenIndexRPC
+  - SyncSpawnPointRPC
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

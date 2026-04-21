@@ -19,6 +19,12 @@ namespace GhostVillage.Gameplay.Shared
         /// <summary>Bán kính tối đa của mỗi zone</summary>
         private readonly float patrolRadius;
 
+        /// <summary>Phần bán kính bị trừ ở mép zone để tránh bám sát tường/rìa collider.</summary>
+        private readonly float patrolEdgePadding;
+
+        /// <summary>Layer vật cản cần tránh khi chọn target patrol.</summary>
+        private readonly LayerMask patrolObstacleMask;
+
         /// <summary>Khoảng cách để coi là "đến nơi"</summary>
         private readonly float arrivalThreshold;
 
@@ -30,6 +36,12 @@ namespace GhostVillage.Gameplay.Shared
         private bool hasTarget = false;
         private float idleTimer = 0f;
         private bool isIdle = false;
+        private float stuckTimer = 0f;
+
+        // Theo yêu cầu: nếu velocity < (baseSpeed - 10) trong 1.5s thì đổi patrol target.
+        private const float StuckSpeedDeltaFromBase = 10f;
+        private const float MinEffectiveStuckThreshold = 0.05f;
+        private const float StuckRepathDelay = 1.5f;
 
         // ── Constructor: 1 zone (spawn point) ──────────────────────────────
         /// <param name="monster">MonsterBase của quái</param>
@@ -42,8 +54,10 @@ namespace GhostVillage.Gameplay.Shared
             Vector3 patrolOrigin,
             float patrolRadius,
             float arrivalThreshold = 1.2f,
-            float idleTimeAtPoint = 1.5f)
-            : this(monster, new Vector3[] { patrolOrigin }, patrolRadius, arrivalThreshold, idleTimeAtPoint) { }
+            float idleTimeAtPoint = 1.5f,
+            float patrolEdgePadding = 2f,
+            LayerMask patrolObstacleMask = default)
+            : this(monster, new Vector3[] { patrolOrigin }, patrolRadius, arrivalThreshold, idleTimeAtPoint, patrolEdgePadding, patrolObstacleMask) { }
 
         // ── Constructor: nhiều zone ─────────────────────────────────────────
         /// <param name="monster">MonsterBase của quái</param>
@@ -56,7 +70,9 @@ namespace GhostVillage.Gameplay.Shared
             Vector3[] patrolZones,
             float patrolRadius,
             float arrivalThreshold = 1.2f,
-            float idleTimeAtPoint = 1.5f)
+            float idleTimeAtPoint = 1.5f,
+            float patrolEdgePadding = 2f,
+            LayerMask patrolObstacleMask = default)
         {
             this.monster = monster;
             this.patrolZones = patrolZones != null && patrolZones.Length > 0
@@ -65,6 +81,10 @@ namespace GhostVillage.Gameplay.Shared
             this.patrolRadius = patrolRadius;
             this.arrivalThreshold = arrivalThreshold;
             this.idleTimeAtPoint = idleTimeAtPoint;
+            this.patrolEdgePadding = Mathf.Max(0f, patrolEdgePadding);
+            this.patrolObstacleMask = patrolObstacleMask == default
+                ? LayerMask.GetMask("Wall", "Boundary")
+                : patrolObstacleMask;
         }
 
         public void Enter()
@@ -72,7 +92,16 @@ namespace GhostVillage.Gameplay.Shared
             hasTarget = false;
             isIdle = false;
             idleTimer = 0f;
+            stuckTimer = 0f;
             currentZoneIndex = 0;
+
+            NavMeshAgent agent = monster.GetNavMeshAgent();
+            if (agent != null)
+            {
+                float stuckThreshold = Mathf.Max(MinEffectiveStuckThreshold, agent.speed - StuckSpeedDeltaFromBase);
+                Debug.Log($"[RandomPatrol] baseSpeed={agent.speed:F2} | stuckThreshold(base-10)={stuckThreshold:F2} | stuckDelay={StuckRepathDelay:F1}s");
+            }
+
             PickNewTarget();
             Debug.Log($"[RandomPatrol] Enter → zone[{currentZoneIndex}] target: {currentTarget}");
         }
@@ -108,6 +137,49 @@ namespace GhostVillage.Gameplay.Shared
             monster.MoveTo(currentTarget);
 
             float dist = Vector3.Distance(monster.transform.position, currentTarget);
+
+            // ===== Check obstacle ahead (raycast 1.5m) =====
+            Vector3 dirToTarget = (currentTarget - monster.transform.position).normalized;
+            if (CheckObstacleAhead(dirToTarget, 1.5f))
+            {
+                Debug.LogWarning($"[RandomPatrol] ⚠️ OBSTACLE AHEAD! Đổi patrol point ngay. (dist to target={dist:F2}m)");
+                hasTarget = false;
+                stuckTimer = 0f;
+                monster.Stop();
+                return;
+            }
+
+            // Nếu đích bị chặn bởi collider vật lý (không phản ánh trên NavMesh),
+            // agent sẽ gần như đứng yên dù còn xa đích. Khi đó đổi target mới.
+            if (dist > arrivalThreshold)
+            {
+                NavMeshAgent agent = monster.GetNavMeshAgent();
+                if (agent != null && !agent.pathPending)
+                {
+                    float stuckSpeedThreshold = Mathf.Max(MinEffectiveStuckThreshold, agent.speed - StuckSpeedDeltaFromBase);
+                    if (agent.velocity.sqrMagnitude <= stuckSpeedThreshold * stuckSpeedThreshold)
+                    {
+                        stuckTimer += Time.deltaTime;
+                        if (stuckTimer >= StuckRepathDelay)
+                        {
+                            Debug.LogWarning($"[RandomPatrol] Có vẻ bị kẹt tại target {currentTarget} (dist={dist:F2}). Đổi target mới.");
+                            hasTarget = false;
+                            stuckTimer = 0f;
+                            monster.Stop();
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        stuckTimer = 0f;
+                    }
+                }
+            }
+            else
+            {
+                stuckTimer = 0f;
+            }
+
             if (dist <= arrivalThreshold)
             {
                 // Đến nơi → bắt đầu idle
@@ -124,9 +196,9 @@ namespace GhostVillage.Gameplay.Shared
                 monster.LookForward();
 
             // Cập nhật detection cone
-            NavMeshAgent agent = monster.GetNavMeshAgent();
-            if (agent != null && agent.velocity.sqrMagnitude > 0.01f)
-                monster.GetPlayerDetector().UpdateDetectionDirection(agent.velocity.normalized);
+            NavMeshAgent detectorAgent = monster.GetNavMeshAgent();
+            if (detectorAgent != null && detectorAgent.velocity.sqrMagnitude > 0.01f)
+                monster.GetPlayerDetector().UpdateDetectionDirection(detectorAgent.velocity.normalized);
 
             // Debug line
             Debug.DrawLine(monster.transform.position, currentTarget, Color.cyan);
@@ -134,6 +206,7 @@ namespace GhostVillage.Gameplay.Shared
 
         public void Exit()
         {
+            stuckTimer = 0f;
             monster.Stop();
         }
 
@@ -149,34 +222,169 @@ namespace GhostVillage.Gameplay.Shared
 
         /// <summary>
         /// Tìm điểm ngẫu nhiên hợp lệ trên NavMesh trong zone hiện tại.
-        /// Thử tối đa 10 lần, nếu không được thì quay về tâm zone đó.
+        /// Validation chain: NavMeshSample → CanReachDestination → PhysicalClearance → ActualPathTest
+        /// Thử tối đa 50 lần, nếu không được thì fallback.
         /// </summary>
         private void PickNewTarget()
         {
-            const int maxAttempts = 10;
+            const int maxAttempts = 50;
             Vector3 zoneCenter = patrolZones[currentZoneIndex];
+            float effectiveRadius = Mathf.Max(1f, patrolRadius - patrolEdgePadding);
+            
+            NavMeshAgent agent = monster.GetNavMeshAgent();
+            if (agent == null)
+            {
+                Debug.LogError("[RandomPatrol] ❌ NavMeshAgent not found!");
+                currentTarget = zoneCenter;
+                hasTarget = true;
+                return;
+            }
 
+            // ✅ Validation chain - tối đa 50 attempts
             for (int i = 0; i < maxAttempts; i++)
             {
-                Vector3 randomOffset = Random.insideUnitSphere * patrolRadius;
+                Vector3 randomOffset = Random.insideUnitSphere * effectiveRadius;
                 randomOffset.y = 0f;
                 Vector3 candidate = zoneCenter + randomOffset;
 
-                if (NavMesh.SamplePosition(candidate, out NavMeshHit hit, patrolRadius, NavMesh.AllAreas))
+                // [1] NavMesh.SamplePosition
+                if (!NavMesh.SamplePosition(candidate, out NavMeshHit hit, effectiveRadius, NavMesh.AllAreas))
                 {
-                    currentTarget = hit.position;
-                    hasTarget = true;
-                    monster.MoveTo(currentTarget);
-                    Debug.Log($"[RandomPatrol] Zone[{currentZoneIndex}] target: {currentTarget} (attempt {i + 1})");
-                    return;
+                    //Debug.Log($"[RandomPatrol] Attempt {i + 1}: ❌ NavMesh.SamplePosition failed");
+                    continue;
                 }
+
+                // [2] CanReachDestination  
+                if (!monster.CanReachDestination(hit.position, Mathf.Max(1f, effectiveRadius * 0.5f)))
+                {
+                    //Debug.Log($"[RandomPatrol] Attempt {i + 1}: ❌ CanReachDestination failed @ {hit.position}");
+                    continue;
+                }
+
+                // [3] HasPhysicalClearance
+                if (!HasPhysicalClearance(hit.position, agent))
+                {
+                    //Debug.Log($"[RandomPatrol] Attempt {i + 1}: ❌ HasPhysicalClearance blocked @ {hit.position}");
+                    continue;
+                }
+
+                // [4] IsValidPatrolTarget - actual path test
+                if (!IsValidPatrolTarget(agent, hit.position))
+                {
+                    //Debug.Log($"[RandomPatrol] Attempt {i + 1}: ❌ IsValidPatrolTarget failed @ {hit.position}");
+                    continue;
+                }
+
+                // ✅ ALL CHECKS PASSED
+                currentTarget = hit.position;
+                hasTarget = true;
+                stuckTimer = 0f;
+                monster.MoveTo(currentTarget);
+                Debug.Log($"[RandomPatrol] ✅ Zone[{currentZoneIndex}] target acquired @ {currentTarget:F2} (attempt {i + 1}/{maxAttempts})");
+                return;
             }
 
-            // Fallback: về tâm zone
+            // ❌ Fallback 1: thử về gần tâm zone nhưng vẫn phải reachable
+            if (monster.TryGetReachableDestination(zoneCenter, out Vector3 fallbackPoint, Mathf.Max(1f, effectiveRadius))
+                && HasPhysicalClearance(fallbackPoint, agent)
+                && IsValidPatrolTarget(agent, fallbackPoint))
+            {
+                currentTarget = fallbackPoint;
+                hasTarget = true;
+                stuckTimer = 0f;
+                monster.MoveTo(currentTarget);
+                Debug.LogWarning($"[RandomPatrol] ⚠️ Fallback 1 reachable về zone[{currentZoneIndex}] @ {fallbackPoint:F2}");
+                return;
+            }
+
+            // ❌ Fallback 2: tâm zone (cuối cùng)
             currentTarget = zoneCenter;
             hasTarget = true;
+            stuckTimer = 0f;
             monster.MoveTo(currentTarget);
-            Debug.LogWarning($"[RandomPatrol] Fallback về tâm zone[{currentZoneIndex}]: {zoneCenter}");
+            Debug.LogWarning($"[RandomPatrol] ⚠️ Fallback 2 cuối về tâm zone[{currentZoneIndex}] @ {zoneCenter:F2}");
+        }
+
+        private bool HasPhysicalClearance(Vector3 point, NavMeshAgent agent)
+        {
+            if (agent == null)
+                return true;
+
+            float agentRadius = Mathf.Max(0.25f, agent.radius * 0.9f);
+            float capsuleBottom = Mathf.Max(0.1f, agent.height * 0.25f);
+            float capsuleTop = Mathf.Max(capsuleBottom + 0.1f, agent.height * 0.9f);
+
+            Vector3 bottom = point + Vector3.up * capsuleBottom;
+            Vector3 top = point + Vector3.up * capsuleTop;
+
+            bool blocked = Physics.CheckCapsule(
+                bottom,
+                top,
+                agentRadius,
+                patrolObstacleMask,
+                QueryTriggerInteraction.Ignore);
+
+            return !blocked;
+        }
+
+        /// <summary>
+        /// Raycast từ monster hướng target, check nếu có obstacle trong 1.5m
+        /// </summary>
+        private bool CheckObstacleAhead(Vector3 direction, float distance = 1.5f)
+        {
+            if (monster == null)
+                return false;
+
+            RaycastHit hit;
+            bool hasObstacle = Physics.Raycast(
+                monster.transform.position + Vector3.up * 1f,
+                direction.normalized,
+                out hit,
+                distance,
+                patrolObstacleMask,
+                QueryTriggerInteraction.Ignore);
+
+            return hasObstacle;
+        }
+
+        /// <summary>
+        /// Test actual path từ monster position tới target
+        /// Checks:
+        ///   ✅ Path calculated successfully
+        ///   ✅ path.status == NavMeshPathStatus.PathComplete (not partial/invalid)
+        ///   ✅ Path có ít nhất 2 corners (start + end)
+        /// </summary>
+        private bool IsValidPatrolTarget(NavMeshAgent agent, Vector3 targetPos)
+        {
+            if (agent == null)
+                return true;
+
+            NavMeshPath path = new NavMeshPath();
+            
+            // [1] Calculate actual path từ agent position tới target
+            bool pathCalculated = agent.CalculatePath(targetPos, path);
+            if (!pathCalculated)
+            {
+                //Debug.Log($"[RandomPatrol] Path calculation FAILED for target {targetPos}");
+                return false;
+            }
+
+            // [2] Check path status - MUST be PathComplete
+            if (path.status != NavMeshPathStatus.PathComplete)
+            {
+                //Debug.Log($"[RandomPatrol] Path status {path.status} != PathComplete (target {targetPos})");
+                return false;
+            }
+
+            // [3] Check corners count - MUST have at least 2 (start + end)
+            if (path.corners.Length < 2)
+            {
+                //Debug.Log($"[RandomPatrol] Path has only {path.corners.Length} corners (need ≥2) for target {targetPos}");
+                return false;
+            }
+
+            // ✅ All checks passed
+            return true;
         }
     }
 }
