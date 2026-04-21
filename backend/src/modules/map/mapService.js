@@ -7,7 +7,7 @@ import MoonEvent from "../moonEvent/moonEventModel.js";
 
 export const MapService = {
   getAllMaps: async (query) => {
-    const { isActive = "all" } = query;
+    const { isActive = "true" } = query;
     let filter = {};
     if (isActive !== "all") {
       filter["identityConfig.isActive"] = isActive === "true";
@@ -37,20 +37,106 @@ export const MapService = {
     const map = await MapConfig.findById(id);
     if (!map) throw new Error("Không tìm thấy map");
 
-    const { displayName, requiredLevel, shortDescription, thumbnailUrl } =
-      updateData;
+    const identity = updateData.identityConfig || {};
+    const consumable = updateData.consumableConfig || {};
+    const equipment = updateData.equipmentConfig || {};
+    const monsterSystem = updateData.monsterSystemConfig || {};
+    const reward = updateData.rewardConfig || {};
 
-    if (requiredLevel !== undefined && requiredLevel < 1) {
-      throw new Error("Required Level phải lớn hơn 0");
+    // Backward-compatible flat metadata updates
+    if (updateData.displayName !== undefined)
+      map.identityConfig.displayName = updateData.displayName;
+    if (updateData.shortDescription !== undefined)
+      map.identityConfig.shortDescription = updateData.shortDescription;
+    if (updateData.thumbnailUrl !== undefined)
+      map.identityConfig.thumbnailUrl = updateData.thumbnailUrl;
+    if (updateData.sceneName !== undefined)
+      map.identityConfig.sceneName = updateData.sceneName;
+
+    // Identity config updates
+    if (identity.displayName !== undefined)
+      map.identityConfig.displayName = identity.displayName;
+    if (identity.sceneName !== undefined)
+      map.identityConfig.sceneName = identity.sceneName;
+    if (identity.shortDescription !== undefined)
+      map.identityConfig.shortDescription = identity.shortDescription;
+    if (identity.thumbnailUrl !== undefined)
+      map.identityConfig.thumbnailUrl = identity.thumbnailUrl;
+    if (identity.isActive !== undefined)
+      map.identityConfig.isActive = !!identity.isActive;
+
+    // Reward config updates
+    if (reward.baseExp !== undefined) {
+      if (Number(reward.baseExp) < 0) throw new Error("baseExp không được âm");
+      map.rewardConfig.baseExp = Number(reward.baseExp);
+    }
+    if (reward.baseCoin !== undefined) {
+      if (Number(reward.baseCoin) < 0)
+        throw new Error("baseCoin không được âm");
+      map.rewardConfig.baseCoin = Number(reward.baseCoin);
     }
 
-    if (displayName !== undefined) map.identityConfig.displayName = displayName;
-    if (requiredLevel !== undefined)
-      map.identityConfig.requiredLevel = requiredLevel;
-    if (shortDescription !== undefined)
-      map.identityConfig.shortDescription = shortDescription;
-    if (thumbnailUrl !== undefined)
-      map.identityConfig.thumbnailUrl = thumbnailUrl;
+    // Consumable config updates
+    if (Array.isArray(consumable.mandatoryItems)) {
+      map.consumableConfig.mandatoryItems = consumable.mandatoryItems.map(
+        (item) => ({
+          itemId: item.itemId,
+          minCount: Number(item.minCount || 0),
+          maxCount: Number(item.maxCount || 0),
+        }),
+      );
+    }
+    if (consumable.randomPoolConfig) {
+      const cfg = consumable.randomPoolConfig;
+      if (cfg.minCount !== undefined)
+        map.consumableConfig.randomPoolConfig.minCount = Number(cfg.minCount);
+      if (cfg.maxCount !== undefined)
+        map.consumableConfig.randomPoolConfig.maxCount = Number(cfg.maxCount);
+      if (Array.isArray(cfg.pool)) {
+        map.consumableConfig.randomPoolConfig.pool = cfg.pool.map((item) => ({
+          itemId: item.itemId,
+          weight: Number(item.weight || 0),
+        }));
+      }
+    }
+
+    // Equipment config updates
+    if (Array.isArray(equipment.mandatoryEquipment)) {
+      map.equipmentConfig.mandatoryEquipment = equipment.mandatoryEquipment.map(
+        (item) => ({
+          itemId: item.itemId,
+          minCount: Number(item.minCount || 0),
+          maxCount: Number(item.maxCount || 0),
+        }),
+      );
+    }
+    if (equipment.randomPoolConfig) {
+      const cfg = equipment.randomPoolConfig;
+      if (cfg.minCount !== undefined)
+        map.equipmentConfig.randomPoolConfig.minCount = Number(cfg.minCount);
+      if (cfg.maxCount !== undefined)
+        map.equipmentConfig.randomPoolConfig.maxCount = Number(cfg.maxCount);
+      if (Array.isArray(cfg.pool)) {
+        map.equipmentConfig.randomPoolConfig.pool = cfg.pool.map((item) => ({
+          itemId: item.itemId,
+          weight: Number(item.weight || 0),
+        }));
+      }
+    }
+
+    // Monster config updates
+    if (monsterSystem.bossConfig) {
+      if (monsterSystem.bossConfig.monsterId !== undefined) {
+        map.monsterSystemConfig.bossConfig.monsterId =
+          monsterSystem.bossConfig.monsterId;
+      }
+    }
+    if (monsterSystem.minionConfig) {
+      if (Array.isArray(monsterSystem.minionConfig.allowedMonsterIds)) {
+        map.monsterSystemConfig.minionConfig.allowedMonsterIds =
+          monsterSystem.minionConfig.allowedMonsterIds;
+      }
+    }
 
     return await map.save();
   },

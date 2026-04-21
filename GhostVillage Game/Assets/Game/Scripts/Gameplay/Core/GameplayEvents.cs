@@ -50,8 +50,8 @@ namespace Game.Scripts.Gameplay.Core
         // Gọi khi có người tiêu diệt được quái phụ (truyền vào actorNumber của người giết).
         public static Action<int> OnSmallMonsterKilled;
 
-        // Gọi khi Boss khóa mục tiêu vào một người chơi (truyền vào actorNumber của nạn nhân).
-        public static Action<int> OnBossTargetedPlayer;
+        // Gọi khi Boss ngừng khóa mục tiêu, truyền vào (actorNumber nạn nhân, thời gian bị rượt tính bằng giây).
+        public static Action<int, int> OnBossTargetedPlayer;
 
         // Gọi khi người chơi hét vào mic vượt ngưỡng (truyền vào actorNumber của người hét).
         public static Action<int> OnPlayerScreamed;

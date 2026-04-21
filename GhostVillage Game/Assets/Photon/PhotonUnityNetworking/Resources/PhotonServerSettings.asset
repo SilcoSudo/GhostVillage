@@ -93,6 +93,8 @@ MonoBehaviour:
   - RpcDoTeleportSequence
   - ReceiveJumpscareRPC
   - RpcPlayJumpscareEffect
+  - RpcBlowWhistle
+  - RpcReceiveRelicBearerBuff
   - SyncChickenMovementSnapshotRPC
   - SyncRealChickenIndexRPC
   - SyncSpawnPointRPC

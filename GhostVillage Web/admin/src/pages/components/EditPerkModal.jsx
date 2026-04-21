@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { X, Loader2, Save } from "lucide-react";
 import perkService from "../../shared/services/perkService";
 import "../assets/styles/Modal.css";
 
 const EditPerkModal = ({ perk, onClose, onSuccess }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     perkName: "",
     description: "",
@@ -40,12 +42,12 @@ const EditPerkModal = ({ perk, onClose, onSuccess }) => {
     e.preventDefault();
 
     if (!formData.perkName.trim()) {
-      setError("Tên perk không được để trống");
+      setError(t("perkModal.errors.nameRequired"));
       return;
     }
 
     if (!formData.prefabId.trim()) {
-      setError("Prefab ID không được để trống");
+      setError(t("perkModal.errors.prefabRequired"));
       return;
     }
 
@@ -55,7 +57,7 @@ const EditPerkModal = ({ perk, onClose, onSuccess }) => {
         ? JSON.parse(formData.modifiersText)
         : {};
     } catch (parseError) {
-      setError("Modifiers phải là JSON hợp lệ");
+      setError(t("perkModal.errors.modifiersJson"));
       return;
     }
 
@@ -78,7 +80,7 @@ const EditPerkModal = ({ perk, onClose, onSuccess }) => {
       }
     } catch (err) {
       console.error("Error updating perk:", err);
-      setError(err.response?.data?.message || "Lỗi khi cập nhật perk");
+      setError(err.response?.data?.message || t("perkModal.errors.updateFailed"));
     } finally {
       setLoading(false);
     }
@@ -88,7 +90,7 @@ const EditPerkModal = ({ perk, onClose, onSuccess }) => {
     <div className="modal-overlay">
       <div className="modal-container" style={{ maxWidth: "760px" }}>
         <div className="modal-header">
-          <h2>Chỉnh sửa Perk</h2>
+          <h2>{t("perkModal.editTitle")}</h2>
           <button onClick={onClose} className="modal-close-btn">
             <X size={22} />
           </button>
@@ -98,7 +100,7 @@ const EditPerkModal = ({ perk, onClose, onSuccess }) => {
           {error && <div className="modal-error">{error}</div>}
 
           <div className="form-group">
-            <label className="form-label">Perk ID (không thể chỉnh sửa)</label>
+            <label className="form-label">{t("perkModal.perkIdReadonly")}</label>
             <input
               type="text"
               value={perk?.perkId || ""}
@@ -109,7 +111,7 @@ const EditPerkModal = ({ perk, onClose, onSuccess }) => {
 
           <div className="form-group">
             <label className="form-label">
-              Tên Perk <span className="required">*</span>
+              {t("perk.columns.name")} <span className="required">*</span>
             </label>
             <input
               type="text"
@@ -122,7 +124,7 @@ const EditPerkModal = ({ perk, onClose, onSuccess }) => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Mô tả</label>
+            <label className="form-label">{t("common.description")}</label>
             <textarea
               name="description"
               value={formData.description}
@@ -144,7 +146,6 @@ const EditPerkModal = ({ perk, onClose, onSuccess }) => {
                 <option value="COMMON">COMMON</option>
                 <option value="RARE">RARE</option>
                 <option value="EPIC">EPIC</option>
-                <option value="LEGENDARY">LEGENDARY</option>
               </select>
             </div>
 
@@ -194,7 +195,7 @@ const EditPerkModal = ({ perk, onClose, onSuccess }) => {
               className="modal-btn modal-btn-cancel"
               disabled={loading}
             >
-              Hủy
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
@@ -204,12 +205,12 @@ const EditPerkModal = ({ perk, onClose, onSuccess }) => {
               {loading ? (
                 <>
                   <Loader2 className="spinner" size={16} />
-                  <span>Đang lưu...</span>
+                  <span>{t("perkModal.saving")}</span>
                 </>
               ) : (
                 <>
                   <Save size={16} />
-                  <span>Lưu thay đổi</span>
+                  <span>{t("common.save")}</span>
                 </>
               )}
             </button>

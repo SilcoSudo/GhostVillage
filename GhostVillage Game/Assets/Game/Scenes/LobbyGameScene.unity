@@ -1937,6 +1937,7 @@ GameObject:
   - component: {fileID: 369262886}
   - component: {fileID: 369262885}
   - component: {fileID: 369262884}
+  - component: {fileID: 369262887}
   m_Layer: 5
   m_Name: Btn_Close
   m_TagString: Untagged
@@ -2046,6 +2047,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 369262882}
   m_CullTransparentMesh: 1
+--- !u!114 &369262887
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 369262882}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45fd43e057439c6498d29aff827730c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonSound
+  audioID: All_Button
 --- !u!1 &373914105
 GameObject:
   m_ObjectHideFlags: 0
@@ -10187,7 +10201,7 @@ MonoBehaviour:
   OwnershipTransfer: 0
   observableSearch: 2
   ObservedComponents: []
-  sceneViewId: 9
+  sceneViewId: 17
   InstantiationId: 0
   isRuntimeInstantiated: 0
 --- !u!1 &1501452928
@@ -11671,6 +11685,7 @@ GameObject:
   - component: {fileID: 1671304589}
   - component: {fileID: 1671304588}
   - component: {fileID: 1671304591}
+  - component: {fileID: 1671304592}
   m_Layer: 5
   m_Name: Btn_PickMap
   m_TagString: Untagged
@@ -11810,6 +11825,19 @@ MonoBehaviour:
   _normalTextColor: {r: 0.627451, g: 0.627451, b: 0.57254905, a: 1}
   _hoverTextColor: {r: 0.9411765, g: 0.6392157, b: 0.2509804, a: 1}
   _pressedTextColor: {r: 0.78431374, g: 0.43137255, b: 0.11764706, a: 1}
+--- !u!114 &1671304592
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1671304586}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45fd43e057439c6498d29aff827730c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonSound
+  audioID: All_Button
 --- !u!1 &1692948840
 GameObject:
   m_ObjectHideFlags: 0
@@ -12006,6 +12034,7 @@ GameObject:
   - component: {fileID: 1740730458}
   - component: {fileID: 1740730457}
   - component: {fileID: 1740730456}
+  - component: {fileID: 1740730459}
   m_Layer: 5
   m_Name: Btn_Prev
   m_TagString: Untagged
@@ -12115,6 +12144,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1740730454}
   m_CullTransparentMesh: 1
+--- !u!114 &1740730459
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1740730454}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45fd43e057439c6498d29aff827730c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonSound
+  audioID: All_Button
 --- !u!1 &1747642469
 GameObject:
   m_ObjectHideFlags: 0
@@ -12619,6 +12661,7 @@ GameObject:
   - component: {fileID: 1812458723}
   - component: {fileID: 1812458722}
   - component: {fileID: 1812458721}
+  - component: {fileID: 1812458724}
   m_Layer: 5
   m_Name: Btn_Next
   m_TagString: Untagged
@@ -12728,6 +12771,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1812458719}
   m_CullTransparentMesh: 1
+--- !u!114 &1812458724
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1812458719}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45fd43e057439c6498d29aff827730c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonSound
+  audioID: All_Button
 --- !u!1 &1815211661
 GameObject:
   m_ObjectHideFlags: 0
@@ -13837,6 +13893,7 @@ GameObject:
   - component: {fileID: 1938703061}
   - component: {fileID: 1938703060}
   - component: {fileID: 1938703063}
+  - component: {fileID: 1938703064}
   m_Layer: 5
   m_Name: Btn_Save
   m_TagString: Untagged
@@ -13964,6 +14021,19 @@ MonoBehaviour:
   _normalTextColor: {r: 0.627451, g: 0.627451, b: 0.57254905, a: 1}
   _hoverTextColor: {r: 0.9411765, g: 0.6392157, b: 0.2509804, a: 1}
   _pressedTextColor: {r: 0.78431374, g: 0.43137255, b: 0.11764706, a: 1}
+--- !u!114 &1938703064
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1938703058}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45fd43e057439c6498d29aff827730c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonSound
+  audioID: All_Button
 --- !u!1 &1995753675
 GameObject:
   m_ObjectHideFlags: 0
@@ -14411,6 +14481,7 @@ GameObject:
   - component: {fileID: 2025480189}
   - component: {fileID: 2025480188}
   - component: {fileID: 2025480191}
+  - component: {fileID: 2025480192}
   m_Layer: 5
   m_Name: Btn_Equip
   m_TagString: Untagged
@@ -14538,6 +14609,19 @@ MonoBehaviour:
   _normalTextColor: {r: 0.627451, g: 0.627451, b: 0.57254905, a: 1}
   _hoverTextColor: {r: 0.9411765, g: 0.6392157, b: 0.2509804, a: 1}
   _pressedTextColor: {r: 0.78431374, g: 0.43137255, b: 0.11764706, a: 1}
+--- !u!114 &2025480192
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2025480186}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45fd43e057439c6498d29aff827730c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonSound
+  audioID: All_Button
 --- !u!1 &2044648168
 GameObject:
   m_ObjectHideFlags: 0

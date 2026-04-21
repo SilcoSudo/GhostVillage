@@ -209,7 +209,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a2064c36bfbf4a24fb9c15a2f6d85493, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Core.Interaction.ItemPickup
-  data: {fileID: 11400000, guid: 8a19965e246633d4eba2c5e2eae15232, type: 2}
+  data: {fileID: 11400000, guid: 492d0ac50f1e6ab4eadd78ba952db831, type: 2}
   promptText: Whistle
 --- !u!1 &6950243576721563672
 GameObject:

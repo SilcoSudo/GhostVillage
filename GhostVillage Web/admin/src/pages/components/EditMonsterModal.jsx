@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { X, Loader2, Save } from "lucide-react";
 import monsterService from "../../shared/services/monsterService";
 import "../assets/styles/Modal.css";
@@ -8,6 +9,7 @@ import "../assets/styles/Modal.css";
  * Modal để chỉnh sửa thông tin quái vật
  */
 const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     monsterName: "",
     monsterType: "MINION",
@@ -26,12 +28,8 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
       detectionRange: 15,
       detectionAngle: 120,
     },
-    specialSkillConfig: {
-      skillName: "",
-      pullMaxForce: 12,
-      pullCooldown: 32,
-    },
   });
+  const [specialSkillJson, setSpecialSkillJson] = useState("{}");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -56,12 +54,10 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
           detectionRange: monster.detectionConfig?.detectionRange ?? 15,
           detectionAngle: monster.detectionConfig?.detectionAngle ?? 120,
         },
-        specialSkillConfig: {
-          skillName: monster.specialSkillConfig?.skillName || "",
-          pullMaxForce: monster.specialSkillConfig?.pullMaxForce ?? 12,
-          pullCooldown: monster.specialSkillConfig?.pullCooldown ?? 32,
-        },
       });
+      setSpecialSkillJson(
+        JSON.stringify(monster.specialSkillConfig || {}, null, 2)
+      );
     }
   }, [monster]);
 
@@ -98,12 +94,12 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
     
     // Validation
     if (!formData.monsterName.trim()) {
-      setError("Tên quái vật không được để trống");
+      setError(t("monsterModal.errors.monsterNameRequired"));
       return;
     }
 
     if (!formData.prefabName.trim()) {
-      setError("Prefab Name không được để trống");
+      setError(t("monsterModal.errors.prefabRequired"));
       return;
     }
 
@@ -111,14 +107,30 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
       setLoading(true);
       setError(null);
 
-      const response = await monsterService.updateMonster(monster._id, formData);
+      let parsedSpecialSkillConfig = {};
+      if (specialSkillJson.trim()) {
+        try {
+          parsedSpecialSkillConfig = JSON.parse(specialSkillJson);
+        } catch {
+          setError(t("monsterModal.errors.specialSkillJson"));
+          setLoading(false);
+          return;
+        }
+      }
+
+      const payload = {
+        ...formData,
+        specialSkillConfig: parsedSpecialSkillConfig,
+      };
+
+      const response = await monsterService.updateMonster(monster._id, payload);
 
       if (response.success) {
         onSuccess();
       }
     } catch (err) {
       console.error("Error updating monster:", err);
-      setError(err.response?.data?.message || "Lỗi khi cập nhật quái vật");
+      setError(err.response?.data?.message || t("monsterModal.errors.updateFailed"));
     } finally {
       setLoading(false);
     }
@@ -129,7 +141,7 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
       <div className="modal-container" style={{ maxWidth: "760px" }}>
         {/* Header */}
         <div className="modal-header">
-          <h2>Chỉnh sửa quái vật</h2>
+          <h2>{t("monsterModal.editTitle")}</h2>
           <button onClick={onClose} className="modal-close-btn">
             <X size={24} />
           </button>
@@ -142,8 +154,10 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
             <div className="modal-error">{error}</div>
           )}
 
+          <h3 className="modal-section-title">{t("monsterModal.sections.basic")}</h3>
+
           <div className="form-group">
-            <label className="form-label">Monster ID (không thể chỉnh sửa)</label>
+            <label className="form-label">{t("monsterModal.monsterIdReadonly")}</label>
             <input
               type="text"
               value={monster?.monsterId || ""}
@@ -154,7 +168,7 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
 
           <div className="form-group">
             <label className="form-label">
-              Tên quái <span className="required">*</span>
+              {t("monsterModal.monsterName")} <span className="required">*</span>
             </label>
             <input
               type="text"
@@ -162,7 +176,7 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
               value={formData.monsterName}
               onChange={handleChange}
               className="form-input"
-              placeholder="Nhập tên quái vật"
+              placeholder={t("monsterModal.monsterNameInput")}
               required
             />
           </div>
@@ -196,9 +210,7 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Movement Config</label>
-          </div>
+          <h3 className="modal-section-title">{t("monsterModal.sections.movement")}</h3>
           <div className="stats-grid">
             <div className="form-group">
               <label className="form-label">Move Speed</label>
@@ -237,9 +249,7 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Combat Config</label>
-          </div>
+          <h3 className="modal-section-title">{t("monsterModal.sections.combat")}</h3>
           <div className="stats-grid">
             <div className="form-group">
               <label className="form-label">Chase Range</label>
@@ -276,9 +286,7 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Detection Config</label>
-          </div>
+          <h3 className="modal-section-title">{t("monsterModal.sections.detection")}</h3>
           <div className="stats-grid">
             <div className="form-group">
               <label className="form-label">Detection Range</label>
@@ -304,43 +312,17 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
             </div>
           </div>
 
+          <h3 className="modal-section-title">{t("monsterModal.sections.specialSkill")}</h3>
           <div className="form-group">
-            <label className="form-label">Special Skill Config</label>
-          </div>
-          <div className="stats-grid">
-            <div className="form-group">
-              <label className="form-label">Skill Name</label>
-              <input
-                type="text"
-                name="specialSkillConfig.skillName"
-                value={formData.specialSkillConfig.skillName}
-                onChange={handleChange}
-                className="form-input"
-                placeholder="Pull"
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Pull Max Force</label>
-              <input
-                type="number"
-                name="specialSkillConfig.pullMaxForce"
-                value={formData.specialSkillConfig.pullMaxForce}
-                onChange={handleChange}
-                step="0.1"
-                className="form-input"
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Pull Cooldown</label>
-              <input
-                type="number"
-                name="specialSkillConfig.pullCooldown"
-                value={formData.specialSkillConfig.pullCooldown}
-                onChange={handleChange}
-                step="0.1"
-                className="form-input"
-              />
-            </div>
+            <label className="form-label">Special Skill JSON</label>
+            <textarea
+              value={specialSkillJson}
+              onChange={(e) => setSpecialSkillJson(e.target.value)}
+              className="form-textarea"
+              rows={6}
+              placeholder='{}'
+              style={{ fontFamily: "monospace" }}
+            />
           </div>
 
           {/* Actions */}
@@ -351,7 +333,7 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
               className="modal-btn modal-btn-cancel"
               disabled={loading}
             >
-              Hủy
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
@@ -361,12 +343,12 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
               {loading ? (
                 <>
                   <Loader2 className="spinner" size={18} />
-                  <span>Đang lưu...</span>
+                  <span>{t("monsterModal.saving")}</span>
                 </>
               ) : (
                 <>
                   <Save size={18} />
-                  <span>Lưu thay đổi</span>
+                  <span>{t("common.save")}</span>
                 </>
               )}
             </button>

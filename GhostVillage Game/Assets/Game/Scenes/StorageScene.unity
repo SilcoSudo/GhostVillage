@@ -1800,6 +1800,7 @@ GameObject:
   - component: {fileID: 1115915282}
   - component: {fileID: 1115915281}
   - component: {fileID: 1115915284}
+  - component: {fileID: 1115915285}
   m_Layer: 5
   m_Name: Btn_EquipPerk
   m_TagString: Untagged
@@ -1927,6 +1928,19 @@ MonoBehaviour:
   _normalTextColor: {r: 0.627451, g: 0.627451, b: 0.57254905, a: 1}
   _hoverTextColor: {r: 0.9411765, g: 0.6392157, b: 0.2509804, a: 1}
   _pressedTextColor: {r: 0.78431374, g: 0.43137255, b: 0.11764706, a: 1}
+--- !u!114 &1115915285
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1115915279}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45fd43e057439c6498d29aff827730c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonSound
+  audioID: All_Button
 --- !u!1 &1162437672
 GameObject:
   m_ObjectHideFlags: 0

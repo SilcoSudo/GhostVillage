@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 import * as supportTicketService from "../services/supportTicketService";
 
@@ -8,6 +13,7 @@ export const useMySupportTickets = (params = {}) => {
   return useQuery({
     queryKey: [SUPPORT_TICKET_QUERY_KEY, params],
     queryFn: () => supportTicketService.getMySupportTickets(params),
+    placeholderData: keepPreviousData,
   });
 };
 

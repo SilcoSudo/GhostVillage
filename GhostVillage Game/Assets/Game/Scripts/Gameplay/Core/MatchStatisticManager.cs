@@ -98,7 +98,7 @@ namespace Game.Scripts.Gameplay.Core
             GameplayEvents.OnPlayerRescued += (healer, target) => ReportAction(healer, MatchActions.RESCUE_TEAMMATE);
             GameplayEvents.OnPlayerKnocked += (actor) => ReportAction(actor, MatchActions.GET_KNOCKED);
             GameplayEvents.OnSmallMonsterKilled += (actor) => ReportAction(actor, MatchActions.KILL_SMALL_MONSTER);
-            GameplayEvents.OnBossTargetedPlayer += (actor) => ReportAction(actor, MatchActions.BOSS_TARGET);
+            GameplayEvents.OnBossTargetedPlayer += (actor, duration) => ReportAction(actor, MatchActions.BOSS_TARGET, duration);
             GameplayEvents.OnPlayerScreamed += (actor) => ReportAction(actor, MatchActions.SCREAM);
             GameplayEvents.OnKeyItemGathered += (actor) => ReportAction(actor, MatchActions.GATHER_ITEM);
             GameplayEvents.OnPlayerUsedSiren += (actor) => ReportAction(actor, MatchActions.USE_SIREN);

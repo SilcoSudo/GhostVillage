@@ -187,11 +187,299 @@
   letter-spacing: 0;
 }
 
+.support-history-group-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.support-history-group-subtitle {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.support-history-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.support-history-group-active {
+  margin-bottom: 8px;
+}
+
+.support-history-group {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: linear-gradient(
+    180deg,
+    rgba(26, 26, 26, 0.96) 0%,
+    rgba(18, 18, 18, 0.96) 100%
+  );
+  overflow: hidden;
+}
+
+.support-history-group-active {
+  box-shadow: inset 0 0 0 1px rgba(181, 166, 66, 0.04);
+}
+
+.support-history-group-archived {
+  border-color: rgba(122, 0, 0, 0.6);
+}
+
+.support-history-group-header,
+.support-history-group-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.support-history-group-header {
+  padding: 14px 16px 12px;
+  flex-wrap: wrap;
+}
+
+.support-history-group-toggle {
+  width: 100%;
+  padding: 14px 16px;
+  border: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(122, 0, 0, 0.16) 0%,
+    rgba(26, 26, 26, 0.92) 100%
+  );
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.support-history-group-toggle:hover {
+  background: linear-gradient(
+    90deg,
+    rgba(122, 0, 0, 0.24) 0%,
+    rgba(26, 26, 26, 0.98) 100%
+  );
+}
+
+.support-history-group-toggle:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
+}
+
+.support-history-group-count {
+  min-width: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.support-history-toggle-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-secondary);
+}
+
+.support-history-toggle-icon {
+  transition: transform 0.2s ease;
+}
+
+.support-history-group-toggle.is-open .support-history-toggle-icon {
+  transform: rotate(180deg);
+}
+
+.support-history-group-body {
+  padding: 0 16px 16px;
+}
+
+.support-history-group-empty {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
 .support-ticket-history-item {
   border: 1px solid var(--border-color);
   border-radius: 10px;
-  padding: 14px;
   background: var(--bg-primary);
+  overflow: hidden;
+}
+
+.support-ticket-history-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.support-ticket-history-item-full {
+  padding: 14px;
+}
+
+.support-ticket-history-item-collapsible {
+  padding: 0;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+.support-ticket-history-item-collapsible:hover {
+  border-color: rgba(122, 0, 0, 0.75);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+.support-ticket-history-item-collapsible[open] {
+  background: linear-gradient(
+    180deg,
+    rgba(26, 26, 26, 0.98) 0%,
+    rgba(18, 18, 18, 0.98) 100%
+  );
+}
+
+.support-ticket-history-summary {
+  display: block;
+  list-style: none;
+  padding: 14px;
+  cursor: pointer;
+}
+
+.support-ticket-history-summary::-webkit-details-marker {
+  display: none;
+}
+
+.support-ticket-history-summary::marker {
+  content: "";
+}
+
+.support-ticket-history-summary-header {
+  margin-bottom: 10px;
+}
+
+.support-ticket-history-summary-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.support-ticket-history-summary-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}
+
+.support-ticket-history-summary-line .small {
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.support-ticket-history-summary-line .support-ticket-summary-chevron {
+  margin-top: 0;
+}
+
+.support-ticket-history-summary-header .small {
+  max-width: 100%;
+  line-height: 1.35;
+}
+
+.support-ticket-history-summary-meta {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.support-ticket-history-summary-meta .badge {
+  align-self: flex-end;
+  margin-top: 2px;
+}
+
+.support-ticket-history-card-header .badge {
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+.support-ticket-history-summary-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.support-ticket-summary-chevron {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+}
+
+.support-ticket-history-item-collapsible[open] .support-ticket-summary-chevron {
+  transform: rotate(180deg);
+}
+
+.support-ticket-history-item-body {
+  padding: 0 14px 14px;
+}
+
+.support-history-load-more-row {
+  display: flex;
+  justify-content: center;
+  padding-top: 4px;
+}
+
+.support-history-load-more-btn {
+  min-width: 160px;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+  background: rgba(26, 26, 26, 0.9) !important;
+}
+
+.support-history-load-more-btn:hover {
+  background: var(--primary-dark) !important;
+  color: #fff !important;
+  border-color: var(--primary-color) !important;
+}
+
+.support-history-load-more-btn:disabled {
+  opacity: 0.65;
+  transform: none;
+}
+
+.support-history-load-more-row {
+  display: flex;
+  justify-content: center;
+  padding-top: 2px;
+}
+
+.support-history-load-more-btn {
+  min-width: 160px;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+  background: rgba(26, 26, 26, 0.9) !important;
+}
+
+.support-history-load-more-btn:hover {
+  background: var(--primary-dark) !important;
+  color: #fff !important;
+  border-color: var(--primary-color) !important;
+}
+
+.support-history-load-more-btn:disabled {
+  opacity: 0.65;
+  transform: none;
 }
 
 .support-ticket-history-item h6 {
@@ -294,31 +582,6 @@
   display: block;
 }
 
-.support-history-accordion .accordion-item {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-}
-
-.support-history-accordion .accordion-button {
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-weight: 600;
-  box-shadow: none;
-}
-
-.support-history-accordion .accordion-button:not(.collapsed) {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-}
-
-.support-history-accordion .accordion-button:focus {
-  box-shadow: 0 0 0 0.15rem rgba(122, 0, 0, 0.25);
-}
-
-.support-history-accordion .accordion-body {
-  background: var(--bg-secondary);
-}
-
 @media (max-width: 768px) {
   .support-page-wrapper {
     padding-top: 60px;
@@ -330,5 +593,16 @@
 
   .support-card .card-body {
     padding: 16px;
+  }
+
+  .support-history-group-header,
+  .support-history-group-toggle,
+  .support-history-group-body {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .support-history-group-body {
+    padding-bottom: 12px;
   }
 }

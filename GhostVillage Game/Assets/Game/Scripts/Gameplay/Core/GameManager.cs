@@ -118,6 +118,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         if (_mapData != null && dataToLoad != null)
         {
             _mapData.InitializeMap(dataToLoad);
+            _mapData.OverrideItemStatsFromNetwork(dataToLoad.stats.items, _resourceDB);
         }
         else
         {
@@ -255,11 +256,15 @@ public class GameManager : MonoBehaviourPunCallbacks
             case GameState.WaitingForPlayers: Debug.Log("[GameManager] Đang chờ người chơi..."); break;
             case GameState.Playing:
                 Debug.Log("[GameManager] START GAME!");
-                // var globalUI = FindObjectOfType<GlobalUIManager>();
-                // if (globalUI != null)
-                // {
-                //     globalUI.ShowLoading(false);
-                // }
+
+                // ========================================================
+                // [FIX LOADING]: TẮT MÀN HÌNH CHỜ KHI GAME THỰC SỰ BẮT ĐẦU
+                // ========================================================
+                var globalUI = Object.FindFirstObjectByType<GlobalUIManager>();
+                if (globalUI != null)
+                {
+                    globalUI.ShowLoading(false);
+                }
                 break;
             case GameState.EscapePhase: Debug.Log("[GameManager] RUN NOW!"); break;
             case GameState.Ending:

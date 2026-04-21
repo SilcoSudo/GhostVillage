@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Edit2, Loader2, Image as ImageIcon } from 'lucide-react';
 import { useUpdateAnnouncement } from '../../shared/hooks/useAnnouncements';
 import { uploadImage, validateImageFile, createImagePreview, revokeImagePreview } from '../../shared/services/uploadService';
@@ -6,6 +7,7 @@ import { toast } from 'react-hot-toast';
 import '../assets/styles/AnnouncementModal.css';
 
 const AnnouncementEditorModal = ({ isOpen, announcement, onClose, onSubmit }) => {
+  const { t } = useTranslation();
   const updateMutation = useUpdateAnnouncement();
   const fileInputRef = useRef(null);
   
@@ -82,8 +84,8 @@ const AnnouncementEditorModal = ({ isOpen, announcement, onClose, onSubmit }) =>
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.title.trim()) newErrors.title = 'Title is required';
-    if (!formData.content.trim()) newErrors.content = 'Content is required';
+    if (!formData.title.trim()) newErrors.title = t('announcements.modal.errors.titleRequired');
+    if (!formData.content.trim()) newErrors.content = t('announcements.modal.errors.contentRequired');
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -108,7 +110,7 @@ const AnnouncementEditorModal = ({ isOpen, announcement, onClose, onSubmit }) =>
             }
           } catch (uploadError) {
             console.error('Upload error:', uploadError);
-            toast.error('Failed to upload image');
+            toast.error(t('announcements.modal.errors.uploadImageFailed'));
             setIsUploading(false);
             return;
           }
@@ -164,7 +166,7 @@ const AnnouncementEditorModal = ({ isOpen, announcement, onClose, onSubmit }) =>
         <div className="modal-header">
           <div className="header-content">
             <Edit2 size={20} className="header-icon" />
-            <h2>Edit Announcement</h2>
+            <h2>{t('announcements.editAnnouncement')}</h2>
           </div>
           <button className="close-btn" onClick={handleClose} disabled={updateMutation.isLoading}>
             <X size={20} />
@@ -177,7 +179,7 @@ const AnnouncementEditorModal = ({ isOpen, announcement, onClose, onSubmit }) =>
             {/* Title */}
             <div className="form-group">
               <label htmlFor="title" className="form-label">
-                Announcement Title <span className="required">*</span>
+                {t('announcements.modal.titleLabel')} <span className="required">*</span>
               </label>
               <input
                 id="title"
@@ -185,7 +187,7 @@ const AnnouncementEditorModal = ({ isOpen, announcement, onClose, onSubmit }) =>
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
-                placeholder="Enter announcement title..."
+                placeholder={t('announcements.modal.titlePlaceholder')}
                 className={`form-input ${errors.title ? 'input-error' : ''}`}
                 maxLength={200}
                 disabled={updateMutation.isLoading}
@@ -197,33 +199,33 @@ const AnnouncementEditorModal = ({ isOpen, announcement, onClose, onSubmit }) =>
             {/* Content */}
             <div className="form-group">
               <label htmlFor="content" className="form-label">
-                Content <span className="required">*</span>
+                {t('announcements.content')} <span className="required">*</span>
               </label>
               <textarea
                 id="content"
                 name="content"
                 value={formData.content}
                 onChange={handleChange}
-                placeholder="Enter announcement content..."
+                placeholder={t('announcements.modal.contentShortPlaceholder')}
                 className={`form-textarea ${errors.content ? 'input-error' : ''}`}
                 rows={8}
                 disabled={updateMutation.isLoading}
               />
               {errors.content && <span className="error-message">{errors.content}</span>}
-              <small className="form-hint">Rich Text Editor integration coming soon</small>
+              <small className="form-hint">{t('announcements.modal.richTextHint')}</small>
             </div>
 
             {/* Excerpt */}
             <div className="form-group">
               <label htmlFor="excerpt" className="form-label">
-                Excerpt <span className="optional">(optional)</span>
+                {t('announcements.excerpt')} <span className="optional">({t('announcements.modal.optional')})</span>
               </label>
               <textarea
                 id="excerpt"
                 name="excerpt"
                 value={formData.excerpt}
                 onChange={handleChange}
-                placeholder="Brief summary"
+                placeholder={t('announcements.modal.briefSummary')}
                 className="form-textarea"
                 rows={3}
                 maxLength={300}
@@ -235,7 +237,7 @@ const AnnouncementEditorModal = ({ isOpen, announcement, onClose, onSubmit }) =>
             {/* Cover Image */}
             <div className="form-group">
               <label className="form-label">
-                Cover Image <span className="optional">(optional)</span>
+                {t('announcements.coverImage')} <span className="optional">({t('announcements.modal.optional')})</span>
               </label>
               
               {/* Image Preview */}
@@ -243,7 +245,7 @@ const AnnouncementEditorModal = ({ isOpen, announcement, onClose, onSubmit }) =>
                 <div className="image-preview-container">
                   <img 
                     src={imagePreview} 
-                    alt="Preview"
+                    alt={t('announcements.modal.previewAlt')}
                   />
                   <button
                     type="button"
@@ -262,8 +264,8 @@ const AnnouncementEditorModal = ({ isOpen, announcement, onClose, onSubmit }) =>
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <ImageIcon size={48} />
-                  <p>Click to upload cover image</p>
-                  <p>JPG, PNG, GIF, WEBP (max 5MB)</p>
+                  <p>{t('announcements.modal.uploadCover')}</p>
+                  <p>{t('announcements.modal.uploadFormats')}</p>
                 </div>
               )}
 
@@ -288,7 +290,7 @@ const AnnouncementEditorModal = ({ isOpen, announcement, onClose, onSubmit }) =>
                   onChange={(e) => setFormData(prev => ({ ...prev, isPinned: e.target.checked }))}
                   disabled={updateMutation.isLoading}
                 />
-                <label htmlFor="isPinned">Pin this announcement</label>
+                <label htmlFor="isPinned">{t('announcements.modal.pinAnnouncement')}</label>
               </div>
 
               <div className="form-checkbox">
@@ -300,7 +302,7 @@ const AnnouncementEditorModal = ({ isOpen, announcement, onClose, onSubmit }) =>
                   onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
                   disabled={updateMutation.isLoading}
                 />
-                <label htmlFor="isActive">Set as active</label>
+                <label htmlFor="isActive">{t('announcements.modal.setActive')}</label>
               </div>
             </div>
           </div>
@@ -313,7 +315,7 @@ const AnnouncementEditorModal = ({ isOpen, announcement, onClose, onSubmit }) =>
               onClick={handleClose}
               disabled={updateMutation.isLoading}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button 
               type="submit" 
@@ -323,10 +325,10 @@ const AnnouncementEditorModal = ({ isOpen, announcement, onClose, onSubmit }) =>
               {updateMutation.isLoading || isUploading ? (
                 <>
                   <Loader2 size={16} className="spinner" style={{ marginRight: '8px' }} />
-                  {isUploading ? 'Uploading...' : 'Saving...'}
+                  {isUploading ? t('announcements.modal.uploading') : t('announcements.modal.saving')}
                 </>
               ) : (
-                'Save Changes'
+                t('announcements.modal.saveChanges')
               )}
             </button>
           </div>

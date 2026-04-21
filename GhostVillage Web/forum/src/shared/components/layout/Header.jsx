@@ -65,7 +65,7 @@ const Header = () => {
             <Search className="search-icon" size={18} />
             <input
               type="text"
-              placeholder="Tìm kiếm bài viết, người dùng..."
+              placeholder={t("navbar.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="search-input"
@@ -78,7 +78,7 @@ const Header = () => {
           <button
             className="language-toggle"
             onClick={toggleLanguage}
-            title="Chuyển đổi ngôn ngữ"
+            title={t("navbar.changeLanguage")}
           >
             <Globe size={20} />
             <span>{i18n.language === "en" ? "EN" : "VI"}</span>
@@ -87,7 +87,7 @@ const Header = () => {
           <button
             className={`friends-btn ${showFriendSidebar ? "active" : ""}`}
             onClick={handleFriendsClick}
-            title="Danh sách bạn bè"
+            title={t("navbar.friendsList")}
           >
             <Users size={20} />
             {hasUnreadFriendMessage ? (

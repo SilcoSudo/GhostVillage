@@ -1,5 +1,8 @@
 import { useContext, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { User } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { useAuth } from "../../app/hooks/useAuth";
 import { ChatContext } from "../../app/context/ChatContext.jsx";
 import { useFriendList, useUnfriend } from "../../shared/hooks/useFriend.js";
 import { getAvatarUrl, cacheAvatar } from "../../shared/utils/avatarCache";
@@ -7,7 +10,9 @@ import UnfriendConfirmModal from "./UnfriendConfirmModal.jsx";
 import "./FriendList.css";
 
 const FriendList = () => {
+  const { t } = useTranslation();
   const { openChat } = useContext(ChatContext);
+  const { user, loading: authLoading } = useAuth();
   const { data: friends, isLoading, error } = useFriendList();
   const { mutate: unfriend, isPending: isUnfriending } = useUnfriend();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -70,11 +75,37 @@ const FriendList = () => {
     });
   }, [friends, unreadByFriend, latestMessageAtByFriend]);
 
+  if (authLoading) {
+    return (
+      <div className="friend-list">
+        <div className="loading">
+          <p>{t("friendList.loading")}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="friend-list">
+        <div className="guest-friends-prompt">
+          <p className="guest-friends-title">{t("friendList.guestTitle")}</p>
+          <p className="guest-friends-message">
+            {t("friendList.guestMessage")}
+          </p>
+          <Link to="/login" className="friend-btn add-friend guest-login-btn">
+            {t("auth.login")}
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="friend-list">
         <div className="loading">
-          <p>Loading friends...</p>
+          <p>{t("friendList.loading")}</p>
         </div>
       </div>
     );
@@ -84,7 +115,7 @@ const FriendList = () => {
     return (
       <div className="friend-list">
         <div className="error">
-          <p>Error loading friends: {error.message}</p>
+          <p>{t("friendList.errorLoading", { message: error.message })}</p>
         </div>
       </div>
     );
@@ -119,64 +150,68 @@ const FriendList = () => {
   };
 
   return (
-    <div className="friend-list">
-      <div className="friend-list-header">
-        <h2>My Friends</h2>
-        <span className="friend-count">{friends?.length || 0} friends</span>
+    <>
+      <div className="friend-list">
+        <div className="friend-list-header">
+          <h2>{t("friendList.title")}</h2>
+          <span className="friend-count">
+            {t("friendList.count", { count: friends?.length || 0 })}
+          </span>
+        </div>
+
+        {!friends || friends.length === 0 ? (
+          <div className="no-friends">
+            <p>{t("friendList.empty")}</p>
+          </div>
+        ) : (
+          <div className="friends-list">
+            {sortedFriends.map((friend) => (
+              <div
+                key={friend._id}
+                className={`friend-item ${unreadByFriend[friend._id] ? "has-unread" : ""}`}
+                onClick={() => handleSendMessage(friend)}
+                title={t("friendList.openChat")}
+              >
+                <div className="friend-avatar-small">
+                  {friend.avatar ? (
+                    <img
+                      src={getAvatarUrl(friend._id, friend.avatar)}
+                      alt={friend.fullname}
+                      onLoad={() => cacheAvatar(friend._id, friend.avatar)}
+                      crossOrigin="anonymous"
+                    />
+                  ) : (
+                    <div className="avatar-fallback">
+                      <User size={18} strokeWidth={1.5} />
+                    </div>
+                  )}
+                </div>
+
+                <div className="friend-info-small">
+                  <h4 className="friend-name-small">{friend.fullname}</h4>
+                  {unreadByFriend[friend._id] ? (
+                    <span className="friend-unread-badge">
+                      {unreadByFriend[friend._id] > 99
+                        ? "99+"
+                        : unreadByFriend[friend._id]}
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="friend-actions-small">
+                  <button
+                    className="btn-icon btn-danger"
+                    onClick={(event) => handleUnfriend(event, friend)}
+                    title={t("friendList.unfriend")}
+                  >
+                    <i className="fas fa-user-minus"></i>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-
-      {!friends || friends.length === 0 ? (
-        <div className="no-friends">
-          <p>You don't have any friends yet.</p>
-        </div>
-      ) : (
-        <div className="friends-list">
-          {sortedFriends.map((friend) => (
-            <div
-              key={friend._id}
-              className={`friend-item ${unreadByFriend[friend._id] ? "has-unread" : ""}`}
-              onClick={() => handleSendMessage(friend)}
-              title="Open chat"
-            >
-              <div className="friend-avatar-small">
-                {friend.avatar ? (
-                  <img
-                    src={getAvatarUrl(friend._id, friend.avatar)}
-                    alt={friend.fullname}
-                    onLoad={() => cacheAvatar(friend._id, friend.avatar)}
-                    crossOrigin="anonymous"
-                  />
-                ) : (
-                  <div className="avatar-fallback">
-                    <User size={18} strokeWidth={1.5} />
-                  </div>
-                )}
-              </div>
-
-              <div className="friend-info-small">
-                <h4 className="friend-name-small">{friend.fullname}</h4>
-                {unreadByFriend[friend._id] ? (
-                  <span className="friend-unread-badge">
-                    {unreadByFriend[friend._id] > 99
-                      ? "99+"
-                      : unreadByFriend[friend._id]}
-                  </span>
-                ) : null}
-              </div>
-
-              <div className="friend-actions-small">
-                <button
-                  className="btn-icon btn-danger"
-                  onClick={(event) => handleUnfriend(event, friend)}
-                  title="Unfriend"
-                >
-                  <i className="fas fa-user-minus"></i>
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
 
       <UnfriendConfirmModal
         isOpen={isConfirmOpen}
@@ -185,7 +220,7 @@ const FriendList = () => {
         isLoading={isUnfriending}
         friendName={selectedFriend?.fullname}
       />
-    </div>
+    </>
   );
 };
 

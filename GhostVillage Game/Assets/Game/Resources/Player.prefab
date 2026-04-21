@@ -55,6 +55,7 @@ GameObject:
   - component: {fileID: 2496939903830817862}
   - component: {fileID: 958768899498627804}
   - component: {fileID: 8365199394453088430}
+  - component: {fileID: 8887101244987023100}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -158,7 +159,7 @@ NavMeshAgent:
   m_AutoBraking: 1
   m_AutoRepath: 1
   m_Height: 1
-  m_BaseOffset: 0.5
+  m_BaseOffset: 1
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 2
 --- !u!114 &7514658226068342345
@@ -317,8 +318,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerKnockedState
   isKnocked: 0
-  maxProgress: 25
-  startingProgress: 12.5
+  maxProgress: 50
+  startingProgress: 50
+  knockdownMesh: -2.8
   currentProgress: 0
   playerCamera: {fileID: 7854717136852411816}
 --- !u!136 &-7655005216016039397
@@ -405,6 +407,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::XRayPerkController
   _xRayMaterial: {fileID: 2100000, guid: dfd26d8b20a44804d8d2d80dbb30f732, type: 2}
   _xRayDuration: 5
+--- !u!114 &8887101244987023100
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100691100974995321}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc8157d22b89fc7409aae8c7f1e8ba39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VoiceScreamDetector
+  screamThreshold: 0.7
+  screamCooldown: 5
 --- !u!1 &301576926713191709
 GameObject:
   m_ObjectHideFlags: 0

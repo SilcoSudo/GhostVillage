@@ -234,6 +234,7 @@ export const addAdminReply = async (req, res, next) => {
             adminUser: req.user,
             ticketId: updated._id,
             subject: updated.subject,
+            content,
           },
           io,
         );

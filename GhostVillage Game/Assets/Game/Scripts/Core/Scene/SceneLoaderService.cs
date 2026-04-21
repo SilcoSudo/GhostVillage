@@ -1,7 +1,8 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine.SceneManagement;
 using UnityEngine;
-using Game.Script.UI; // Để dùng Debug
+using Game.Script.UI;
+using VContainer; // Để dùng Debug
 
 namespace Game.Core.Scene
 {
@@ -12,31 +13,25 @@ namespace Game.Core.Scene
 
     public class SceneLoaderService : ISceneLoaderService
     {
+        // Thay vì ôm cứng GlobalUIManager, ta ôm cái IObjectResolver (Tổng đài)
+        private readonly IObjectResolver _resolver;
 
-        private readonly GlobalUIManager _globalUI;
-
-        public SceneLoaderService(GlobalUIManager globalUI)
+        // Constructor nhận Tổng đài, KHÔNG nhận trực tiếp GlobalUIManager nữa
+        public SceneLoaderService(IObjectResolver resolver)
         {
-            _globalUI = globalUI;
+            _resolver = resolver;
         }
+
         public async UniTask LoadSceneAsync(string sceneName)
         {
             Debug.Log($"⏳ [SceneLoader] Khởi động màn hình chắn: {sceneName}");
 
-            if (string.IsNullOrWhiteSpace(sceneName))
-            {
-                Debug.LogError("[SceneLoader] sceneName rỗng/null.");
-                return;
-            }
+            // 1. Khi nào xài thì mới gọi Tổng đài để lấy GlobalUIManager ra
+            // Như vầy sẽ không bị lỗi vòng tròn lúc khởi tạo nữa!
+            var globalUI = _resolver.Resolve<GlobalUIManager>();
 
-            if (!Application.CanStreamedLevelBeLoaded(sceneName))
-            {
-                Debug.LogError($"[SceneLoader] Scene '{sceneName}' chưa được add vào Build Settings hoặc sai tên.");
-                return;
-            }
-
-            // 1. Bật Loading Overlay
-            _globalUI.ShowLoading(true);
+            // Bật Loading Overlay
+            if (globalUI != null) globalUI.ShowLoading(true);
 
             try
             {
@@ -53,13 +48,8 @@ namespace Game.Core.Scene
                 // 3. Chờ thêm 1 frame để script Scene mới hoàn tất Awake/Start
                 await UniTask.Yield();
 
-                Debug.Log($" [SceneLoader] Hoàn tất chuyển cảnh: {sceneName}");
-            }
-            finally
-            {
-                // 4. Luôn tắt Loading Overlay kể cả khi lỗi
-                _globalUI.ShowLoading(false);
-            }
+            // 4. Tắt Loading Overlay
+            if (globalUI != null) globalUI.ShowLoading(false);
         }
     }
 }

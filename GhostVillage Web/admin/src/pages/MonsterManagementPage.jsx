@@ -18,7 +18,7 @@ import "./assets/styles/MonsterManagement.css";
  * Trang quản lý quái vật với các chức năng CRUD
  */
 const MonsterManagementPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [monsters, setMonsters] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -39,6 +39,16 @@ const MonsterManagementPage = () => {
     totalPages: 1,
   });
 
+  const formatDateTime = (value) => {
+    if (!value) return "-";
+    const rawValue = typeof value === "object" && value.$date ? value.$date : value;
+    const parsedDate = new Date(rawValue);
+    if (Number.isNaN(parsedDate.getTime())) return "-";
+    return parsedDate.toLocaleString(i18n.language?.startsWith("vi") ? "vi-VN" : "en-US", {
+      hour12: false,
+    });
+  };
+
   /**
    * Fetch monsters từ API
    */
@@ -58,7 +68,7 @@ const MonsterManagementPage = () => {
       }
     } catch (err) {
       console.error("Error fetching monsters:", err);
-      setError(err.response?.data?.message || "Lỗi khi tải danh sách quái vật");
+      setError(err.response?.data?.message || t("monster.errors.loadList"));
     } finally {
       setLoading(false);
     }
@@ -102,7 +112,7 @@ const MonsterManagementPage = () => {
       }
     } catch (err) {
       console.error("Error toggling monster status:", err);
-      alert(err.response?.data?.message || "Lỗi khi cập nhật trạng thái");
+      alert(err.response?.data?.message || t("monster.errors.toggleStatus"));
     }
   };
 
@@ -145,9 +155,9 @@ const MonsterManagementPage = () => {
         <div className="monster-management-header">
           <h1>
             <Skull size={28} />
-            Quản lý Quái Vật
+            {t("monster.title")}
           </h1>
-          <p>Quản lý thông tin monster theo schema backend mới</p>
+          <p>{t("monster.subtitle")}</p>
         </div>
 
         {/* Toolbar */}
@@ -159,7 +169,7 @@ const MonsterManagementPage = () => {
                 <Search className="search-icon" size={20} />
                 <input
                   type="text"
-                  placeholder="Tìm kiếm quái vật..."
+                  placeholder={t("monster.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="search-input"
@@ -176,9 +186,9 @@ const MonsterManagementPage = () => {
                     onChange={(e) => setFilterStatus(e.target.value)}
                     className="filter-select"
                   >
-                    <option value="all">Tất cả</option>
-                    <option value="true">Đang hoạt động</option>
-                    <option value="false">Vô hiệu hóa</option>
+                    <option value="all">{t("common.all")}</option>
+                    <option value="true">{t("common.active")}</option>
+                    <option value="false">{t("common.inactive")}</option>
                   </select>
                 </div>
               </div>
@@ -208,20 +218,23 @@ const MonsterManagementPage = () => {
                   <thead>
                     <tr>
                       <th>Monster ID</th>
-                      <th>Tên quái</th>
-                      <th className="center">Loại</th>
+                      <th>{t("monster.columns.name")}</th>
+                      <th className="center">{t("monster.columns.type")}</th>
                       <th>Prefab</th>
-                      <th className="center">Move Speed</th>
-                      <th className="center">Attack CD</th>
-                      <th className="center">Trạng thái</th>
-                      <th className="center">Thao tác</th>
+                      <th className="center">{t("monster.columns.movement")}</th>
+                      <th className="center">{t("monster.columns.combat")}</th>
+                      <th className="center">{t("monster.columns.detection")}</th>
+                      <th>Created At</th>
+                      <th>Updated At</th>
+                      <th className="center">{t("common.status")}</th>
+                      <th className="center">{t("common.actions")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredMonsters.length === 0 ? (
                       <tr>
-                        <td colSpan="8" className="empty-state">
-                          <p>Không tìm thấy quái vật nào</p>
+                        <td colSpan="11" className="empty-state">
+                          <p>{t("monster.empty")}</p>
                         </td>
                       </tr>
                     ) : (
@@ -240,10 +253,25 @@ const MonsterManagementPage = () => {
                             <span className="stat-def">{monster.prefabName}</span>
                           </td>
                           <td className="center">
-                            <span className="stat-spawn">{monster.movementConfig?.moveSpeed ?? "-"}</span>
+                            <span className="stat-spawn">
+                              SPD {monster.movementConfig?.moveSpeed ?? "-"} / STOP {monster.movementConfig?.stoppingDistance ?? "-"} / PATROL {monster.movementConfig?.patrolRadius ?? "-"}
+                            </span>
                           </td>
                           <td className="center">
-                            <span className="stat-spawn">{monster.combatConfig?.attackCooldown ?? "-"}</span>
+                            <span className="stat-spawn">
+                              CHASE {monster.combatConfig?.chaseRange ?? "-"} / ATK {monster.combatConfig?.attackRange ?? "-"} / CD {monster.combatConfig?.attackCooldown ?? "-"}
+                            </span>
+                          </td>
+                          <td className="center">
+                            <span className="stat-spawn">
+                              RNG {monster.detectionConfig?.detectionRange ?? "-"} / ANG {monster.detectionConfig?.detectionAngle ?? "-"}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="stat-spawn">{formatDateTime(monster.createdAt)}</span>
+                          </td>
+                          <td>
+                            <span className="stat-spawn">{formatDateTime(monster.updatedAt)}</span>
                           </td>
                           <td className="center">
                             <button
@@ -252,7 +280,7 @@ const MonsterManagementPage = () => {
                                 monster.isActive ? "active" : "inactive"
                               }`}
                             >
-                              {monster.isActive ? "Hoạt động" : "Vô hiệu"}
+                              {monster.isActive ? t("common.active") : t("common.inactive")}
                             </button>
                           </td>
                           <td>
@@ -260,14 +288,14 @@ const MonsterManagementPage = () => {
                               <button
                                 onClick={() => handleEdit(monster)}
                                 className="action-btn edit"
-                                title="Chỉnh sửa"
+                                title={t("common.edit")}
                               >
                                 <Edit2 size={16} />
                               </button>
                               <button
                                 onClick={() => handleDelete(monster)}
                                 className="action-btn delete"
-                                title="Xóa"
+                                title={t("common.delete")}
                               >
                                 <Trash2 size={16} />
                               </button>
@@ -289,10 +317,10 @@ const MonsterManagementPage = () => {
                   disabled={currentPage === 1}
                   className="pagination-btn"
                 >
-                  Trước
+                  {t("common.previous")}
                 </button>
                 <span className="pagination-info">
-                  Trang {currentPage} / {pagination.totalPages}
+                  {t("common.pageOf", { page: currentPage, total: pagination.totalPages })}
                 </span>
                 <button
                   onClick={() =>
@@ -303,7 +331,7 @@ const MonsterManagementPage = () => {
                   disabled={currentPage === pagination.totalPages}
                   className="pagination-btn"
                 >
-                  Sau
+                  {t("common.next")}
                 </button>
               </div>
             )}
@@ -322,14 +350,14 @@ const MonsterManagementPage = () => {
 
       {isDeleteModalOpen && (
         <DeleteConfirmModal
-          title="Xác nhận xóa quái vật"
-          message={`Bạn có chắc chắn muốn xóa quái vật "${selectedMonster?.monsterName}"? Quái vật sẽ bị vô hiệu hóa.`}
+          title={t("monster.deleteTitle")}
+          message={t("monster.deleteMessage", { name: selectedMonster?.monsterName || "" })}
           onConfirm={async () => {
             try {
               await monsterService.deleteMonster(selectedMonster._id);
               handleDeleteSuccess();
             } catch (err) {
-              alert(err.response?.data?.message || "Lỗi khi xóa quái vật");
+              alert(err.response?.data?.message || t("monster.errors.delete"));
             }
           }}
           onClose={() => setIsDeleteModalOpen(false)}

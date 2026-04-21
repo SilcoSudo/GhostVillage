@@ -1,15 +1,18 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import axios from 'axios';
-import AnnouncementCard from '../components/AnnouncementCard';import '../../../shared/assets/styles/AnnouncementPage.css';import '../../../shared/assets/styles/AnnouncementPage.css';
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import axios from "axios";
+import AnnouncementCard from "../components/AnnouncementCard";
+import "../../../shared/assets/styles/AnnouncementPage.css";
 
 const AnnouncementListPage = () => {
+  const { t } = useTranslation();
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState(null);
   const [page, setPage] = useState(1);
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+  const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
   useEffect(() => {
     fetchAnnouncements();
@@ -24,7 +27,7 @@ const AnnouncementListPage = () => {
       setAnnouncements(response.data.data.announcements);
       setPagination(response.data.data.pagination);
     } catch (error) {
-      console.error('Error fetching announcements:', error);
+      console.error("Error fetching announcements:", error);
     } finally {
       setLoading(false);
     }
@@ -38,17 +41,20 @@ const AnnouncementListPage = () => {
   return (
     <div className="announcement-page">
       <div className="announcement-header">
-        <h1>📢 Thông Báo</h1>
-        <p>Cập nhật tin tức và thông báo mới nhất từ GhostVillage</p>
+        <h1>{t("announcements.title")}</h1>
+        <p>{t("announcements.subtitle")}</p>
       </div>
 
       {loading ? (
-        <div className="loading">Đang tải...</div>
+        <div className="loading">{t("announcements.loading")}</div>
       ) : announcements.length > 0 ? (
         <>
           <div className="announcement-list">
             {announcements.map((announcement) => (
-              <AnnouncementCard key={announcement._id} announcement={announcement} />
+              <AnnouncementCard
+                key={announcement._id}
+                announcement={announcement}
+              />
             ))}
           </div>
 
@@ -59,22 +65,25 @@ const AnnouncementListPage = () => {
                 disabled={page === 1}
                 onClick={() => handlePageChange(page - 1)}
               >
-                Trang trước
+                {t("announcements.pagination.prev")}
               </button>
               <span>
-                Trang {pagination.page} / {Math.ceil(pagination.total / pagination.limit)}
+                {t("announcements.pagination.pageStatus", {
+                  page: pagination.page,
+                  total: Math.ceil(pagination.total / pagination.limit),
+                })}
               </span>
               <button
                 disabled={!pagination.hasMore}
                 onClick={() => handlePageChange(page + 1)}
               >
-                Trang sau
+                {t("announcements.pagination.next")}
               </button>
             </div>
           )}
         </>
       ) : (
-        <div className="no-results">Chưa có thông báo nào</div>
+        <div className="no-results">{t("announcements.empty")}</div>
       )}
     </div>
   );

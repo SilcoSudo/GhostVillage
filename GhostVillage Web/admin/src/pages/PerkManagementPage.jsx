@@ -1,15 +1,18 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Edit2, Search, Loader2, AlertCircle, Sparkles } from "lucide-react";
 import perkService from "../shared/services/perkService";
 import EditPerkModal from "./components/EditPerkModal";
 import "./assets/styles/MonsterManagement.css";
 
 const PerkManagementPage = () => {
+  const { t, i18n } = useTranslation();
   const [perks, setPerks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterRarity, setFilterRarity] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({
     total: 0,
@@ -21,6 +24,26 @@ const PerkManagementPage = () => {
   const [selectedPerk, setSelectedPerk] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  const formatDateTime = (value) => {
+    if (!value) return "-";
+    const rawValue = typeof value === "object" && value.$date ? value.$date : value;
+    const parsed = new Date(rawValue);
+    if (Number.isNaN(parsed.getTime())) return "-";
+    return parsed.toLocaleString(i18n.language?.startsWith("vi") ? "vi-VN" : "en-US", {
+      hour12: false,
+    });
+  };
+
+  const summarizeModifiers = (modifiers) => {
+    if (!modifiers || typeof modifiers !== "object") return "{}";
+    const entries = Object.entries(modifiers);
+    if (entries.length === 0) return "{}";
+    return entries
+      .slice(0, 3)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join(" | ");
+  };
+
   const fetchPerks = async () => {
     try {
       setLoading(true);
@@ -30,6 +53,7 @@ const PerkManagementPage = () => {
         page: currentPage,
         limit: 20,
         isActive: filterStatus,
+        rarity: filterRarity,
         search: searchQuery || undefined,
       });
 
@@ -39,7 +63,7 @@ const PerkManagementPage = () => {
       }
     } catch (err) {
       console.error("Error fetching perks:", err);
-      setError(err.response?.data?.message || "Lỗi khi tải danh sách perk");
+      setError(err.response?.data?.message || t("perk.errors.loadList"));
     } finally {
       setLoading(false);
     }
@@ -47,19 +71,29 @@ const PerkManagementPage = () => {
 
   useEffect(() => {
     fetchPerks();
-  }, [currentPage, filterStatus]);
+  }, [currentPage, filterStatus, filterRarity]);
 
   const filteredPerks = useMemo(() => {
-    if (!searchQuery.trim()) return perks;
+    return perks.filter((perk) => {
+      const matchStatus =
+        filterStatus === "all" || String(perk.isActive) === filterStatus;
 
-    const keyword = searchQuery.toLowerCase();
-    return perks.filter(
-      (perk) =>
+      const matchRarity =
+        filterRarity === "all" || perk.rarity === filterRarity;
+
+      if (!searchQuery.trim()) {
+        return matchStatus && matchRarity;
+      }
+
+      const keyword = searchQuery.toLowerCase();
+      const matchSearch =
         perk.perkId?.toLowerCase().includes(keyword) ||
         perk.perkName?.toLowerCase().includes(keyword) ||
-        perk.prefabId?.toLowerCase().includes(keyword),
-    );
-  }, [perks, searchQuery]);
+        perk.prefabId?.toLowerCase().includes(keyword);
+
+      return matchStatus && matchRarity && matchSearch;
+    });
+  }, [perks, searchQuery, filterStatus, filterRarity]);
 
   const handleSearch = () => {
     setCurrentPage(1);
@@ -77,7 +111,7 @@ const PerkManagementPage = () => {
       }
     } catch (err) {
       console.error("Error toggling perk status:", err);
-      alert(err.response?.data?.message || "Lỗi khi cập nhật trạng thái perk");
+      alert(err.response?.data?.message || t("perk.errors.toggleStatus"));
     }
   };
 
@@ -98,9 +132,9 @@ const PerkManagementPage = () => {
         <div className="monster-management-header">
           <h1>
             <Sparkles size={28} />
-            Perk Management
+            {t("perk.title")}
           </h1>
-          <p>Quản lý danh sách perk, chỉnh sửa thông tin và bật/tắt kích hoạt</p>
+          <p>{t("perk.subtitle")}</p>
         </div>
 
         <div className="monster-toolbar">
@@ -110,7 +144,7 @@ const PerkManagementPage = () => {
                 <Search className="search-icon" size={20} />
                 <input
                   type="text"
-                  placeholder="Tìm perk theo ID, tên hoặc prefab..."
+                  placeholder={t("perk.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -131,9 +165,25 @@ const PerkManagementPage = () => {
                     }}
                     className="filter-select"
                   >
-                    <option value="all">Tất cả trạng thái</option>
-                    <option value="true">Đang hoạt động</option>
-                    <option value="false">Vô hiệu hóa</option>
+                    <option value="all">{t("common.all")}</option>
+                    <option value="true">{t("common.active")}</option>
+                    <option value="false">{t("common.inactive")}</option>
+                  </select>
+                </div>
+
+                <div className="filter-group">
+                  <select
+                    value={filterRarity}
+                    onChange={(e) => {
+                      setFilterRarity(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="filter-select"
+                  >
+                    <option value="all">{t("perk.allRarity")}</option>
+                    <option value="COMMON">COMMON</option>
+                    <option value="RARE">RARE</option>
+                    <option value="EPIC">EPIC</option>
                   </select>
                 </div>
               </div>
@@ -160,19 +210,22 @@ const PerkManagementPage = () => {
                   <thead>
                     <tr>
                       <th>Perk ID</th>
-                      <th>Tên Perk</th>
+                      <th>{t("perk.columns.name")}</th>
                       <th className="center">Rarity</th>
                       <th className="center">Price</th>
                       <th>Prefab ID</th>
-                      <th className="center">Trạng thái</th>
-                      <th className="center">Thao tác</th>
+                      <th>Modifiers</th>
+                      <th>Created At</th>
+                      <th>Updated At</th>
+                      <th className="center">{t("common.status")}</th>
+                      <th className="center">{t("common.actions")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredPerks.length === 0 ? (
                       <tr>
-                        <td colSpan="7" className="empty-state">
-                          <p>Không tìm thấy perk nào</p>
+                        <td colSpan="10" className="empty-state">
+                          <p>{t("perk.empty")}</p>
                         </td>
                       </tr>
                     ) : (
@@ -206,6 +259,15 @@ const PerkManagementPage = () => {
                           <td>
                             <span className="stat-def">{perk.prefabId || "-"}</span>
                           </td>
+                          <td>
+                            <span className="stat-spawn">{summarizeModifiers(perk.modifiers)}</span>
+                          </td>
+                          <td>
+                            <span className="stat-spawn">{formatDateTime(perk.createdAt)}</span>
+                          </td>
+                          <td>
+                            <span className="stat-spawn">{formatDateTime(perk.updatedAt)}</span>
+                          </td>
                           <td className="center">
                             <button
                               onClick={() => handleToggleStatus(perk)}
@@ -213,7 +275,7 @@ const PerkManagementPage = () => {
                                 perk.isActive ? "active" : "inactive"
                               }`}
                             >
-                              {perk.isActive ? "Hoạt động" : "Vô hiệu"}
+                              {perk.isActive ? t("common.active") : t("common.inactive")}
                             </button>
                           </td>
                           <td>
@@ -221,7 +283,7 @@ const PerkManagementPage = () => {
                               <button
                                 onClick={() => handleEdit(perk)}
                                 className="action-btn edit"
-                                title="Chỉnh sửa"
+                                title={t("common.edit")}
                               >
                                 <Edit2 size={16} />
                               </button>
@@ -242,10 +304,10 @@ const PerkManagementPage = () => {
                   disabled={currentPage === 1}
                   className="pagination-btn"
                 >
-                  Trước
+                  {t("common.previous")}
                 </button>
                 <span className="pagination-info">
-                  Trang {currentPage} / {pagination.totalPages}
+                  {t("common.pageOf", { page: currentPage, total: pagination.totalPages })}
                 </span>
                 <button
                   onClick={() =>
@@ -254,7 +316,7 @@ const PerkManagementPage = () => {
                   disabled={currentPage === pagination.totalPages}
                   className="pagination-btn"
                 >
-                  Sau
+                  {t("common.next")}
                 </button>
               </div>
             )}

@@ -2136,7 +2136,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00021381097}
+  m_AnchoredPosition: {x: 0, y: 0.0009620784}
   m_SizeDelta: {x: 0, y: 400}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &5492597699078800573
@@ -2284,6 +2284,8 @@ MonoBehaviour:
   _resultUI: {fileID: 135560650906631315}
   interactPanel: {fileID: 2792298371302728326}
   interactText: {fileID: 6591254268595045374}
+  _grpStamina: {fileID: 5649365760716946122}
+  _grpPerk: {fileID: 6419456102837666376}
 --- !u!114 &657573506752277864
 MonoBehaviour:
   m_ObjectHideFlags: 0

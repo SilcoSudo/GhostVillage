@@ -23,8 +23,50 @@ const getMediaCounts = (mediaList = []) => {
   return { imageCount, videoCount };
 };
 
+const formatRestrictedDuration = (remainingSeconds, language) => {
+  const seconds = Math.max(0, Math.ceil(Number(remainingSeconds) || 0));
+  if (!seconds) return "";
+
+  const isVietnamese = String(language || "")
+    .toLowerCase()
+    .startsWith("vi");
+  const hours = Math.max(1, Math.ceil(seconds / 3600));
+
+  if (isVietnamese) {
+    return `${hours} giờ`;
+  }
+
+  return `${hours} ${hours === 1 ? "hour" : "hours"}`;
+};
+
+const getSubmitErrorMessage = (error, t, language) => {
+  const response = error?.response;
+  const responseData = response?.data || {};
+  const nestedData = responseData?.data || {};
+
+  const remainingSeconds =
+    nestedData.remainingSeconds ??
+    nestedData.lockSeconds ??
+    responseData.remainingSeconds ??
+    responseData.lockSeconds ??
+    0;
+
+  if (response?.status === 403) {
+    const durationLabel = formatRestrictedDuration(remainingSeconds, language);
+    if (durationLabel) {
+      return t("post.create.errors.postingRestricted", {
+        duration: durationLabel,
+      });
+    }
+
+    return t("post.create.errors.postingRestrictedFallback");
+  }
+
+  return responseData?.message || t("post.create.errors.saveFailed");
+};
+
 const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const createPostMutation = useCreatePost();
   const updatePostMutation = useUpdatePost();
   const isEditMode = mode === "edit" && post;
@@ -101,15 +143,17 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
     const newErrors = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = "Title is required";
+      newErrors.title = t("post.create.validation.titleRequired");
     }
 
     if (!formData.body.trim()) {
-      newErrors.body = "Content is required";
+      newErrors.body = t("post.create.validation.bodyRequired");
     } else if (formData.body.trim().length < 10) {
-      newErrors.body = "Content must be at least 10 characters";
+      newErrors.body = t("post.create.validation.bodyMinLength");
     } else if (getPlainTextLength(formData.body) > MAX_POST_BODY_LENGTH) {
-      newErrors.body = `Content must not exceed ${MAX_POST_BODY_LENGTH} characters`;
+      newErrors.body = t("post.create.validation.bodyMaxLength", {
+        max: MAX_POST_BODY_LENGTH,
+      });
     }
 
     setErrors(newErrors);
@@ -125,12 +169,16 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
 
     const { imageCount, videoCount } = getMediaCounts(uploadedImages);
     if (imageCount > MAX_POST_IMAGES) {
-      toast.error(`A post can contain up to ${MAX_POST_IMAGES} images.`);
+      toast.error(
+        t("post.create.errors.maxImagesReached", { max: MAX_POST_IMAGES }),
+      );
       return;
     }
 
     if (videoCount > MAX_POST_VIDEOS) {
-      toast.error(`A post can contain up to ${MAX_POST_VIDEOS} video.`);
+      toast.error(
+        t("post.create.errors.maxVideosReached", { max: MAX_POST_VIDEOS }),
+      );
       return;
     }
 
@@ -153,7 +201,10 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
             });
           } catch (error) {
             toast.error(
-              `Failed to upload ${media.file.name}: ${error.response?.data?.message || "Upload failed"}`,
+              t("post.create.errors.uploadFailed", {
+                name: media.file.name,
+                message: t("post.create.errors.uploadFailedFallback"),
+              }),
             );
             setIsUploading(false);
             return; // Stop if any upload fails
@@ -183,10 +234,10 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
 
       if (isEditMode) {
         await updatePostMutation.mutateAsync({ postId: post._id, postData });
-        toast.success("Post updated successfully!");
+        toast.success(t("post.create.success.updated"));
       } else {
         await createPostMutation.mutateAsync(postData);
-        toast.success("Post created successfully!");
+        toast.success(t("post.create.success.created"));
       }
 
       // Reset form
@@ -196,11 +247,8 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
       onHide();
     } catch (error) {
       setIsUploading(false);
-      console.error(" Failed to save post:", error);
-      toast.error(
-        error.response?.data?.message ||
-          `Failed to ${isEditMode ? "update" : "create"} post`,
-      );
+      console.error("Failed to save post:", error);
+      toast.error(getSubmitErrorMessage(error, t, i18n.language));
     }
   };
 
@@ -245,7 +293,7 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
       const remainingImageSlots = MAX_POST_IMAGES - imageCount;
       if (remainingImageSlots <= 0) {
         toast.error(
-          `You can only add up to ${MAX_POST_IMAGES} images per post.`,
+          t("post.create.errors.maxImagesReached", { max: MAX_POST_IMAGES }),
         );
         return;
       }
@@ -263,12 +311,22 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
       const validFiles = files.filter((file) => {
         if (!allowedTypes.includes(file.type)) {
           toast.error(
-            `${file.name}: Invalid type. Allowed: ${allowedTypes.map((t) => t.split("/")[1].toUpperCase()).join(", ")}`,
+            t("post.create.errors.invalidImageType", {
+              name: file.name,
+              types: allowedTypes
+                .map((item) => item.split("/")[1].toUpperCase())
+                .join(", "),
+            }),
           );
           return false;
         }
         if (file.size > 5 * 1024 * 1024) {
-          toast.error(`${file.name}: Too large. Max 5MB.`);
+          toast.error(
+            t("post.create.errors.imageTooLarge", {
+              name: file.name,
+              maxSize: 5,
+            }),
+          );
           return false;
         }
         return true;
@@ -276,7 +334,10 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
 
       if (validFiles.length > remainingImageSlots) {
         toast.error(
-          `Only ${remainingImageSlots} image slot${remainingImageSlots > 1 ? "s" : ""} left.`,
+          t("post.create.errors.imageSlotsLeft", {
+            count: remainingImageSlots,
+            plural: remainingImageSlots > 1 ? "s" : "",
+          }),
         );
       }
 
@@ -289,7 +350,7 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
           ...prev,
           { file, preview, type: "image" },
         ]);
-        toast.success(`${file.name} added!`);
+        toast.success(t("post.create.success.mediaAdded", { name: file.name }));
       }
     };
 
@@ -310,7 +371,7 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
       const remainingVideoSlots = MAX_POST_VIDEOS - videoCount;
       if (remainingVideoSlots <= 0) {
         toast.error(
-          `You can only add up to ${MAX_POST_VIDEOS} video per post.`,
+          t("post.create.errors.maxVideosReached", { max: MAX_POST_VIDEOS }),
         );
         return;
       }
@@ -319,18 +380,33 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
 
       const validFiles = files.filter((file) => {
         if (!allowedTypes.includes(file.type)) {
-          toast.error(`${file.name}: Invalid type. Allowed: MP4, WebM, OGG`);
+          toast.error(
+            t("post.create.errors.invalidVideoType", {
+              name: file.name,
+              types: "MP4, WebM, OGG",
+            }),
+          );
           return false;
         }
         if (file.size > 20 * 1024 * 1024) {
-          toast.error(`${file.name}: Too large. Max 20MB.`);
+          toast.error(
+            t("post.create.errors.videoTooLarge", {
+              name: file.name,
+              maxSize: 20,
+            }),
+          );
           return false;
         }
         return true;
       });
 
       if (validFiles.length > remainingVideoSlots) {
-        toast.error(`Only ${remainingVideoSlots} video slot left.`);
+        toast.error(
+          t("post.create.errors.videoSlotsLeft", {
+            count: remainingVideoSlots,
+            plural: remainingVideoSlots > 1 ? "s" : "",
+          }),
+        );
       }
 
       const filesToAdd = validFiles.slice(0, remainingVideoSlots);
@@ -342,7 +418,7 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
           ...prev,
           { file, preview, type: "video" },
         ]);
-        toast.success(`${file.name} added!`);
+        toast.success(t("post.create.success.mediaAdded", { name: file.name }));
       }
     };
 
@@ -392,7 +468,7 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
       {isUploading && (
         <div className="modal-loading-overlay">
           <Spinner animation="border" role="status" />
-          <p>Uploading...</p>
+          <p>{t("post.create.uploading")}</p>
         </div>
       )}
 
@@ -498,10 +574,12 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
               {` / ${MAX_POST_BODY_LENGTH}`}
             </Form.Text>
             <Form.Text className="char-counter d-block">
-              Media: {getMediaCounts(uploadedImages).imageCount}/
-              {MAX_POST_IMAGES} images,{" "}
-              {getMediaCounts(uploadedImages).videoCount}/{MAX_POST_VIDEOS}{" "}
-              video
+              {t("post.create.mediaSummary", {
+                imageCount: getMediaCounts(uploadedImages).imageCount,
+                maxImages: MAX_POST_IMAGES,
+                videoCount: getMediaCounts(uploadedImages).videoCount,
+                maxVideos: MAX_POST_VIDEOS,
+              })}
             </Form.Text>
           </Form.Group>
 

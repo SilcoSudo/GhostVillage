@@ -96,6 +96,12 @@ public class GameplayUIManager : MonoBehaviourPunCallbacks
             ReviveQTEManager.Instance.HideVictimUI();  // Ẩn luôn thanh máu đếm ngược của nạn nhân
         }
 
+        // ==========================================
+        // [FIX BUG XUYÊN UI]: Ép tắt Stamina và Perk ngay tại đây cho chắc cú!
+        // ==========================================
+        if (_grpStamina != null) _grpStamina.SetActive(false);
+        if (_grpPerk != null) _grpPerk.SetActive(false);
+
         // 2. Gọi hiển thị kết quả
         if (_resultUI != null)
         {
