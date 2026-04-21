@@ -1,7 +1,7 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../../app/hooks/useAuth';
+import React, { useState, useEffect, createContext, useContext } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { useAuth } from "../../../app/hooks/useAuth";
 import {
   Home,
   Users,
@@ -13,7 +13,6 @@ import {
   BookOpen,
   Activity,
   Package,
-  Bug,
   ChevronFirst,
   ChevronLast,
   LogOut,
@@ -22,10 +21,8 @@ import {
   Map,
   Moon,
   Scroll,
-  Shirt,
   Pill,
-  Sparkles,
-} from 'lucide-react';
+} from "lucide-react";
 import "../../assets/styles/SidebarNav.css";
 
 // Create Sidebar Context for sharing expanded state
@@ -34,7 +31,7 @@ const SidebarContext = createContext();
 const useSidebarContext = () => {
   const context = useContext(SidebarContext);
   if (!context) {
-    throw new Error('useSidebarContext must be used within SidebarProvider');
+    throw new Error("useSidebarContext must be used within SidebarProvider");
   }
   return context;
 };
@@ -59,68 +56,130 @@ const SidebarNav = () => {
         setExpanded(false);
       }
     };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const isActive = (path) => location.pathname === path;
 
   const adminLinks = [
-    { icon: Users, label: t('dashboard.userList'), path: '/users', color: 'green' },
-    { icon: Ticket, label: t('dashboard.supportTickets'), path: '/support-tickets', color: 'purple' },
-    { icon: Megaphone, label: t('dashboard.announcements'), path: '/announcements', color: 'yellow' },
-    { icon: BookOpen, label: t('dashboard.wiki'), path: '/wiki', color: 'cyan' },
+    {
+      icon: Users,
+      label: t("dashboard.userList"),
+      path: "/users",
+      color: "green",
+    },
+    {
+      icon: Ticket,
+      label: t("dashboard.supportTickets"),
+      path: "/support-tickets",
+      color: "purple",
+    },
+    {
+      icon: Megaphone,
+      label: t("dashboard.announcements"),
+      path: "/announcements",
+      color: "yellow",
+    },
+    {
+      icon: BookOpen,
+      label: t("dashboard.wiki"),
+      path: "/wiki",
+      color: "cyan",
+    },
   ];
 
-  const gameLinks = [ 
-    { icon: Skull, label: 'Monster Management', path: '/monsters', color: 'red' },
-    { icon: Map, label: 'Map Management', path: '/maps', color: 'blue' },
-    { icon: Scroll, label: 'Quest Management', path: '/quests', color: 'purple' },
-    { icon: Pill, label: 'Consumable Items', path: '/consumables', color: 'green' },
-    { icon: Shirt, label: 'Costume Management', path: '/costumes', color: 'cyan' },
-    { icon: Sparkles, label: 'Perk Management', path: '/perks', color: 'indigo' },
-    { icon: Moon, label: 'Moon Event Management', path: '/moon-events', color: 'yellow' },
-    { icon: Activity, label: t('dashboard.activityLog'), path: '/activity-log', color: 'gray' },
-    { icon: Package, label: t('dashboard.gameVersion'), path: '/game-versions', color: 'indigo' },
-  ]
+  const gameLinks = [
+    {
+      icon: Skull,
+      label: "Monster Management",
+      path: "/monsters",
+      color: "red",
+    },
+    { icon: Map, label: "Map Management", path: "/maps", color: "blue" },
+    {
+      icon: Scroll,
+      label: "Quest Management",
+      path: "/quests",
+      color: "purple",
+    },
+    {
+      icon: Pill,
+      label: "Consumable Items",
+      path: "/consumables",
+      color: "green",
+    },
+    {
+      icon: Moon,
+      label: "Moon Event Management",
+      path: "/moon-events",
+      color: "yellow",
+    },
+    {
+      icon: Activity,
+      label: t("dashboard.activityLog"),
+      path: "/activity-log",
+      color: "gray",
+    },
+    {
+      icon: Package,
+      label: t("dashboard.gameVersion"),
+      path: "/game-versions",
+      color: "indigo",
+    },
+  ];
 
   const reportLinks = [
-    { icon: AlertCircle, label: t('dashboard.reportedPosts'), path: '/reports/posts', color: 'orange' },
-    { icon: MessageSquare, label: t('dashboard.reportedComments'), path: '/reports/comments', color: 'red' },
-    { icon: Bug, label: t('dashboard.reportBug'), path: '/report-bug', color: 'red' },
+    {
+      icon: AlertCircle,
+      label: t("dashboard.reportedPosts"),
+      path: "/reports/posts",
+      color: "orange",
+    },
+    {
+      icon: MessageSquare,
+      label: t("dashboard.reportedComments"),
+      path: "/reports/comments",
+      color: "red",
+    },
   ];
 
   return (
     <SidebarContext.Provider value={{ expanded }}>
-      <aside className={`sidebar-nav ${expanded ? 'expanded' : 'collapsed'}`}>
+      <aside className={`sidebar-nav ${expanded ? "expanded" : "collapsed"}`}>
         {/* Header with Logo and Toggle */}
         <div className="sidebar-header-top">
           {user ? (
-            <div 
+            <div
               className="sidebar-user-header"
               onClick={() => navigate(`/profile/${user._id}`)}
-              title={t('navbar.viewProfile')}
+              title={t("navbar.viewProfile")}
             >
               <img
-                src={user.avatar || `https://ui-avatars.com/api/?name=${user.username || user.fullname}&background=990000&color=fff`}
+                src={
+                  user.avatar ||
+                  `https://ui-avatars.com/api/?name=${user.username || user.fullname}&background=990000&color=fff`
+                }
                 alt={user.username || user.fullname}
                 className="sidebar-user-avatar-header"
               />
               {expanded && (
                 <div className="sidebar-user-info-header">
-                  <h4 className="sidebar-user-name-header">{user.username || user.fullname}</h4>
+                  <h4 className="sidebar-user-name-header">
+                    {user.username || user.fullname}
+                  </h4>
                 </div>
               )}
             </div>
           ) : (
             <div className="sidebar-logo-spacer"></div>
           )}
-          
+
           <button
             onClick={() => setExpanded(!expanded)}
             className="sidebar-toggle-btn"
-            title={expanded ? t('navbar.collapse') : t('navbar.expand')}
-            aria-label={expanded ? t('navbar.collapse') : t('navbar.expand')}
+            title={expanded ? t("navbar.collapse") : t("navbar.expand")}
+            aria-label={expanded ? t("navbar.collapse") : t("navbar.expand")}
           >
             {expanded ? <ChevronFirst size={20} /> : <ChevronLast size={20} />}
           </button>
@@ -131,7 +190,7 @@ const SidebarNav = () => {
           {/* Admin Navigation Section */}
           <div className="sidebar-section">
             <h3 className="sidebar-section-title">
-              <span>{t('navbar.administration')}</span>
+              <span>{t("navbar.administration")}</span>
             </h3>
             <ul className="sidebar-items">
               {adminLinks.map((link) => (
@@ -148,7 +207,7 @@ const SidebarNav = () => {
 
             {/* Reports Section */}
             <h3 className="sidebar-section-title">
-              <span>{t('navbar.reports')}</span>
+              <span>{t("navbar.reports")}</span>
             </h3>
             <ul className="sidebar-items">
               {reportLinks.map((link) => (
@@ -165,7 +224,7 @@ const SidebarNav = () => {
 
             {/* Game Section */}
             <h3 className="sidebar-section-title">
-              <span>{t('navbar.game')}</span>
+              <span>{t("navbar.game")}</span>
             </h3>
             <ul className="sidebar-items">
               {gameLinks.map((link) => (
@@ -188,10 +247,10 @@ const SidebarNav = () => {
             <button
               className="sidebar-logout-btn"
               onClick={logout}
-              title={t('common.logout')}
+              title={t("common.logout")}
             >
               <LogOut size={18} />
-              {expanded && <span>{t('common.logout')}</span>}
+              {expanded && <span>{t("common.logout")}</span>}
             </button>
           </div>
         )}
@@ -202,11 +261,11 @@ const SidebarNav = () => {
             <div className="sidebar-auth-buttons">
               <button
                 className="sidebar-login-btn"
-                onClick={() => navigate('/login')}
-                title={t('auth.login')}
+                onClick={() => navigate("/login")}
+                title={t("auth.login")}
               >
                 <LogIn size={18} />
-                {expanded && <span>{t('auth.login')}</span>}
+                {expanded && <span>{t("auth.login")}</span>}
               </button>
             </div>
           </div>
@@ -224,20 +283,15 @@ const SidebarItem = ({ icon: Icon, label, path, color, active }) => {
     <li className="sidebar-item-wrapper">
       <Link
         to={path}
-        className={`sidebar-item sidebar-item-${color} ${active ? 'active' : ''}`}
+        className={`sidebar-item sidebar-item-${color} ${active ? "active" : ""}`}
         title={label}
       >
         <Icon size={20} className="sidebar-item-icon" />
         <span className="sidebar-item-label">{label}</span>
-        {!expanded && (
-          <div className="sidebar-tooltip">
-            {label}
-          </div>
-        )}
+        {!expanded && <div className="sidebar-tooltip">{label}</div>}
       </Link>
     </li>
   );
 };
 
 export default SidebarNav;
-

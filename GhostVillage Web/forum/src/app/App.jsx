@@ -4,6 +4,7 @@ import { AuthProvider, AuthContext } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { FriendSidebarProvider } from "./context/FriendSidebarContext";
 import { ChatProvider } from "./context/ChatContext.jsx";
+import ProtectedRoute from "./router/ProtectedRoute";
 import Header from "../shared/components/layout/Header";
 import SidebarNav from "../shared/components/layout/SidebarNav";
 import FriendSidebar from "../shared/components/layout/FriendSidebar";
@@ -23,6 +24,7 @@ import CompleteProfilePage from "../features/auth/pages/CompleteProfilePage";
 import HomePage from "../pages/HomePage";
 import PostsPage from "../features/posts/pages/PostsPage";
 import SavedPostsPage from "../features/posts/pages/SavedPostsPage";
+import MyPostsPage from "../features/posts/pages/MyPostsPage";
 import WikiListPage from "../features/wiki/pages/WikiListPage";
 import WikiDetailPage from "../features/wiki/pages/WikiDetailPage";
 import AnnouncementListPage from "../features/announcement/pages/AnnouncementListPage";
@@ -71,6 +73,14 @@ function AppContent() {
             <Route path="/complete-profile" element={<CompleteProfilePage />} />
             <Route path="/" element={<HomePage />} />
             <Route path="/posts" element={<PostsPage />} />
+            <Route
+              path="/my-posts"
+              element={
+                <ProtectedRoute>
+                  <MyPostsPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/saved-posts" element={<SavedPostsPage />} />
             <Route path="/support/ticket" element={<SupportTicketPage />} />
             <Route path="/wiki" element={<WikiListPage />} />

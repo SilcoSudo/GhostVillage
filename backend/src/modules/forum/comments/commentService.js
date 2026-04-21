@@ -6,7 +6,6 @@ import User from "../../user/userModel.js";
 export const getComments = async (postId, { parentId = null } = {}) => {
   const query = {
     post: postId,
-    isHiddenByModeration: { $ne: true },
   };
 
   if (parentId === "null" || parentId === null || parentId === undefined) {
@@ -74,9 +73,12 @@ export const updateComment = async (commentId, userId, content) => {
   }
 
   comment.content = content.trim();
+  comment.isEdited = true;
+  comment.editedAt = new Date();
   await comment.save();
 
-  return await comment.populate("author", "fullname avatar").populate({
+  await comment.populate("author", "fullname avatar");
+  await comment.populate({
     path: "parentId",
     select: "author",
     populate: {
@@ -84,6 +86,8 @@ export const updateComment = async (commentId, userId, content) => {
       select: "fullname avatar",
     },
   });
+
+  return comment;
 };
 
 export const deleteComment = async (commentId, userId) => {

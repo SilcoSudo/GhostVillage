@@ -1,22 +1,29 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useNotifications, useSocket } from "../hooks/useSocket";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import { getLocalizedNotificationToastText } from "../../../shared/utils/notificationLocalization";
 
 /**
  * Global component để handle realtime notifications
  * Place this component ở root level của app (App.jsx hoặc main layout)
  */
 export const NotificationListener = ({ token }) => {
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const { isConnected } = useSocket(token);
+
+  const getToastMessage = (notification) => {
+    return getLocalizedNotificationToastText(notification, t, i18n.language);
+  };
 
   // Listen for notifications
   useNotifications((notification) => {
     console.log("Notification received:", notification);
 
     // Show toast
-    toast.success(notification.message, {
+    toast.success(getToastMessage(notification), {
       duration: 4000,
       icon: "🔔",
     });
@@ -24,7 +31,10 @@ export const NotificationListener = ({ token }) => {
     // Invalidate queries to refresh data
     if (
       notification.type === "post_liked" ||
-      notification.type === "post_commented"
+      notification.type === "post_commented" ||
+      notification.type === "comment_replied" ||
+      notification.type === "report_processed" ||
+      notification.type === "content_restored"
     ) {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
     }

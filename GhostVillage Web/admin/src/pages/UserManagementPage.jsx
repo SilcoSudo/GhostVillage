@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Search, Unlock } from "lucide-react";
 import axios from "../shared/services/axios";
 import "./assets/styles/UserManagement.css";
 
 const UserManagementPage = () => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -62,7 +64,7 @@ const UserManagementPage = () => {
       }
     } catch (err) {
       console.error("Error fetching users:", err);
-      setError(err?.response?.data?.message || "Failed to load users");
+      setError(err?.response?.data?.message || t("users.errors.loadList"));
     } finally {
       setLoading(false);
     }
@@ -100,7 +102,7 @@ const UserManagementPage = () => {
       await fetchUsers();
     } catch (err) {
       console.error("Error unmuting user:", err);
-      setError(err?.response?.data?.message || "Failed to unmute user");
+      setError(err?.response?.data?.message || t("users.errors.unmute"));
     } finally {
       setUnmutingUserId(null);
     }
@@ -113,7 +115,7 @@ const UserManagementPage = () => {
     const expireDate = new Date(expiresAt);
     const diffMs = expireDate - now;
 
-    if (diffMs <= 0) return "Expired";
+    if (diffMs <= 0) return t("users.status.expired");
 
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffHours / 24);
@@ -134,8 +136,8 @@ const UserManagementPage = () => {
       <div className="user-management-header">
         <div className="user-management-header-row">
           <div className="user-management-header-text">
-            <h1>Users Management</h1>
-            <p>Total: {pagination.total} users</p>
+            <h1>{t("users.managementTitle")}</h1>
+            <p>{t("users.totalUsers", { count: pagination.total })}</p>
           </div>
 
           <div className="um-header-search">
@@ -143,7 +145,7 @@ const UserManagementPage = () => {
               <Search size={18} className="um-search-icon" />
               <input
                 type="text"
-                placeholder="Search users..."
+                placeholder={t("users.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -160,7 +162,7 @@ const UserManagementPage = () => {
       <div className="users-table-wrapper">
         {loading ? (
           <div className="empty-state">
-            <p>Loading users...</p>
+            <p>{t("users.loading")}</p>
           </div>
         ) : users.length > 0 ? (
           <table className="users-table">
@@ -178,8 +180,8 @@ const UserManagementPage = () => {
                 </th>
                 <th>Name</th>
                 <th>Email</th>
-                <th>Account Status</th>
-                <th className="action-header">Unmute</th>
+                <th>{t("users.accountStatus")}</th>
+                <th className="action-header">{t("users.unmute")}</th>
               </tr>
             </thead>
             <tbody>
@@ -204,14 +206,14 @@ const UserManagementPage = () => {
                         <span
                           className={`account-status-badge ${accountStatus.isMuted ? "muted" : "active"}`}
                         >
-                          {accountStatus.isMuted ? "Muted" : "Active"}
+                          {accountStatus.isMuted ? t("users.muted") : t("common.active")}
                         </span>
                         <span className="account-status-detail">
                           {accountStatus.isMuted
                             ? remainingTime
-                              ? `Remaining: ${remainingTime}`
-                              : "Restricted"
-                            : "No restriction"}
+                              ? t("users.status.remaining", { time: remainingTime })
+                              : t("users.status.restricted")
+                            : t("users.status.noRestriction")}
                         </span>
                       </div>
                     </td>
@@ -220,8 +222,8 @@ const UserManagementPage = () => {
                         <button
                           className="action-btn action-unmute-icon"
                           onClick={() => handleUnmuteUser(user.id)}
-                          title="Restore posting and commenting"
-                          aria-label="Restore posting and commenting"
+                          title={t("users.restoreAction")}
+                          aria-label={t("users.restoreAction")}
                           disabled={
                             !accountStatus.isMuted || unmutingUserId === user.id
                           }
@@ -237,7 +239,7 @@ const UserManagementPage = () => {
           </table>
         ) : (
           <div className="empty-state">
-            <p>{error || "No users found"}</p>
+            <p>{error || t("users.noUsersFound")}</p>
           </div>
         )}
       </div>
@@ -250,11 +252,11 @@ const UserManagementPage = () => {
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage <= 1}
           >
-            Previous
+            {t("common.previous")}
           </button>
 
           <span className="pagination-info">
-            Page {pagination.page} / {pagination.totalPages}
+            {t("common.pageOf", { page: pagination.page, total: pagination.totalPages })}
           </span>
 
           <button
@@ -267,7 +269,7 @@ const UserManagementPage = () => {
             }
             disabled={currentPage >= pagination.totalPages}
           >
-            Next
+            {t("common.next")}
           </button>
         </div>
       )}

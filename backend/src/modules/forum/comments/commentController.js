@@ -95,6 +95,9 @@ const serializeComment = (comment, userId = null) => {
     replyTo: replyToData,
     likes: Array.isArray(c.likes) ? c.likes : [],
     userLiked,
+    isEdited: Boolean(c.isEdited),
+    editedAt: c.editedAt || null,
+    isHiddenByModeration: Boolean(c.isHiddenByModeration),
     createdAt: c.createdAt,
     updatedAt: c.updatedAt,
   };

@@ -34,10 +34,9 @@ const Header = () => {
     }
   };
 
-  const toggleLanguage = () => {
-    const currentLang = i18n.language || 'en';
-    const newLang = currentLang === 'en' ? 'vi' : 'en';
-    i18n.changeLanguage(newLang);
+  const handleLanguageChange = (e) => {
+    const nextLanguage = e.target.value;
+    i18n.changeLanguage(nextLanguage);
   };
 
   const handleChangePassword = () => {
@@ -63,11 +62,18 @@ const Header = () => {
           {/* Language Toggle */}
           <button 
             className="language-toggle"
-            onClick={toggleLanguage}
-            title="Toggle language"
+            title={t('language.switchLanguage')}
           >
             <Globe size={20} />
-            <span>{i18n.language === 'en' ? 'EN' : 'VI'}</span>
+            <select
+              className="language-select"
+              value={(i18n.language || 'vi').startsWith('en') ? 'en' : 'vi'}
+              onChange={handleLanguageChange}
+              aria-label={t('language.switchLanguage')}
+            >
+              <option value="en">EN</option>
+              <option value="vi">VN</option>
+            </select>
           </button>
 
           {/* Profile Menu */}
@@ -97,12 +103,12 @@ const Header = () => {
                   <div className="dropdown-divider" />
                   <button className="dropdown-item" onClick={handleChangePassword}>
                     <Lock size={18} />
-                    <span>Change Password</span>
+                    <span>{t('common.changePassword')}</span>
                   </button>
                   <div className="dropdown-divider" />
                   <button className="dropdown-item logout" onClick={handleLogout}>
                     <LogOut size={18} />
-                    <span>Logout</span>
+                    <span>{t('common.logout')}</span>
                   </button>
                 </div>
               )}

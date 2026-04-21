@@ -1,4 +1,8 @@
 .ticket-detail-modal {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.ticket-detail-modal {
   max-width: 860px;
   width: 100%;
 }
@@ -39,7 +43,6 @@
   text-transform: uppercase;
   letter-spacing: 0.8px;
   width: fit-content;
-  font-family: "Courier New", Courier, monospace;
 }
 
 .td-subject {
@@ -47,7 +50,6 @@
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
-  font-family: "Courier New", Courier, monospace;
   word-break: break-word;
 }
 
@@ -62,7 +64,6 @@
   text-transform: capitalize;
   letter-spacing: 0.5px;
   white-space: nowrap;
-  font-family: "Courier New", Courier, monospace;
   flex-shrink: 0;
 }
 
@@ -92,7 +93,7 @@
 
 .td-meta-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
   margin-bottom: 20px;
 }
@@ -124,7 +125,6 @@
   letter-spacing: 0.7px;
   color: var(--text-secondary);
   margin: 0 0 4px;
-  font-family: "Courier New", Courier, monospace;
 }
 
 .td-meta-value {
@@ -132,7 +132,6 @@
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
-  font-family: "Courier New", Courier, monospace;
   word-break: break-all;
 }
 
@@ -140,7 +139,6 @@
   font-size: 11px;
   color: var(--text-secondary);
   margin: 2px 0 0;
-  font-family: "Courier New", Courier, monospace;
   word-break: break-all;
 }
 
@@ -158,7 +156,6 @@
   letter-spacing: 0.8px;
   color: var(--text-primary);
   margin: 0 0 10px;
-  font-family: "Courier New", Courier, monospace;
 }
 
 .td-attach-count {
@@ -206,13 +203,11 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.4px;
-  font-family: "Courier New", Courier, monospace;
 }
 
 .td-chat-time {
   font-size: 10px;
   color: var(--text-secondary);
-  font-family: "Courier New", Courier, monospace;
 }
 
 .td-chat-original-tag {
@@ -227,7 +222,6 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  font-family: "Courier New", Courier, monospace;
 }
 
 .td-chat-row.is-user .td-chat-author {
@@ -243,7 +237,6 @@
   border-radius: 8px;
   font-size: 13px;
   line-height: 1.6;
-  font-family: "Courier New", Courier, monospace;
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -304,7 +297,6 @@
   height: 100%;
   color: var(--text-secondary);
   font-size: 11px;
-  font-family: "Courier New", Courier, monospace;
   opacity: 0.65;
 }
 
@@ -326,7 +318,7 @@
   border-radius: 6px;
   background: rgba(30, 30, 30, 0.4);
   color: var(--text-primary);
-  font-family: "Courier New", Courier, monospace;
+  font-family: inherit;
   font-size: 13px;
   line-height: 1.5;
   resize: vertical;
@@ -356,14 +348,12 @@
 .td-reply-char {
   font-size: 11px;
   color: var(--text-secondary);
-  font-family: "Courier New", Courier, monospace;
   flex: 1;
 }
 
 .td-reply-error {
   font-size: 11px;
   color: #ff8a80;
-  font-family: "Courier New", Courier, monospace;
   flex: 2;
 }
 
@@ -378,7 +368,6 @@
   border-radius: 6px;
   font-size: 12px;
   font-weight: 700;
-  font-family: "Courier New", Courier, monospace;
   cursor: pointer;
   transition:
     background 0.2s,

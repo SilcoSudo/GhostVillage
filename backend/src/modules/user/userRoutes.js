@@ -2,6 +2,7 @@ import express from "express";
 import {
   getMyProfile,
   getUserIdProfile,
+  getUserPostsById,
   updateMyProfile,
   updateName,
   toggleEmailVisibility,
@@ -48,6 +49,7 @@ router.put(
   toggleEmailVisibility,
 );
 router.get("/saved-posts", authMiddleware, getSavedPosts);
+router.get("/:id/posts", authMiddleware, getUserPostsById);
 
 /* =========================================================
  * SECTION B: ADMIN USER MANAGEMENT ROUTES

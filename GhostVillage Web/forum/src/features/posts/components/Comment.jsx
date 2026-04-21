@@ -12,6 +12,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { vi, enUS } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../app/context/AuthContext";
 import {
   useDeleteComment,
@@ -24,8 +25,15 @@ import ReportPostModal from "./ReportPostModal";
 import { getAvatarUrl, cacheAvatar } from "../../../shared/utils/avatarCache";
 import "./Comment.css";
 
-const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
+const Comment = ({
+  comment,
+  postId,
+  level = 0,
+  topLevelCommentId = null,
+  onNavigateProfile,
+}) => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyText, setReplyText] = useState("");
@@ -34,6 +42,13 @@ const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
   const [editText, setEditText] = useState(comment.content);
   const [showReportModal, setShowReportModal] = useState(false);
   const isDeletedComment = comment.content === "This comment has been deleted.";
+  const isModerationHiddenComment = Boolean(comment.isHiddenByModeration);
+  const visibleCommentContent = isModerationHiddenComment
+    ? t("posts.hiddenCommentPlaceholder", {
+        defaultValue:
+          "This comment was hidden for violating community guidelines.",
+      })
+    : comment.content;
 
   const deleteCommentMutation = useDeleteComment(postId);
   const createCommentMutation = useCreateComment(postId);
@@ -51,19 +66,37 @@ const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
   const locale = i18n.language === "vi" ? vi : enUS;
   const replies = repliesData?.data || [];
   const replyCount = replies.length;
+  const isCommentEdited = Boolean(
+    !isDeletedComment &&
+    !isModerationHiddenComment &&
+    (comment?.isEdited || comment?.editedAt),
+  );
+
+  const handleOpenProfile = (profileId) => {
+    if (!profileId) return;
+
+    if (onNavigateProfile) {
+      onNavigateProfile(profileId);
+      return;
+    }
+
+    navigate(`/profile/${profileId}`);
+  };
 
   const handleDelete = async () => {
+    if (isModerationHiddenComment) return;
+
     if (window.confirm(t("posts.confirmDeleteComment"))) {
       await deleteCommentMutation.mutateAsync(comment._id);
     }
   };
 
   useEffect(() => {
-    if (isDeletedComment) {
+    if (isDeletedComment || isModerationHiddenComment) {
       setIsEditing(false);
       setEditText(comment.content);
     }
-  }, [isDeletedComment, comment.content]);
+  }, [isDeletedComment, isModerationHiddenComment, comment.content]);
 
   const handleReply = () => {
     setShowReplyForm(!showReplyForm);
@@ -88,6 +121,12 @@ const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
   };
 
   const handleSaveEdit = async () => {
+    if (isModerationHiddenComment) {
+      setIsEditing(false);
+      setEditText(comment.content);
+      return;
+    }
+
     if (!editText.trim() || editText === comment.content) {
       setIsEditing(false);
       return;
@@ -105,6 +144,7 @@ const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
   };
 
   const isAuthor = user?._id === comment.author._id;
+  const canShowCommentMenu = !isModerationHiddenComment;
 
   const handleSubmitReport = async ({ reason, customReason }) => {
     await reportCommentMutation.mutateAsync({
@@ -136,54 +176,63 @@ const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
       )}
       <div className="comment-content-wrapper">
         <div
-          className={`comment-bubble ${isDeletedComment ? "comment-bubble-deleted" : ""}`}
+          className={`comment-bubble ${
+            isDeletedComment || isModerationHiddenComment
+              ? "comment-bubble-deleted"
+              : ""
+          }`}
         >
           <div className="comment-header">
             <span className="comment-author">
-              <span className="comment-author-name">
+              <button
+                type="button"
+                className="comment-author-name"
+                onClick={() => handleOpenProfile(comment.author._id)}
+              >
                 {comment.author.username}
-              </span>
+              </button>
               {comment.replyTo && (
                 <>
                   <span className="reply-arrow"> ▸ </span>
-                  <span
+                  <button
+                    type="button"
                     className="reply-to-name"
-                    onClick={() =>
-                      (window.location.href = `/profile/${comment.replyTo._id}`)
-                    }
+                    onClick={() => handleOpenProfile(comment.replyTo._id)}
                   >
                     {comment.replyTo.username}
-                  </span>
+                  </button>
                 </>
               )}
             </span>
-            <Dropdown align="end" className="comment-menu">
-              <Dropdown.Toggle variant="link" bsPrefix="p-0">
-                <MoreVertical size={16} />
-              </Dropdown.Toggle>
-              <Dropdown.Menu>
-                {!isDeletedComment && isAuthor ? (
-                  <>
-                    <Dropdown.Item onClick={() => setIsEditing(true)}>
-                      <Edit2 size={14} />
-                      {t("posts.edit")}
+            {canShowCommentMenu && (
+              <Dropdown align="end" className="comment-menu">
+                <Dropdown.Toggle variant="link" bsPrefix="p-0">
+                  <MoreVertical size={16} />
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  {!isDeletedComment && isAuthor ? (
+                    <>
+                      <Dropdown.Item onClick={() => setIsEditing(true)}>
+                        <Edit2 size={14} />
+                        {t("posts.edit")}
+                      </Dropdown.Item>
+                      <Dropdown.Item
+                        className="text-danger"
+                        onClick={handleDelete}
+                      >
+                        <Trash2 size={14} />
+                        {t("posts.delete")}
+                      </Dropdown.Item>
+                    </>
+                  ) : (
+                    <Dropdown.Item onClick={() => setShowReportModal(true)}>
+                      <Flag size={14} />
+                      {t("posts.report")}
                     </Dropdown.Item>
-                    <Dropdown.Item
-                      className="text-danger"
-                      onClick={handleDelete}
-                    >
-                      <Trash2 size={14} />
-                      {t("posts.delete")}
-                    </Dropdown.Item>
-                  </>
-                ) : (
-                  <Dropdown.Item onClick={() => setShowReportModal(true)}>
-                    <Flag size={14} />
-                    {t("posts.report")}
-                  </Dropdown.Item>
-                )}
-              </Dropdown.Menu>
-            </Dropdown>
+                  )}
+                </Dropdown.Menu>
+              </Dropdown>
+            )}
           </div>
           {isEditing ? (
             <Form.Control
@@ -196,9 +245,13 @@ const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
             />
           ) : (
             <p
-              className={`comment-text ${isDeletedComment ? "comment-text-deleted" : ""}`}
+              className={`comment-text ${
+                isDeletedComment || isModerationHiddenComment
+                  ? "comment-text-deleted"
+                  : ""
+              }`}
             >
-              {comment.content}
+              {visibleCommentContent}
             </p>
           )}
         </div>
@@ -252,6 +305,12 @@ const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
               locale,
             })}
           </span>
+
+          {isCommentEdited && (
+            <span className="comment-edited-indicator">
+              {t("common.edited")}
+            </span>
+          )}
         </div>
 
         {/* Reply Form */}
@@ -301,6 +360,7 @@ const Comment = ({ comment, postId, level = 0, topLevelCommentId = null }) => {
                 postId={postId}
                 level={1}
                 topLevelCommentId={rootCommentId}
+                onNavigateProfile={onNavigateProfile}
               />
             ))}
           </div>

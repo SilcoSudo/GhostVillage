@@ -350,13 +350,36 @@ class FriendService {
   /**
    * Reject friend request
    */
-  static async rejectFriendRequest(friendshipId) {
+  static async rejectFriendRequest(friendshipId, currentUserId, io) {
     try {
-      const friendship = await Friend.findByIdAndDelete(friendshipId);
+      const friendship = await Friend.findById(friendshipId).populate(
+        "userId friendId",
+        "fullname email avatar bio",
+      );
 
       if (!friendship) {
         throw new Error("Friendship not found");
       }
+
+      if (friendship.status !== "pending") {
+        throw new Error("Only pending requests can be rejected");
+      }
+
+      if (
+        currentUserId &&
+        friendship.friendId._id.toString() !== currentUserId.toString()
+      ) {
+        throw new Error("You are not allowed to reject this friend request");
+      }
+
+      await Friend.findByIdAndDelete(friendshipId);
+
+      await NotificationService.createFriendRejectedNotification(
+        friendship.friendId,
+        friendship.userId,
+        friendship._id,
+        io,
+      );
 
       return { message: "Friend request rejected", friendshipId };
     } catch (error) {
@@ -369,17 +392,26 @@ class FriendService {
    * Reject friend request by relatedUserId (alternative method)
    * Used when friendshipId is not available in notification
    */
-  static async rejectFriendRequestByUserId(currentUserId, relatedUserId) {
+  static async rejectFriendRequestByUserId(currentUserId, relatedUserId, io) {
     try {
-      const friendship = await Friend.findOneAndDelete({
+      const friendship = await Friend.findOne({
         userId: relatedUserId,
         friendId: currentUserId,
         status: "pending",
-      });
+      }).populate("userId friendId", "fullname email avatar bio");
 
       if (!friendship) {
         throw new Error("Friendship not found");
       }
+
+      await Friend.findByIdAndDelete(friendship._id);
+
+      await NotificationService.createFriendRejectedNotification(
+        friendship.friendId,
+        friendship.userId,
+        friendship._id,
+        io,
+      );
 
       return {
         message: "Friend request rejected",

@@ -1,5 +1,6 @@
 import { useState, useContext, useRef, useEffect } from "react";
 import { X, Send } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { AuthContext } from "../../app/context/AuthContext";
 import { ChatContext } from "../../app/context/ChatContext.jsx";
 import {
@@ -13,6 +14,7 @@ import "./ChatModal.css";
 const MAX_MESSAGE_LENGTH = 2000;
 
 const ChatModal = () => {
+  const { t, i18n } = useTranslation();
   const { user } = useContext(AuthContext);
   const { token } = useContext(AuthContext);
   const { isOpen, selectedFriend, closeChat } = useContext(ChatContext);
@@ -172,11 +174,15 @@ const ChatModal = () => {
           />
           <div className="chat-header-info">
             <h3>{selectedFriend?.fullname}</h3>
-            <p className="chat-status">Active now</p>
+            <p className="chat-status">{t("chatModal.activeNow")}</p>
           </div>
         </div>
         <div className="chat-header-actions">
-          <button className="chat-close-btn" onClick={closeChat} title="Close">
+          <button
+            className="chat-close-btn"
+            onClick={closeChat}
+            title={t("chatModal.close")}
+          >
             <X size={18} />
           </button>
         </div>
@@ -186,7 +192,7 @@ const ChatModal = () => {
       <div className="chat-floating-messages">
         {isLoading ? (
           <div className="chat-empty">
-            <p className="chat-empty-text">Loading messages...</p>
+            <p className="chat-empty-text">{t("chatModal.loadingMessages")}</p>
           </div>
         ) : messages.length === 0 ? (
           <div className="chat-empty">
@@ -197,19 +203,20 @@ const ChatModal = () => {
               crossOrigin="anonymous"
             />
             <p className="chat-empty-title">{selectedFriend?.fullname}</p>
-            <p className="chat-empty-text">
-              You're now connected on GhostVillage
-            </p>
+            <p className="chat-empty-text">{t("chatModal.connectedMessage")}</p>
           </div>
         ) : (
           messages.map((msg) => (
             <div key={msg._id} className={`message-bubble ${msg.type}`}>
               <div className="message-content">{msg.content}</div>
               <span className="message-time">
-                {new Date(msg.createdAt).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                {new Date(msg.createdAt).toLocaleTimeString(
+                  i18n.language?.startsWith("vi") ? "vi-VN" : "en-US",
+                  {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  },
+                )}
               </span>
             </div>
           ))
@@ -221,7 +228,7 @@ const ChatModal = () => {
       <div className="chat-floating-input-section">
         <textarea
           className="chat-floating-input"
-          placeholder="Aa"
+          placeholder={t("chatModal.placeholder")}
           value={messageInput}
           onChange={(e) => setMessageInput(e.target.value)}
           maxLength={MAX_MESSAGE_LENGTH}
@@ -236,7 +243,7 @@ const ChatModal = () => {
           className="chat-floating-send-btn"
           onClick={handleSendMessage}
           disabled={!messageInput.trim() || isSending}
-          title="Send"
+          title={t("chatModal.send")}
         >
           <Send size={16} />
         </button>

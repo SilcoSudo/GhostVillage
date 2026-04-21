@@ -5,8 +5,25 @@ import TicketDetailModal from "../shared/components/modals/TicketDetailModal";
 import axios from "../shared/services/axios";
 import "./assets/styles/SupportTicket.css";
 
+const getStatusLabel = (status, t) => {
+  switch (String(status || "OPEN").toUpperCase()) {
+    case "OPEN":
+      return t("tickets.statusLabels.open", { defaultValue: "Open" });
+    case "IN_PROGRESS":
+      return t("tickets.statusLabels.inProgress", {
+        defaultValue: "In Progress",
+      });
+    case "RESOLVED":
+      return t("tickets.statusLabels.resolved", { defaultValue: "Resolved" });
+    case "CLOSED":
+      return t("tickets.statusLabels.closed", { defaultValue: "Closed" });
+    default:
+      return String(status || "OPEN");
+  }
+};
+
 const SupportTicketPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const [supportTickets, setSupportTickets] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -39,18 +56,26 @@ const SupportTicketPage = () => {
     return {
       id,
       _id: id,
-      ticketNumber: id ? String(id) : "N/A",
+      ticketNumber: id
+        ? String(id)
+        : t("tickets.notAvailable", { defaultValue: "N/A" }),
       userName:
         typeof ticket?.userId === "object"
-          ? ticket?.userId?.fullname || "Unknown"
-          : "Unknown",
+          ? ticket?.userId?.fullname ||
+            t("tickets.unknownUser", { defaultValue: "Unknown" })
+          : t("tickets.unknownUser", { defaultValue: "Unknown" }),
       userId:
         typeof ticket?.userId === "object"
-          ? ticket?.userId?._id || "Unknown"
-          : String(ticket?.userId || "Unknown"),
+          ? ticket?.userId?._id ||
+            t("tickets.notAvailable", { defaultValue: "N/A" })
+          : String(
+              ticket?.userId ||
+                t("tickets.notAvailable", { defaultValue: "N/A" }),
+            ),
       userEmail:
         typeof ticket?.userId === "object" ? ticket?.userId?.email || "" : "",
-      subject: ticket?.subject || "Untitled",
+      subject:
+        ticket?.subject || t("tickets.untitled", { defaultValue: "Untitled" }),
       message: ticket?.message || "",
       status,
       attachments,
@@ -87,7 +112,10 @@ const SupportTicketPage = () => {
     } catch (err) {
       console.error("Error fetching support tickets:", err);
       setError(
-        err?.response?.data?.message || "Failed to load support tickets",
+        err?.response?.data?.message ||
+          t("tickets.loadFailed", {
+            defaultValue: "Failed to load support tickets",
+          }),
       );
     } finally {
       setLoading(false);
@@ -200,23 +228,24 @@ const SupportTicketPage = () => {
       await handleChangeTicketStatus(ticket.id, next);
     } catch (err) {
       setError(
-        err?.response?.data?.message || "Failed to update ticket status",
+        err?.response?.data?.message ||
+          t("tickets.updateFailed", {
+            defaultValue: "Failed to update ticket status",
+          }),
       );
     } finally {
       setUpdatingTicketId("");
     }
   };
 
-  const formatStatusLabel = (status) =>
-    String(status || "OPEN")
-      .replace("_", " ")
-      .toLowerCase()
-      .replace(/(^\w|\s\w)/g, (m) => m.toUpperCase());
+  const formatStatusLabel = (status) => getStatusLabel(status, t);
 
-  const formatDate = (value) => new Date(value).toLocaleDateString();
+  const dateLocale = i18n.language?.startsWith("vi") ? "vi-VN" : "en-US";
+
+  const formatDate = (value) => new Date(value).toLocaleDateString(dateLocale);
 
   const formatTime = (value) =>
-    new Date(value).toLocaleTimeString([], {
+    new Date(value).toLocaleTimeString(dateLocale, {
       hour: "2-digit",
       minute: "2-digit",
     });
@@ -241,14 +270,13 @@ const SupportTicketPage = () => {
       <div className="support-ticket-header">
         <div className="support-ticket-header-row">
           <div className="support-ticket-header-text">
-            <h1>{t("tickets.supportTickets") || "Support Tickets"}</h1>
+            <h1>{t("tickets.supportTickets")}</h1>
             <p>
-              {t("tickets.totalTickets") || "Total"}: {filteredTickets.length}{" "}
-              {t("tickets.ticketCountLabel") || "tickets"}
+              {t("tickets.totalTickets")}: {filteredTickets.length}{" "}
+              {t("tickets.ticketCountLabel")}
             </p>
             <span className="st-interaction-hint">
-              {t("tickets.rowInteractionHint") ||
-                "Click on a row to view details. Change status directly from the last column."}
+              {t("tickets.rowInteractionHint")}
             </span>
           </div>
 
@@ -257,10 +285,7 @@ const SupportTicketPage = () => {
               <Search size={18} className="st-search-icon" />
               <input
                 type="text"
-                placeholder={
-                  t("common.search") ||
-                  "Search by ticket ID, subject, user name..."
-                }
+                placeholder={t("tickets.searchPlaceholder")}
                 className="st-search-input"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -293,7 +318,7 @@ const SupportTicketPage = () => {
       <div className="support-tickets-table-wrapper">
         {loading ? (
           <div className="empty-state">
-            <p>{t("common.loading") || "Loading support tickets..."}</p>
+            <p>{t("tickets.loading")}</p>
           </div>
         ) : (
           <>
@@ -308,7 +333,7 @@ const SupportTicketPage = () => {
               </colgroup>
               <thead>
                 <tr>
-                  <th className="stt-header">STT</th>
+                  <th className="stt-header">{t("tickets.rowNumber")}</th>
                   <th
                     onClick={() => handleSort("ticketNumber")}
                     className="sortable"
@@ -421,9 +446,7 @@ const SupportTicketPage = () => {
 
             {sortedTickets.length === 0 && (
               <div className="empty-state">
-                <p>
-                  {error || t("common.noData") || "No support tickets found"}
-                </p>
+                <p>{error || t("tickets.noTicketsFound")}</p>
               </div>
             )}
           </>

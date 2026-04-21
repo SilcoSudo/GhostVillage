@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { RotateCcw, Trash2 } from "lucide-react";
+import { Eye, RotateCcw } from "lucide-react";
+import CommentDetailModal from "../shared/components/modals/CommentDetailModal";
 import CommentRecoveryModal from "../shared/components/modals/CommentRecoveryModal";
 import axios from "../shared/services/axios";
 import "./assets/styles/ReportedComment.css";
@@ -17,7 +18,9 @@ const ReportedCommentPage = () => {
   });
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [selectedComment, setSelectedComment] = useState(null);
+  const [detailComment, setDetailComment] = useState(null);
   const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
 
   const tr = (key, fallback) => {
@@ -167,9 +170,20 @@ const ReportedCommentPage = () => {
     setIsRecoveryModalOpen(true);
   };
 
+  const openDetailModal = (comment) => {
+    setError("");
+    setDetailComment(comment);
+    setIsDetailModalOpen(true);
+  };
+
   const closeRecoveryModal = () => {
     setIsRecoveryModalOpen(false);
     setSelectedComment(null);
+  };
+
+  const closeDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setDetailComment(null);
   };
 
   const handleRestoreComment = async (recoveryReason = "") => {
@@ -199,10 +213,6 @@ const ReportedCommentPage = () => {
     } finally {
       setIsRestoring(false);
     }
-  };
-
-  const handleDeleteComment = (commentId) => {
-    setReportedComments((prev) => prev.filter((c) => c.id !== commentId));
   };
 
   return (
@@ -297,18 +307,24 @@ const ReportedCommentPage = () => {
                     </td>
                     <td className="comment-actions-cell">
                       <button
+                        className="action-btn view-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDetailModal(comment);
+                        }}
+                        title={tr("comments.viewDetails", "View Details")}
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <button
                         className="action-btn restore-btn"
-                        onClick={() => openRecoveryModal(comment)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openRecoveryModal(comment);
+                        }}
                         title={tr("comments.restore", "Restore Comment")}
                       >
                         <RotateCcw size={16} />
-                      </button>
-                      <button
-                        className="action-btn delete-btn"
-                        onClick={() => handleDeleteComment(comment.id)}
-                        title={tr("common.delete", "Delete Comment")}
-                      >
-                        <Trash2 size={16} />
                       </button>
                     </td>
                   </tr>
@@ -334,6 +350,12 @@ const ReportedCommentPage = () => {
         onClose={closeRecoveryModal}
         onConfirm={handleRestoreComment}
         isSubmitting={isRestoring}
+      />
+
+      <CommentDetailModal
+        isOpen={isDetailModalOpen}
+        comment={detailComment}
+        onClose={closeDetailModal}
       />
     </div>
   );

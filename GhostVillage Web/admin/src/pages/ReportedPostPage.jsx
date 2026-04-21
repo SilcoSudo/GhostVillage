@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Eye, RotateCcw, Trash2 } from "lucide-react";
+import { Eye, RotateCcw } from "lucide-react";
 import PostDetailModal from "../shared/components/modals/PostDetailModal";
 import PostRecoveryModal from "../shared/components/modals/PostRecoveryModal";
 import axios from "../shared/services/axios";
@@ -209,10 +209,6 @@ const ReportedPostPage = () => {
     }
   };
 
-  const handleDeletePost = (postId) => {
-    setReportedPosts((prev) => prev.filter((p) => p.id !== postId));
-  };
-
   return (
     <div className="reported-posts-container">
       <div className="reported-posts-header">
@@ -303,13 +299,6 @@ const ReportedPostPage = () => {
                         title={tr("posts.restore", "Restore Post")}
                       >
                         <RotateCcw size={16} />
-                      </button>
-                      <button
-                        className="action-btn delete-btn"
-                        onClick={() => handleDeletePost(post.id)}
-                        title={tr("common.delete", "Delete Post")}
-                      >
-                        <Trash2 size={16} />
                       </button>
                     </td>
                   </tr>
