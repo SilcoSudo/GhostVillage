@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useAuth } from "../../../app/context/AuthContext";
@@ -10,6 +11,7 @@ import FogEffect from "../components/FogEffect";
 import "./Auth.css";
 
 const CompleteProfilePage = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { setSession, user: currentUser } = useAuth();
@@ -68,13 +70,17 @@ const CompleteProfilePage = () => {
 
     // Date of birth validation
     if (!dateOfBirth) {
-      newErrors.dateOfBirth = "Date of birth is required";
+      newErrors.dateOfBirth = t(
+        "auth.completeProfilePage.validation.dobRequired",
+      );
     } else {
       const dob =
         dateOfBirth instanceof Date ? dateOfBirth : new Date(dateOfBirth);
       const now = new Date();
       if (isNaN(dob.getTime()) || dob > now) {
-        newErrors.dateOfBirth = "Please enter a valid date of birth";
+        newErrors.dateOfBirth = t(
+          "auth.completeProfilePage.validation.dobInvalid",
+        );
       } else {
         // Calculate age in years reliably
         let age = now.getFullYear() - dob.getFullYear();
@@ -83,23 +89,32 @@ const CompleteProfilePage = () => {
           age--;
         }
         if (age < 13)
-          newErrors.dateOfBirth = "You must be at least 13 years old";
+          newErrors.dateOfBirth = t(
+            "auth.completeProfilePage.validation.dobAge",
+          );
       }
     }
 
     // Password validation (match register)
     const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
     if (!password) {
-      newErrors.password = "Password is required";
+      newErrors.password = t(
+        "auth.completeProfilePage.validation.passwordRequired",
+      );
     } else if (!pwdRegex.test(password)) {
-      newErrors.password =
-        "Password must be at least 8 characters and include uppercase, lowercase, and a special character";
+      newErrors.password = t(
+        "auth.completeProfilePage.validation.passwordWeak",
+      );
     }
 
     if (!confirmPassword) {
-      newErrors.confirmPassword = "Please confirm your password";
+      newErrors.confirmPassword = t(
+        "auth.completeProfilePage.validation.confirmPasswordRequired",
+      );
     } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
+      newErrors.confirmPassword = t(
+        "auth.completeProfilePage.validation.passwordsMatch",
+      );
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -124,11 +139,11 @@ const CompleteProfilePage = () => {
         setSession(localStorage.getItem("token"), data.user);
         navigate("/");
       } else {
-        setError(data.message || "Failed to complete profile");
+        setError(data.message || t("auth.completeProfilePage.errors.failed"));
       }
     } catch (error) {
       console.error("Complete profile error:", error);
-      setError("An error occurred. Please try again.");
+      setError(t("auth.completeProfilePage.errors.generic"));
     } finally {
       setLoading(false);
     }
@@ -144,7 +159,7 @@ const CompleteProfilePage = () => {
               variant="light"
               style={{ width: "3rem", height: "3rem" }}
             />
-            <p className="mt-3 text-light">Loading...</p>
+            <p className="mt-3 text-light">{t("common.loading")}</p>
           </div>
         </div>
         <div className="login-image-section">
@@ -159,21 +174,23 @@ const CompleteProfilePage = () => {
     <div className="login-page">
       <div className="login-form-section">
         <div className="login-form-wrapper">
-          <h2>Complete Your Profile</h2>
+          <h2>{t("auth.completeProfilePage.title")}</h2>
           <p className="form-subtitle">
-            We need a bit more information to get you started
+            {t("auth.completeProfilePage.subtitle")}
           </p>
 
           {error && <div className="alert-message alert-danger">{error}</div>}
 
           <form onSubmit={handleSubmit} noValidate>
             <div className="form-group date-input-wrapper">
-              <label>Date of Birth</label>
+              <label>{t("auth.completeProfilePage.dateOfBirthLabel")}</label>
               <DatePicker
                 selected={dateOfBirth}
                 onChange={(date) => setDateOfBirth(date)}
                 dateFormat="yyyy-MM-dd"
-                placeholderText="Select your date of birth"
+                placeholderText={t(
+                  "auth.completeProfilePage.dateOfBirthPlaceholder",
+                )}
                 maxDate={new Date()}
                 showYearDropdown
                 showMonthDropdown
@@ -185,11 +202,11 @@ const CompleteProfilePage = () => {
             </div>
 
             <div className="form-group">
-              <label>Password</label>
+              <label>{t("auth.completeProfilePage.passwordLabel")}</label>
               <input
                 type="password"
                 name="password"
-                placeholder="Create a password"
+                placeholder={t("auth.completeProfilePage.passwordPlaceholder")}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -199,11 +216,15 @@ const CompleteProfilePage = () => {
             </div>
 
             <div className="form-group">
-              <label>Confirm Password</label>
+              <label>
+                {t("auth.completeProfilePage.confirmPasswordLabel")}
+              </label>
               <input
                 type="password"
                 name="confirmPassword"
-                placeholder="Confirm your password"
+                placeholder={t(
+                  "auth.completeProfilePage.confirmPasswordPlaceholder",
+                )}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
               />
@@ -213,7 +234,9 @@ const CompleteProfilePage = () => {
             </div>
 
             <button type="submit" className="btn-signin" disabled={loading}>
-              {loading ? "Saving..." : "Complete Profile"}
+              {loading
+                ? t("auth.completeProfilePage.loadingButton")
+                : t("auth.completeProfilePage.submitButton")}
             </button>
           </form>
         </div>

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useNotifications, useSocket } from "../hooks/useSocket";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
@@ -8,15 +9,42 @@ import toast from "react-hot-toast";
  * Place this component ở root level của app (App.jsx hoặc main layout)
  */
 export const NotificationListener = ({ token }) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { isConnected } = useSocket(token);
+
+  const getToastMessage = (notification) => {
+    const type = String(notification?.type || "").toLowerCase();
+    const typeKeyMap = {
+      friend_request: "friendRequest",
+      friendrequest: "friendRequest",
+      friend_accepted: "friendAccepted",
+      friendaccepted: "friendAccepted",
+      friend_rejected: "friendRejected",
+      friendrejected: "friendRejected",
+      post_liked: "postLiked",
+      postliked: "postLiked",
+      post_commented: "postCommented",
+      postcommented: "postCommented",
+      comment_replied: "commentReplied",
+      commentreplied: "commentReplied",
+      report_processed: "reportProcessed",
+      reportprocessed: "reportProcessed",
+      ticket_replied: "ticketReplied",
+      ticketreplied: "ticketReplied",
+      announcement: "announcement",
+    };
+
+    const messageKey = typeKeyMap[type] || "default";
+    return t(`notifications.toasts.${messageKey}`);
+  };
 
   // Listen for notifications
   useNotifications((notification) => {
     console.log("Notification received:", notification);
 
     // Show toast
-    toast.success(notification.message, {
+    toast.success(getToastMessage(notification), {
       duration: 4000,
       icon: "🔔",
     });

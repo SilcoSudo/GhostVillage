@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
-import { X, Eye, EyeOff, Lock, Check, AlertCircle } from 'lucide-react';
-import api from '../../../shared/services/axios';
-import './ChangePasswordModal.css';
+import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { X, Eye, EyeOff, Lock, Check, AlertCircle } from "lucide-react";
+import api from "../../../shared/services/axios";
+import "./ChangePasswordModal.css";
 
 const ChangePasswordModal = ({ onClose, onSuccess }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
 
   const [showPasswords, setShowPasswords] = useState({
@@ -28,10 +30,22 @@ const ChangePasswordModal = ({ onClose, onSuccess }) => {
     const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
     const criteria = [
-      { met: minLength, text: 'At least 8 characters' },
-      { met: hasUpperCase, text: 'One uppercase letter' },
-      { met: hasLowerCase, text: 'One lowercase letter' },
-      { met: hasSpecialChar, text: 'One special character' },
+      {
+        met: minLength,
+        text: t("auth.changePasswordModal.criteria.minLength"),
+      },
+      {
+        met: hasUpperCase,
+        text: t("auth.changePasswordModal.criteria.uppercase"),
+      },
+      {
+        met: hasLowerCase,
+        text: t("auth.changePasswordModal.criteria.lowercase"),
+      },
+      {
+        met: hasSpecialChar,
+        text: t("auth.changePasswordModal.criteria.specialChar"),
+      },
     ];
 
     const score = criteria.filter((c) => c.met).length;
@@ -63,43 +77,45 @@ const ChangePasswordModal = ({ onClose, onSuccess }) => {
 
     // Validation
     if (!formData.currentPassword) {
-      setError('Current password is required');
+      setError(
+        t("auth.changePasswordModal.validation.currentPasswordRequired"),
+      );
       setLoading(false);
       return;
     }
 
     if (!formData.newPassword) {
-      setError('New password is required');
+      setError(t("auth.changePasswordModal.validation.newPasswordRequired"));
       setLoading(false);
       return;
     }
 
     if (formData.newPassword.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError(t("auth.changePasswordModal.validation.minLength"));
       setLoading(false);
       return;
     }
 
     if (formData.newPassword !== formData.confirmPassword) {
-      setError('New passwords do not match');
+      setError(t("auth.changePasswordModal.validation.passwordsDoNotMatch"));
       setLoading(false);
       return;
     }
 
     if (formData.currentPassword === formData.newPassword) {
-      setError('New password must be different from current password');
+      setError(t("auth.changePasswordModal.validation.differentFromCurrent"));
       setLoading(false);
       return;
     }
 
     if (passwordStrength.score < 4) {
-      setError('Password does not meet strength requirements');
+      setError(t("auth.changePasswordModal.validation.strengthRequirements"));
       setLoading(false);
       return;
     }
 
     try {
-      const response = await api.post('/web/auth/change-password', {
+      const response = await api.post("/web/auth/change-password", {
         currentPassword: formData.currentPassword,
         newPassword: formData.newPassword,
       });
@@ -111,10 +127,12 @@ const ChangePasswordModal = ({ onClose, onSuccess }) => {
           onClose();
         }, 1500);
       } else {
-        setError(response.data.message || 'Password change failed');
+        setError(response.data.message || t("auth.changePasswordModal.failed"));
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to change password');
+      setError(
+        err.response?.data?.message || t("auth.changePasswordModal.failed"),
+      );
     } finally {
       setLoading(false);
     }
@@ -129,7 +147,7 @@ const ChangePasswordModal = ({ onClose, onSuccess }) => {
         <div className="horror-modal-header">
           <div className="horror-modal-title">
             <Lock size={24} />
-            <h2>CHANGE PASSWORD</h2>
+            <h2>{t("auth.changePasswordModal.title")}</h2>
           </div>
           <button className="horror-modal-close" onClick={onClose}>
             <X size={24} />
@@ -147,21 +165,25 @@ const ChangePasswordModal = ({ onClose, onSuccess }) => {
           {success && (
             <div className="horror-alert horror-alert-success">
               <Check size={20} />
-              <span>Password changed successfully!</span>
+              <span>{t("auth.changePasswordModal.successMessage")}</span>
             </div>
           )}
 
           {/* Current Password */}
           <div className="horror-form-group">
-            <label htmlFor="currentPassword">Current Password *</label>
+            <label htmlFor="currentPassword">
+              {t("auth.changePasswordModal.currentPasswordLabel")}
+            </label>
             <div className="horror-password-input-wrapper">
               <input
-                type={showPasswords.current ? 'text' : 'password'}
+                type={showPasswords.current ? "text" : "password"}
                 id="currentPassword"
                 name="currentPassword"
                 value={formData.currentPassword}
                 onChange={handleChange}
-                placeholder="Enter your current password"
+                placeholder={t(
+                  "auth.changePasswordModal.currentPasswordPlaceholder",
+                )}
                 required
                 className="horror-input"
                 disabled={loading || success}
@@ -169,25 +191,33 @@ const ChangePasswordModal = ({ onClose, onSuccess }) => {
               <button
                 type="button"
                 className="horror-password-toggle"
-                onClick={() => toggleShowPassword('current')}
+                onClick={() => toggleShowPassword("current")}
                 tabIndex={-1}
               >
-                {showPasswords.current ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPasswords.current ? (
+                  <EyeOff size={18} />
+                ) : (
+                  <Eye size={18} />
+                )}
               </button>
             </div>
           </div>
 
           {/* New Password */}
           <div className="horror-form-group">
-            <label htmlFor="newPassword">New Password *</label>
+            <label htmlFor="newPassword">
+              {t("auth.changePasswordModal.newPasswordLabel")}
+            </label>
             <div className="horror-password-input-wrapper">
               <input
-                type={showPasswords.new ? 'text' : 'password'}
+                type={showPasswords.new ? "text" : "password"}
                 id="newPassword"
                 name="newPassword"
                 value={formData.newPassword}
                 onChange={handleChange}
-                placeholder="Enter your new password"
+                placeholder={t(
+                  "auth.changePasswordModal.newPasswordPlaceholder",
+                )}
                 required
                 className="horror-input"
                 disabled={loading || success}
@@ -195,7 +225,7 @@ const ChangePasswordModal = ({ onClose, onSuccess }) => {
               <button
                 type="button"
                 className="horror-password-toggle"
-                onClick={() => toggleShowPassword('new')}
+                onClick={() => toggleShowPassword("new")}
                 tabIndex={-1}
               >
                 {showPasswords.new ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -216,13 +246,9 @@ const ChangePasswordModal = ({ onClose, onSuccess }) => {
                 {passwordStrength.criteria.map((criterion, index) => (
                   <div
                     key={index}
-                    className={`horror-criterion ${criterion.met ? 'met' : ''}`}
+                    className={`horror-criterion ${criterion.met ? "met" : ""}`}
                   >
-                    {criterion.met ? (
-                      <Check size={14} />
-                    ) : (
-                      <X size={14} />
-                    )}
+                    {criterion.met ? <Check size={14} /> : <X size={14} />}
                     <span>{criterion.text}</span>
                   </div>
                 ))}
@@ -232,15 +258,19 @@ const ChangePasswordModal = ({ onClose, onSuccess }) => {
 
           {/* Confirm Password */}
           <div className="horror-form-group">
-            <label htmlFor="confirmPassword">Confirm New Password *</label>
+            <label htmlFor="confirmPassword">
+              {t("auth.changePasswordModal.confirmPasswordLabel")}
+            </label>
             <div className="horror-password-input-wrapper">
               <input
-                type={showPasswords.confirm ? 'text' : 'password'}
+                type={showPasswords.confirm ? "text" : "password"}
                 id="confirmPassword"
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                placeholder="Confirm your new password"
+                placeholder={t(
+                  "auth.changePasswordModal.confirmPasswordPlaceholder",
+                )}
                 required
                 className="horror-input"
                 disabled={loading || success}
@@ -248,10 +278,14 @@ const ChangePasswordModal = ({ onClose, onSuccess }) => {
               <button
                 type="button"
                 className="horror-password-toggle"
-                onClick={() => toggleShowPassword('confirm')}
+                onClick={() => toggleShowPassword("confirm")}
                 tabIndex={-1}
               >
-                {showPasswords.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPasswords.confirm ? (
+                  <EyeOff size={18} />
+                ) : (
+                  <Eye size={18} />
+                )}
               </button>
             </div>
           </div>
@@ -263,14 +297,18 @@ const ChangePasswordModal = ({ onClose, onSuccess }) => {
               className="btn-horror-outline"
               disabled={loading || success}
             >
-              CANCEL
+              {t("auth.changePasswordModal.cancel")}
             </button>
             <button
               type="submit"
               className="btn-horror"
               disabled={loading || success}
             >
-              {loading ? 'CHANGING...' : success ? 'SUCCESS!' : 'CHANGE PASSWORD'}
+              {loading
+                ? t("auth.changePasswordModal.changing")
+                : success
+                  ? t("auth.changePasswordModal.successButton")
+                  : t("auth.changePasswordModal.submitButton")}
             </button>
           </div>
         </form>

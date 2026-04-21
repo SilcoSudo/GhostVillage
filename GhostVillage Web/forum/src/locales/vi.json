@@ -6,6 +6,8 @@
     "username": "Tên Đăng Nhập",
     "password": "Mật Khẩu",
     "confirmPassword": "Xác Nhận Mật Khẩu",
+    "showPassword": "Hiện mật khẩu",
+    "hidePassword": "Ẩn mật khẩu",
     "rememberMe": "Ghi nhớ tôi",
     "forgotPassword": "Quên mật khẩu?",
     "noAccount": "Chưa có tài khoản? Đăng ký",
@@ -13,7 +15,207 @@
     "signUp": "Đăng Ký",
     "signIn": "Đăng Nhập",
     "login": "Đăng Nhập",
-    "register": "Đăng Ký"
+    "register": "Đăng Ký",
+    "loginPage": {
+      "subtitle": "Đăng nhập vào tài khoản của bạn",
+      "emailPlaceholder": "Nhập email của bạn",
+      "passwordPlaceholder": "Nhập mật khẩu của bạn",
+      "loggingInButton": "Đang đăng nhập...",
+      "orText": "Hoặc",
+      "googleSignIn": "Đăng nhập bằng Google",
+      "noAccountPrompt": "Chưa có tài khoản?",
+      "registerNow": "Đăng ký ngay",
+      "loginFailed": "Đăng nhập thất bại",
+      "validation": {
+        "emailRequired": "Email là bắt buộc",
+        "emailInvalid": "Vui lòng nhập email hợp lệ",
+        "passwordRequired": "Mật khẩu là bắt buộc",
+        "passwordMinLength": "Mật khẩu phải có ít nhất 8 ký tự",
+        "passwordStrength": "Mật khẩu phải gồm chữ hoa, chữ thường và ký tự đặc biệt"
+      },
+      "oauthErrors": {
+        "accessDenied": "Bạn đã từ chối quyền truy cập Google. Vui lòng thử lại và cấp quyền.",
+        "invalidScope": "Quyền truy cập được yêu cầu không hợp lệ. Vui lòng thử lại.",
+        "invalidGrant": "Mã xác thực không hợp lệ. Vui lòng thử lại.",
+        "noAuthorizationCode": "Không lấy được mã xác thực. Vui lòng thử lại.",
+        "serverError": "Lỗi máy chủ: {{description}}. Vui lòng thử lại sau.",
+        "serverErrorGeneric": "Đã xảy ra lỗi máy chủ. Vui lòng thử lại sau.",
+        "failed": "Đăng nhập Google thất bại. Vui lòng thử lại.",
+        "initFailed": "Không thể khởi tạo đăng nhập Google"
+      }
+    },
+    "registerPage": {
+      "title": "Đăng Ký",
+      "subtitle": "Tham gia GhostVillage ngay hôm nay",
+      "fullNameLabel": "Họ và tên",
+      "emailLabel": "Địa chỉ email",
+      "dobLabel": "Ngày sinh",
+      "passwordLabel": "Mật khẩu",
+      "confirmPasswordLabel": "Xác nhận mật khẩu",
+      "fullNamePlaceholder": "Nhập họ và tên của bạn",
+      "emailPlaceholder": "Nhập email của bạn",
+      "dobPlaceholder": "Chọn ngày sinh của bạn",
+      "passwordPlaceholder": "Tạo mật khẩu",
+      "confirmPasswordPlaceholder": "Xác nhận mật khẩu của bạn",
+      "submitButton": "Đăng Ký",
+      "loadingButton": "Đang tạo tài khoản...",
+      "dividerText": "Hoặc",
+      "loginPrompt": "Đã có tài khoản?",
+      "loginLink": "Đăng nhập",
+      "errors": {
+        "registrationFailed": "Đăng ký thất bại"
+      },
+      "validation": {
+        "fullNameRequired": "Họ và tên là bắt buộc.",
+        "fullNameMin": "Họ và tên phải có ít nhất 3 ký tự.",
+        "emailRequired": "Email là bắt buộc.",
+        "emailInvalid": "Vui lòng nhập email hợp lệ.",
+        "passwordRequired": "Mật khẩu là bắt buộc.",
+        "passwordWeak": "Mật khẩu phải có ít nhất 8 ký tự và bao gồm chữ hoa, chữ thường và ký tự đặc biệt.",
+        "confirmPasswordRequired": "Vui lòng xác nhận mật khẩu của bạn.",
+        "passwordsMatch": "Mật khẩu không khớp.",
+        "dobRequired": "Ngày sinh là bắt buộc.",
+        "dobInvalid": "Vui lòng nhập ngày sinh hợp lệ.",
+        "dobAge": "Bạn phải ít nhất 13 tuổi."
+      }
+    },
+    "forgotPasswordPage": {
+      "title": "Đặt lại mật khẩu",
+      "successTitle": "Kiểm tra email của bạn",
+      "subtitle": "Nhập địa chỉ email của bạn và chúng tôi sẽ gửi cho bạn liên kết để đặt lại mật khẩu.",
+      "successMessagePrefix": "Nếu có tài khoản với email đó, chúng tôi đã gửi liên kết đặt lại mật khẩu tới",
+      "successMessageSuffix": ".",
+      "successNote": "Liên kết sẽ hết hạn sau 15 phút vì lý do bảo mật.",
+      "backToLogin": "Quay lại đăng nhập",
+      "emailLabel": "Địa chỉ email",
+      "emailPlaceholder": "Nhập địa chỉ email của bạn",
+      "submitButton": "Gửi liên kết đặt lại",
+      "loadingButton": "Đang gửi...",
+      "rememberPassword": "Nhớ mật khẩu của bạn?",
+      "loginLink": "Đăng nhập",
+      "errors": {
+        "failedSend": "Không thể gửi liên kết đặt lại"
+      }
+    },
+    "resetPasswordPage": {
+      "title": "Đặt mật khẩu mới",
+      "subtitle": "Nhập mật khẩu mới của bạn bên dưới.",
+      "newPasswordLabel": "Mật khẩu mới",
+      "confirmPasswordLabel": "Xác nhận mật khẩu mới",
+      "newPasswordPlaceholder": "Nhập mật khẩu mới",
+      "confirmPasswordPlaceholder": "Xác nhận mật khẩu mới",
+      "passwordHint": "Ít nhất 8 ký tự với chữ hoa, chữ thường và ký tự đặc biệt",
+      "submitButton": "Cập nhật mật khẩu",
+      "loadingButton": "Đang cập nhật mật khẩu...",
+      "rememberPassword": "Nhớ mật khẩu của bạn?",
+      "loginLink": "Đăng nhập",
+      "validation": {
+        "passwordRequired": "Mật khẩu là bắt buộc",
+        "passwordWeak": "Mật khẩu phải có ít nhất 8 ký tự và bao gồm chữ hoa, chữ thường và ký tự đặc biệt",
+        "confirmPasswordRequired": "Vui lòng xác nhận mật khẩu của bạn",
+        "passwordsMatch": "Mật khẩu không khớp"
+      }
+    },
+    "authCallbackPage": {
+      "loading": "Đang hoàn tất đăng nhập...",
+      "successHeading": "Thành công!",
+      "successRedirect": "Đang chuyển hướng về trang chủ...",
+      "errorHeading": "Xác thực thất bại",
+      "errorRedirect": "Đang chuyển hướng đến trang đăng nhập...",
+      "processingHeading": "Đang xử lý xác thực...",
+      "processingMessage": "Vui lòng chờ trong khi chúng tôi hoàn tất đăng nhập của bạn.",
+      "toastSuccess": "Chào mừng! Bạn đã đăng nhập.",
+      "toastError": "Xác thực thất bại",
+      "messages": {
+        "success": "Đăng nhập bằng Google thành công!",
+        "oauthFailed": "Không thể xác thực với Google. Vui lòng thử lại.",
+        "accessDenied": "Quyền truy cập đã bị từ chối. Vui lòng cấp quyền để tiếp tục.",
+        "generic": "Đã xảy ra lỗi trong quá trình xác thực."
+      }
+    },
+    "registrationSuccessPage": {
+      "title": "Đăng ký thành công!",
+      "subtitle": "Chúng tôi đã gửi liên kết xác minh tới email của bạn.",
+      "description": "Vui lòng kiểm tra hộp thư đến (và cả thư mục spam) để kích hoạt tài khoản.",
+      "resendButton": "Yêu cầu gửi lại liên kết xác minh",
+      "loadingButton": "Đang gửi...",
+      "countdown": "Yêu cầu liên kết mới sau {{count}} giây",
+      "successMessage": "Đã gửi liên kết xác minh mới! Vui lòng kiểm tra hộp thư của bạn.",
+      "errors": {
+        "emailNotFound": "Không tìm thấy địa chỉ email. Vui lòng thử đăng ký lại.",
+        "resendFailed": "Không thể gửi lại email xác minh. Vui lòng thử lại sau."
+      }
+    },
+    "verifyEmailPage": {
+      "title": "Xác minh email",
+      "subtitle": "Xác minh địa chỉ email của bạn",
+      "loadingHeading": "Đang xác minh email của bạn...",
+      "loadingMessage": "Vui lòng chờ trong khi chúng tôi xác minh địa chỉ email của bạn.",
+      "successHeading": "Xác minh email thành công!",
+      "successRedirect": "Đang chuyển hướng về trang chủ...",
+      "errorHeading": "Xác minh thất bại",
+      "registerAgain": "Đăng ký lại",
+      "messages": {
+        "invalidLink": "Liên kết xác minh không hợp lệ. Không có token được cung cấp.",
+        "sessionFailed": "Thiết lập phiên thất bại. Vui lòng thử lại.",
+        "success": "Xác minh email thành công! Bạn hiện đã đăng nhập.",
+        "failed": "Xác minh email thất bại. Liên kết có thể đã hết hạn hoặc không hợp lệ."
+      }
+    },
+    "completeProfilePage": {
+      "title": "Hoàn thiện hồ sơ của bạn",
+      "subtitle": "Chúng tôi cần thêm một ít thông tin để bắt đầu.",
+      "dateOfBirthLabel": "Ngày sinh",
+      "dateOfBirthPlaceholder": "Chọn ngày sinh của bạn",
+      "passwordLabel": "Mật khẩu",
+      "passwordPlaceholder": "Tạo mật khẩu",
+      "confirmPasswordLabel": "Xác nhận mật khẩu",
+      "confirmPasswordPlaceholder": "Xác nhận mật khẩu của bạn",
+      "submitButton": "Hoàn tất hồ sơ",
+      "loadingButton": "Đang lưu...",
+      "validation": {
+        "dobRequired": "Ngày sinh là bắt buộc",
+        "dobInvalid": "Vui lòng nhập ngày sinh hợp lệ",
+        "dobAge": "Bạn phải ít nhất 13 tuổi",
+        "passwordRequired": "Mật khẩu là bắt buộc",
+        "passwordWeak": "Mật khẩu phải có ít nhất 8 ký tự và bao gồm chữ hoa, chữ thường và ký tự đặc biệt",
+        "confirmPasswordRequired": "Vui lòng xác nhận mật khẩu của bạn",
+        "passwordsMatch": "Mật khẩu không khớp"
+      },
+      "errors": {
+        "failed": "Không thể hoàn thiện hồ sơ",
+        "generic": "Đã xảy ra lỗi. Vui lòng thử lại."
+      }
+    },
+    "changePasswordModal": {
+      "title": "Đổi mật khẩu",
+      "currentPasswordLabel": "Mật khẩu hiện tại *",
+      "newPasswordLabel": "Mật khẩu mới *",
+      "confirmPasswordLabel": "Xác nhận mật khẩu mới *",
+      "currentPasswordPlaceholder": "Nhập mật khẩu hiện tại",
+      "newPasswordPlaceholder": "Nhập mật khẩu mới",
+      "confirmPasswordPlaceholder": "Xác nhận mật khẩu mới",
+      "cancel": "HỦY",
+      "changing": "ĐANG ĐỔI...",
+      "successButton": "THÀNH CÔNG!",
+      "submitButton": "ĐỔI MẬT KHẨU",
+      "successMessage": "Đổi mật khẩu thành công!",
+      "failed": "Không thể đổi mật khẩu",
+      "validation": {
+        "currentPasswordRequired": "Mật khẩu hiện tại là bắt buộc",
+        "newPasswordRequired": "Mật khẩu mới là bắt buộc",
+        "minLength": "Mật khẩu phải có ít nhất 8 ký tự",
+        "passwordsDoNotMatch": "Mật khẩu mới không khớp",
+        "differentFromCurrent": "Mật khẩu mới phải khác mật khẩu hiện tại",
+        "strengthRequirements": "Mật khẩu chưa đủ mạnh"
+      },
+      "criteria": {
+        "minLength": "Ít nhất 8 ký tự",
+        "uppercase": "Một chữ cái in hoa",
+        "lowercase": "Một chữ cái thường",
+        "specialChar": "Một ký tự đặc biệt"
+      }
+    }
   },
   "navbar": {
     "home": "Trang Chủ",
@@ -26,12 +228,131 @@
     "myContent": "Nội Dung Của Tôi",
     "settings": "Cài Đặt",
     "changePassword": "Đổi Mật Khẩu",
+    "wiki": "Wiki",
+    "announcements": "Thông Báo",
+    "searchPlaceholder": "Tìm kiếm bài viết, người dùng...",
+    "changeLanguage": "Chuyển đổi ngôn ngữ",
+    "friendsList": "Danh sách bạn bè",
     "collapse": "Thu gọn sidebar",
     "expand": "Mở rộng sidebar",
     "viewProfile": "Xem hồ sơ",
     "userMenu": "Menu người dùng",
     "followers": "Người theo dõi",
     "following": "Đang theo dõi"
+  },
+  "homePage": {
+    "hero": {
+      "line1": "Khám phá ngôi làng ma cùng đồng đội.",
+      "line2": "Sống sót qua đêm và lần ra lời nguyền.",
+      "cta": "Chơi ngay"
+    },
+    "majorFeatures": {
+      "eyebrow": "Tính năng game",
+      "coop": {
+        "title": "Co-op Gameplay",
+        "description": "Chơi cùng bạn bè, phối hợp nhịp nhàng và sống sót trước những mối đe dọa trong làng ma."
+      },
+      "lobby": {
+        "title": "Lobby & Pre-game System",
+        "description": "Tạo phòng, mời bạn bè, chat nhanh và chuẩn bị trước khi ván chơi bắt đầu."
+      },
+      "objective": {
+        "title": "Objective-Based Progression",
+        "description": "Khám phá khu vực, giải đố và hoàn thành nhiệm vụ để tiến tiếp trong mỗi màn."
+      },
+      "mapMonster": {
+        "title": "Multi-Map & Monster System",
+        "description": "Mỗi bản đồ có bối cảnh, quái vật và nhịp chơi riêng để mỗi lần vào game đều khác nhau."
+      }
+    },
+    "intro": {
+      "eyebrow": "Giới thiệu game chính thức",
+      "title": "GhostVillage là game kinh dị sinh tồn co-op đặt trong một ngôi làng bị nguyền rủa.",
+      "description": "Bước vào ngôi làng, lần theo manh mối và sống sót qua đêm cùng đồng đội."
+    },
+    "features": {
+      "explore": {
+        "label": "Khám phá",
+        "title": "Điều tra ngôi làng ma ám",
+        "description": "Đi qua các con đường, đọc chi tiết môi trường và tìm ra thứ vẫn còn cử động trong bóng tối.",
+        "action": "Vào làng"
+      },
+      "survival": {
+        "label": "Sinh tồn",
+        "title": "Trụ vững đến bình minh",
+        "description": "Quản lý căng thẳng, giữ cảnh giác và bảo vệ cả nhóm khi lời nguyền trở nên dữ dội hơn.",
+        "action": "Học luật chơi"
+      },
+      "coop": {
+        "label": "Co-op",
+        "title": "Đi cùng một tổ đội",
+        "description": "Chia vai trò, báo nguy hiểm và làm mọi lượt chơi tốt hơn khi cả nhóm phối hợp nhịp nhàng.",
+        "action": "Tham gia săn đêm"
+      },
+      "lore": {
+        "label": "Cốt truyện",
+        "title": "Ghép lại câu chuyện",
+        "description": "Thu thập ghi chú, hiện vật và manh mối để hiểu vì sao ngôi làng này sụp đổ.",
+        "action": "Đọc lore"
+      },
+      "events": {
+        "label": "Sự kiện trực tiếp",
+        "title": "Đối mặt các kèo ngẫu nhiên",
+        "description": "Bước vào các đợt săn theo mùa, boss đặc biệt và thử thách giới hạn thời gian.",
+        "action": "Xem sự kiện"
+      }
+    },
+    "modes": {
+      "eyebrow": "Phong cách chơi",
+      "title": "Ba cách bước vào bóng tối",
+      "description": "Chọn nhịp độ hợp với nhóm của bạn và kiểu sợ hãi bạn muốn trải nghiệm tối nay.",
+      "story": {
+        "label": "Chế độ cốt truyện",
+        "title": "Theo dấu lời nguyền",
+        "description": "Trải nghiệm các chương chính và lần ra nguồn gốc ngôi làng theo nhịp riêng của bạn.",
+        "action": "Bắt đầu cốt truyện"
+      },
+      "hunt": {
+        "label": "Săn đêm",
+        "title": "Đi raid co-op",
+        "description": "Vào các lượt chơi áp lực cao cùng bạn bè và hoàn thành mục tiêu trước khi bóng tối khép lại.",
+        "action": "Tham gia săn"
+      },
+      "investigation": {
+        "label": "Điều tra",
+        "title": "Lần theo từng manh mối",
+        "description": "Đọc ghi chú bản đồ, đối chiếu chứng cứ và nối các sự kiện bất thường lại với nhau.",
+        "action": "Mở điều tra"
+      }
+    },
+    "workflow": {
+      "eyebrow": "Bắt đầu",
+      "title": "Khởi hành cuộc săn trong bốn bước",
+      "description": "Vòng lặp rất đơn giản: tải game, chọn vai trò, tiến vào làng và sống sót qua đêm.",
+      "step1": {
+        "title": "Tải bản dựng",
+        "description": "Mở game client và lấy phiên bản mới nhất trước khi bước vào cuộc săn."
+      },
+      "step2": {
+        "title": "Chọn vai trò",
+        "description": "Chọn lối chơi phù hợp với cách bạn muốn xử lý nguy hiểm và hỗ trợ đồng đội."
+      },
+      "step3": {
+        "title": "Bước vào ngôi làng",
+        "description": "Đi qua những con đường bị nguyền, lục soát nhà cửa và thu thập các manh mối cần thiết."
+      },
+      "step4": {
+        "title": "Sống sót và rút lui",
+        "description": "Hoàn thành mục tiêu, ở cùng nhau và thoát ra trước khi màn đêm nuốt chửng tất cả."
+      }
+    },
+    "cta": {
+      "eyebrow": "Sẵn sàng chưa?",
+      "title": "Bước vào GhostVillage và bắt đầu cuộc săn.",
+      "description": "Trang chủ giờ hoạt động như cửa vào của game: mở đầu rõ ràng, phong cách chơi và lộ trình cho đêm đầu tiên.",
+      "primary": "Chơi ngay",
+      "secondary": "Đọc lore"
+    }
   },
   "support": {
     "title": "Gửi yêu cầu hỗ trợ",
@@ -90,7 +411,274 @@
     "save": "Lưu",
     "cancel": "Hủy",
     "delete": "Xóa",
-    "edit": "Sửa"
+    "edit": "Sửa",
+    "edited": "Đã chỉnh sửa"
+  },
+  "errors": {
+    "notFoundMessage": "Trang bạn đang tìm không tồn tại.",
+    "goHome": "Về trang chủ"
+  },
+  "notifications": {
+    "title": "Thông báo",
+    "tabs": {
+      "notifications": "Thông báo",
+      "friendRequests": "Lời mời kết bạn"
+    },
+    "emptyNotifications": "Không có thông báo nào.",
+    "emptyFriendRequests": "Không có lời mời kết bạn nào.",
+    "viewAll": "Xem tất cả thông báo",
+    "autoDeleteNote": "Thông báo sau 15 ngày sẽ tự động xóa.",
+    "readAll": "Đánh dấu tất cả đã đọc",
+    "accept": "Đồng ý",
+    "reject": "Từ chối",
+    "toasts": {
+      "friendRequest": "Bạn có một lời mời kết bạn mới.",
+      "friendAccepted": "Lời mời kết bạn của bạn đã được chấp nhận.",
+      "friendRejected": "Lời mời kết bạn của bạn đã bị từ chối.",
+      "postLiked": "Ai đó đã thích bài viết của bạn.",
+      "postCommented": "Ai đó đã bình luận vào bài viết của bạn.",
+      "commentReplied": "Ai đó đã trả lời bình luận của bạn.",
+      "reportProcessed": "Báo cáo của bạn đã được xem xét.",
+      "ticketReplied": "Phiếu hỗ trợ của bạn vừa có phản hồi mới.",
+      "announcement": "Có một thông báo mới.",
+      "default": "Bạn có một thông báo mới."
+    }
+  },
+  "friendRequests": {
+    "title": "Lời mời kết bạn",
+    "loading": "Đang tải lời mời kết bạn...",
+    "tabs": {
+      "incoming": "Đã nhận",
+      "outgoing": "Đã gửi"
+    },
+    "emptyIncoming": "Không có lời mời kết bạn nào đã nhận",
+    "emptyOutgoing": "Không có lời mời kết bạn nào đã gửi",
+    "accept": "Đồng ý",
+    "reject": "Từ chối",
+    "view": "Xem",
+    "pending": "Đang chờ",
+    "sentOn": "Đã gửi {{date}}"
+  },
+  "profile": {
+    "loading": "ĐANG TRUY VẾT...",
+    "notFoundTitle": "404 - KHÔNG TÌM THẤY CHỦ THỂ",
+    "notFoundMessage": "Hồ sơ được yêu cầu không tồn tại trong sổ bộ của làng.",
+    "returnHome": "TRỞ VỀ AN TOÀN",
+    "anonymousSubject": "Chủ thể ẩn danh",
+    "view": "XEM",
+    "badges": {
+      "warden": "WARDEN",
+      "explorer": "KHÁM PHÁ"
+    },
+    "headings": {
+      "logData": "NHẬT KÝ DỮ LIỆU",
+      "vitalSigns": "CHỈ SỐ SINH TỒN",
+      "gameMatchHistory": "LỊCH SỬ TRẬN ĐẤU",
+      "publishedPosts": "BÀI VIẾT ĐÃ ĐĂNG",
+      "archivedSaved": "LƯU TRỮ / ĐÃ LƯU",
+      "accomplicesFriends": "ĐỒNG MINH / BẠN BÈ",
+      "accountPreferences": "TÙY CHỌN TÀI KHOẢN"
+    },
+    "tabs": {
+      "activity": "HOẠT ĐỘNG",
+      "posts": "BÀI VIẾT",
+      "saved": "ĐÃ LƯU",
+      "friends": "BẠN BÈ",
+      "settings": "CÀI ĐẶT"
+    },
+    "labels": {
+      "joinedDate": "Tham gia {{date}}",
+      "friendsCount": "Bạn bè: {{count}}",
+      "posts": "BÀI VIẾT",
+      "achievements": "THÀNH TỰU",
+      "profileDetails": "CHI TIẾT HỒ SƠ",
+      "displayName": "Tên hiển thị",
+      "bio": "Tiểu sử",
+      "avatarUpload": "Tải ảnh đại diện",
+      "supportedImageTypes": "Hỗ trợ: JPEG, PNG, GIF (Tối đa 5MB)",
+      "avatarPreview": "Xem trước ảnh đại diện",
+      "avatarUrlAlternative": "URL ảnh đại diện (Tùy chọn)",
+      "security": "BẢO MẬT",
+      "privacy": "QUYỀN RIÊNG TƯ",
+      "showEmailToOthers": "Hiển thị email cho người khác"
+    },
+    "placeholders": {
+      "displayName": "Nhập tên hiển thị",
+      "bio": "Nhập tiểu sử (không bắt buộc)",
+      "avatarUrl": "Hoặc nhập trực tiếp URL ảnh"
+    },
+    "buttons": {
+      "returnHome": "TRỞ VỀ AN TOÀN",
+      "save": "LƯU",
+      "saving": "ĐANG LƯU...",
+      "cancel": "HỦY",
+      "uploading": "ĐANG TẢI LÊN...",
+      "uploadAvatar": "TẢI ẢNH ĐẠI DIỆN",
+      "saveChanges": "LƯU THAY ĐỔI",
+      "loadMore": "TẢI THÊM",
+      "changePassword": "ĐỔI MẬT KHẨU",
+      "forgotPassword": "QUÊN MẬT KHẨU?"
+    },
+    "actions": {
+      "editDisplayName": "Chỉnh sửa tên hiển thị",
+      "toggleVisibility": "Chuyển đổi hiển thị"
+    },
+    "empty": {
+      "noMatchData": "KHÔNG TÌM THẤY DỮ LIỆU TRẬN ĐẤU",
+      "matchDescription": "Chủ thể này chưa tham gia trận đấu nào được ghi nhận.",
+      "postsDescription": "Thư mục này hiện đang trống.",
+      "noSavedContent": "KHÔNG CÓ NỘI DUNG ĐÃ LƯU",
+      "onlyWardenArchive": "Chỉ warden mới có thể xem kho lưu trữ này.",
+      "noAccomplicesFound": "KHÔNG TÌM THẤY ĐỒNG MINH",
+      "subjectWandersAlone": "Chủ thể này lang thang một mình trong ngôi làng."
+    },
+    "status": {
+      "enabled": "ĐÃ BẬT",
+      "disabled": "ĐÃ TẮT"
+    },
+    "errors": {
+      "subjectNotFound": "Không tìm thấy chủ thể",
+      "connectionFailed": "Không thể kết nối tới cơ sở dữ liệu",
+      "failedUpdateName": "Không thể cập nhật tên",
+      "nameEmpty": "Tên không được để trống",
+      "nameTooLong": "Tên không được vượt quá 100 ký tự",
+      "bioTooLong": "Tiểu sử không được vượt quá 500 ký tự",
+      "failedUpdateProfile": "Không thể cập nhật hồ sơ",
+      "onlyImageTypes": "Chỉ cho phép ảnh JPEG, PNG và GIF",
+      "fileTooLarge": "Dung lượng ảnh không được vượt quá 5MB",
+      "selectImageFirst": "Vui lòng chọn một ảnh trước",
+      "failedUploadAvatar": "Không thể tải ảnh đại diện lên",
+      "failedUpdateVisibility": "Không thể cập nhật chế độ hiển thị"
+    },
+    "success": {
+      "updated": "Cập nhật hồ sơ thành công!",
+      "avatarUploaded": "Tải ảnh đại diện thành công!"
+    }
+  },
+  "friendActions": {
+    "loading": "Đang tải...",
+    "addFriend": "Thêm bạn bè",
+    "friendLimitReached": "Đã đạt giới hạn bạn bè",
+    "unfriend": "Hủy kết bạn",
+    "requestPending": "Đang chờ",
+    "acceptRequest": "Chấp nhận yêu cầu",
+    "rejectRequest": "Từ chối yêu cầu"
+  },
+  "friendList": {
+    "loading": "Đang tải danh sách bạn bè...",
+    "errorLoading": "Không thể tải danh sách bạn bè: {{message}}",
+    "title": "Bạn bè của tôi",
+    "count": "{{count}} bạn bè",
+    "empty": "Bạn chưa có người bạn nào.",
+    "unfriend": "Hủy kết bạn",
+    "openChat": "Mở chat"
+  },
+  "editor": {
+    "linkPrompt": "Nhập URL:",
+    "toolbar": {
+      "bold": "In đậm (Ctrl+B)",
+      "italic": "In nghiêng (Ctrl+I)",
+      "underline": "Gạch chân (Ctrl+U)",
+      "strikethrough": "Gạch ngang",
+      "textColor": "Màu chữ",
+      "bulletList": "Danh sách gạch đầu dòng",
+      "numberedList": "Danh sách đánh số",
+      "quote": "Trích dẫn",
+      "addLink": "Thêm liên kết",
+      "addImage": "Thêm ảnh",
+      "addVideo": "Thêm video"
+    }
+  },
+  "changePassword": {
+    "title": "Đổi mật khẩu",
+    "currentPassword": "Mật khẩu hiện tại *",
+    "newPassword": "Mật khẩu mới *",
+    "confirmPassword": "Xác nhận mật khẩu mới *",
+    "currentPasswordPlaceholder": "Nhập mật khẩu hiện tại của bạn",
+    "newPasswordPlaceholder": "Nhập mật khẩu mới của bạn",
+    "confirmPasswordPlaceholder": "Xác nhận mật khẩu mới của bạn",
+    "validation": {
+      "currentRequired": "Mật khẩu hiện tại là bắt buộc",
+      "newRequired": "Mật khẩu mới là bắt buộc",
+      "minLength": "Mật khẩu phải có ít nhất 8 ký tự",
+      "uppercase": "Một chữ cái in hoa",
+      "lowercase": "Một chữ cái thường",
+      "numbers": "Một chữ số",
+      "specialChar": "Một ký tự đặc biệt",
+      "passwordsMatch": "Mật khẩu mới không khớp",
+      "differentPassword": "Mật khẩu mới phải khác mật khẩu hiện tại",
+      "weakPassword": "Mật khẩu chưa đáp ứng yêu cầu độ mạnh"
+    },
+    "messages": {
+      "success": "Đổi mật khẩu thành công!",
+      "failed": "Không thể đổi mật khẩu"
+    },
+    "strength": {
+      "weak": "Yếu",
+      "fair": "Trung bình",
+      "good": "Khá",
+      "strong": "Mạnh"
+    }
+  },
+  "chatWidget": {
+    "messages": "Tin nhắn",
+    "moreOptions": "Tùy chọn khác",
+    "close": "Đóng",
+    "noFriends": "Chưa có bạn bè nào",
+    "placeholder": "Nhập tin nhắn...",
+    "autoReply": "Đã nhận tin nhắn của bạn! 👋"
+  },
+  "chatModal": {
+    "activeNow": "Đang hoạt động",
+    "close": "Đóng",
+    "loadingMessages": "Đang tải tin nhắn...",
+    "connectedMessage": "Bạn đã kết nối trên GhostVillage",
+    "placeholder": "Aa",
+    "send": "Gửi"
+  },
+  "search": {
+    "resultsTitle": "Kết quả tìm kiếm",
+    "resultsTitleWithQuery": "Kết quả tìm kiếm cho \"{{query}}\"",
+    "filters": "Bộ lọc",
+    "searchIn": "Tìm trong:",
+    "failed": "Không thể thực hiện tìm kiếm. Vui lòng đảm bảo máy chủ backend đang chạy.",
+    "loading": "Đang tìm kiếm...",
+    "errorTitle": "Lỗi tìm kiếm",
+    "errorHint": "Hãy chắc chắn rằng máy chủ backend đang chạy ở cổng 5000",
+    "noResultsTitle": "Không tìm thấy kết quả",
+    "noResultsDescription": "Thử từ khóa khác hoặc kiểm tra chính tả",
+    "featured": "Nổi bật",
+    "views": "{{count}} lượt xem",
+    "likes": "{{count}} lượt thích",
+    "comments": "{{count}} bình luận",
+    "collections": {
+      "posts": "Bài viết",
+      "wiki": "Wiki",
+      "announcements": "Thông báo",
+      "users": "Người dùng"
+    },
+    "tabs": {
+      "allResults": "Tất cả kết quả ({{count}})",
+      "posts": "Bài viết ({{count}})",
+      "wiki": "Wiki ({{count}})",
+      "announcements": "Thông báo ({{count}})",
+      "users": "Người dùng ({{count}})"
+    },
+    "section": {
+      "posts": "Bài viết ({{count}})",
+      "wiki": "Wiki ({{count}})",
+      "announcements": "Thông báo ({{count}})",
+      "users": "Người dùng ({{count}})"
+    }
+  },
+  "unfriendConfirm": {
+    "title": "Xác nhận",
+    "messageWithName": "Bạn có chắc muốn hủy kết bạn với {{name}} không?",
+    "messageWithoutName": "Bạn có chắc muốn hủy kết bạn với người này không?",
+    "ariaLabel": "Xác nhận hủy kết bạn",
+    "cancel": "Hủy",
+    "confirm": "Hủy kết bạn",
+    "loading": "Đang xử lý..."
   },
   "posts": {
     "title": "Bài viết",
@@ -98,12 +686,101 @@
     "noPosts": "Chưa có bài viết nào. Hãy là người đầu tiên tạo bài!",
     "noPostsRecorded": "CHƯA CÓ BÀI VIẾT",
     "loadingPosts": "Đang tải bài viết...",
+    "failedToLoadPosts": "Không thể tải bài viết",
+    "myPostsDescription": "Kho lưu trữ riêng của mọi bài viết bạn đã đăng trong GhostVillage.",
+    "myPostsTotalLabel": "Tổng bài viết",
+    "myPostsShownLabel": "Đã tải",
+    "myPostsEmptyTitle": "Chưa có bài viết nào được đăng",
+    "myPostsEmptyDescription": "Bài viết đã đăng của bạn sẽ xuất hiện tại đây sau khi bạn chia sẻ câu chuyện đầu tiên với ngôi làng.",
+    "myPostsError": "Không thể tải các bài viết bạn đã đăng.",
+    "savedPostsEmptyDescription": "Chưa có bài viết nào được lưu. Hãy đánh dấu những bài bạn muốn xem lại sau.",
+    "failedToLoadSaved": "Không thể tải bài viết đã lưu.",
+    "anonymous": "Ẩn danh",
+    "edit": "Sửa",
+    "delete": "Xóa",
+    "report": "Báo cáo",
+    "hide": "Ẩn",
+    "sharePost": "Chia sẻ bài viết",
+    "copyLink": "Sao chép liên kết",
+    "copied": "Đã sao chép!",
+    "linkCopied": "Đã sao chép liên kết!",
+    "copyLinkFailed": "Không thể sao chép liên kết",
+    "shareText": "Xem bài viết này trên GhostVillage:\n\n{{title}}\n\n{{url}}",
+    "reportProcessing": "Đang xử lý báo cáo...",
+    "reportReason": "Lý do",
+    "selectReason": "Chọn một lý do",
+    "reportReasonDetail": "Vui lòng mô tả chi tiết",
+    "reportReasonPlaceholder": "Mô tả rõ lý do bạn báo cáo bài viết này",
+    "reasonSpam": "Spam hoặc quảng cáo lặp lại",
+    "reasonScam": "Lừa đảo hoặc phishing",
+    "reasonAbuse": "Quấy rối, ngôn từ thù ghét hoặc đe dọa",
+    "reasonAdult": "Nội dung người lớn hoặc nhạy cảm",
+    "reasonMisinfo": "Thông tin sai lệch gây hại",
+    "reasonOffTopic": "Nội dung không liên quan hoặc lạc đề",
+    "reasonOther": "Khác",
     "categories": {
       "general": "Chung",
       "discussion": "Thảo luận",
       "trading": "Trao đổi",
       "teamUp": "Tìm đồng đội",
       "bugReport": "Báo lỗi"
+    }
+  },
+  "announcements": {
+    "title": "Thông Báo",
+    "subtitle": "Cập nhật tin tức và thông báo mới nhất từ GhostVillage",
+    "loading": "Đang tải...",
+    "empty": "Chưa có thông báo nào",
+    "detail": {
+      "loading": "Đang tải...",
+      "notFound": "Không tìm thấy thông báo",
+      "back": "← Quay lại Thông báo",
+      "breadcrumbRoot": "Thông báo",
+      "pinned": "Ghim",
+      "authorAnonymous": "Ẩn danh",
+      "views": "{{count}} lượt xem"
+    },
+    "pagination": {
+      "prev": "Trang trước",
+      "next": "Trang sau",
+      "pageStatus": "Trang {{page}} / {{total}}"
+    }
+  },
+  "wiki": {
+    "title": "GhostVillage Wiki",
+    "subtitle": "Kho tài liệu và hướng dẫn đầy đủ về thế giới GhostVillage",
+    "featured": "Nổi bật",
+    "loading": "Đang tải...",
+    "empty": "Không tìm thấy wiki nào",
+    "detail": {
+      "loading": "Đang tải...",
+      "notFound": "Không tìm thấy wiki",
+      "back": "← Quay lại Wiki",
+      "breadcrumbRoot": "Wiki",
+      "authorAnonymous": "Ẩn danh",
+      "views": "{{count}} lượt xem",
+      "likes": "{{count}} lượt thích",
+      "detailsHeading": "📊 Thông tin chi tiết",
+      "galleryHeading": "🖼️ Thư viện ảnh",
+      "videoHeading": "🎥 Video hướng dẫn",
+      "relatedHeading": "📖 Wiki liên quan",
+      "like": "Thích",
+      "liked": "Đã thích"
+    },
+    "pagination": {
+      "prev": "Trang trước",
+      "next": "Trang sau",
+      "pageStatus": "Trang {{page}} / {{total}}"
+    },
+    "categories": {
+      "all": "Tất cả",
+      "monster": "Quái vật",
+      "map": "Bản đồ",
+      "item": "Vật phẩm",
+      "guide": "Hướng dẫn",
+      "tutorial": "Bài hướng dẫn",
+      "lore": "Cốt truyện",
+      "faq": "Câu hỏi thường gặp"
     }
   },
   "post": {
@@ -114,7 +791,33 @@
       "contentPlaceholder": "Viết nội dung bài viết của bạn...",
       "contentCounter": "ký tự",
       "creatingButton": "Đang tạo...",
-      "addButton": "Thêm"
+      "addButton": "Thêm",
+      "uploading": "Đang tải lên...",
+      "mediaSummary": "Phương tiện: {{imageCount}}/{{maxImages}} ảnh, {{videoCount}}/{{maxVideos}} video",
+      "validation": {
+        "titleRequired": "Tiêu đề là bắt buộc",
+        "bodyRequired": "Nội dung là bắt buộc",
+        "bodyMinLength": "Nội dung phải có ít nhất 10 ký tự",
+        "bodyMaxLength": "Nội dung không được vượt quá {{max}} ký tự"
+      },
+      "errors": {
+        "maxImagesReached": "Bạn chỉ có thể thêm tối đa {{max}} ảnh cho mỗi bài viết.",
+        "maxVideosReached": "Bạn chỉ có thể thêm tối đa {{max}} video cho mỗi bài viết.",
+        "uploadFailed": "Không thể tải lên {{name}}: {{message}}",
+        "uploadFailedFallback": "Tải lên thất bại",
+        "saveFailed": "Không thể lưu bài viết",
+        "invalidImageType": "{{name}}: Định dạng không hợp lệ. Cho phép: {{types}}",
+        "imageTooLarge": "{{name}}: Quá lớn. Tối đa {{maxSize}}MB.",
+        "imageSlotsLeft": "Chỉ còn {{count}} chỗ ảnh{{plural}}.",
+        "invalidVideoType": "{{name}}: Định dạng không hợp lệ. Cho phép: {{types}}",
+        "videoTooLarge": "{{name}}: Quá lớn. Tối đa {{maxSize}}MB.",
+        "videoSlotsLeft": "Chỉ còn {{count}} chỗ video{{plural}}."
+      },
+      "success": {
+        "created": "Tạo bài viết thành công!",
+        "updated": "Cập nhật bài viết thành công!",
+        "mediaAdded": "Đã thêm {{name}}!"
+      }
     },
     "edit": {
       "title": "Chỉnh sửa bài viết",

@@ -97,8 +97,12 @@ const SidebarNav = () => {
   const browseLinks = [
     { icon: Home, label: t("navbar.home"), path: "/" },
     { icon: FileText, label: t("navbar.allPosts"), path: "/posts" },
-    { icon: BookOpen, label: "Wiki", path: "/wiki" },
-    { icon: Megaphone, label: "Announcements", path: "/announcements" },
+    { icon: BookOpen, label: t("navbar.wiki"), path: "/wiki" },
+    {
+      icon: Megaphone,
+      label: t("navbar.announcements"),
+      path: "/announcements",
+    },
   ];
 
   const myContentLinks = user

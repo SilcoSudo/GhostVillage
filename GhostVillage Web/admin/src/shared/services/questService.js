@@ -7,7 +7,7 @@ import axios from "./axios";
 const questService = {
   /**
    * Lấy danh sách tất cả quest
-   * @param {Object} params - Query parameters (page, limit, isActive, questLine, difficulty, search)
+    * @param {Object} params - Query parameters (page, limit, isActive, questType, search)
    * @returns {Promise} Response data
    */
   getAllQuests: async (params = {}) => {

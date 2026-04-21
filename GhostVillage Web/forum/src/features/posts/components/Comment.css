@@ -88,8 +88,13 @@
   align-items: center;
   gap: 4px;
 }
-.comment-bubble-deleted {
+
 .comment-author-name {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--text-primary);
   transition: color 0.2s;
   cursor: pointer;
 }
@@ -105,6 +110,10 @@
 }
 
 .reply-to-name {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
   color: var(--text-primary);
   font-weight: 600;
   transition: color 0.2s;
@@ -202,6 +211,18 @@
   font-size: 13px;
   color: var(--text-secondary);
   margin-left: auto;
+}
+
+.comment-edited-indicator {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  color: var(--text-primary);
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 700;
+  font-style: italic;
+  opacity: 0.85;
 }
 
 /* Dropdown menu styling */

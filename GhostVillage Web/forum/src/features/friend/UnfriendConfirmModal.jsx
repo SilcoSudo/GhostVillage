@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import "./UnfriendConfirmModal.css";
 
 const UnfriendConfirmModal = ({
@@ -7,11 +8,13 @@ const UnfriendConfirmModal = ({
   isLoading = false,
   friendName = "",
 }) => {
+  const { t } = useTranslation();
+
   if (!isOpen) return null;
 
   const message = friendName
-    ? `Bạn có chắc muốn hủy kết bạn với ${friendName} không?`
-    : "Bạn có chắc muốn hủy kết bạn với người này không?";
+    ? t("unfriendConfirm.messageWithName", { name: friendName })
+    : t("unfriendConfirm.messageWithoutName");
 
   return (
     <div className="unfriend-modal-overlay" onClick={onCancel}>
@@ -20,9 +23,9 @@ const UnfriendConfirmModal = ({
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label="Xác nhận hủy kết bạn"
+        aria-label={t("unfriendConfirm.ariaLabel")}
       >
-        <h3 className="unfriend-modal-title">Xác nhận</h3>
+        <h3 className="unfriend-modal-title">{t("unfriendConfirm.title")}</h3>
         <p className="unfriend-modal-message">{message}</p>
         <div className="unfriend-modal-actions">
           <button
@@ -31,7 +34,7 @@ const UnfriendConfirmModal = ({
             onClick={onCancel}
             disabled={isLoading}
           >
-            Hủy
+            {t("unfriendConfirm.cancel")}
           </button>
           <button
             type="button"
@@ -39,7 +42,9 @@ const UnfriendConfirmModal = ({
             onClick={onConfirm}
             disabled={isLoading}
           >
-            {isLoading ? "Đang xử lý..." : "Hủy kết bạn"}
+            {isLoading
+              ? t("unfriendConfirm.loading")
+              : t("unfriendConfirm.confirm")}
           </button>
         </div>
       </div>

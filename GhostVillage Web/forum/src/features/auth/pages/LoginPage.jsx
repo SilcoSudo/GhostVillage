@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../../../app/hooks/useAuth";
 import authService from "../services/authService";
 import LangmaText from "../../../shared/assets/images/logo.png";
@@ -7,6 +9,7 @@ import FogEffect from "../components/FogEffect";
 import "./Auth.css";
 
 const LoginPage = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -14,6 +17,7 @@ const LoginPage = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -28,21 +32,23 @@ const LoginPage = () => {
 
     // Map error codes to user-friendly messages
     const errorMessages = {
-      access_denied:
-        "You denied Google access. Please try again and grant permission.",
-      invalid_scope: "Invalid permissions requested. Please try again.",
-      invalid_grant: "Invalid authorization grant. Please try again.",
-      no_authorization_code:
-        "Failed to get authorization code. Please try again.",
+      access_denied: t("auth.loginPage.oauthErrors.accessDenied"),
+      invalid_scope: t("auth.loginPage.oauthErrors.invalidScope"),
+      invalid_grant: t("auth.loginPage.oauthErrors.invalidGrant"),
+      no_authorization_code: t(
+        "auth.loginPage.oauthErrors.noAuthorizationCode",
+      ),
       server_error: errorDescription
-        ? `Server error: ${errorDescription}. Please try again later.`
-        : "Server error occurred. Please try again later.",
+        ? t("auth.loginPage.oauthErrors.serverError", {
+            description: errorDescription,
+          })
+        : t("auth.loginPage.oauthErrors.serverErrorGeneric"),
     };
 
     const message =
-      errorMessages[errorParam] || "Google login failed. Please try again.";
+      errorMessages[errorParam] || t("auth.loginPage.oauthErrors.failed");
     setError(message);
-  }, [searchParams]);
+  }, [searchParams, t]);
 
   const handleChange = (e) => {
     setFormData({
@@ -67,29 +73,27 @@ const LoginPage = () => {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email) {
-      setError("Email is required");
+      setError(t("auth.loginPage.validation.emailRequired"));
       return;
     }
     if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address");
+      setError(t("auth.loginPage.validation.emailInvalid"));
       return;
     }
 
     // Validate password (match Register requirements)
     if (!password) {
-      setError("Password is required");
+      setError(t("auth.loginPage.validation.passwordRequired"));
       return;
     }
     if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+      setError(t("auth.loginPage.validation.passwordMinLength"));
       return;
     }
     // Password must include uppercase, lowercase, and special character
     const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
     if (!pwdRegex.test(password)) {
-      setError(
-        "Password must include uppercase, lowercase, and a special character",
-      );
+      setError(t("auth.loginPage.validation.passwordStrength"));
       return;
     }
 
@@ -99,7 +103,7 @@ const LoginPage = () => {
     if (result?.success) {
       navigate("/");
     } else {
-      const errorMessage = result?.message || "Login failed";
+      const errorMessage = result?.message || t("auth.loginPage.loginFailed");
 
       // Handle unverified account - redirect with email in state
       if (errorMessage === "ACCOUNT_NOT_VERIFIED") {
@@ -124,12 +128,12 @@ const LoginPage = () => {
       if (data.success && data.authUrl) {
         window.location.href = data.authUrl;
       } else {
-        setError(data.message || "Failed to initialize Google login");
+        setError(data.message || t("auth.loginPage.oauthErrors.initFailed"));
         setLoading(false);
       }
     } catch (error) {
       console.error("Google login error:", error);
-      setError("Failed to initialize Google login");
+      setError(t("auth.loginPage.oauthErrors.initFailed"));
       setLoading(false);
     }
   };
@@ -139,34 +143,49 @@ const LoginPage = () => {
       {/* Left side - Form */}
       <div className="login-form-section">
         <div className="login-form-wrapper">
-          <h2>Login</h2>
-          <p className="form-subtitle">Login into your account</p>
+          <h2>{t("auth.loginTitle")}</h2>
+          <p className="form-subtitle">{t("auth.loginPage.subtitle")}</p>
 
           {error && <div className="alert-message alert-danger">{error}</div>}
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Email</label>
+              <label>{t("auth.email")}</label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
                 required
-                placeholder="Enter your email"
+                placeholder={t("auth.loginPage.emailPlaceholder")}
               />
             </div>
 
             <div className="form-group">
-              <label>Password</label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                placeholder="Enter your password"
-              />
+              <label>{t("auth.password")}</label>
+              <div className="password-input-wrapper">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  placeholder={t("auth.loginPage.passwordPlaceholder")}
+                  className="password-input"
+                />
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={
+                    showPassword
+                      ? t("auth.hidePassword")
+                      : t("auth.showPassword")
+                  }
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <div className="remember-forgot">
@@ -176,20 +195,20 @@ const LoginPage = () => {
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                 />
-                <span>Remember me</span>
+                <span>{t("auth.rememberMe")}</span>
               </label>
               <Link to="/forgot-password" className="forgot-link">
-                Forgot password?
+                {t("auth.forgotPassword")}
               </Link>
             </div>
 
             <button type="submit" className="btn-signin" disabled={loading}>
-              {loading ? "Logging in..." : "Login"}
+              {loading ? t("auth.loginPage.loggingInButton") : t("auth.login")}
             </button>
           </form>
 
           <div className="form-divider">
-            <span>Or</span>
+            <span>{t("auth.loginPage.orText")}</span>
           </div>
 
           <button
@@ -216,12 +235,13 @@ const LoginPage = () => {
                 d="M9 3.582c1.321 0 2.508.454 3.44 1.345l2.582-2.580C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.29C4.672 5.163 6.656 3.582 9 3.582z"
               />
             </svg>
-            Sign in with Google
+            {t("auth.loginPage.googleSignIn")}
           </button>
 
           <div className="signup-link">
             <p>
-              Don't have an account? <Link to="/register">Register now</Link>
+              {t("auth.loginPage.noAccountPrompt")}{" "}
+              <Link to="/register">{t("auth.loginPage.registerNow")}</Link>
             </p>
           </div>
         </div>

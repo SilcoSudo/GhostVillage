@@ -12,7 +12,14 @@ i18n
       en: { translation: en },
       vi: { translation: vi }
     },
-    fallbackLng: 'en',
+    fallbackLng: 'vi',
+    supportedLngs: ['en', 'vi'],
+    detection: {
+      order: ['localStorage', 'navigator'],
+      caches: ['localStorage'],
+      lookupLocalStorage: 'admin_language',
+    },
+    load: 'languageOnly',
     interpolation: {
       escapeValue: false
     }

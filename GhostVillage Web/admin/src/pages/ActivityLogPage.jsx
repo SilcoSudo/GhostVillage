@@ -23,7 +23,7 @@ import "./assets/styles/ActivityLog.css";
  * Xem logs của hệ thống (admin actions, errors, system events)
  */
 const ActivityLogPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -68,7 +68,7 @@ const ActivityLogPage = () => {
       }
     } catch (err) {
       console.error("Error fetching logs:", err);
-      setError(err.response?.data?.message || "Lỗi khi tải danh sách logs");
+      setError(err.response?.data?.message || t("activityLog.errors.loadList"));
     } finally {
       setLoading(false);
     }
@@ -119,7 +119,7 @@ const ActivityLogPage = () => {
    */
   const formatTimestamp = (timestamp) => {
     const date = new Date(timestamp);
-    return date.toLocaleString("vi-VN", {
+    return date.toLocaleString(i18n.language?.startsWith("vi") ? "vi-VN" : "en-US", {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
@@ -170,28 +170,28 @@ const ActivityLogPage = () => {
         <div className="activity-log-header">
           <h1>
             <Activity size={28} />
-            Activity Log
+            {t("activityLog.title")}
           </h1>
-          <p>Xem lịch sử hoạt động của hệ thống, admin actions và errors</p>
+          <p>{t("activityLog.subtitle")}</p>
         </div>
 
         {/* Statistics Cards */}
         {stats && (
           <div className="activity-log-stats-grid">
             <div className="activity-log-stat-card">
-              <div className="activity-log-stat-label">Total Logs</div>
+              <div className="activity-log-stat-label">{t("activityLog.stats.total")}</div>
               <div className="activity-log-stat-value total">{stats.total}</div>
             </div>
             <div className="activity-log-stat-card">
-              <div className="activity-log-stat-label">Today</div>
+              <div className="activity-log-stat-label">{t("activityLog.stats.today")}</div>
               <div className="activity-log-stat-value today">{stats.today}</div>
             </div>
             <div className="activity-log-stat-card">
-              <div className="activity-log-stat-label">This Week</div>
+              <div className="activity-log-stat-label">{t("activityLog.stats.week")}</div>
               <div className="activity-log-stat-value week">{stats.week}</div>
             </div>
             <div className="activity-log-stat-card">
-              <div className="activity-log-stat-label">Errors</div>
+              <div className="activity-log-stat-label">{t("activityLog.stats.errors")}</div>
               <div className="activity-log-stat-value errors">{stats.errors}</div>
             </div>
           </div>
@@ -206,7 +206,7 @@ const ActivityLogPage = () => {
                 <Search className="search-icon" size={20} />
                 <input
                   type="text"
-                  placeholder="Tìm kiếm logs..."
+                  placeholder={t("activityLog.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleSearch()}
@@ -224,7 +224,7 @@ const ActivityLogPage = () => {
                     onChange={(e) => setFilterAction(e.target.value)}
                     className="filter-select"
                   >
-                    <option value="all">Tất cả actions</option>
+                    <option value="all">{t("activityLog.filters.allActions")}</option>
                     <option value="CREATE">Create</option>
                     <option value="UPDATE">Update</option>
                     <option value="DELETE">Delete</option>
@@ -244,7 +244,7 @@ const ActivityLogPage = () => {
                     onChange={(e) => setFilterEntityType(e.target.value)}
                     className="filter-select"
                   >
-                    <option value="all">Tất cả entities</option>
+                    <option value="all">{t("activityLog.filters.allEntities")}</option>
                     <option value="USER">User</option>
                     <option value="MONSTER">Monster</option>
                     <option value="MAP">Map</option>
@@ -265,7 +265,7 @@ const ActivityLogPage = () => {
                     onChange={(e) => setFilterSeverity(e.target.value)}
                     className="filter-select"
                   >
-                    <option value="all">Tất cả severity</option>
+                    <option value="all">{t("activityLog.filters.allSeverity")}</option>
                     <option value="LOW">Low</option>
                     <option value="MEDIUM">Medium</option>
                     <option value="HIGH">High</option>
@@ -299,20 +299,20 @@ const ActivityLogPage = () => {
                   <thead>
                     <tr>
                       <th style={{ width: "40px" }}></th>
-                      <th style={{ width: "150px" }}>Timestamp</th>
+                      <th style={{ width: "150px" }}>{t("activityLog.columns.timestamp")}</th>
                       <th style={{ width: "100px" }}>Action</th>
-                      <th style={{ width: "120px" }}>Entity Type</th>
+                      <th style={{ width: "120px" }}>{t("activityLog.columns.entityType")}</th>
                       <th style={{ width: "100px" }}>Severity</th>
-                      <th>Description</th>
+                      <th>{t("common.description")}</th>
                       <th style={{ width: "150px" }}>User</th>
-                      <th style={{ width: "80px" }}>Actions</th>
+                      <th style={{ width: "80px" }}>{t("common.actions")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {logs.length === 0 ? (
                       <tr>
                         <td colSpan="8" className="activity-log-empty-state">
-                          <p>Không tìm thấy logs nào</p>
+                          <p>{t("activityLog.empty")}</p>
                         </td>
                       </tr>
                     ) : (
@@ -360,14 +360,14 @@ const ActivityLogPage = () => {
                                 <span>{log.username}</span>
                               </div>
                             ) : (
-                              <span className="activity-log-system">System</span>
+                              <span className="activity-log-system">{t("activityLog.system")}</span>
                             )}
                           </td>
                           <td className="center">
                             <button
                               onClick={() => handleViewDetail(log)}
                               className="activity-log-action-btn view"
-                              title="Xem chi tiết"
+                              title={t("common.view")}
                             >
                               <Eye size={16} />
                             </button>
@@ -388,10 +388,10 @@ const ActivityLogPage = () => {
                   disabled={currentPage === 1}
                   className="activity-log-pagination-btn"
                 >
-                  Trước
+                  {t("common.previous")}
                 </button>
                 <span className="activity-log-pagination-info">
-                  Trang {currentPage} / {pagination.totalPages}
+                  {t("common.pageOf", { page: currentPage, total: pagination.totalPages })}
                 </span>
                 <button
                   onClick={() =>
@@ -402,7 +402,7 @@ const ActivityLogPage = () => {
                   disabled={currentPage === pagination.totalPages}
                   className="activity-log-pagination-btn"
                 >
-                  Sau
+                  {t("common.next")}
                 </button>
               </div>
             )}
@@ -415,7 +415,7 @@ const ActivityLogPage = () => {
         <div className="modal-overlay">
           <div className="modal-container" style={{ maxWidth: "48rem" }}>
             <div className="modal-header">
-              <h2>Log Detail</h2>
+              <h2>{t("activityLog.detailTitle")}</h2>
               <button
                 onClick={() => setShowDetailModal(false)}
                 className="modal-close-btn"
@@ -427,12 +427,12 @@ const ActivityLogPage = () => {
             <div className="modal-body">
               <div className="log-detail-grid">
                 <div className="log-detail-item">
-                  <label>Timestamp:</label>
+                  <label>{t("activityLog.columns.timestamp")}:</label>
                   <span>{formatTimestamp(selectedLog.createdAt)}</span>
                 </div>
 
                 <div className="log-detail-item">
-                  <label>Action:</label>
+                  <label>{t("activityLog.columns.action")}:</label>
                   <span
                     className={`activity-log-badge ${getActionColor(
                       selectedLog.action
@@ -443,22 +443,22 @@ const ActivityLogPage = () => {
                 </div>
 
                 <div className="log-detail-item">
-                  <label>Entity Type:</label>
+                  <label>{t("activityLog.columns.entityType")}:</label>
                   <span>{selectedLog.entityType}</span>
                 </div>
 
                 <div className="log-detail-item">
-                  <label>Entity ID:</label>
-                  <span>{selectedLog.entityId || "N/A"}</span>
+                  <label>{t("activityLog.columns.entityId")}:</label>
+                  <span>{selectedLog.entityId || t("activityLog.na")}</span>
                 </div>
 
                 <div className="log-detail-item">
-                  <label>Entity Name:</label>
-                  <span>{selectedLog.entityName || "N/A"}</span>
+                  <label>{t("activityLog.columns.entityName")}:</label>
+                  <span>{selectedLog.entityName || t("activityLog.na")}</span>
                 </div>
 
                 <div className="log-detail-item">
-                  <label>Severity:</label>
+                  <label>{t("activityLog.columns.severity")}:</label>
                   <span
                     className={`activity-log-severity ${selectedLog.severity.toLowerCase()}`}
                   >
@@ -467,23 +467,23 @@ const ActivityLogPage = () => {
                 </div>
 
                 <div className="log-detail-item full-width">
-                  <label>Description:</label>
+                  <label>{t("common.description")}:</label>
                   <p>{selectedLog.description}</p>
                 </div>
 
                 <div className="log-detail-item">
-                  <label>User:</label>
-                  <span>{selectedLog.username || "System"}</span>
+                  <label>{t("activityLog.columns.user")}:</label>
+                  <span>{selectedLog.username || t("activityLog.system")}</span>
                 </div>
 
                 <div className="log-detail-item">
-                  <label>IP Address:</label>
-                  <span>{selectedLog.ipAddress || "N/A"}</span>
+                  <label>{t("activityLog.columns.ipAddress")}:</label>
+                  <span>{selectedLog.ipAddress || t("activityLog.na")}</span>
                 </div>
 
                 {selectedLog.metadata && Object.keys(selectedLog.metadata).length > 0 && (
                   <div className="log-detail-item full-width">
-                    <label>Metadata:</label>
+                    <label>{t("activityLog.columns.metadata")}:</label>
                     <pre className="log-metadata">
                       {JSON.stringify(selectedLog.metadata, null, 2)}
                     </pre>
@@ -497,7 +497,7 @@ const ActivityLogPage = () => {
                 onClick={() => setShowDetailModal(false)}
                 className="modal-btn modal-btn-secondary"
               >
-                Đóng
+                {t("common.close")}
               </button>
             </div>
           </div>

@@ -1,18 +1,21 @@
-import { Link } from 'react-router-dom';
-import { Eye, Calendar, Pin } from 'lucide-react';
-import PropTypes from 'prop-types';
+import { Link } from "react-router-dom";
+import { Eye, Calendar, Pin } from "lucide-react";
+import PropTypes from "prop-types";
+import { useTranslation } from "react-i18next";
 
 const AnnouncementCard = ({ announcement }) => {
+  const { t, i18n } = useTranslation();
+
   return (
     <Link
       to={`/announcements/${announcement.slug}`}
-      className={`announcement-card ${announcement.isPinned ? 'pinned' : ''}`}
+      className={`announcement-card ${announcement.isPinned ? "pinned" : ""}`}
     >
       {/* Pinned Badge */}
       {announcement.isPinned && (
         <div className="pinned-indicator">
           <Pin size={16} />
-          <span>Ghim</span>
+          <span>{t("announcements.detail.pinned")}</span>
         </div>
       )}
 
@@ -41,7 +44,11 @@ const AnnouncementCard = ({ announcement }) => {
         <div className="announcement-meta">
           <div className="meta-item">
             <Calendar size={14} />
-            <span>{new Date(announcement.createdAt).toLocaleDateString('vi-VN')}</span>
+            <span>
+              {new Date(announcement.createdAt).toLocaleDateString(
+                i18n.language?.startsWith("vi") ? "vi-VN" : "en-US",
+              )}
+            </span>
           </div>
           <div className="meta-item">
             <Eye size={14} />

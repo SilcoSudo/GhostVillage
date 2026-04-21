@@ -6,6 +6,23 @@ export const COMMENT_QUERY_KEYS = {
   COMMENTS: "comments",
 };
 
+const updateCommentCollection = (oldData, updatedComment) => {
+  if (!oldData?.data || !Array.isArray(oldData.data) || !updatedComment?._id) {
+    return oldData;
+  }
+
+  const nextComments = oldData.data.map((comment) =>
+    String(comment._id) === String(updatedComment._id)
+      ? { ...comment, ...updatedComment }
+      : comment,
+  );
+
+  return {
+    ...oldData,
+    data: nextComments,
+  };
+};
+
 // Get comments for a post
 export const useComments = (postId, options = {}) => {
   return useQuery({
@@ -23,7 +40,9 @@ export const useCreateComment = (postId) => {
     mutationFn: (commentData) =>
       commentService.createComment(postId, commentData),
     onSuccess: () => {
-      queryClient.invalidateQueries([COMMENT_QUERY_KEYS.COMMENTS, postId]);
+      queryClient.invalidateQueries({
+        queryKey: [COMMENT_QUERY_KEYS.COMMENTS, postId],
+      });
       toast.success("Comment posted!");
     },
     onError: (error) => {
@@ -39,8 +58,19 @@ export const useUpdateComment = (postId) => {
   return useMutation({
     mutationFn: ({ commentId, commentData }) =>
       commentService.updateComment(postId, commentId, commentData),
-    onSuccess: () => {
-      queryClient.invalidateQueries([COMMENT_QUERY_KEYS.COMMENTS, postId]);
+    onSuccess: (data) => {
+      const updatedComment = data?.data;
+
+      if (updatedComment?._id) {
+        queryClient.setQueriesData(
+          { queryKey: [COMMENT_QUERY_KEYS.COMMENTS, postId] },
+          (oldData) => updateCommentCollection(oldData, updatedComment),
+        );
+      }
+
+      queryClient.invalidateQueries({
+        queryKey: [COMMENT_QUERY_KEYS.COMMENTS, postId],
+      });
       toast.success("Comment updated!");
     },
     onError: (error) => {
@@ -56,7 +86,9 @@ export const useDeleteComment = (postId) => {
   return useMutation({
     mutationFn: (commentId) => commentService.deleteComment(postId, commentId),
     onSuccess: () => {
-      queryClient.invalidateQueries([COMMENT_QUERY_KEYS.COMMENTS, postId]);
+      queryClient.invalidateQueries({
+        queryKey: [COMMENT_QUERY_KEYS.COMMENTS, postId],
+      });
       toast.success("Comment deleted!");
     },
     onError: (error) => {
@@ -72,7 +104,9 @@ export const useReportComment = (postId) => {
     mutationFn: ({ commentId, reportData }) =>
       commentService.reportComment(postId, commentId, reportData),
     onSuccess: (data) => {
-      queryClient.invalidateQueries([COMMENT_QUERY_KEYS.COMMENTS, postId]);
+      queryClient.invalidateQueries({
+        queryKey: [COMMENT_QUERY_KEYS.COMMENTS, postId],
+      });
       toast.success(data?.message || "Comment report submitted");
     },
     onError: (error) => {

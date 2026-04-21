@@ -59,6 +59,6 @@ export const reportPost = async ({ postId, reason, customReason = "" }) => {
 
 // Get user's posts
 export const getUserPosts = async (userId, params = {}) => {
-  const response = await axios.get(`/users/${userId}/posts`, { params });
+  const response = await axios.get(`/web/user/${userId}/posts`, { params });
   return response.data;
 };

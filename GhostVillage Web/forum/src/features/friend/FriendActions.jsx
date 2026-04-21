@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useFriendList,
   useFriendshipStatus,
@@ -23,6 +24,7 @@ const FriendActions = ({
   compact = false,
   preloadedStatus = null,
 }) => {
+  const { t } = useTranslation();
   // Use preloaded status if provided, otherwise fetch
   const shouldFetch = !preloadedStatus;
   const { data: fetchedStatus, isLoading } = useFriendshipStatus(
@@ -69,13 +71,13 @@ const FriendActions = ({
       <button
         className={`friend-btn add-friend ${compact ? "compact" : ""}`}
         disabled={true}
-        title="Loading..."
+        title={t("friendActions.loading")}
       >
         {compact ? (
           <i className="fas fa-user-plus"></i>
         ) : (
           <>
-            <i className="fas fa-user-plus"></i> Add Friend
+            <i className="fas fa-user-plus"></i> {t("friendActions.addFriend")}
           </>
         )}
       </button>
@@ -89,14 +91,20 @@ const FriendActions = ({
         className={`friend-btn add-friend ${compact ? "compact" : ""}`}
         onClick={() => addFriend(targetUserId)}
         disabled={isLoadingAction || hasFriendLimitReached}
-        title={hasFriendLimitReached ? "Friend limit reached" : "Add Friend"}
+        title={
+          hasFriendLimitReached
+            ? t("friendActions.friendLimitReached")
+            : t("friendActions.addFriend")
+        }
       >
         {compact ? (
           <i className="fas fa-user-plus"></i>
         ) : (
           <>
             <i className="fas fa-user-plus"></i>
-            {hasFriendLimitReached ? " Friend Limit Reached" : " Add Friend"}
+            {hasFriendLimitReached
+              ? ` ${t("friendActions.friendLimitReached")}`
+              : ` ${t("friendActions.addFriend")}`}
           </>
         )}
       </button>
@@ -111,13 +119,14 @@ const FriendActions = ({
           className={`friend-btn unfriend ${compact ? "compact" : ""}`}
           onClick={handleUnfriend}
           disabled={isLoadingAction}
-          title="Unfriend"
+          title={t("friendActions.unfriend")}
         >
           {compact ? (
             <i className="fas fa-user-minus"></i>
           ) : (
             <>
-              <i className="fas fa-user-minus"></i> Unfriend
+              <i className="fas fa-user-minus"></i>{" "}
+              {t("friendActions.unfriend")}
             </>
           )}
         </button>
@@ -138,13 +147,14 @@ const FriendActions = ({
       <button
         className={`friend-btn pending ${compact ? "compact" : ""}`}
         disabled={true}
-        title="Request Pending"
+        title={t("friendActions.requestPending")}
       >
         {compact ? (
           <i className="fas fa-hourglass-half"></i>
         ) : (
           <>
-            <i className="fas fa-hourglass-half"></i> Pending
+            <i className="fas fa-hourglass-half"></i>{" "}
+            {t("friendActions.requestPending")}
           </>
         )}
       </button>
@@ -163,13 +173,14 @@ const FriendActions = ({
             console.log("Accept request");
           }}
           disabled={isLoadingAction}
-          title="Accept Request"
+          title={t("friendActions.acceptRequest")}
         >
           {compact ? (
             <i className="fas fa-check"></i>
           ) : (
             <>
-              <i className="fas fa-check"></i> Accept
+              <i className="fas fa-check"></i>{" "}
+              {t("friendActions.acceptRequest")}
             </>
           )}
         </button>
@@ -180,13 +191,14 @@ const FriendActions = ({
             console.log("Reject request");
           }}
           disabled={isLoadingAction}
-          title="Reject Request"
+          title={t("friendActions.rejectRequest")}
         >
           {compact ? (
             <i className="fas fa-times"></i>
           ) : (
             <>
-              <i className="fas fa-times"></i> Reject
+              <i className="fas fa-times"></i>{" "}
+              {t("friendActions.rejectRequest")}
             </>
           )}
         </button>

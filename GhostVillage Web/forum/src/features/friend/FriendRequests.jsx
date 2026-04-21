@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { User } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   usePendingFriendRequests,
   useSentFriendRequests,
@@ -12,6 +13,7 @@ import "./FriendRequests.css";
 
 const FriendRequests = () => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [activeTab, setActiveTab] = useState("incoming"); // incoming | outgoing
 
   const { data: pendingRequests, isLoading: loadingPending } =
@@ -27,11 +29,13 @@ const FriendRequests = () => {
     return (
       <div className="friend-requests">
         <div className="loading">
-          <p>Loading friend requests...</p>
+          <p>{t("friendRequests.loading")}</p>
         </div>
       </div>
     );
   }
+
+  const dateLocale = i18n.language?.startsWith("vi") ? "vi-VN" : "en-US";
 
   const handleAccept = (friendshipId) => {
     acceptRequest(friendshipId);
@@ -48,7 +52,7 @@ const FriendRequests = () => {
   return (
     <div className="friend-requests">
       <div className="friend-requests-header">
-        <h2>Friend Requests</h2>
+        <h2>{t("friendRequests.title")}</h2>
       </div>
 
       <div className="request-tabs">
@@ -56,7 +60,7 @@ const FriendRequests = () => {
           className={`tab-btn ${activeTab === "incoming" ? "active" : ""}`}
           onClick={() => setActiveTab("incoming")}
         >
-          <i className="fas fa-inbox"></i> Incoming
+          <i className="fas fa-inbox"></i> {t("friendRequests.tabs.incoming")}
           {pendingRequests && pendingRequests.length > 0 && (
             <span className="badge">{pendingRequests.length}</span>
           )}
@@ -65,7 +69,8 @@ const FriendRequests = () => {
           className={`tab-btn ${activeTab === "outgoing" ? "active" : ""}`}
           onClick={() => setActiveTab("outgoing")}
         >
-          <i className="fas fa-paper-plane"></i> Outgoing
+          <i className="fas fa-paper-plane"></i>{" "}
+          {t("friendRequests.tabs.outgoing")}
           {sentRequests && sentRequests.length > 0 && (
             <span className="badge">{sentRequests.length}</span>
           )}
@@ -76,7 +81,7 @@ const FriendRequests = () => {
         <div className="requests-container">
           {!pendingRequests || pendingRequests.length === 0 ? (
             <div className="no-requests">
-              <p>No incoming friend requests</p>
+              <p>{t("friendRequests.emptyIncoming")}</p>
             </div>
           ) : (
             <div className="requests-list">
@@ -107,7 +112,9 @@ const FriendRequests = () => {
                         <p className="requester-bio">{request.userId.bio}</p>
                       )}
                       <span className="request-date">
-                        {new Date(request.requestedAt).toLocaleDateString()}
+                        {new Date(request.requestedAt).toLocaleDateString(
+                          dateLocale,
+                        )}
                       </span>
                     </div>
                   </div>
@@ -117,19 +124,21 @@ const FriendRequests = () => {
                       className="btn btn-accept"
                       onClick={() => handleAccept(request._id)}
                     >
-                      <i className="fas fa-check"></i> Accept
+                      <i className="fas fa-check"></i>{" "}
+                      {t("friendRequests.accept")}
                     </button>
                     <button
                       className="btn btn-reject"
                       onClick={() => handleReject(request._id)}
                     >
-                      <i className="fas fa-times"></i> Reject
+                      <i className="fas fa-times"></i>{" "}
+                      {t("friendRequests.reject")}
                     </button>
                     <button
                       className="btn btn-view"
                       onClick={() => handleViewProfile(request.userId._id)}
                     >
-                      <i className="fas fa-user"></i> View
+                      <i className="fas fa-user"></i> {t("friendRequests.view")}
                     </button>
                   </div>
                 </div>
@@ -143,7 +152,7 @@ const FriendRequests = () => {
         <div className="requests-container">
           {!sentRequests || sentRequests.length === 0 ? (
             <div className="no-requests">
-              <p>No outgoing friend requests</p>
+              <p>{t("friendRequests.emptyOutgoing")}</p>
             </div>
           ) : (
             <div className="requests-list">
@@ -177,21 +186,25 @@ const FriendRequests = () => {
                         <p className="requester-bio">{request.friendId.bio}</p>
                       )}
                       <span className="request-date">
-                        Sent{" "}
-                        {new Date(request.requestedAt).toLocaleDateString()}
+                        {t("friendRequests.sentOn", {
+                          date: new Date(
+                            request.requestedAt,
+                          ).toLocaleDateString(dateLocale),
+                        })}
                       </span>
                     </div>
                   </div>
 
                   <div className="request-actions">
                     <span className="pending-badge">
-                      <i className="fas fa-clock"></i> Pending
+                      <i className="fas fa-clock"></i>{" "}
+                      {t("friendRequests.pending")}
                     </span>
                     <button
                       className="btn btn-view"
                       onClick={() => handleViewProfile(request.friendId._id)}
                     >
-                      <i className="fas fa-user"></i> View
+                      <i className="fas fa-user"></i> {t("friendRequests.view")}
                     </button>
                   </div>
                 </div>
