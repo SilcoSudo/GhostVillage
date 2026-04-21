@@ -16,6 +16,8 @@ MonoBehaviour:
   itemName: Medkit
   description: Use to revive teamate
   itemType: 1
+  holdType: 1
   itemIcon: {fileID: 1651848752, guid: 412061ab55e24ac4e8620a04a28b9e2a, type: 3}
   itemWorldPrefab: {fileID: 135329721425972406, guid: 21fefe87b2e17944f8520aa7d386f2fe, type: 3}
   itemHandModel: {fileID: 3445322360468258779, guid: 47c06c39b358e814092bc725e917e1b2, type: 3}
+  healAmount: 10

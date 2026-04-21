@@ -174,28 +174,28 @@ namespace Game.UI.Lobby
             // 1. Bắt lỗi rỗng
             if (string.IsNullOrEmpty(roomName))
             {
-                if (_globalUI != null) _globalUI.ShowError("Lỗi Nhập Liệu", "Tên phòng không được để trống!");
+                if (_globalUI != null) _globalUI.ShowError("Error", "Room name cannot be empty!");
                 return;
             }
 
             // 2. Bắt lỗi độ dài tên phòng (ngắn quá hoặc dài quá nhìn UI sẽ rất gớm)
             if (roomName.Length < 3 || roomName.Length > 20)
             {
-                if (_globalUI != null) _globalUI.ShowError("Lỗi Nhập Liệu", "Tên phòng phải dài từ 3 đến 20 ký tự!");
+                if (_globalUI != null) _globalUI.ShowError("Error", "Room name must be between 3 and 20 characters!");
                 return;
             }
 
             // 3. Bắt lỗi ký tự đặc biệt (Chỉ cho phép Chữ không dấu/có dấu, Số và Khoảng trắng)
             if (!System.Text.RegularExpressions.Regex.IsMatch(roomName, @"^[a-zA-Z0-9 ]+$"))
             {
-                if (_globalUI != null) _globalUI.ShowError("Lỗi Nhập Liệu", "Tên phòng chỉ được chứa chữ cái, số và khoảng trắng (không có ký tự đặc biệt)!");
+                if (_globalUI != null) _globalUI.ShowError("Error", "Room name can only contain letters, numbers, and spaces!");
                 return;
             }
 
             // 4. Giới hạn độ dài Password (Mặc dù Photon cho max ping, nhưng UI mình set 16 cho đẹp)
             if (password.Length > 16)
             {
-                if (_globalUI != null) _globalUI.ShowError("Lỗi Nhập Liệu", "Mật khẩu không được vượt quá 16 ký tự!");
+                if (_globalUI != null) _globalUI.ShowError("Error", "Password cannot exceed 16 characters!");
                 return;
             }
 

@@ -249,18 +249,40 @@ namespace Game.Script.UI
 
         public void OpenSettings()
         {
-            if (_settingsUI != null) _settingsUI.ShowSettings(true);
+            if (_settingsUI != null)
+            {
+                _settingsUI.ShowSettings(true);
+                // [FIX]: Chắc chắn nhả chuột khi mở Settings
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
         }
 
         public void CloseSettings()
         {
             if (_settingsUI != null) _settingsUI.ShowSettings(false);
 
-            if (_currentEscType == EscMenuType.InGame)
+            // [FIX]: Khóa chuột cho cả InGame và Lobby khi đóng Settings
+            if (_currentEscType == EscMenuType.InGame || _currentEscType == EscMenuType.Lobby)
             {
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
             }
+            else if (_currentEscType == EscMenuType.MainMenu)
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
+
+            // Reset trạng thái sau khi đóng từ Settings (nếu muốn đóng thẳng về Game)
+            _currentEscType = EscMenuType.None;
+        }
+
+        public bool IsSettingsOpen()
+        {
+            if (_settingsUI == null) return false;
+            // Kiểm tra xem GameObject của Settings hoặc Panel chính của nó có đang Active không
+            return _settingsUI.gameObject.activeInHierarchy;
         }
 
         // ========================================================

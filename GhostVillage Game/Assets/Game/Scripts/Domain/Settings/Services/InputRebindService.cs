@@ -30,69 +30,66 @@ namespace Game.Domain.Settings.Services
         }
 
         // Lệnh bắt đầu nghe phím mới
-        public void StartRebind(string actionName, int bindingIndex, Action<string, string> onComplete)
+        // SỬA HÀM NÀY TRONG InputRebindService.cs
+        public void StartRebind(string actionName, int bindingIndex, Action<string, string> onResult)
         {
             var action = _inputActions.asset.FindAction(actionName);
-            if (action == null)
-            {
-                Debug.LogError($"[InputRebind] Không tìm thấy Action: {actionName}");
-                return;
-            }
+            if (action == null) return;
 
             action.Disable();
 
-            // Bắt đầu quá trình chờ người chơi bấm phím
-            action.PerformInteractiveRebinding(bindingIndex)
-                .WithControlsExcluding("Mouse") // Bỏ qua nhấp chuột
-                .WithCancelingThrough("<Keyboard>/escape") // Hủy thao tác nếu bấm nút ESC
-                .OnMatchWaitForAnother(0.1f) // Chờ 0.1s để tránh nhận tín hiệu đúp
+            var rebindOperation = action.PerformInteractiveRebinding(bindingIndex)
+                .WithControlsExcluding("Mouse")
+                .WithCancelingThrough("<Keyboard>/escape")
                 .OnApplyBinding((operation, path) =>
                 {
-                    // ĐI THEO DÕI XEM PHÍM VỪA BẤM CÓ BỊ TRÙNG VỚI AI KHÔNG
+                    // 1. KIỂM TRA TRÙNG PHÍM
                     bool isDuplicate = false;
-                    foreach (var b in action.actionMap.bindings)
+                    foreach (var map in _inputActions.asset.actionMaps)
                     {
-                        // Nếu là chính cái nút đang được gán thì bỏ qua
-                        if (b.action == action.name && action.bindings[bindingIndex].id == b.id) continue;
-
-                        // Nếu phím vừa bấm trùng với một phím đã có trong hệ thống
-                        if (b.effectivePath == path)
+                        foreach (var b in map.bindings)
                         {
-                            isDuplicate = true;
-                            break;
+                            if (b.effectivePath == path)
+                            {
+                                // Nếu trùng phím ở một Action khác -> Đánh dấu trùng
+                                if (b.action != actionName) { isDuplicate = true; break; }
+                            }
                         }
                     }
 
                     if (isDuplicate)
                     {
-                        Debug.LogWarning($"[InputRebind] Phím '{path}' đã bị trùng với chức năng khác!");
-                        operation.Cancel(); // Phím trùng -> Hủy luôn thao tác gán
+                        Debug.LogWarning($"[InputRebind] Phím '{path}' bị trùng!");
+                        operation.Cancel();
+                    }
+                    else
+                    {
+                        // [FIX CHÍ MẠNG]: Phải gọi dòng này thì Input System mới thực sự đè phím mới vào asset
+                        operation.action.ApplyBindingOverride(bindingIndex, path);
                     }
                 })
                 .OnComplete(operation =>
                 {
-                    operation.Dispose();
-                    action.Enable();
-
-                    // Lấy đường dẫn mã hóa (để lưu JSON) và tên hiển thị (để hiện lên UI)
-                    string overridePath = action.bindings[bindingIndex].overridePath;
+                    // Lấy phím mới sau khi đã Apply thành công
+                    string finalPath = action.bindings[bindingIndex].overridePath;
                     string displayString = action.GetBindingDisplayString(bindingIndex);
 
-                    onComplete?.Invoke(overridePath, displayString);
+                    operation.Dispose();
+                    action.Enable();
+                    onResult?.Invoke(finalPath, displayString);
                 })
                 .OnCancel(operation =>
                 {
-                    operation.Dispose();
-                    action.Enable();
-
-                    // TRƯỜNG HỢP HỦY (Bấm ESC hoặc bị trùng phím):
-                    // Trả lại tên phím CŨ để UI không bị kẹt ở chữ "..."
-                    string overridePath = action.bindings[bindingIndex].overridePath ?? action.bindings[bindingIndex].path;
+                    // [FIX LỖI MẤT PHÍM]: Khi hủy, lấy lại phím đang có (cũ hoặc override cũ)
+                    string currentPath = action.bindings[bindingIndex].overridePath ?? action.bindings[bindingIndex].path;
                     string displayString = action.GetBindingDisplayString(bindingIndex);
 
-                    onComplete?.Invoke(overridePath, displayString);
-                })
-                .Start();
+                    operation.Dispose();
+                    action.Enable();
+                    onResult?.Invoke(currentPath, displayString);
+                });
+
+            rebindOperation.Start();
         }
 
         // Trả về tên phím hiện tại để load lên UI

@@ -1444,6 +1444,10 @@ PrefabInstance:
       propertyPath: sceneViewId
       value: 4
       objectReference: {fileID: 0}
+    - target: {fileID: 8486354453713600770, guid: cf7c961e4a151d346a159150c761d42a, type: 3}
+      propertyPath: data
+      value: 
+      objectReference: {fileID: 11400000, guid: 492d0ac50f1e6ab4eadd78ba952db831, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4282,6 +4286,7 @@ SceneRoots:
   - {fileID: 1376857683}
   - {fileID: 1033470195}
   - {fileID: 662520484}
+  - {fileID: 688476222}
   - {fileID: 2004174520}
   - {fileID: 420899526}
   - {fileID: 621073176}
@@ -4289,4 +4294,3 @@ SceneRoots:
   - {fileID: 1429792550}
   - {fileID: 1550805750}
   - {fileID: 1346050364}
-  - {fileID: 688476222}

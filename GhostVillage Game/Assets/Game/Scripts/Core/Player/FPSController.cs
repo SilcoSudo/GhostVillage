@@ -92,7 +92,7 @@ public class FPSController : MonoBehaviourPun
     {
         if (!photonView.IsMine || _inputActions == null) return;
 
-        if (_globalUI != null && _globalUI.IsEscMenuOpen()) return;
+        if (_globalUI != null && (_globalUI.IsEscMenuOpen() || _globalUI.IsSettingsOpen())) return;
 
         if (_uiManager != null && _uiManager.IsAnyUIOpen) return;
 

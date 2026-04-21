@@ -7,7 +7,7 @@ import MoonEvent from "../moonEvent/moonEventModel.js";
 
 export const MapService = {
   getAllMaps: async (query) => {
-    const { isActive = "all" } = query;
+    const { isActive = "true" } = query;
     let filter = {};
     if (isActive !== "all") {
       filter["identityConfig.isActive"] = isActive === "true";

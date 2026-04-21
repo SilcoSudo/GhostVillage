@@ -424,11 +424,13 @@ namespace GhostVillage.Gameplay.Monsters.Mada
 
             if (other.CompareTag("Player"))
             {
-                // [MỚI]: Check xem thằng này có đang bị Knocked không
-                var knockedState = other.GetComponent<PlayerKnockedState>();
+                // [FIX ĐỒNG BỘ]: Tìm Component bao cả root và children
+                var knockedState = other.GetComponentInParent<PlayerKnockedState>();
+                if (knockedState == null) knockedState = other.GetComponentInChildren<PlayerKnockedState>();
+
                 if (knockedState != null && knockedState.isKnocked)
                 {
-                    Debug.Log($"[Ma Da] Thằng {other.name} gục rồi, không thèm chấp!");
+                    Debug.Log($"<color=yellow>[Ma Da]</color> Thằng {other.name} gục rồi, không thèm chấp!");
                     return;
                 }
 

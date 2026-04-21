@@ -87,7 +87,7 @@ namespace Game.Core.Player.RayCast // namespace cũ của bạn là RayCast hay 
 
             Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
 
-            if (Physics.Raycast(ray, out RaycastHit hit, interactRange, interactLayer))
+            if (Physics.Raycast(ray, out RaycastHit hit, interactRange, interactLayer, QueryTriggerInteraction.Collide))
             {
                 var interactable = hit.collider.GetComponent<IInteractable>();
 
