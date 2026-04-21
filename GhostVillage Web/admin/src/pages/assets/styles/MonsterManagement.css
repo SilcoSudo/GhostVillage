@@ -21,7 +21,7 @@
 .monster-management-container {
   width: 100%;
   min-height: 100vh;
-  padding: 16px;
+  padding: 36px 16px 16px;
   background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
   color: var(--text-secondary);
 }
@@ -505,7 +505,7 @@
 /* Responsive */
 @media (max-width: 768px) {
   .monster-management-container {
-    padding: 12px;
+    padding: 28px 12px 12px;
   }
 
   .toolbar-content {

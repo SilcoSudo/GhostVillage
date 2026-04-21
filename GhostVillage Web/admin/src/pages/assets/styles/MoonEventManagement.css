@@ -5,7 +5,7 @@
    ========================================== */
 
 .moon-event-management {
-  padding: 20px 16px;
+  padding: 36px 16px 20px;
   min-height: 100vh;
   background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
   font-family: 'Courier New', monospace;
