@@ -134,7 +134,7 @@ namespace Game.Scripts.UI.Lobby
                                 if (string.IsNullOrEmpty(targetUid))
                                 {
                                     Debug.LogError($"<color=red>[FriendBoard] ❌ Không lấy được UID từ CustomProperties!</color>");
-                                    if (globalUI != null) globalUI.ShowError("Lỗi", "Không thể lấy ID của người chơi này!");
+                                    if (globalUI != null) globalUI.ShowError("Error", "Cannot retrieve ID of this player!");
                                     return;
                                 }
 
@@ -147,18 +147,18 @@ namespace Game.Scripts.UI.Lobby
                                 {
                                     Debug.Log($"<color=green>[FriendBoard] ✅ Gửi thành công!</color>");
                                     _btnAddFriend.interactable = false; // Bóp nút chặn click nháy
-                                    if (globalUI != null) globalUI.ShowError("Thành công", $"Đã gửi lời mời kết bạn tới {player.NickName}!");
+                                    if (globalUI != null) globalUI.ShowError("Success", $"Successfully sent friend request to {player.NickName}!");
                                 }
                                 else
                                 {
                                     Debug.LogWarning($"<color=red>[FriendBoard] ❌ SendFriendRequest trả về false!</color>");
-                                    if (globalUI != null) globalUI.ShowError("Lỗi", "Gửi lời mời thất bại hoặc đã gửi trước đó!");
+                                    if (globalUI != null) globalUI.ShowError("Error", "Failed to send friend request or request already sent!");
                                 }
                             }
                             catch (Exception e)
                             {
                                 Debug.LogError($"<color=red>[FriendBoard] Exception: {e.Message}\n{e.StackTrace}</color>");
-                                if (globalUI != null) globalUI.ShowError("Lỗi hệ thống", "Không thể gửi lời mời lúc này.");
+                                if (globalUI != null) globalUI.ShowError("Error", "Cannot send friend request at this time.");
                             }
                         });
                     }
@@ -187,30 +187,17 @@ namespace Game.Scripts.UI.Lobby
         }
 
         /// <summary>
-        /// Tìm Speaker của người chơi mục tiêu trong Scene và chỉnh âm lượng chỉ trên máy này.
+        /// Chỉnh âm lượng chỉ trên máy Local và lưu vào Cache để dùng trong Game.
         /// </summary>
-        [System.Obsolete]
+        [Obsolete]
         private void SetLocalVolume(float volume)
         {
             if (_targetPlayer == null) return;
 
-            // Tìm Speaker dựa trên OwnerActorNr - Cách này là chuẩn nhất cho Photon Voice
-            Speaker[] allSpeakers = FindObjectsOfType<Speaker>();
-            foreach (var s in allSpeakers)
-            {
-                // Speaker thường nằm trên GameObject có PhotonView của người chơi đó
-                var pv = s.GetComponentInParent<PhotonView>();
-                if (pv != null && pv.OwnerActorNr == _targetPlayer.ActorNumber)
-                {
-                    var audioSource = s.GetComponent<AudioSource>();
-                    if (audioSource != null)
-                    {
-                        audioSource.volume = volume;
-                        Debug.Log($"[Audio] Đã chỉnh Volume cho {_targetPlayer.NickName} thành: {volume}");
-                    }
-                    break;
-                }
-            }
+            // Gọi thẳng tới Tổng đài quản lý âm thanh tĩnh để lưu và áp dụng
+            VoiceScreamDetector.SetRemotePlayerVolume(_targetPlayer.ActorNumber, volume);
+
+            Debug.Log($"[Audio UI] Đã ra lệnh đổi và lưu Volume cho {_targetPlayer.NickName} thành: {volume}");
         }
 
         [PunRPC]

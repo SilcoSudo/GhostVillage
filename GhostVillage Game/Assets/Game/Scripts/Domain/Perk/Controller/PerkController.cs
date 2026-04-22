@@ -39,13 +39,13 @@ namespace Game.Domain.Perk.Controllers
                 }
                 else
                 {
-                    _globalUI.ShowError("Lỗi dữ liệu", "Không thể tải danh sách Perk!");
+                    _globalUI.ShowError("Error", "Can not load Perk!");
                 }
             }
             catch (Exception ex)
             {
                 Debug.LogError($"[PerkController] Lỗi Fetch Data: {ex.Message}");
-                _globalUI.ShowError("Lỗi Mạng", "Kết nối máy chủ thất bại!");
+                _globalUI.ShowError("Error", "Can not connect to server!");
             }
             finally
             {
@@ -57,7 +57,7 @@ namespace Game.Domain.Perk.Controllers
         public async UniTask<bool> SaveEquippedPerksAsync(List<string> selectedPerkIds)
         {
             IsLoading.Value = true;
-            _globalUI.ShowLoading(true, "Đang lưu cấu hình...");
+            _globalUI.ShowLoading(true, "Saving...");
 
             try
             {
@@ -85,7 +85,7 @@ namespace Game.Domain.Perk.Controllers
                 else
                 {
                     _globalUI.ShowLoading(false);
-                    _globalUI.ShowError("Lưu thất bại", "Không thể lưu kỹ năng. Hãy thử lại!");
+                    _globalUI.ShowError("Error", "Failed to save perks. Please try again!");
                     return false;
                 }
             }
@@ -93,7 +93,7 @@ namespace Game.Domain.Perk.Controllers
             {
                 Debug.LogError($"[PerkController] Lỗi Save Data: {ex.Message}");
                 _globalUI.ShowLoading(false);
-                _globalUI.ShowError("Lỗi Mạng", "Lưu thất bại do kết nối!");
+                _globalUI.ShowError("Error", "Failed to save perks due to network issues!");
                 return false;
             }
         }

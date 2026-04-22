@@ -467,7 +467,7 @@ namespace Game.Scripts.UI.Lobby
             if (!Application.CanStreamedLevelBeLoaded(playableScene))
             {
                 Debug.LogError($"[LobbyManager] Scene not found in Build Profiles: requested='{requestedScene}', resolved='{playableScene}'. Add scene to Build Profiles.");
-                _globalUI.ShowError("Scene Not Found", $"Scene '{playableScene}' chưa có trong Build Profiles. Vào File > Build Profiles để thêm scene.");
+                _globalUI.ShowError("Scene Not Found", $"Scene '{playableScene}' not in Build Profiles. GO to File > Build Profiles to add scene.");
                 return;
             }
 
@@ -475,7 +475,7 @@ namespace Game.Scripts.UI.Lobby
 
             if (_globalUI != null)
             {
-                _globalUI.ShowLoading(true, "Đang kiến tạo thế giới tâm linh...");
+                _globalUI.ShowLoading(true, "Loading map...");
             }
 
             PhotonNetwork.LoadLevel(playableScene);

@@ -94,7 +94,7 @@ namespace Game.UI.Lobby
                 _passwordModal.SetActive(true);
                 if (_txtPasswordError != null)
                 {
-                    _txtPasswordError.text = "Mật khẩu không đúng, vui lòng thử lại!";
+                    _txtPasswordError.text = "Wrong Password, please try again!";
                     _txtPasswordError.color = Color.red;
                 }
 
@@ -105,7 +105,7 @@ namespace Game.UI.Lobby
             }
             else
             {
-                _globalUI.ShowError("Lỗi hệ thống", $"Không thể vào phòng: {errorReason}");
+                _globalUI.ShowError("System Error", $"Cannot join room: {errorReason}");
             }
         }
 

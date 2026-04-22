@@ -86,7 +86,7 @@ namespace Game.Boot
                     _session.Token = "";
 
                     _globalUI.ShowLoading(false);
-                    _globalUI.ShowError("Lỗi Kết Nối", "Máy chủ không phản hồi hoặc phiên đăng nhập đã hết hạn.");
+                    _globalUI.ShowError("Connection Error", "Server not responding or session expired.");
                     await _sceneLoader.LoadSceneAsync("LoginScene");
 
                     return; // CẮT ĐỨT LUỒNG CHẠY TẠI ĐÂY
@@ -111,7 +111,7 @@ namespace Game.Boot
                 }
 
                 // NẾU BACKEND SỐNG & TOKEN NGON -> KẾT NỐI PHOTON
-                _globalUI.ShowLoading(true, "Đang vào sảnh chờ...");
+                _globalUI.ShowLoading(true, "Joining...");
                 bool connected = await _network.ConnectAsync(_session.DisplayName, _session.Token);
 
                 if (connected)
@@ -122,7 +122,7 @@ namespace Game.Boot
                 else
                 {
                     _globalUI.ShowLoading(false);
-                    _globalUI.ShowError("Lỗi Mạng", "Không thể kết nối đến máy chủ trò chơi (Photon).");
+                    _globalUI.ShowError("Network Error", "Cannot connect to game server (Photon).");
                     await _sceneLoader.LoadSceneAsync("LoginScene");
                 }
             }

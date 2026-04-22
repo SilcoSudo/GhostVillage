@@ -116,7 +116,7 @@ namespace Game.Domain.Friend.Controllers
                 bool success = await _friendService.AddFriendAsync(targetUserId);
                 if (success)
                 {
-                    _globalUI.ShowError("Thành công", "Đã gửi lời mời kết bạn!");
+                    _globalUI.ShowError("Success", "Friend request sent!");
                     await FetchSentRequestsAsync();
                     return true;
                 }
@@ -124,12 +124,12 @@ namespace Game.Domain.Friend.Controllers
             }
             catch (Exception ex)
             {
-                string errorMsg = "Người này đã là bạn, hoặc bạn đã gửi lời mời trước đó rồi!";
-                if (ex.Message.Contains("400") || ex.Message.Contains("giới hạn"))
+                string errorMsg = "This person is already your friend, or you have already sent them a friend request!";
+                if (ex.Message.Contains("400") || ex.Message.Contains("Friend limit reached"))
                 {
-                    errorMsg = "Không thể gửi. Có thể danh sách bạn bè của một người đã đầy!";
+                    errorMsg = "Cannot send request. This person's friend list might be full!";
                 }
-                _globalUI.ShowError("Lỗi kết bạn", errorMsg);
+                _globalUI.ShowError("Friend Request Error", errorMsg);
                 return false;
             }
             finally { IsLoading.Value = false; }
@@ -151,12 +151,12 @@ namespace Game.Domain.Friend.Controllers
             }
             catch (Exception ex)
             {
-                string errorMsg = "Không thể chấp nhận (Có thể lời mời đã bị hủy)!";
-                if (ex.Message.Contains("400") || ex.Message.Contains("giới hạn"))
+                string errorMsg = "Cannot accept request (Request might have been cancelled)!";
+                if (ex.Message.Contains("400") || ex.Message.Contains("Friend limit reached"))
                 {
-                    errorMsg = "Không thể chấp nhận. Danh sách bạn bè đã đầy (Giới hạn 20 người)!";
+                    errorMsg = "Cannot accept request. Friend list might be full (Limit: 20 friends)!";
                 }
-                _globalUI.ShowError("Lỗi", errorMsg);
+                _globalUI.ShowError("Accept Request Error", errorMsg);
                 await FetchPendingRequestsAsync();
                 return false;
             }
@@ -175,7 +175,7 @@ namespace Game.Domain.Friend.Controllers
             }
             catch (Exception)
             {
-                _globalUI.ShowError("Lỗi", "Không thể từ chối lời mời lúc này!");
+                _globalUI.ShowError("Reject Request Error", "Cannot reject request at this time!");
                 return false;
             }
             finally { IsLoading.Value = false; }
@@ -193,7 +193,7 @@ namespace Game.Domain.Friend.Controllers
             }
             catch (Exception)
             {
-                _globalUI.ShowError("Lỗi", "Không thể xóa bạn bè lúc này!");
+                _globalUI.ShowError("Unfriend Error", "Cannot remove friend at this time!");
                 return false;
             }
             finally { IsLoading.Value = false; }

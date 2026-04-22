@@ -243,7 +243,7 @@ namespace Game.Core.Network
 
                 // [FIX LỖI] Báo UI cho người chơi biết máy chủ chưa load xong
                 var globalUI = FindFirstObjectByType<Game.Script.UI.GlobalUIManager>();
-                if (globalUI != null) globalUI.ShowError("Error", "Đang kết nối lại sảnh chờ. Vui lòng bấm lại sau 2 giây...");
+                if (globalUI != null) globalUI.ShowError("Error", "Reconnecting to lobby. Please try again in 2 seconds...");
 
                 JoinHallway();
                 return;
@@ -304,9 +304,9 @@ namespace Game.Core.Network
             {
                 // Nếu mã lỗi là 32766 (GameIdAlreadyExists)
                 if (returnCode == 32766)
-                    globalUI.ShowError("Error", "Tạo thất bại: Tên phòng này đã có người sử dụng!");
+                    globalUI.ShowError("Error", "Failed to create room: This room name is already in use!");
                 else
-                    globalUI.ShowError("Error", $"Tạo thất bại: {message}");
+                    globalUI.ShowError("Error", $"Failed to create room: {message}");
             }
 
             OnCreateLobbyFailed?.Invoke();
@@ -314,13 +314,13 @@ namespace Game.Core.Network
 
         public override void OnJoinRoomFailed(short returnCode, string message)
         {
-            Debug.LogError($"[Photon] Join thất bại: {message}");
+            Debug.LogError($"[Photon] Join failed: {message}");
 
             // [FIX LỖI] Hiển thị UI khi không vào được phòng
             var globalUI = FindFirstObjectByType<Game.Script.UI.GlobalUIManager>();
             if (globalUI != null)
             {
-                globalUI.ShowError("Error", $"Không thể tham gia: {message}");
+                globalUI.ShowError("Error", $"Failed to join room: {message}");
             }
 
             OnJoinLobbyFailed?.Invoke(message);
