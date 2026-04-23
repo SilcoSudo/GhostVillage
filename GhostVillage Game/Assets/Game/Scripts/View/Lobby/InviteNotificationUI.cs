@@ -27,7 +27,7 @@ namespace Game.Script.UI
 
             // Hiện tên người mời
             if (_txtSender != null)
-                _txtSender.text = $"<b>{senderName}</b> mời bạn vào phòng!";
+                _txtSender.text = $"<b>{senderName}</b> invite you!";
 
             // Móc dây điện cho nút Accept
             _btnAccept.onClick.RemoveAllListeners();
