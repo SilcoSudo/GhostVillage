@@ -1,8 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Eye, Plus, Edit2, Trash2, Pin, PinOff, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Pin, PinOff, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { useAnnouncementList, useTogglePin, useToggleActive } from '../shared/hooks/useAnnouncements';
-import AnnouncementDetailModal from './components/AnnouncementDetailModal';
 import AnnouncementCreationModal from './components/AnnouncementCreationModal';
 import AnnouncementEditorModal from './components/AnnouncementEditorModal';
 import AnnouncementDeleteModal from './components/AnnouncementDeleteModal';
@@ -29,7 +28,6 @@ const AnnouncementPage = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPinned, setFilterPinned] = useState('all');
   const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isCreationModalOpen, setIsCreationModalOpen] = useState(false);
   const [isEditorModalOpen, setIsEditorModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -83,11 +81,6 @@ const AnnouncementPage = () => {
       key,
       direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
     }));
-  };
-
-  const openDetailModal = (announcement) => {
-    setSelectedAnnouncement(announcement);
-    setIsDetailModalOpen(true);
   };
 
   const openCreationModal = () => {
@@ -254,13 +247,6 @@ const AnnouncementPage = () => {
                     </td>
                     <td className="announcement-actions-cell">
                       <button
-                        className="action-btn detail-btn"
-                        onClick={() => openDetailModal(announcement)}
-                        title={t('common.view') || 'View Details'}
-                      >
-                        <Eye size={16} />
-                      </button>
-                      <button
                         className="action-btn edit-btn"
                         onClick={() => openEditorModal(announcement)}
                         title={t('common.edit') || 'Edit'}
@@ -311,13 +297,6 @@ const AnnouncementPage = () => {
           )}
         </>
       )}
-
-      {/* Detail Modal */}
-      <AnnouncementDetailModal
-        isOpen={isDetailModalOpen}
-        announcement={selectedAnnouncement}
-        onClose={() => setIsDetailModalOpen(false)}
-      />
 
       {/* Creation Modal */}
       <AnnouncementCreationModal

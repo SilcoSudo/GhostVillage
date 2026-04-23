@@ -641,6 +641,39 @@ class NotificationService {
   }
 
   /**
+   * Tạo notification khi admin gỡ mute cho tài khoản
+   */
+  static async createAccountUnmutedNotification(
+    { userId, adminUser = null },
+    io,
+  ) {
+    try {
+      if (!userId) return null;
+
+      const moderatorName = getDisplayName(adminUser, "Admin");
+      const notification = await Notification.create({
+        userId,
+        type: "report_processed",
+        title: "Account Unmuted",
+        message: `Your account has been unmuted by ${moderatorName}. You can post and comment again.`,
+        relatedUser: adminUser?._id || null,
+      });
+
+      if (io) {
+        io.to(`user:${userId}`).emit(
+          "new_notification",
+          buildSocketNotification(notification),
+        );
+      }
+
+      return notification;
+    } catch (error) {
+      console.error("Error creating account unmuted notification:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Tạo announcement cho tất cả users
    */
   static async createAnnouncementNotification(title, message, io) {

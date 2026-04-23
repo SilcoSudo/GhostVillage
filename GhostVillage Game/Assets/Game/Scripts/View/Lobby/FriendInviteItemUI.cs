@@ -25,13 +25,13 @@ namespace Game.Scripts.UI.Lobby
             {
                 onInviteClicked?.Invoke(_targetUserId);
                 _btnInvite.interactable = false;
-                _txtInviteBtn.text = "Đã gửi";
+                _txtInviteBtn.text = "Sent";
             });
 
             // LOGIC KHÓA MÕM VÀ ĐỔI MÀU TRỰC TIẾP KHÔNG DÙNG THẺ HTML
             if (isInSameRoom)
             {
-                _txtStatus.text = "Đang trong phòng";
+                _txtStatus.text = "In Room";
                 _txtStatus.color = Color.yellow; // Đổi màu xịn
                 _btnInvite.interactable = false;
                 _txtInviteBtn.text = "In Room";
@@ -41,7 +41,7 @@ namespace Game.Scripts.UI.Lobby
                 _txtStatus.text = "Online";
                 _txtStatus.color = Color.green;
                 _btnInvite.interactable = true;
-                _txtInviteBtn.text = "Mời";
+                _txtInviteBtn.text = "Invite";
             }
             else
             {
