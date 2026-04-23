@@ -126,7 +126,7 @@ namespace Game.UI.MainMenu
                 HandleConnected();
             else
             {
-                _statusText.text = "Đang kết nối lại...";
+                _statusText.text = "Reconnecting...";
                 _statusText.color = Color.yellow;
                 _lobbyListButton.interactable = false;
                 _debugHostButton.interactable = false;
@@ -157,11 +157,16 @@ namespace Game.UI.MainMenu
         private async void OnLogoutAction()
         {
             Debug.Log("<color=yellow>[MainMenu] Bắt đầu quá trình Đăng xuất...</color>");
-            _globalUI.ShowLoading(true, "Đang đăng xuất...");
+            _globalUI.ShowLoading(true, "Logging out...");
 
             // 1. Xóa sạch Session và Token lưu dưới máy
             _session.Clear();
-            PlayerPrefs.DeleteKey("AccessToken");
+
+            _session.UID = "";
+            _session.DisplayName = "";
+            _session.Token = "";
+
+            PlayerPrefs.DeleteAll();
             PlayerPrefs.Save();
 
             // 2. Ngắt kết nối Photon (Nếu đang kết nối)
@@ -191,6 +196,10 @@ namespace Game.UI.MainMenu
 
             if (profileData != null && profileData.profile != null)
             {
+                _session.UID = profileData.uid; // Cất cái mã 8 số vào Session để xài cho kết bạn
+                PlayerPrefs.SetString("UserId", profileData.userId); // Cất MongoID 24 ký tự xuống PlayerPrefs để xíu nữa Photon bốc lên xài
+                PlayerPrefs.Save();
+
                 Debug.Log($"<color=cyan>[MainMenuController] ✅ UID từ Session: {_session.UID} | Name: {profileData.profile.displayName}</color>");
 
                 txtPlayerName.text = profileData.profile.displayName;

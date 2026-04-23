@@ -98,13 +98,13 @@ namespace Game.UI.Friend
 
                 if (string.IsNullOrEmpty(uid))
                 {
-                    if (_globalUI != null) _globalUI.ShowError("Lỗi nhập liệu", "UID không được để trống!");
+                    if (_globalUI != null) _globalUI.ShowError("Input Error", "UID is required!");
                     return;
                 }
 
                 if (uid.Length != 8 || !System.Text.RegularExpressions.Regex.IsMatch(uid, @"^\d{8}$"))
                 {
-                    if (_globalUI != null) _globalUI.ShowError("Lỗi nhập liệu", "UID không hợp lệ! Vui lòng nhập chính xác 8 chữ số.");
+                    if (_globalUI != null) _globalUI.ShowError("Input Error", "Invalid UID! Please enter exactly 8 digits.");
                     return;
                 }
 
@@ -112,7 +112,7 @@ namespace Game.UI.Friend
 
                 if (uid == myUid)
                 {
-                    if (_globalUI != null) _globalUI.ShowError("Oops!", "Bạn không thể tìm kiếm chính mình!");
+                    if (_globalUI != null) _globalUI.ShowError("Oops!", "You cannot search for yourself!");
                     ClearContent();
                     return;
                 }
@@ -135,9 +135,9 @@ namespace Game.UI.Friend
                     {
                         // Kiểm tra nếu là lỗi HTTP 404
                         if (e.Message.Contains("404"))
-                            _globalUI.ShowError("Không tìm thấy", "Không tìm thấy người chơi với UID này.");
+                            _globalUI.ShowError("Not Found", "Player with this UID not found.");
                         else
-                            _globalUI.ShowError("Lỗi tìm kiếm", "Đã xảy ra lỗi khi tìm kiếm UID. Vui lòng thử lại!");
+                            _globalUI.ShowError("Search Error", "An error occurred while searching for the UID. Please try again!");
                     }
                     ClearContent(); // Xóa sạch kết quả cũ nếu tìm lỗi
                 }
@@ -255,7 +255,7 @@ namespace Game.UI.Friend
             catch (Exception e)
             {
                 Debug.LogError($"[FriendUI] Lỗi tải dữ liệu bạn bè: {e.Message}");
-                if (_globalUI != null) _globalUI.ShowError("Lỗi Dữ Liệu", "Không thể lấy danh sách bạn bè lúc này.");
+                if (_globalUI != null) _globalUI.ShowError("Data Error", "Cannot fetch friend list at this time.");
             }
         }
 
@@ -314,7 +314,7 @@ namespace Game.UI.Friend
             catch (Exception e)
             {
                 Debug.LogWarning($"[FriendUI] Lỗi tải dữ liệu Tab {tab}: {e.Message}");
-                if (_globalUI != null) _globalUI.ShowError("Lỗi", $"Không thể tải danh sách ({tab}).");
+                if (_globalUI != null) _globalUI.ShowError("Error", $"Cannot fetch list ({tab}).");
             }
         }
 
@@ -388,18 +388,18 @@ namespace Game.UI.Friend
                         bool isSuccess = await _friendController.Unfriend(data.GetUserId());
                         if (isSuccess)
                         {
-                            if (_globalUI != null) _globalUI.ShowError("Thành công", "Đã xóa khỏi danh sách bạn bè.");
+                            if (_globalUI != null) _globalUI.ShowError("Success", "Successfully removed from friend list.");
                             SwitchTab(_currentTab);
                         }
                         else
                         {
-                            if (_globalUI != null) _globalUI.ShowError("Lỗi", "Không thể xóa bạn lúc này!");
+                            if (_globalUI != null) _globalUI.ShowError("Error", "Cannot remove friend at this time!");
                         }
                     }
                     catch (Exception e)
                     {
                         Debug.LogWarning($"[FriendUI] Lỗi hủy kết bạn: {e.Message}");
-                        if (_globalUI != null) _globalUI.ShowError("Lỗi hệ thống", "Đã xảy ra lỗi khi kết nối máy chủ.");
+                        if (_globalUI != null) _globalUI.ShowError("System Error", "An error occurred while connecting to the server.");
                     }
                 });
             }
@@ -422,11 +422,11 @@ namespace Game.UI.Friend
                     {
                         bool isSuccess = await _friendController.AcceptRequest(data.GetFriendshipId());
                         if (isSuccess) SwitchTab(_currentTab);
-                        else if (_globalUI != null) _globalUI.ShowError("Lỗi", "Không thể chấp nhận (Có thể thư đã bị thu hồi)!");
+                        else if (_globalUI != null) _globalUI.ShowError("Error", "Cannot accept request (Request might have been cancelled)!");
                     }
                     catch (Exception)
                     {
-                        if (_globalUI != null) _globalUI.ShowError("Lỗi hệ thống", "Không thể xử lý yêu cầu.");
+                        if (_globalUI != null) _globalUI.ShowError("System Error", "An error occurred while processing the request.");
                     }
                 });
             }
@@ -441,11 +441,11 @@ namespace Game.UI.Friend
                     {
                         bool isSuccess = await _friendController.RejectRequest(data.GetFriendshipId());
                         if (isSuccess) SwitchTab(_currentTab);
-                        else if (_globalUI != null) _globalUI.ShowError("Lỗi", "Không thể từ chối!");
+                        else if (_globalUI != null) _globalUI.ShowError("Error", "Cannot reject request at this time!");
                     }
                     catch (Exception)
                     {
-                        if (_globalUI != null) _globalUI.ShowError("Lỗi hệ thống", "Không thể xử lý yêu cầu.");
+                        if (_globalUI != null) _globalUI.ShowError("System Error", "An error occurred while processing the request.");
                     }
                 });
             }
@@ -469,14 +469,14 @@ namespace Game.UI.Friend
                         bool isSuccess = await _friendController.RejectRequest(data.GetFriendshipId());
                         if (isSuccess)
                         {
-                            if (_globalUI != null) _globalUI.ShowError("Thành công", "Đã thu hồi lời mời!");
+                            if (_globalUI != null) _globalUI.ShowError("Success", "Successfully withdrew the friend request!");
                             await _friendController.FetchSentRequestsAsync();
                             SwitchTab(_currentTab);
                         }
                     }
                     catch (Exception)
                     {
-                        if (_globalUI != null) _globalUI.ShowError("Lỗi hệ thống", "Không thể thu hồi lúc này.");
+                        if (_globalUI != null) _globalUI.ShowError("System Error", "Cannot withdraw request at this time.");
                     }
                 });
             }
@@ -503,18 +503,18 @@ namespace Game.UI.Friend
                         {
                             btnAdd.interactable = false;
                             var btnText = btnAdd.GetComponentInChildren<TextMeshProUGUI>();
-                            if (btnText != null) btnText.text = "Đã Gửi";
-                            if (_globalUI != null) _globalUI.ShowError("Thành công", "Đã gửi lời mời!");
+                            if (btnText != null) btnText.text = "Sent";
+                            if (_globalUI != null) _globalUI.ShowError("Success", "Successfully sent friend request!");
                         }
                         else
                         {
-                            if (_globalUI != null) _globalUI.ShowError("Lỗi", "Đã gửi lời mời hoặc đã là bạn!");
+                            if (_globalUI != null) _globalUI.ShowError("Error", "Friend request already sent or already friends!");
                         }
                     }
                     catch (Exception e)
                     {
                         Debug.LogWarning($"[FriendUI] Lỗi gửi kết bạn: {e.Message}");
-                        if (_globalUI != null) _globalUI.ShowError("Lỗi", "Có vẻ như UID này không thể kết bạn.");
+                        if (_globalUI != null) _globalUI.ShowError("Error", "An error occurred while sending friend request.");
                     }
                 });
             }

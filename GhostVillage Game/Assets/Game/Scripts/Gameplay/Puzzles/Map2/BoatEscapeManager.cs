@@ -49,7 +49,7 @@ public class BoatEscapeManager : MonoBehaviourPun, IInteractable
 
     public string GetPromptMessage()
     {
-        if (_isEscaping) return "Đang nổ máy cút khỏi đảo...";
+        if (_isEscaping) return "Begin Escape!";
 
         int count = 0;
         if (_hasSparkPlug) count++;

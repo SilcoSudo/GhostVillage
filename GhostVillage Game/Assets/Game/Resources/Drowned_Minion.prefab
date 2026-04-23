@@ -741,7 +741,7 @@ MonoBehaviour:
   _audioSource: {fileID: 1595769603968899312}
   crawlAudioID: DROWNED_CRAWL
   alertAudioID: DROWNED_ALERT
-  burnAudioID: DROWNED_BURN
+  burnAudioID: DROWNED_ALERT
 --- !u!114 &1344289874186077996
 MonoBehaviour:
   m_ObjectHideFlags: 0

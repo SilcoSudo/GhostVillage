@@ -25,7 +25,7 @@ namespace GhostVillage.Gameplay.Monsters.Mada
         [Tooltip("Các ID âm thanh nạp vào GameManager")]
         [SerializeField] private string crawlAudioID = "DROWNED_CRAWL";
         [SerializeField] private string alertAudioID = "DROWNED_ALERT";
-        [SerializeField] private string burnAudioID = "DROWNED_BURN";
+        [SerializeField] private string burnAudioID = "DROWNED_ALERT";
 
         // [Inject] Nếu sếp xài VContainer, còn không thì tui dùng FindFirstObjectByType ở Awake
         [Inject] private GameAudioManager _audioManager;

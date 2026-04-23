@@ -243,7 +243,7 @@ namespace Game.Core.Network
 
                 // [FIX LỖI] Báo UI cho người chơi biết máy chủ chưa load xong
                 var globalUI = FindFirstObjectByType<Game.Script.UI.GlobalUIManager>();
-                if (globalUI != null) globalUI.ShowError("Error", "Đang kết nối lại sảnh chờ. Vui lòng bấm lại sau 2 giây...");
+                if (globalUI != null) globalUI.ShowError("Error", "Reconnecting to lobby. Please try again in 2 seconds...");
 
                 JoinHallway();
                 return;
@@ -304,9 +304,9 @@ namespace Game.Core.Network
             {
                 // Nếu mã lỗi là 32766 (GameIdAlreadyExists)
                 if (returnCode == 32766)
-                    globalUI.ShowError("Error", "Tạo thất bại: Tên phòng này đã có người sử dụng!");
+                    globalUI.ShowError("Error", "Failed to create room: This room name is already in use!");
                 else
-                    globalUI.ShowError("Error", $"Tạo thất bại: {message}");
+                    globalUI.ShowError("Error", $"Failed to create room: {message}");
             }
 
             OnCreateLobbyFailed?.Invoke();
@@ -314,13 +314,13 @@ namespace Game.Core.Network
 
         public override void OnJoinRoomFailed(short returnCode, string message)
         {
-            Debug.LogError($"[Photon] Join thất bại: {message}");
+            Debug.LogError($"[Photon] Join failed: {message}");
 
             // [FIX LỖI] Hiển thị UI khi không vào được phòng
             var globalUI = FindFirstObjectByType<Game.Script.UI.GlobalUIManager>();
             if (globalUI != null)
             {
-                globalUI.ShowError("Error", $"Không thể tham gia: {message}");
+                globalUI.ShowError("Error", $"Failed to join room: {message}");
             }
 
             OnJoinLobbyFailed?.Invoke(message);
@@ -349,7 +349,7 @@ namespace Game.Core.Network
             {
                 if (_tempInputPass != correctPass)
                 {
-                    Debug.LogError("[Photon] SAI PASS! Đang rút lui...");
+                    Debug.LogError("[Photon] Wrong password...");
                     PhotonNetwork.LeaveRoom();
                     OnJoinLobbyFailed?.Invoke("Wrong Password!");
                     return;
@@ -361,28 +361,40 @@ namespace Game.Core.Network
                 Debug.Log("<color=green>Dùng thẻ VIP Bypass Password thành công!</color>");
             }
 
-            // ✅ [FIX KẾT BẠN]: Gửi UID vào Player CustomProperties để Lobby có thể lấy
-            // Sử dụng VContainer GlobalScope để resolve GameSession
-            try
+            string savedUserId = PlayerPrefs.GetString("UserId", "");
+            if (!string.IsNullOrEmpty(savedUserId))
             {
-                var container = LifetimeScope.Find<LifetimeScope>()?.Container;
-                GameSession session = container?.Resolve<GameSession>();
+                var playerProps = new Hashtable { { "UID", savedUserId } };
+                PhotonNetwork.LocalPlayer.SetCustomProperties(playerProps);
+                Debug.Log($"<color=cyan>[Photon] Đã nạp thành công UID ({savedUserId}) vào mạng!</color>");
+            }
+            else
+            {
+                Debug.LogError("<color=red>[Photon] CẢNH BÁO MÁU: Không tìm thấy UserId trong PlayerPrefs! Sẽ bị lưu nhầm lịch sử đấu!</color>");
+            }
 
-                if (session != null && !string.IsNullOrEmpty(session.UID))
-                {
-                    var playerProps = new Hashtable { { "UID", session.UID } };
-                    PhotonNetwork.LocalPlayer.SetCustomProperties(playerProps);
-                    Debug.Log($"<color=cyan>[Photon] Đã gửi UID ({session.UID}) vào Player CustomProperties</color>");
-                }
-                else
-                {
-                    Debug.LogWarning("<color=yellow>[Photon] GameSession hoặc UID chưa available!</color>");
-                }
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogWarning($"<color=yellow>[Photon] Lỗi resolve GameSession: {e.Message}</color>");
-            }
+            // // ✅ [FIX KẾT BẠN]: Gửi UID vào Player CustomProperties để Lobby có thể lấy
+            // // Sử dụng VContainer GlobalScope để resolve GameSession
+            // try
+            // {
+            //     var container = LifetimeScope.Find<LifetimeScope>()?.Container;
+            //     GameSession session = container?.Resolve<GameSession>();
+
+            //     if (session != null && !string.IsNullOrEmpty(session.UID))
+            //     {
+            //         var playerProps = new Hashtable { { "UID", session.UID } };
+            //         PhotonNetwork.LocalPlayer.SetCustomProperties(playerProps);
+            //         Debug.Log($"<color=cyan>[Photon] Đã gửi UID ({session.UID}) vào Player CustomProperties</color>");
+            //     }
+            //     else
+            //     {
+            //         Debug.LogWarning("<color=yellow>[Photon] GameSession hoặc UID chưa available!</color>");
+            //     }
+            // }
+            // catch (System.Exception e)
+            // {
+            //     Debug.LogWarning($"<color=yellow>[Photon] Lỗi resolve GameSession: {e.Message}</color>");
+            // }
 
             // Nếu đúng pass, bật lại tính năng sync scene
             PhotonNetwork.AutomaticallySyncScene = true;

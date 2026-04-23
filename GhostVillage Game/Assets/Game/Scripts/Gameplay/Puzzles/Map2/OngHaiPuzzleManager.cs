@@ -44,7 +44,7 @@ namespace Game.Scripts.Gameplay.Puzzles.Map2
 
         // --- Biến đồng bộ mạng ---
         private List<string> _winningSequenceIDs = new List<string>();
-        private string _activeHintText = "Đang tìm manh mối...";
+        private string _activeHintText = "Looking for clues...";
         private string[] _currentSlots = new string[3] { "", "", "" };
         private bool _isSolved = false;
 

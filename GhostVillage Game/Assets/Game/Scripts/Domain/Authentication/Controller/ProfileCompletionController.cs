@@ -62,7 +62,7 @@ namespace Game.UI.Login
 
                 if (response != null && !string.IsNullOrEmpty(response.token))
                 {
-                    view.SetStatus("✓ Profile updated! Loading game...");
+                    view.SetStatus("Profile updated! Loading game...");
 
                     // Save new token to both memory and PlayerPrefs
                     _authService.SaveToken(response.token);
@@ -70,7 +70,7 @@ namespace Game.UI.Login
 
                     // Get updated player data
                     await _authService.FetchMyProfileAsync();
-                    view.SetStatus("<color=green>✓ Welcome to Ghost Village!</color>");
+                    view.SetStatus("<color=green>Welcome to Ghost Village!</color>");
 
                     // Brief delay before scene load
                     await UniTask.Delay(1000);

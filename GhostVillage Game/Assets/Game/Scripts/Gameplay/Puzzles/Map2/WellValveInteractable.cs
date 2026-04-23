@@ -20,8 +20,8 @@ public class WellValveInteractable : MonoBehaviourPun, IInteractable
     public string GetPromptMessage()
     {
         // Chỗ này sếp lưu ý: Phải trả về chuỗi mới nhất để UI nảy số
-        if (_isOpened) return "<color=red>Van đã mở</color>";
-        return "Vặn van nước (F)";
+        if (_isOpened) return "<color=red>Valve is open</color>";
+        return "Turn on the valve";
     }
 
     public void Interact(GameObject actor)
@@ -50,7 +50,7 @@ public class WellValveInteractable : MonoBehaviourPun, IInteractable
         if (_isOpened) return;
         _isOpened = true;
 
-        Debug.Log($"<color=orange>[Valve] {gameObject.name} đã xoay!</color>");
+        Debug.Log($"<color=orange>[Valve] {gameObject.name} is opened!</color>");
 
         if (wellManager != null)
         {

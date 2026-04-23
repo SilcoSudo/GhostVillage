@@ -40,6 +40,7 @@ namespace Game.Boot
 
         public void Start() => RunFlow().Forget();
 
+        [System.Obsolete]
         private async UniTaskVoid RunFlow()
         {
             _settingsController.Initialize();
@@ -85,26 +86,32 @@ namespace Game.Boot
                     _session.Token = "";
 
                     _globalUI.ShowLoading(false);
-                    _globalUI.ShowError("Lỗi Kết Nối", "Máy chủ không phản hồi hoặc phiên đăng nhập đã hết hạn.");
+                    _globalUI.ShowError("Connection Error", "Server not responding or session expired.");
                     await _sceneLoader.LoadSceneAsync("LoginScene");
 
                     return; // CẮT ĐỨT LUỒNG CHẠY TẠI ĐÂY
                 }
                 else
                 {
-                    // ========================================================
-                    // [FIX CHÍ MẠNG]: Bơm đúng UID 8 số vào Session để toàn game xài kết bạn!
-                    // ========================================================
-                    if (!string.IsNullOrEmpty(profileCheck.uid))
+                    if (profileCheck.profile != null)
                     {
-                        _session.UID = profileCheck.uid;
+                        _session.UID = profileCheck.uid; // Cất 8 số xài cho kết bạn
                         _session.DisplayName = profileCheck.profile.displayName;
-                        Debug.Log($"<color=green>[AppManager] Đã lưu UID chuẩn vào Session: {_session.UID}</color>");
+
+                        string finalMongoId = !string.IsNullOrEmpty(profileCheck.userId)
+                                              ? profileCheck.userId
+                                              : profileCheck.uid;
+
+                        // Ép lưu MongoID 24 ký tự xuống máy để xíu nữa Photon bốc lên xài
+                        PlayerPrefs.SetString("UserId", finalMongoId);
+                        PlayerPrefs.Save();
+
+                        Debug.Log($"<color=green>[AppManager] Đã lưu UID: {_session.UID} | MongoID: {finalMongoId}</color>");
                     }
                 }
 
                 // NẾU BACKEND SỐNG & TOKEN NGON -> KẾT NỐI PHOTON
-                _globalUI.ShowLoading(true, "Đang vào sảnh chờ...");
+                _globalUI.ShowLoading(true, "Joining...");
                 bool connected = await _network.ConnectAsync(_session.DisplayName, _session.Token);
 
                 if (connected)
@@ -115,7 +122,7 @@ namespace Game.Boot
                 else
                 {
                     _globalUI.ShowLoading(false);
-                    _globalUI.ShowError("Lỗi Mạng", "Không thể kết nối đến máy chủ trò chơi (Photon).");
+                    _globalUI.ShowError("Network Error", "Cannot connect to game server (Photon).");
                     await _sceneLoader.LoadSceneAsync("LoginScene");
                 }
             }
