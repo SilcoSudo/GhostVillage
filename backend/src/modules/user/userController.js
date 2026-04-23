@@ -1,6 +1,7 @@
 import * as userService from "./userService.js";
 import * as postService from "../forum/posts/postService.js";
 import FriendService from "../friend/web/friendService.js";
+import NotificationService from "../forum/notifications/notificationService.js";
 
 const getProfileFriends = async (userId) => {
   try {
@@ -597,6 +598,20 @@ export const unmuteUserForAdmin = async (req, res, next) => {
   try {
     const { id } = req.params;
     const updatedUser = await userService.unmuteUserByAdmin(id);
+
+    const io = req.app.get("io");
+
+    try {
+      await NotificationService.createAccountUnmutedNotification(
+        {
+          userId: updatedUser._id,
+          adminUser: req.user,
+        },
+        io,
+      );
+    } catch (notifyError) {
+      console.error("Error sending account unmuted notification:", notifyError);
+    }
 
     return res.status(200).json({
       success: true,
