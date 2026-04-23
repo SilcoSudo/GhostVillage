@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6842870659671581819}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Dui.R
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -41,7 +41,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5370389046323050654}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Dui.L
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -73,7 +73,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3271134467972059389}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Bone.004
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -104,7 +104,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2961794580680396956}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Bone.005
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -135,7 +135,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4585748688429909490}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Tail.005
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -166,7 +166,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5072682645018027687}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Banchan.L.001
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -203,7 +203,7 @@ GameObject:
   - component: {fileID: 9173907291548791625}
   - component: {fileID: 2682676217414525495}
   - component: {fileID: 1687728034558853611}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: World_Chicken
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -219,7 +219,7 @@ Transform:
   m_GameObject: {fileID: 2532318701082046109}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 115.13313, y: 19.996338, z: 122.289825}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -360,7 +360,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2445322352582761252}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Bone.003
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -394,7 +394,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5313499575282430182}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Tail.006
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -426,7 +426,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8493448295781492083}
   - component: {fileID: 2086469635690129627}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Object_5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -530,7 +530,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1454935514186411593}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Bone
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -565,7 +565,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9208138026413480794}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: neutral_bone
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -596,7 +596,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2496200891688168375}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Tail.004
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -629,7 +629,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2579318554930455985}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Banchan.R.001
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -660,7 +660,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8844882068979193284}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Armature
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -694,7 +694,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7284897806140592441}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Bone.001
   m_TagString: Untagged
   m_Icon: {fileID: 0}

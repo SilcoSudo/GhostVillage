@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine.InputSystem; // Cần thiết cho phím tắt
+using UnityEngine.InputSystem; 
 
 public class SlidingPuzzleUI : MonoBehaviour
 {
@@ -41,7 +41,6 @@ public class SlidingPuzzleUI : MonoBehaviour
         if (currentPuzzle3D != null) currentPuzzle3D.OnPlayerCanceled();
     }
 
-    // [CẬP NHẬT]: Thêm phím tắt để thoát nhanh
     private void Update()
     {
         if (panelMain.activeSelf && Keyboard.current != null)
@@ -60,21 +59,35 @@ public class SlidingPuzzleUI : MonoBehaviour
         for (int i = 0; i < 9; i++)
         {
             tiles[i] = gridBoard.GetChild(i);
-            int index = i; 
-            Button btn = tiles[i].GetComponent<Button>();
+            
+            // [CÚ FIX ĂN TIỀN LÀ ĐÂY]: Bắt chết reference của viên gạch tại thời điểm này
+            Transform currentTile = tiles[i]; 
+            
+            Button btn = currentTile.GetComponent<Button>();
             if (btn != null)
             {
                 btn.onClick.RemoveAllListeners();
-                btn.onClick.AddListener(() => OnTileClick(tiles[index]));
+                
+                // Truyền thẳng cục gạch vào hàm, không dùng Index nữa!
+                btn.onClick.AddListener(() => OnTileClick(currentTile));
             }
-            if (tiles[i].name == "Tile_Empty") emptyIndex = i;
+            if (currentTile.name == "Tile_Empty") emptyIndex = i;
         }
     }
 
     private void OnTileClick(Transform clickedTile)
     {
         int clickedIndex = -1;
-        for (int i = 0; i < 9; i++) if (tiles[i] == clickedTile) clickedIndex = i;
+        
+        // Quét lại mảng tiles hiện tại xem viên gạch bị bấm đang nằm ở Index thứ mấy
+        for (int i = 0; i < 9; i++) 
+        {
+            if (tiles[i] == clickedTile) 
+            {
+                clickedIndex = i;
+                break;
+            }
+        }
 
         if (IsAdjacent(clickedIndex, emptyIndex))
         {
@@ -92,12 +105,15 @@ public class SlidingPuzzleUI : MonoBehaviour
 
     private void SwapTiles(int i, int j)
     {
+        // Hoán đổi vị trí trong bộ nhớ code
         Transform temp = tiles[i];
         tiles[i] = tiles[j];
         tiles[j] = temp;
 
+        // Hoán đổi vị trí hiển thị trên màn hình (UI Sibling Index)
         for (int k = 0; k < 9; k++) tiles[k].SetSiblingIndex(k);
 
+        // Cập nhật lại vị trí của ô Trống
         if (tiles[i].name == "Tile_Empty") emptyIndex = i;
         if (tiles[j].name == "Tile_Empty") emptyIndex = j;
     }
@@ -108,6 +124,8 @@ public class SlidingPuzzleUI : MonoBehaviour
         {
             List<int> validMoves = new List<int>();
             int x = emptyIndex % 3, y = emptyIndex / 3;
+            
+            // Tìm các ô có thể hoán đổi với ô trống
             if (x > 0) validMoves.Add(emptyIndex - 1);
             if (x < 2) validMoves.Add(emptyIndex + 1);
             if (y > 0) validMoves.Add(emptyIndex - 3);
@@ -122,6 +140,7 @@ public class SlidingPuzzleUI : MonoBehaviour
         bool isWin = true;
         for (int i = 0; i < 8; i++)
         {
+            // Kiểm tra xem tên viên gạch có kết thúc bằng con số đúng vị trí của nó không
             if (!tiles[i].name.EndsWith((i + 1).ToString()))
             {
                 isWin = false;
@@ -131,7 +150,6 @@ public class SlidingPuzzleUI : MonoBehaviour
 
         if (isWin)
         {
-            // [CẬP NHẬT]: Thông báo thắng đậm chất kinh dị
             if (textStatus != null) textStatus.text = "THE SEAL IS BROKEN!";
             
             for (int i = 0; i < 9; i++) 

@@ -938,7 +938,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1232179116239251295}
   m_Direction: 2
   m_Value: 0
-  m_Size: 1
+  m_Size: 0.99996674
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -956,7 +956,7 @@ GameObject:
   - component: {fileID: 5792399960702892782}
   - component: {fileID: 3054725191534244849}
   m_Layer: 0
-  m_Name: Button
+  m_Name: Btn_Exit
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2438,8 +2438,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -86}
-  m_SizeDelta: {x: 700, y: 200}
+  m_AnchoredPosition: {x: 0, y: 55}
+  m_SizeDelta: {x: 1000, y: 500}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5513734388044044417
 CanvasRenderer:
@@ -3239,7 +3239,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00057477405}
+  m_AnchoredPosition: {x: 0, y: -0.000017156166}
   m_SizeDelta: {x: 0, y: 400}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &5492597699078800573
@@ -3956,12 +3956,12 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1121495897506871429}
-  m_Father: {fileID: 3471401191251553724}
+  m_Father: {fileID: 4410627778263612443}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 350, y: 0}
-  m_SizeDelta: {x: 700, y: 0}
+  m_AnchoredPosition: {x: 960, y: 271}
+  m_SizeDelta: {x: 700, y: -1010}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!1 &2525931212470095227
 GameObject:
@@ -5279,11 +5279,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 482cc446b4159cc4c85f4d39d73e0f88, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KeoCoPuzzleUI
-  panelMain: {fileID: 0}
-  ropeSlider: {fileID: 0}
-  statusText: {fileID: 0}
-  resultPanel: {fileID: 0}
-  resultText: {fileID: 0}
+  panelMain: {fileID: 3622141573778573400}
+  ropeSlider: {fileID: 1307721097636840640}
+  statusText: {fileID: 8066289943447978922}
+  resultPanel: {fileID: 8097467383903639669}
+  resultText: {fileID: 4443592012393854208}
   sequenceLength: 5
   shakeDuration: 0.25
   shakeMagnitude: 8
@@ -7373,7 +7373,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: -950, y: 235}
+  m_AnchoredPosition: {x: -1300, y: 235}
   m_SizeDelta: {x: 0, y: 470}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8679727793517203024
@@ -10586,8 +10586,8 @@ RectTransform:
   - {fileID: 6228192242411966333}
   - {fileID: 8126765913486221170}
   - {fileID: 786629800935809655}
-  - {fileID: 8202022075361163234}
   - {fileID: 2361442569481569170}
+  - {fileID: 8202022075361163234}
   m_Father: {fileID: 5721746929169575181}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -11530,8 +11530,7 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1552912430615284631}
+  m_Children: []
   m_Father: {fileID: 4410627778263612443}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -11764,6 +11763,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3471401191251553724}
+  - {fileID: 1552912430615284631}
   m_Father: {fileID: 8202022075361163234}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
