@@ -56,7 +56,7 @@ namespace Game.Scripts.UI.Lobby
             gameObject.SetActive(true);
 
             // Ẩn mô tả và nút Equip lúc mới bật lên
-            _txtPerkDesc.text = "Chọn một kỹ năng bên trái để xem mô tả.";
+            _txtPerkDesc.text = "Select a perk on the left to view its description.";
             _btnEquip.gameObject.SetActive(false);
             _selectedPerk = null;
 
