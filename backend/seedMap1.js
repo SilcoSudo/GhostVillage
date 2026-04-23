@@ -45,11 +45,15 @@ const map1Config = {
 
   monsterSystemConfig: {
     bossConfig: {
-      monsterId: "ONG_KE",
+      monsterId: "OngKe",
     },
     minionConfig: {
-      allowedMonsterIds: ["VONG_NHI"],
+      allowedMonsterIds: ["VongNhi"],
     },
+  },
+
+  puzzleConfig: {
+    puzzlePoolIds: ["PUZZLE_BatGa", "PUZZLE_KeoCo"],
   },
 
   rewardConfig: {
@@ -60,7 +64,7 @@ const map1Config = {
 
 const map1Monsters = [
   {
-    monsterId: "ONG_KE",
+    monsterId: "OngKe",
     monsterName: "Ong Ke",
     monsterType: "BOSS",
     prefabName: "OngKeMonster",
@@ -85,7 +89,7 @@ const map1Monsters = [
     //   Cần teammate dùng ITEM_MEDKIT để cứu (không có timeout, chỉ cần cứu)
   },
   {
-    monsterId: "VONG_NHI",
+    monsterId: "VongNhi",
     monsterName: "Vong Nhi",
     monsterType: "MINION",
     prefabName: "VongNhiMonster",
@@ -171,7 +175,7 @@ const seedMap1 = async () => {
         { upsert: true },
       );
     }
-    console.log(`Upserted ${map1Monsters.length} monsters: ONG_KE, VONG_NHI`);
+    console.log(`Upserted ${map1Monsters.length} monsters: OngKe, VongNhi`);
 
     for (const item of map1Items) {
       await Item.updateOne(

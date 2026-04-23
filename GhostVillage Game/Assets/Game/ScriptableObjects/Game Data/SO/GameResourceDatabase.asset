@@ -29,8 +29,18 @@ MonoBehaviour:
     prefab: {fileID: 5167604229924277683, guid: 42c02c1145627644796c13aaf79c330b, type: 3}
   - entityId: MINION_DROWNED
     prefab: {fileID: 2041089602458688669, guid: 49a5e38fcde8bc341aff4e9af89b6145, type: 3}
+  - entityId: OngKe
+    prefab: {fileID: 4856024847922469503, guid: 5ce3407ee56d3c3489a24738de5df1ed, type: 3}
+  - entityId: VongNhi
+    prefab: {fileID: 4100079312764719314, guid: febb4a69dc94512458ef3c61e0fa7396, type: 3}
   puzzles:
   - entityId: PUZZLE_FIND_DOLL
     prefab: {fileID: 8126756268081071111, guid: f0aa56b0f0b6cab4480a1f0f89562a60, type: 3}
   - entityId: PUZZLE_FIX_LIGHT
     prefab: {fileID: 8891307657192998306, guid: abe4dd02f1be2524f8b7e1bdbe4194dd, type: 3}
+  - entityId: PUZZLE_BatGa
+    prefab: {fileID: 6453574431910901216, guid: 71719b55dcaa8644297cb3dba014dc7f, type: 3}
+  - entityId: PUZZLE_KeoCo
+    prefab: {fileID: 5770537936977570188, guid: 3318fa6afc809b948b658dbc0b457a25, type: 3}
+  - entityId: PUZZLE_Sliding
+    prefab: {fileID: 5770537936977570188, guid: 3318fa6afc809b948b658dbc0b457a25, type: 3}

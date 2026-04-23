@@ -95,6 +95,17 @@ MonoBehaviour:
   - RpcPlayJumpscareEffect
   - RpcBlowWhistle
   - RpcReceiveRelicBearerBuff
+  - SyncChickenMovementSnapshotRPC
+  - SyncRealChickenIndexRPC
+  - SyncSpawnPointRPC
+  - ApplyScoreRPC
+  - ConfirmSolveRPC
+  - EndMatchRPC
+  - PlayerJoinRPC
+  - PlayerLeaveRPC
+  - StartMatchRPC
+  - SubmitSolveRPC
+  - SyncScoreRPC
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

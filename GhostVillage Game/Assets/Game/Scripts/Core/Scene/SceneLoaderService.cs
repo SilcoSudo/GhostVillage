@@ -33,16 +33,26 @@ namespace Game.Core.Scene
             // Bật Loading Overlay
             if (globalUI != null) globalUI.ShowLoading(true);
 
-            // 2. Tải Scene ngầm
-            await SceneManager.LoadSceneAsync(sceneName).ToUniTask();
+            try
+            {
+                // 2. Tải Scene ngầm
+                AsyncOperation loadOperation = SceneManager.LoadSceneAsync(sceneName);
+                if (loadOperation == null)
+                {
+                    Debug.LogError($"[SceneLoader] SceneManager.LoadSceneAsync trả về null cho scene '{sceneName}'.");
+                    return;
+                }
 
-            // 3. (Tư duy kỹ) Chờ thêm 1 chút để các Script ở Scene mới chạy xong Awake/Start
-            await UniTask.Yield();
+                await loadOperation.ToUniTask();
 
-            Debug.Log($" [SceneLoader] Hoàn tất chuyển cảnh: {sceneName}");
-
-            // 4. Tắt Loading Overlay
-            if (globalUI != null) globalUI.ShowLoading(false);
+                // 3. Chờ thêm 1 frame để script Scene mới hoàn tất Awake/Start
+                await UniTask.Yield();
+            }
+            finally
+            {
+                // 4. Tắt Loading Overlay
+                if (globalUI != null) globalUI.ShowLoading(false);
+            }
         }
     }
 }
