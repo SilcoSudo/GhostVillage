@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using Game.Core.Interaction;
 using Game.Scripts.Gameplay.Core;
 
+// Bổ sung thêm namespace để gọi FPSController
+using Game.Core.Player.RayCast; 
+
 public class SlidingPuzzle : MonoBehaviourPunCallbacks, IPuzzleInteractTarget
 {
     [Header("--- Spawning Settings ---")]
@@ -20,6 +23,11 @@ public class SlidingPuzzle : MonoBehaviourPunCallbacks, IPuzzleInteractTarget
     private bool isFinished = false;
     private bool isCurrentlySolving = false;
     private bool isManager = false; 
+
+    // [MỚI]: Khai báo biến giữ người chơi để khóa/mở
+    private GameObject _localActor = null;
+    private FPSController _cachedFpsController = null;
+    private PlayerInteract _cachedPlayerInteract = null;
 
     void Start()
     {
@@ -61,26 +69,37 @@ public class SlidingPuzzle : MonoBehaviourPunCallbacks, IPuzzleInteractTarget
     public void Interact(GameObject actor)
     {
         if (isFinished || isCurrentlySolving || isManager) return;
+        
         if (SlidingPuzzleUI.Instance != null)
         {
             isCurrentlySolving = true;
+            
+            // [MỚI]: Lưu người chơi lại và KHÓA di chuyển + NHẢ chuột ra
+            _localActor = actor;
+            LockPlayerControls(actor);
+
             SlidingPuzzleUI.Instance.OpenPuzzle(this);
         }
     }
 
     public string GetPromptMessage()
     {
-        if (isManager) return "";
+        if (isManager) return ""; 
         if (isFinished) return "Completed ✓";
-        // [CẬP NHẬT]: Đã đổi sang phím F
         return isCurrentlySolving ? "Solving..." : "[F] Solve Seal";
     }
 
-    public void OnPlayerCanceled() { isCurrentlySolving = false; }
+    public void OnPlayerCanceled()
+    {
+        isCurrentlySolving = false;
+        UnlockPlayerControls(); // [MỚI]: Tắt UI thì giấu chuột đi và cho đi lại bình thường
+    }
 
     public void OnPuzzleSolvedLocal()
     {
         isCurrentlySolving = false;
+        UnlockPlayerControls(); // [MỚI]: Giải xong cũng giấu chuột đi và cho đi lại bình thường
+        
         if (PhotonNetwork.IsConnectedAndReady)
             photonView.RPC(nameof(SubmitSolveRPC), RpcTarget.MasterClient);
         else
@@ -91,8 +110,10 @@ public class SlidingPuzzle : MonoBehaviourPunCallbacks, IPuzzleInteractTarget
     private void SubmitSolveRPC(PhotonMessageInfo info)
     {
         if (!PhotonNetwork.IsMasterClient) return;
+        
         int currentSolved = 1;
         string propKey = "SlidingPuzzle_GlobalCount";
+        
         if (PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue(propKey, out object val))
             currentSolved = (int)val + 1;
 
@@ -108,10 +129,58 @@ public class SlidingPuzzle : MonoBehaviourPunCallbacks, IPuzzleInteractTarget
     {
         isFinished = true;
         GameplayEvents.OnPuzzleSolved?.Invoke();
+        
         if (isFinal && PhotonNetwork.IsMasterClient && keyItemReward != null)
         {
-            Vector3 dropPos = transform.position + Vector3.up * 1f;
-            PhotonNetwork.InstantiateRoomObject(keyItemReward.itemWorldPrefab.name, dropPos, Quaternion.identity);
+            try {
+                Vector3 dropPos = transform.position + Vector3.up * 1.5f;
+                PhotonNetwork.InstantiateRoomObject(keyItemReward.itemWorldPrefab.name, dropPos, Quaternion.identity);
+            } catch (System.Exception e) {
+                Debug.LogError("[Sliding Puzzle] Lỗi đẻ đồ: " + e.Message);
+            }
         }
+    }
+
+    // ==============================================================
+    // [CÔNG NGHỆ KHÓA/MỞ PLAYER & QUẢN LÝ CHUỘT]
+    // ==============================================================
+    private void LockPlayerControls(GameObject a) 
+    {
+        _cachedFpsController = a.GetComponent<FPSController>(); 
+        if (_cachedFpsController) {
+            _cachedFpsController.isPlayingMinigame = true; // Khóa không cho đi lại
+        }
+
+        _cachedPlayerInteract = a.GetComponent<PlayerInteract>(); 
+        if (_cachedPlayerInteract) {
+            _cachedPlayerInteract.enabled = false;
+        }
+        
+        // TRẢ CHUỘT LẠI CHO UI
+        Cursor.lockState = CursorLockMode.None; 
+        Cursor.visible = true; 
+    }
+    
+    private void UnlockPlayerControls() 
+    {
+        if (_cachedFpsController == null && _localActor != null) {
+            _cachedFpsController = _localActor.GetComponent<FPSController>();
+        }
+
+        if (_cachedFpsController != null) {
+            _cachedFpsController.isPlayingMinigame = false; // Mở khóa di chuyển
+        }
+
+        if (_cachedPlayerInteract == null && _localActor != null) {
+            _cachedPlayerInteract = _localActor.GetComponent<PlayerInteract>();
+        }
+
+        if (_cachedPlayerInteract != null) {
+            _cachedPlayerInteract.enabled = true;
+        }
+        
+        // GIẤU CHUỘT ĐI VÀ KHÓA VÀO GIỮA MÀN HÌNH NHƯ CŨ
+        Cursor.lockState = CursorLockMode.Locked; 
+        Cursor.visible = false; 
     }
 }

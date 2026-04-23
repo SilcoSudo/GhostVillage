@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8722784124605742782}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: g
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -44,7 +44,7 @@ GameObject:
   - component: {fileID: 892864403724384852}
   - component: {fileID: 9100017399393837118}
   - component: {fileID: 8128200488730749072}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: World_Talisman
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -60,7 +60,7 @@ Transform:
   m_GameObject: {fileID: 2396600044685604337}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 114.49485, y: 20.224, z: 119.96539}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -162,7 +162,7 @@ GameObject:
   - component: {fileID: 564400484476137305}
   - component: {fileID: 4371989264767547578}
   - component: {fileID: 4470846087505541803}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: defaultMaterial.001
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -250,7 +250,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1087657840593206544}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Collada visual scene group
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -283,7 +283,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6206751226959754351}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: g.001
   m_TagString: Untagged
   m_Icon: {fileID: 0}

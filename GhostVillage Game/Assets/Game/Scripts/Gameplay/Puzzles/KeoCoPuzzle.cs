@@ -15,17 +15,14 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
     [SerializeField] private string vongNhiTag = "VongNhi";
 
     [Header("--- Player Control ---")]
-    [SerializeField] private Transform playerPullPoint;
-    [SerializeField] private Transform vongNhiPullPoint;
     [SerializeField] private bool showCursorDuringMinigame = false;
 
     [Header("--- Balance System (Sudden Death) ---")]
-    public float pointsPerCorrectPress = 0.5f;
-    public float penaltyPerWrongPress = 1.0f;
+    public float pointsPerCorrectPress = 5.0f;
+    public float penaltyPerWrongPress = 0.75f;
     public float[] targetScores = { 20f, 35f, 45f, 50f };
     public float[] dropPerSeconds = { 2f, 4f, 5f, 5.5f };
 
-    // Runtime
     private bool _isSolved = false;
     private bool _isMatchActive = false;
     private int _playersPullingCount = 0; 
@@ -65,8 +62,6 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
         KeoCoPuzzleUI.Instance.OpenPuzzle(this);
 
         int actorNum = pv.Owner?.ActorNumber ?? -1;
-        
-        // [FIX]: Gọi Vòng Nhi cho TẤT CẢ mọi người cùng thấy
         if (PhotonNetwork.IsConnectedAndReady) photonView.RPC(nameof(StartKeoCoRPC), RpcTarget.All, actorNum);
         else StartKeoCoRPC(actorNum);
     }
@@ -115,16 +110,28 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
     [PunRPC]
     private void EndMatchRPC(bool teamWon) {
         _isMatchActive = false;
+
+        // [MỞ KHÓA NGAY LẬP TỨC KHÔNG CHỜ UI]
+        if (_localActor != null) {
+            UnlockPlayerControls();
+        }
+
         if (KeoCoPuzzleUI.Instance != null && KeoCoPuzzleUI.Instance.CurrentPuzzle == this)
-            KeoCoPuzzleUI.Instance.ShowResult(teamWon ? "THE SPIRIT RETREATS" : "CONSUMED BY DARKNESS");
+            KeoCoPuzzleUI.Instance.ShowResult(teamWon ? "THE SPIRIT RETREATS" : "DEFEAT!");
 
         if (teamWon) {
             if (PhotonNetwork.IsMasterClient) {
                 photonView.RPC(nameof(DisablePuzzleRPC), RpcTarget.AllBuffered);
-                if (keyItemReward != null) {
-                    Vector3 pos = (rewardDropPoint != null) ? rewardDropPoint.position : transform.position + Vector3.up * 1f;
-                    PhotonNetwork.InstantiateRoomObject(keyItemReward.itemWorldPrefab.name, pos, Quaternion.identity);
+                
+                try {
+                    if (keyItemReward != null && keyItemReward.itemWorldPrefab != null) {
+                        Vector3 pos = (rewardDropPoint != null) ? rewardDropPoint.position : transform.position + Vector3.up * 1.5f;
+                        PhotonNetwork.InstantiateRoomObject(keyItemReward.itemWorldPrefab.name, pos, Quaternion.identity);
+                    }
+                } catch (System.Exception e) {
+                    Debug.LogError("[Spawn Error] Lỗi mạng đẻ đồ: " + e.Message);
                 }
+                
                 photonView.RPC(nameof(VongNhiLoseRPC), RpcTarget.AllBuffered);
             }
             GameplayEvents.OnPuzzleSolved?.Invoke();
@@ -144,8 +151,6 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
 
     [PunRPC] private void PlayerLeaveRPC() { 
         _playersPullingCount--; 
-        
-        // [FIX BUG]: Giải phóng Vòng Nhi ngay cả khi Thua
         if (_playersPullingCount <= 0 && PhotonNetwork.IsMasterClient) {
             _isMatchActive = false; 
             photonView.RPC(nameof(VongNhiCancelRPC), RpcTarget.AllBuffered);
@@ -178,33 +183,58 @@ public class KeoCoPuzzle : MonoBehaviourPun, IPuzzleInteractTarget
     }
 
     private void SnapVongNhiToPullPoint(Transform playerTf) {
-        if (vongNhi == null || vongNhiPullPoint == null) return;
+        if (vongNhi == null) return;
         
-        // [FIX]: Điểm huyệt NavMesh trước khi tele
-        UnityEngine.AI.NavMeshAgent agent = vongNhi.GetComponent<UnityEngine.AI.NavMeshAgent>();
-        if (agent != null) agent.enabled = false;
-
-        vongNhi.transform.SetPositionAndRotation(vongNhiPullPoint.position, vongNhiPullPoint.rotation);
-        
-        // [FIX]: Giải huyệt NavMesh sau khi tele xong
-        if (agent != null) agent.enabled = true;
-
         if (playerTf != null) {
-            Vector3 dir = playerTf.position - vongNhi.transform.position; dir.y = 0f;
-            if (dir.sqrMagnitude > 0.01f) vongNhi.transform.rotation = Quaternion.LookRotation(dir.normalized);
+            Vector3 dir = playerTf.position - vongNhi.transform.position; 
+            dir.y = 0f;
+            if (dir.sqrMagnitude > 0.01f) {
+                vongNhi.transform.rotation = Quaternion.LookRotation(dir.normalized);
+            }
         }
     }
 
     private void LockPlayerControls(GameObject a) {
-        _cachedFpsController = a.GetComponent<FPSController>(); if (_cachedFpsController) _cachedFpsController.enabled = false;
-        _cachedPlayerInteract = a.GetComponent<PlayerInteract>(); if (_cachedPlayerInteract) _cachedPlayerInteract.enabled = false;
-        if (playerPullPoint != null) a.transform.SetPositionAndRotation(playerPullPoint.position, playerPullPoint.rotation);
-        Cursor.lockState = showCursorDuringMinigame ? CursorLockMode.None : CursorLockMode.Locked; Cursor.visible = showCursorDuringMinigame;
+        _cachedFpsController = a.GetComponent<FPSController>(); 
+        if (_cachedFpsController) {
+            // [SỬA LỖI]: Tuyệt đối KHÔNG tắt component nữa, chỉ bật cờ isPlayingMinigame
+            _cachedFpsController.isPlayingMinigame = true; 
+        }
+
+        _cachedPlayerInteract = a.GetComponent<PlayerInteract>(); 
+        if (_cachedPlayerInteract) {
+            _cachedPlayerInteract.enabled = false;
+        }
+        
+        Cursor.lockState = showCursorDuringMinigame ? CursorLockMode.None : CursorLockMode.Locked; 
+        Cursor.visible = showCursorDuringMinigame;
     }
     
     private void UnlockPlayerControls() {
-        if (_cachedFpsController) _cachedFpsController.enabled = true;
-        if (_cachedPlayerInteract) _cachedPlayerInteract.enabled = true;
-        Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false;
+        if (_cachedFpsController == null && _localActor != null) {
+            _cachedFpsController = _localActor.GetComponent<FPSController>();
+        }
+
+        if (_cachedFpsController != null) {
+            Debug.Log("<color=green>[KeoCo] ĐÃ KÍCH HOẠT LỆNH MỞ KHÓA DI CHUYỂN!</color>");
+            // [MỞ KHÓA]: Trả lại quyền di chuyển cho sếp
+            _cachedFpsController.isPlayingMinigame = false; 
+
+            // Ép bật lại component đề phòng trước đó sếp lỡ tắt thủ công
+            if (!_cachedFpsController.enabled) _cachedFpsController.enabled = true;
+        } else {
+            Debug.LogError("<color=red>[KeoCo] LỖI: Không tìm thấy FPSController để mở khóa!</color>");
+        }
+
+        if (_cachedPlayerInteract == null && _localActor != null) {
+            _cachedPlayerInteract = _localActor.GetComponent<PlayerInteract>();
+        }
+
+        if (_cachedPlayerInteract != null) {
+            _cachedPlayerInteract.enabled = true;
+        }
+        
+        Cursor.lockState = CursorLockMode.Locked; 
+        Cursor.visible = false;
     }
 }

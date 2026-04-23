@@ -50,7 +50,10 @@ public class KeoCoPuzzleUI : MonoBehaviour
         _targetScore = puzzle.GetTargetScore();
         _targetRopeValue = 0.5f;
         
-        if (ropeSlider != null) ropeSlider.value = 0.5f;
+        // Bật lại các UI con trong trường hợp ván trước bị ẩn lúc Thua
+        if (ropeSlider != null) { ropeSlider.gameObject.SetActive(true); ropeSlider.value = 0.5f; }
+        if (statusText != null) statusText.gameObject.SetActive(true);
+
         panelMain.SetActive(true);
         if (resultPanel != null) resultPanel.SetActive(false);
 
@@ -94,13 +97,26 @@ public class KeoCoPuzzleUI : MonoBehaviour
 
     public void ShowResult(string message) {
         _isInteractable = false; 
+        
+        // Ẩn thanh kéo và nút mũi tên cho sạch màn hình lúc kết thúc
+        if (ropeSlider != null) ropeSlider.gameObject.SetActive(false);
+        if (statusText != null) statusText.gameObject.SetActive(false);
+
         if (resultPanel != null) resultPanel.SetActive(true);
         if (resultText != null) resultText.text = message;
-        StartCoroutine(AutoCloseRoutine());
+        
+        // Tắt cực nhanh sau 1.5 giây
+        StartCoroutine(AutoCloseRoutine(1.5f)); 
     }
 
-    private IEnumerator AutoCloseRoutine() {
-        yield return new WaitForSeconds(3f);
+    private IEnumerator AutoCloseRoutine(float delay) {
+        yield return new WaitForSeconds(delay);
+        ForceClose();
+    }
+
+    // Tuyệt chiêu ép tắt UI và mở khóa nhân vật ngay lập tức
+    public void ForceClose() {
+        StopAllCoroutines(); 
         if (CurrentPuzzle != null) CurrentPuzzle.CancelMinigameLocal();
         ClosePuzzle();
     }
@@ -111,10 +127,9 @@ public class KeoCoPuzzleUI : MonoBehaviour
 
         if (!_isInteractable || CurrentPuzzle == null) return;
 
-        // [FIX]: Sử dụng phím Enter hoặc F để thoát. Bỏ phím Esc.
+        // Bấm phím F hoặc Enter để thoát UI an toàn
         if (Keyboard.current != null && (Keyboard.current.enterKey.wasPressedThisFrame || Keyboard.current.fKey.wasPressedThisFrame)) {
-            CurrentPuzzle.CancelMinigameLocal();
-            ClosePuzzle();
+            ForceClose();
             return;
         }
 
@@ -160,7 +175,6 @@ public class KeoCoPuzzleUI : MonoBehaviour
                 _ => 0 
             };
 
-            // [FIX]: Dùng màu Green và cú pháp chuẩn của TMP
             if (i < _currentInputIndex) 
                 seqText += $"<color=green><sprite index={spriteIndex}></color> ";
             else if (i == _currentInputIndex) 
@@ -173,10 +187,7 @@ public class KeoCoPuzzleUI : MonoBehaviour
         statusText.text = $"Team Power: <color={color}>{_currentScore:F1}</color> / <color=yellow>{_targetScore}</color>\n{seqText}";
     }
 
-    // [FIX]: Hàm gọi sự kiện cho nút Exit Button (Dấu X trên màn hình)
     public void OnClickExitButton() {
-        if (!_isInteractable || CurrentPuzzle == null) return;
-        CurrentPuzzle.CancelMinigameLocal();
-        ClosePuzzle();
+        ForceClose();
     }
 }

@@ -116,16 +116,6 @@ const WikiDetailPage = () => {
         <ReactMarkdown>{wiki.content}</ReactMarkdown>
       </div>
 
-      {/* Game Data Display (if exists) */}
-      {wiki.gameData && (
-        <div className="game-data-section">
-          <h2>{t("wiki.detail.detailsHeading")}</h2>
-          <pre className="game-data">
-            {JSON.stringify(wiki.gameData, null, 2)}
-          </pre>
-        </div>
-      )}
-
       {/* Gallery */}
       {wiki.gallery && wiki.gallery.length > 0 && (
         <div className="wiki-gallery">
