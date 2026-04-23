@@ -26,7 +26,7 @@ class ProfileService {
         exp: player.profile?.exp || 0,
         nextLevelExp: player.profile?.nextLevelExp || 100,
         coin: player.profile?.coin || 0,
-        avatar: player.profile?.avatar || "avatar_default_02",
+        avatar: player.profile?.avatar || "avatar_default_01",
         userId: player.userId.toString(),
         totalMatches: totalMatches,
       },
