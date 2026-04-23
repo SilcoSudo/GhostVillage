@@ -52,6 +52,60 @@ MonoBehaviour:
   - UpdatePlayerStatusRPC
   - RpcShowGameResult
   - RPC_AddStat
+  - RPC_ChickenCaught
+  - RPC_LockPuzzle
+  - RPC_RingBell
+  - RPC_SetRealChickenIndex
+  - RPC_StickInteracted
+  - SetPlayingRPC
+  - StartKeoCoRPC
+  - VongNhiLoseRPC
+  - VongNhiWinRPC
+  - VongNhiCancelRPC
+  - RpcSetKnockedState
+  - RpcUpdateReviveProgress
+  - RpcSyncLight
+  - AddCaptureProgressRPC
+  - CompletePuzzleRPC
+  - PlayFakeChickenCryRPC
+  - RequestMasterAlarmRPC
+  - StartCatchPhaseRPC
+  - SyncProgressRPC
+  - RpcSyncLightMode
+  - RpcHandleCorpse
+  - MarkAsSolvedRPC
+  - SyncSecretCodeRPC
+  - TriggerPenaltyRPC
+  - RpcOpenSafeAndSpawnItem
+  - RpcSyncSafeOpened
+  - OnPuzzleFailedRPC
+  - OnPuzzleSolvedRPC
+  - SyncPuzzleConfigRPC
+  - PlaceItemRPC
+  - RemoveItemRPC
+  - UpdateWaterLevelRPC
+  - ActivateValveRPC
+  - InstallPartRPC
+  - TriggerEscapeSequenceRPC
+  - RpcAlertAndSink
+  - RpcFreezeAndSink
+  - RpcActivateTeleport
+  - RpcDoTeleportSequence
+  - ReceiveJumpscareRPC
+  - RpcPlayJumpscareEffect
+  - RpcBlowWhistle
+  - RpcReceiveRelicBearerBuff
+  - SyncChickenMovementSnapshotRPC
+  - SyncRealChickenIndexRPC
+  - SyncSpawnPointRPC
+  - ApplyScoreRPC
+  - ConfirmSolveRPC
+  - EndMatchRPC
+  - PlayerJoinRPC
+  - PlayerLeaveRPC
+  - StartMatchRPC
+  - SubmitSolveRPC
+  - SyncScoreRPC
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

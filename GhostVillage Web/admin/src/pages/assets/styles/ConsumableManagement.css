@@ -21,7 +21,7 @@
 .consumable-management-container {
   width: 100%;
   min-height: 100vh;
-  padding: 16px;
+  padding: 36px 16px 16px;
   background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
   color: var(--text-secondary);
 }
@@ -352,6 +352,18 @@
   background: rgba(255, 87, 34, 0.15);
   color: #ff7043;
   border-color: #ff8a65;
+}
+
+.consumable-badge.consumable {
+  background: rgba(33, 150, 243, 0.15);
+  color: #42a5f5;
+  border-color: #64b5f6;
+}
+
+.consumable-badge.equipment {
+  background: rgba(76, 175, 80, 0.15);
+  color: #66bb6a;
+  border-color: #81c784;
 }
 
 /* Rarity Badges */

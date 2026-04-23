@@ -2,12 +2,18 @@ import express from "express";
 import {
   getMyProfile,
   getUserIdProfile,
+  getUserPostsById,
   updateMyProfile,
   updateName,
   toggleEmailVisibility,
   uploadAvatar,
+  listUsersForAdmin,
+  unmuteUserForAdmin,
 } from "./userController.js";
-import { authMiddleware } from "../../middlewares/auth.middleware.js";
+import {
+  authMiddleware,
+  authorize,
+} from "../../middlewares/auth.middleware.js";
 import { uploadAvatar as uploadAvatarMiddleware } from "../../middlewares/uploadMiddleware.js";
 import { getSavedPosts } from "./userController.js";
 
@@ -22,6 +28,10 @@ const router = express.Router();
  * PUT  /api/web/user/profile/update-name     - Update name (auth required, legacy)
  * PUT  /api/web/user/profile/toggle-email    - Toggle email visibility (auth required)
  */
+
+/* =========================================================
+ * SECTION A: WEB USER ROUTES
+ * ========================================================= */
 
 router.get("/profile/me", authMiddleware, getMyProfile);
 router.get("/profile/:id", getUserIdProfile);
@@ -39,6 +49,20 @@ router.put(
   toggleEmailVisibility,
 );
 router.get("/saved-posts", authMiddleware, getSavedPosts);
+router.get("/:id/posts", authMiddleware, getUserPostsById);
+
+/* =========================================================
+ * SECTION B: ADMIN USER MANAGEMENT ROUTES
+ * - Mounted at /api/admin/users
+ * ========================================================= */
+
+router.get("/", authMiddleware, authorize("admin"), listUsersForAdmin);
+router.patch(
+  "/:id/unmute",
+  authMiddleware,
+  authorize("admin"),
+  unmuteUserForAdmin,
+);
 
 // TODO: Implement other user routes
 // router.get('/profile', getUserProfile);

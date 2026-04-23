@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { X, Loader2, Save } from "lucide-react";
 import monsterService from "../../shared/services/monsterService";
 import "../assets/styles/Modal.css";
@@ -8,13 +9,27 @@ import "../assets/styles/Modal.css";
  * Modal để chỉnh sửa thông tin quái vật
  */
 const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
-    name: "",
-    hp: 100,
-    atk: 10,
-    def: 5,
-    spawnRate: 50,
+    monsterName: "",
+    monsterType: "MINION",
+    prefabName: "",
+    movementConfig: {
+      moveSpeed: 3.5,
+      stoppingDistance: 0.5,
+      patrolRadius: 25,
+    },
+    combatConfig: {
+      chaseRange: 25,
+      attackRange: 1.5,
+      attackCooldown: 1,
+    },
+    detectionConfig: {
+      detectionRange: 15,
+      detectionAngle: 120,
+    },
   });
+  const [specialSkillJson, setSpecialSkillJson] = useState("{}");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -22,12 +37,27 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
   useEffect(() => {
     if (monster) {
       setFormData({
-        name: monster.name || "",
-        hp: monster.hp || 100,
-        atk: monster.atk || 10,
-        def: monster.def || 5,
-        spawnRate: monster.spawnRate || 50,
+        monsterName: monster.monsterName || "",
+        monsterType: monster.monsterType || "MINION",
+        prefabName: monster.prefabName || "",
+        movementConfig: {
+          moveSpeed: monster.movementConfig?.moveSpeed ?? 3.5,
+          stoppingDistance: monster.movementConfig?.stoppingDistance ?? 0.5,
+          patrolRadius: monster.movementConfig?.patrolRadius ?? 25,
+        },
+        combatConfig: {
+          chaseRange: monster.combatConfig?.chaseRange ?? 25,
+          attackRange: monster.combatConfig?.attackRange ?? 1.5,
+          attackCooldown: monster.combatConfig?.attackCooldown ?? 1,
+        },
+        detectionConfig: {
+          detectionRange: monster.detectionConfig?.detectionRange ?? 15,
+          detectionAngle: monster.detectionConfig?.detectionAngle ?? 120,
+        },
       });
+      setSpecialSkillJson(
+        JSON.stringify(monster.specialSkillConfig || {}, null, 2)
+      );
     }
   }, [monster]);
 
@@ -36,9 +66,23 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
    */
   const handleChange = (e) => {
     const { name, value, type } = e.target;
+    const normalizedValue = type === "number" ? parseFloat(value) || 0 : value;
+
+    if (name.includes(".")) {
+      const [group, field] = name.split(".");
+      setFormData((prev) => ({
+        ...prev,
+        [group]: {
+          ...prev[group],
+          [field]: normalizedValue,
+        },
+      }));
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "number" ? parseFloat(value) || 0 : value,
+      [name]: normalizedValue,
     }));
   };
 
@@ -49,28 +93,13 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
     e.preventDefault();
     
     // Validation
-    if (!formData.name.trim()) {
-      setError("Tên quái vật không được để trống");
+    if (!formData.monsterName.trim()) {
+      setError(t("monsterModal.errors.monsterNameRequired"));
       return;
     }
 
-    if (formData.hp < 1) {
-      setError("HP phải lớn hơn 0");
-      return;
-    }
-
-    if (formData.atk < 0) {
-      setError("ATK không được âm");
-      return;
-    }
-
-    if (formData.def < 0) {
-      setError("DEF không được âm");
-      return;
-    }
-
-    if (formData.spawnRate < 0 || formData.spawnRate > 100) {
-      setError("Spawn Rate phải nằm trong khoảng 0-100");
+    if (!formData.prefabName.trim()) {
+      setError(t("monsterModal.errors.prefabRequired"));
       return;
     }
 
@@ -78,14 +107,30 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
       setLoading(true);
       setError(null);
 
-      const response = await monsterService.updateMonster(monster._id, formData);
+      let parsedSpecialSkillConfig = {};
+      if (specialSkillJson.trim()) {
+        try {
+          parsedSpecialSkillConfig = JSON.parse(specialSkillJson);
+        } catch {
+          setError(t("monsterModal.errors.specialSkillJson"));
+          setLoading(false);
+          return;
+        }
+      }
+
+      const payload = {
+        ...formData,
+        specialSkillConfig: parsedSpecialSkillConfig,
+      };
+
+      const response = await monsterService.updateMonster(monster._id, payload);
 
       if (response.success) {
         onSuccess();
       }
     } catch (err) {
       console.error("Error updating monster:", err);
-      setError(err.response?.data?.message || "Lỗi khi cập nhật quái vật");
+      setError(err.response?.data?.message || t("monsterModal.errors.updateFailed"));
     } finally {
       setLoading(false);
     }
@@ -93,10 +138,10 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-container">
+      <div className="modal-container" style={{ maxWidth: "760px" }}>
         {/* Header */}
         <div className="modal-header">
-          <h2>Chỉnh sửa quái vật</h2>
+          <h2>{t("monsterModal.editTitle")}</h2>
           <button onClick={onClose} className="modal-close-btn">
             <X size={24} />
           </button>
@@ -109,88 +154,175 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
             <div className="modal-error">{error}</div>
           )}
 
-          {/* Name */}
+          <h3 className="modal-section-title">{t("monsterModal.sections.basic")}</h3>
+
+          <div className="form-group">
+            <label className="form-label">{t("monsterModal.monsterIdReadonly")}</label>
+            <input
+              type="text"
+              value={monster?.monsterId || ""}
+              className="form-input"
+              disabled
+            />
+          </div>
+
           <div className="form-group">
             <label className="form-label">
-              Tên quái vật <span className="required">*</span>
+              {t("monsterModal.monsterName")} <span className="required">*</span>
             </label>
             <input
               type="text"
-              name="name"
-              value={formData.name}
+              name="monsterName"
+              value={formData.monsterName}
               onChange={handleChange}
               className="form-input"
-              placeholder="Nhập tên quái vật"
+              placeholder={t("monsterModal.monsterNameInput")}
               required
             />
           </div>
 
-          {/* Stats Grid */}
           <div className="stats-grid">
-            {/* HP */}
+            <div className="form-group">
+              <label className="form-label">Monster Type</label>
+              <select
+                name="monsterType"
+                value={formData.monsterType}
+                onChange={handleChange}
+                className="form-select"
+              >
+                <option value="MINION">MINION</option>
+                <option value="BOSS">BOSS</option>
+              </select>
+            </div>
+
             <div className="form-group">
               <label className="form-label">
-                HP (Health Points) <span className="required">*</span>
+                Prefab Name <span className="required">*</span>
               </label>
               <input
-                type="number"
-                name="hp"
-                value={formData.hp}
+                type="text"
+                name="prefabName"
+                value={formData.prefabName}
                 onChange={handleChange}
-                min="1"
                 className="form-input"
                 required
+              />
+            </div>
+          </div>
+
+          <h3 className="modal-section-title">{t("monsterModal.sections.movement")}</h3>
+          <div className="stats-grid">
+            <div className="form-group">
+              <label className="form-label">Move Speed</label>
+              <input
+                type="number"
+                name="movementConfig.moveSpeed"
+                value={formData.movementConfig.moveSpeed}
+                onChange={handleChange}
+                step="0.1"
+                className="form-input"
               />
             </div>
 
-            {/* ATK */}
             <div className="form-group">
-              <label className="form-label">
-                ATK (Attack) <span className="required">*</span>
-              </label>
+              <label className="form-label">Stopping Distance</label>
               <input
                 type="number"
-                name="atk"
-                value={formData.atk}
+                name="movementConfig.stoppingDistance"
+                value={formData.movementConfig.stoppingDistance}
                 onChange={handleChange}
-                min="0"
+                step="0.1"
                 className="form-input"
-                required
               />
             </div>
 
-            {/* DEF */}
             <div className="form-group">
-              <label className="form-label">
-                DEF (Defense) <span className="required">*</span>
-              </label>
+              <label className="form-label">Patrol Radius</label>
               <input
                 type="number"
-                name="def"
-                value={formData.def}
+                name="movementConfig.patrolRadius"
+                value={formData.movementConfig.patrolRadius}
                 onChange={handleChange}
-                min="0"
+                step="0.1"
                 className="form-input"
-                required
               />
             </div>
+          </div>
 
-            {/* Spawn Rate */}
+          <h3 className="modal-section-title">{t("monsterModal.sections.combat")}</h3>
+          <div className="stats-grid">
             <div className="form-group">
-              <label className="form-label">
-                Spawn Rate (0-100%) <span className="required">*</span>
-              </label>
+              <label className="form-label">Chase Range</label>
               <input
                 type="number"
-                name="spawnRate"
-                value={formData.spawnRate}
+                name="combatConfig.chaseRange"
+                value={formData.combatConfig.chaseRange}
                 onChange={handleChange}
-                min="0"
-                max="100"
+                step="0.1"
                 className="form-input"
-                required
               />
             </div>
+            <div className="form-group">
+              <label className="form-label">Attack Range</label>
+              <input
+                type="number"
+                name="combatConfig.attackRange"
+                value={formData.combatConfig.attackRange}
+                onChange={handleChange}
+                step="0.1"
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Attack Cooldown</label>
+              <input
+                type="number"
+                name="combatConfig.attackCooldown"
+                value={formData.combatConfig.attackCooldown}
+                onChange={handleChange}
+                step="0.1"
+                className="form-input"
+              />
+            </div>
+          </div>
+
+          <h3 className="modal-section-title">{t("monsterModal.sections.detection")}</h3>
+          <div className="stats-grid">
+            <div className="form-group">
+              <label className="form-label">Detection Range</label>
+              <input
+                type="number"
+                name="detectionConfig.detectionRange"
+                value={formData.detectionConfig.detectionRange}
+                onChange={handleChange}
+                step="0.1"
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Detection Angle</label>
+              <input
+                type="number"
+                name="detectionConfig.detectionAngle"
+                value={formData.detectionConfig.detectionAngle}
+                onChange={handleChange}
+                step="0.1"
+                className="form-input"
+              />
+            </div>
+          </div>
+
+          <h3 className="modal-section-title">{t("monsterModal.sections.specialSkill")}</h3>
+          <div className="form-group">
+            <label className="form-label">Special Skill JSON</label>
+            <textarea
+              value={specialSkillJson}
+              onChange={(e) => setSpecialSkillJson(e.target.value)}
+              className="form-textarea"
+              rows={6}
+              placeholder='{}'
+              style={{ fontFamily: "monospace" }}
+            />
           </div>
 
           {/* Actions */}
@@ -201,7 +333,7 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
               className="modal-btn modal-btn-cancel"
               disabled={loading}
             >
-              Hủy
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
@@ -211,12 +343,12 @@ const EditMonsterModal = ({ monster, onClose, onSuccess }) => {
               {loading ? (
                 <>
                   <Loader2 className="spinner" size={18} />
-                  <span>Đang lưu...</span>
+                  <span>{t("monsterModal.saving")}</span>
                 </>
               ) : (
                 <>
                   <Save size={18} />
-                  <span>Lưu thay đổi</span>
+                  <span>{t("common.save")}</span>
                 </>
               )}
             </button>

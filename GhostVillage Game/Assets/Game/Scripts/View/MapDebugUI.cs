@@ -37,7 +37,7 @@
 //             if (data != null)
 //             {
 //                 // Format hiển thị cho đẹp để dễ check
-//                 string display = $"✅ LOAD SUCCESS!\n" +
+//                 string display = $" LOAD SUCCESS!\n" +
 //                                  $"------------------\n" +
 //                                  $"ID: {data._id}\n" +
 //                                  $"Name: <color=yellow>{data.name}</color>\n" +
@@ -49,7 +49,7 @@
 //             }
 //             else
 //             {
-//                 _logText.text = "❌ Lỗi: Không lấy được dữ liệu. Check Console!";
+//                 _logText.text = " Lỗi: Không lấy được dữ liệu. Check Console!";
 //             }
 //         }
 //     }

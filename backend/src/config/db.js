@@ -18,7 +18,7 @@ export const connectDB = async () => {
     });
     
     mongoose.connection.on('error', (err) => {
-      console.error('❌ MongoDB connection error:', err);
+      console.error(' MongoDB connection error:', err);
     });
     
     process.on('SIGINT', async () => {
@@ -28,7 +28,7 @@ export const connectDB = async () => {
     });
     
   } catch (error) {
-    console.error('❌ Database connection failed:', error);
+    console.error(' Database connection failed:', error);
     process.exit(1);
   }
 };

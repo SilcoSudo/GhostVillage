@@ -90,6 +90,11 @@
 }
 
 .comment-author-name {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--text-primary);
   transition: color 0.2s;
   cursor: pointer;
 }
@@ -105,6 +110,10 @@
 }
 
 .reply-to-name {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
   color: var(--text-primary);
   font-weight: 600;
   transition: color 0.2s;
@@ -160,6 +169,17 @@
   line-height: 1.5;
 }
 
+.comment-text-deleted {
+  color: var(--text-secondary);
+  font-style: italic;
+  opacity: 0.75;
+}
+
+.comment-bubble-deleted {
+  border-style: dashed;
+  opacity: 0.95;
+}
+
 .comment-actions {
   display: flex;
   align-items: center;
@@ -191,6 +211,18 @@
   font-size: 13px;
   color: var(--text-secondary);
   margin-left: auto;
+}
+
+.comment-edited-indicator {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  color: var(--text-primary);
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 700;
+  font-style: italic;
+  opacity: 0.85;
 }
 
 /* Dropdown menu styling */

@@ -27,10 +27,10 @@ namespace Game.Scripts.Gameplay.Core
                 }
                 else
                 {
-                    Debug.LogError("❌ Không tìm thấy GameResultUI trong HUD Prefab!");
+                    Debug.LogError(" Không tìm thấy GameResultUI trong HUD Prefab!");
                 }
             }
-            else Debug.LogError("❌ Chưa kéo UI HUD Prefab!");
+            else Debug.LogError(" Chưa kéo UI HUD Prefab!");
 
             // 2. LOGIC MANAGERS (Tìm trên Hierarchy của chính Prefab này)     
             builder.RegisterComponent(GetComponentInChildren<MapDataManager>());
@@ -41,6 +41,8 @@ namespace Game.Scripts.Gameplay.Core
             builder.RegisterComponent(GetComponentInChildren<ObjectiveManager>());
             builder.RegisterComponent(GetComponentInChildren<MatchStatisticManager>());
             builder.RegisterComponent(GetComponentInChildren<GameManager>());
+            builder.RegisterComponent(GetComponentInChildren<MoonEventManager>());
+            builder.RegisterComponent(GetComponentInChildren<GameAudioManager>());
 
             // 3. SERVICES (Nếu có service nào cần tạo mới hoặc override thì đăng ký ở đây)
             builder.Register<MatchDataService>(Lifetime.Scoped);

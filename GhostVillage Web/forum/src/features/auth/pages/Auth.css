@@ -6,7 +6,11 @@
   display: flex;
   min-height: 100vh;
   width: 100%;
-  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--bg-primary) 0%,
+    var(--bg-secondary) 100%
+  );
   margin: 0;
   padding: 0;
   position: relative;
@@ -20,7 +24,11 @@
   justify-content: center;
   align-items: center;
   padding: 24px;
-  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--primary-dark) 50%);
+  background: linear-gradient(
+    135deg,
+    var(--bg-secondary) 0%,
+    var(--primary-dark) 50%
+  );
   box-shadow: 2px 0 10px rgba(139, 0, 0, 0.25);
 }
 
@@ -68,6 +76,53 @@
   font-family: inherit;
   background: var(--bg-tertiary);
   color: var(--text-secondary);
+}
+
+.password-input-wrapper {
+  position: relative;
+}
+
+.password-input-wrapper .password-input {
+  padding-right: 42px;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 10px;
+  margin: auto 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 0;
+  border-radius: 999px;
+  line-height: 1;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.password-toggle-btn:hover {
+  color: var(--primary-light);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.password-toggle-btn:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+}
+
+.password-toggle-btn svg {
+  display: block;
 }
 
 /* Make the react-datepicker wrapper full width like other inputs */
@@ -167,7 +222,11 @@
 .login-form-wrapper .btn-signin {
   width: 100%;
   padding: 12px;
-  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-dark) 0%,
+    var(--primary-color) 100%
+  );
   color: var(--text-primary);
   border: 2px solid var(--text-primary);
   border-radius: 6px;
@@ -181,10 +240,16 @@
 }
 
 .login-form-wrapper .btn-signin:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-color) 0%,
+    var(--primary-light) 100%
+  );
   color: #fff;
   border-color: #fff;
-  box-shadow: 0 0 20px rgba(153, 0, 0, 0.6), 0 0 30px rgba(181, 166, 66, 0.2);
+  box-shadow:
+    0 0 20px rgba(153, 0, 0, 0.6),
+    0 0 30px rgba(181, 166, 66, 0.2);
   transform: translateY(-3px) scale(1.02);
 }
 
@@ -245,7 +310,7 @@
 }
 
 .login-form-wrapper .form-divider::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 0;
@@ -288,7 +353,11 @@
   justify-content: center;
   align-items: center;
   padding: 40px;
-  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--bg-primary) 0%,
+    var(--primary-dark) 100%
+  );
   color: var(--accent-color);
   text-align: center;
   position: relative;
@@ -312,15 +381,17 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 215, 0, 0.3);
+  text-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.8),
+    0 0 20px rgba(255, 215, 0, 0.3);
   opacity: 0.9;
   margin: 0;
-  font-family: 'Cinzel', serif;
+  font-family: "Cinzel", serif;
   color: var(--accent-color);
 }
 
 .fog-subtitle {
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-size: clamp(1rem, 2vw, 1.2rem);
   letter-spacing: 0.5em;
   color: var(--text-secondary);
@@ -336,14 +407,15 @@
   text-align: center;
   z-index: 10;
   color: rgba(255, 255, 255, 0.4);
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 0.8rem;
   letter-spacing: 2px;
   pointer-events: none;
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px);
   }
   50% {

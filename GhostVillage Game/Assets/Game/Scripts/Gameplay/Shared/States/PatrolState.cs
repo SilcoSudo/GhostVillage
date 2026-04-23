@@ -29,27 +29,32 @@ namespace GhostVillage.Gameplay.Shared
             // Reset waypoint index khi vào lại (từ ChaseState hoặc state khác)
             currentWaypointIndex = 0;
             GoToNextWaypoint();
-            
-            Debug.Log("✅ PatrolState: Bắt đầu patrol!");
+
+            Debug.Log(" PatrolState: Bắt đầu patrol!");
         }
 
         public void Update()
         {
-            // Luôn di chuyển theo waypoint
+            if (waypoints == null || waypoints.Length == 0)
+            {
+                monster.Stop();
+                return;
+            }
+
+            // Luôn di chuyển theo waypoint hiện tại
             Vector3 targetWaypoint = waypoints[currentWaypointIndex];
             float distanceToWaypoint = Vector3.Distance(monster.transform.position, targetWaypoint);
 
-            // Kiểm tra waypoint với distance thay vì IsMoving (chính xác hơn)
-            if (distanceToWaypoint < 1f) // Tới gần waypoint
+            // Luôn gọi MoveTo mỗi frame để giữ NavMeshAgent active
+            monster.MoveTo(targetWaypoint);
+
+            // Kiểm tra xem đã tới waypoint chưa
+            if (distanceToWaypoint < 1f)
             {
-                if (!monster.IsMoving())
-                {
-                    Debug.Log($"📍 PatrolState: Đã đến waypoint {currentWaypointIndex}. Chuyển sang waypoint {(currentWaypointIndex + 1) % waypoints.Length}");
-                    
-                    // Increment TRƯỚC khi move
-                    currentWaypointIndex = (currentWaypointIndex + 1) % waypoints.Length;
-                    GoToNextWaypoint();
-                }
+                Debug.Log($"📍 PatrolState: Đã đến waypoint {currentWaypointIndex}. Chuyển sang waypoint {(currentWaypointIndex + 1) % waypoints.Length}");
+
+                // Chuyển sang waypoint tiếp theo
+                currentWaypointIndex = (currentWaypointIndex + 1) % waypoints.Length;
             }
 
             // Debug: show current target
@@ -63,6 +68,14 @@ namespace GhostVillage.Gameplay.Shared
             else
             {
                 monster.LookForward();
+            }
+
+
+            // Lấy hướng di chuyển từ NavMeshAgent velocity
+            if (monster.GetPlayerDetector() != null)
+            {
+                // Không dùng vận tốc agent nữa, dùng luôn cái cằm của monster cho nó chắc ăn
+                monster.GetPlayerDetector().UpdateDetectionDirection(monster.transform.forward);
             }
         }
 
@@ -90,7 +103,7 @@ namespace GhostVillage.Gameplay.Shared
 
             Vector3 targetWaypoint = waypoints[currentWaypointIndex];
             Debug.Log($"📍 PatrolState: Di chuyển đến waypoint[{currentWaypointIndex}] = {targetWaypoint}");
-            
+
             monster.MoveTo(targetWaypoint);
         }
 

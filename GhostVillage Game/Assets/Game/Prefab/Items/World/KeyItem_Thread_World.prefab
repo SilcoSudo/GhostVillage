@@ -90,6 +90,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!65 &2210352242887459805
 BoxCollider:
@@ -124,6 +125,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 643e2a9793f430d46902b5f86a2e83e0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KeyItemPickup
-  data: {fileID: 11400000, guid: d69d2f4136bb9694ea1c790d49768739, type: 2}
+  data: {fileID: 11400000, guid: c9a11c21ecaefd348bfda17c5d3425cb, type: 2}
   promptText: "Nh\u1EB7t Ch\u1EC9"
-  interactKey: 102

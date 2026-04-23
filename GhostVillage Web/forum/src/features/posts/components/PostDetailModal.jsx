@@ -21,10 +21,12 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { vi, enUS } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../app/context/AuthContext";
 import CreatePostModal from "./CreatePostModal";
 import ShareModal from "./ShareModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
+import ReportPostModal from "./ReportPostModal";
 import Comment from "./Comment";
 import { useComments, useCreateComment } from "../hooks/useComments";
 import {
@@ -32,6 +34,7 @@ import {
   useToggleLike,
   useToggleBookmark,
   usePost,
+  useReportPost,
 } from "../hooks/usePosts";
 import { linkifyHtmlContent } from "../../../shared/utils/linkify";
 import { removeImagesAndVideosFromHtml } from "../../../shared/utils/mediaExtractor";
@@ -45,10 +48,13 @@ const PostDetailModal = ({
   scrollToComments = false,
 }) => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [failedAvatars, setFailedAvatars] = useState({});
   const commentsSectionRef = useRef(null);
@@ -128,6 +134,30 @@ const PostDetailModal = ({
   const deletePostMutation = useDeletePost();
   const toggleLikeMutation = useToggleLike();
   const toggleBookmarkMutation = useToggleBookmark();
+  const reportPostMutation = useReportPost();
+  const authorDisplayName =
+    post?.author?.username || post?.author?.fullname || t("posts.anonymous");
+  const isPostEdited = Boolean(post?.isEdited || post?.editedAt);
+
+  const handleOpenProfile = (profileId) => {
+    if (!profileId) return;
+
+    const nextSearchParams = new URLSearchParams(location.search);
+    nextSearchParams.set("postId", postId);
+    nextSearchParams.set("scrollToComments", "1");
+
+    navigate(
+      {
+        pathname: location.pathname,
+        search: `?${nextSearchParams.toString()}`,
+      },
+      { replace: true },
+    );
+
+    window.setTimeout(() => {
+      navigate(`/profile/${profileId}`);
+    }, 0);
+  };
 
   const handleDelete = async () => {
     try {
@@ -144,6 +174,7 @@ const PostDetailModal = ({
     setShowEditModal(false);
     setShowShareModal(false);
     setShowDeleteModal(false);
+    setShowReportModal(false);
     onHide();
   };
 
@@ -153,6 +184,7 @@ const PostDetailModal = ({
       setShowEditModal(false);
       setShowShareModal(false);
       setShowDeleteModal(false);
+      setShowReportModal(false);
     }
   }, [show]);
 
@@ -180,6 +212,15 @@ const PostDetailModal = ({
 
   const handleShare = () => {
     setShowShareModal(true);
+  };
+
+  const handleReportSubmit = async ({ reason, customReason }) => {
+    await reportPostMutation.mutateAsync({
+      postId,
+      reason,
+      customReason,
+    });
+    setShowReportModal(false);
   };
 
   const handleCommentSubmit = async (e) => {
@@ -229,7 +270,7 @@ const PostDetailModal = ({
               {post?.author?.avatar && !failedAvatars[post.author._id] ? (
                 <img
                   src={getAvatarUrl(post.author._id, post.author.avatar)}
-                  alt={post.author.username}
+                  alt={authorDisplayName}
                   className="post-avatar"
                   onError={() => handleAvatarError(post.author._id)}
                   onLoad={() =>
@@ -243,9 +284,17 @@ const PostDetailModal = ({
                 </div>
               )}
               <div className="post-author-details">
-                <div className="post-author-name">
-                  {post?.author?.username || t("posts.anonymous")}
-                </div>
+                {post?.author?._id ? (
+                  <button
+                    type="button"
+                    className="post-author-name"
+                    onClick={() => handleOpenProfile(post.author._id)}
+                  >
+                    {authorDisplayName}
+                  </button>
+                ) : (
+                  <div className="post-author-name">{authorDisplayName}</div>
+                )}
                 <div className="post-meta">
                   <span className="post-date">
                     {formatDistanceToNow(new Date(post?.createdAt), {
@@ -260,6 +309,11 @@ const PostDetailModal = ({
                         ☀️ {post.temperature}°C
                       </span>
                     </>
+                  )}
+                  {isPostEdited && (
+                    <span className="post-edited-indicator">
+                      {t("common.edited")}
+                    </span>
                   )}
                 </div>
               </div>
@@ -306,8 +360,9 @@ const PostDetailModal = ({
                       </>
                     ) : (
                       <>
-                        <Dropdown.Item>{t("posts.report")}</Dropdown.Item>
-                        <Dropdown.Item>{t("posts.hide")}</Dropdown.Item>
+                        <Dropdown.Item onClick={() => setShowReportModal(true)}>
+                          {t("posts.report")}
+                        </Dropdown.Item>
                       </>
                     )}
                   </Dropdown.Menu>
@@ -341,7 +396,7 @@ const PostDetailModal = ({
                       <img
                         className="carousel-image"
                         src={src}
-                        alt={`Slide ${index + 1}`}
+                        alt={t("posts.mediaSlideAlt", { index: index + 1 })}
                       />
                       {mediaImages.length > 1 && (
                         <div className="image-counter">
@@ -361,7 +416,9 @@ const PostDetailModal = ({
                   <div key={index} className="video-wrapper">
                     <iframe
                       src={src}
-                      title={`Video ${index + 1}`}
+                      title={t("posts.mediaVideoTitle", {
+                        index: index + 1,
+                      })}
                       frameBorder="0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
@@ -463,6 +520,7 @@ const PostDetailModal = ({
                     key={comment._id}
                     comment={comment}
                     postId={post._id}
+                    onNavigateProfile={handleOpenProfile}
                   />
                 ))
               ) : (
@@ -503,6 +561,17 @@ const PostDetailModal = ({
           onConfirm={handleDelete}
           isDeleting={deletePostMutation.isLoading}
           itemType="post"
+        />
+      )}
+
+      {showReportModal && (
+        <ReportPostModal
+          show={showReportModal}
+          onHide={() => setShowReportModal(false)}
+          onSubmit={handleReportSubmit}
+          isSubmitting={Boolean(
+            reportPostMutation.isPending || reportPostMutation.isLoading,
+          )}
         />
       )}
     </>

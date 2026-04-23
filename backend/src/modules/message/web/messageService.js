@@ -1,19 +1,33 @@
 import Message from "./messageModel.js";
 
+const MAX_MESSAGE_LENGTH = 2000;
+
 class MessageService {
   /**
    * Send a message from one user to another
    */
   static async sendMessage(senderId, recipientId, content) {
     try {
-      if (!content || content.trim() === "") {
-        throw new Error("Message content cannot be empty");
+      const normalizedContent = String(content || "").trim();
+
+      if (!normalizedContent) {
+        const error = new Error("Message content cannot be empty");
+        error.statusCode = 400;
+        throw error;
+      }
+
+      if (normalizedContent.length > MAX_MESSAGE_LENGTH) {
+        const error = new Error(
+          `Message cannot exceed ${MAX_MESSAGE_LENGTH} characters`,
+        );
+        error.statusCode = 400;
+        throw error;
       }
 
       const message = new Message({
         senderId,
         recipientId,
-        content: content.trim(),
+        content: normalizedContent,
       });
 
       await message.save();

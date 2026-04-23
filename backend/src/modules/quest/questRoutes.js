@@ -4,33 +4,31 @@ import { authMiddleware } from "../../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
-// Apply authentication middleware to all routes
 router.use(authMiddleware);
 
-/**
- * Quest Routes
- * Định nghĩa các endpoint cho Quest Management
- */
-
-// GET /api/quests/stats/summary - Lấy thống kê quest (phải đặt trước /:id)
+// GET /api/quests/stats/summary (Phải đặt trước /:id)
 router.get("/stats/summary", QuestController.getQuestStats);
 
-// GET /api/quests - Lấy danh sách quest (có phân trang, filter, search)
+// GET /api/quests
 router.get("/", QuestController.getAllQuests);
 
-// GET /api/quests/:id - Lấy chi tiết một quest (hỗ trợ questId hoặc _id)
+// GET /api/quests/:id (hỗ trợ questId hoặc _id)
 router.get("/:id", QuestController.getQuestById);
 
-// POST /api/quests - Tạo quest mới
+// POST /api/quests
 router.post("/", QuestController.createQuest);
 
-// PUT /api/quests/:id - Cập nhật thông tin quest (objectives, rewards, quest lines)
+// PUT /api/quests/:id
 router.put("/:id", QuestController.updateQuest);
 
-// PATCH /api/quests/:id/status - Bật/tắt trạng thái quest (Toggle Activate)
+// PATCH /api/quests/:id/status
 router.patch("/:id/status", QuestController.toggleQuestStatus);
 
-// DELETE /api/quests/:id - Xóa quest
+// DELETE /api/quests/:id
 router.delete("/:id", QuestController.deleteQuest);
+
+// Thêm 2 dòng này vô questRoutes.js
+router.post("/update-progress", QuestController.updateProgress);
+router.post("/claim", QuestController.claimReward); // Cho GĐ 3
 
 export default router;

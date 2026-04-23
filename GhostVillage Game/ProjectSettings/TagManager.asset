@@ -13,6 +13,12 @@ TagManager:
   - SP_Item_Equip
   - SP_Item_Fix
   - SP_Player
+  - TestMonster
+  - SP_ChickenCoop
+  - Boss
+  - Minion
+  - WayPoint
+  - Puddle
   layers:
   - Default
   - TransparentFX
@@ -22,13 +28,13 @@ TagManager:
   - UI
   - Interactable
   - Wall
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - TestPlayer
+  - TestMonster
+  - Minion
+  - Boundary
+  - XRay_Boss
+  - XRay_Minion
+  - Terrain
   - 
   - 
   - 

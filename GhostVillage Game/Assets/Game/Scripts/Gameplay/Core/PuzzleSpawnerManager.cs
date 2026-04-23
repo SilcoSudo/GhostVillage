@@ -3,33 +3,60 @@ using Photon.Pun;
 using Game.Domain.Map.DTOs;
 using System.Collections.Generic;
 using System.Linq;
-using Game.Core.Database; // Thêm namespace này
+using Game.Core.Database;
 
 public class PuzzleSpawnerManager : MonoBehaviour
 {
     public void SpawnPuzzles(PuzzleConfigDTO config, MapDataManager mapData, GameResourceDatabaseSO resourceDB)
     {
         if (!PhotonNetwork.IsMasterClient) return;
-        if (config == null || config.puzzlePoolIds.Count == 0 || config.spawnPointIds.Count == 0) return;
+
+        Debug.Log($"[PuzzleSpawner] ====== DEBUG INFO ======");
+        Debug.Log($"[PuzzleSpawner] Config: {(config == null ? "NULL" : "NOT NULL")}");
+        Debug.Log($"[PuzzleSpawner] puzzlePoolIds: {(config?.puzzlePoolIds == null ? "NULL" : $"Count = {config.puzzlePoolIds.Count}")}");
+        
+        if (config?.puzzlePoolIds != null && config.puzzlePoolIds.Count > 0)
+        {
+            Debug.Log($"[PuzzleSpawner] puzzlePoolIds content:");
+            for (int i = 0; i < config.puzzlePoolIds.Count; i++)
+            {
+                Debug.Log($"  [{i}] = {config.puzzlePoolIds[i]}");
+            }
+        }
+        Debug.Log($"[PuzzleSpawner] ====== END DEBUG ======");
+
+        if (config == null || config.puzzlePoolIds == null || config.puzzlePoolIds.Count == 0)
+        {
+            Debug.LogWarning("⚠️ [PuzzleSpawner] Map này không có Puzzle hoặc thiếu config Puzzle.");
+            return;
+        }
+
+        // BỐC LIST ĐIỂM TỪ TAG SP_Puzzle
+        List<Transform> availablePoints = mapData.GetSpawnPointsByTag("SP_Puzzle");
+        if (availablePoints.Count == 0)
+        {
+            Debug.LogWarning("⚠️ [PuzzleSpawner] Map không có điểm nào gắn Tag 'SP_Puzzle'!");
+            return;
+        }
 
         Debug.Log($"[PuzzleSpawner] Đang setup {config.puzzlePoolIds.Count} câu đố...");
 
-        List<string> shuffledPoints = config.spawnPointIds.OrderBy(x => Random.value).ToList();
+        List<Transform> shuffledPoints = availablePoints.OrderBy(x => Random.value).ToList();
         int spawnCount = Mathf.Min(config.puzzlePoolIds.Count, shuffledPoints.Count);
 
         for (int i = 0; i < spawnCount; i++)
         {
             string puzzlePrefabId = config.puzzlePoolIds[i];
-            string pointId = shuffledPoints[i];
+            Transform targetPoint = shuffledPoints[i];
 
-            Transform targetPoint = mapData.GetSpawnPointById(pointId);
+            if (string.IsNullOrEmpty(puzzlePrefabId)) continue;
+
             GameObject prefab = resourceDB.GetPrefabById(puzzlePrefabId);
 
-            if (targetPoint != null && prefab != null)
+            if (prefab != null)
             {
-                // Truyền tên Prefab vào cho Photon
                 PhotonNetwork.InstantiateRoomObject(prefab.name, targetPoint.position, targetPoint.rotation);
-                Debug.Log($"✅ [PuzzleSpawner] Spawn {puzzlePrefabId} ({prefab.name}) tại {pointId}");
+                Debug.Log($" [PuzzleSpawner] Spawn {puzzlePrefabId} ({prefab.name}) tại {targetPoint.name}");
             }
         }
     }

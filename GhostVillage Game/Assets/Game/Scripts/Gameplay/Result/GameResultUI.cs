@@ -16,6 +16,7 @@ public class GameResultUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _txtTeamResult;
     [SerializeField] private TextMeshProUGUI _txtPersonalResult;
     [SerializeField] private TextMeshProUGUI _txtMapName;
+    [SerializeField] private TextMeshProUGUI _txtMoonEvent;
 
     [Header("List Container")]
     [SerializeField] private Transform _rowContainer;
@@ -24,7 +25,6 @@ public class GameResultUI : MonoBehaviour
     [Header("Buttons")]
     [SerializeField] private Button _btnReturnLobby;
     [SerializeField] private Button _btnMainMenu;
-    [SerializeField] private TextMeshProUGUI _txtWaitingHost;
 
     private CanvasGroup _canvasGroup;
     private ISceneLoaderService _sceneLoader;
@@ -47,23 +47,24 @@ public class GameResultUI : MonoBehaviour
         _canvasGroup.alpha = 0;
         _canvasGroup.interactable = false;
         _canvasGroup.blocksRaycasts = false;
-
-        // Lưu ý: Không cần SetActive(false) ở đây nếu trong Editor đã tắt rồi.
-        // Nếu tắt ở đây, hãy đảm bảo cha nó đang bật.
     }
 
     public void Show(SaveMatchRequestDTO matchData, string localUserId)
     {
-        // 1. Bật Object lên trước
         gameObject.SetActive(true);
 
         // --- Logic Hiển thị ---
         bool isTeamWin = matchData.playerResults.Any(p => p.outcome == "ESCAPED");
 
-        if (isTeamWin) { _txtTeamResult.text = "ĐỘI SỐNG SÓT"; _txtTeamResult.color = Color.green; }
-        else { _txtTeamResult.text = "THẤT BẠI"; _txtTeamResult.color = Color.red; }
+        // Dịch sang Tiếng Anh
+        if (isTeamWin) { _txtTeamResult.text = "TEAM SURVIVED"; _txtTeamResult.color = Color.green; }
+        else { _txtTeamResult.text = "TEAM DEFEATED"; _txtTeamResult.color = Color.red; }
 
         string timeStr = System.TimeSpan.FromSeconds(Mathf.Abs(matchData.durationSec)).ToString(@"mm\:ss");
+        string moonName = string.IsNullOrEmpty(matchData.moonEventName) ? "Trăng Bình Thường" : matchData.moonEventName;
+
+        // Tùy chọn 1: Nếu sếp có Text riêng cho Trăng
+        if (_txtMoonEvent != null) _txtMoonEvent.text = moonName;
         _txtMapName.text = $"{matchData.mapId} | {timeStr}";
 
         string myNickname = PhotonNetwork.LocalPlayer.NickName;
@@ -71,8 +72,9 @@ public class GameResultUI : MonoBehaviour
 
         bool amIEscaped = myData != null && myData.outcome == "ESCAPED";
 
-        if (amIEscaped) { _txtPersonalResult.text = "BẠN ĐÃ THOÁT!"; _txtPersonalResult.color = Color.cyan; }
-        else { _txtPersonalResult.text = "BẠN ĐÃ BỊ BẮT!"; _txtPersonalResult.color = new Color(1f, 0.4f, 0.4f); }
+        // Dịch sang Tiếng Anh
+        if (amIEscaped) { _txtPersonalResult.text = "YOU ESCAPED!"; _txtPersonalResult.color = Color.cyan; }
+        else { _txtPersonalResult.text = "YOU WERE CAUGHT!"; _txtPersonalResult.color = new Color(1f, 0.4f, 0.4f); }
 
         foreach (Transform child in _rowContainer) Destroy(child.gameObject);
 
@@ -81,29 +83,23 @@ public class GameResultUI : MonoBehaviour
             var rowObj = Instantiate(_rowPrefab, _rowContainer);
             var script = rowObj.GetComponent<ResultRowUI>();
 
-            // [FIX QUAN TRỌNG 2] Check isMe bằng nickname luôn để tên sáng màu Vàng
             bool isMe = p.nickname == myNickname;
 
             if (script) script.Setup(p.nickname, p.outcome, matchData.durationSec, p.rewards.exp, p.rewards.coin, p.titles, isMe);
         }
 
-        // --- [FIX QUAN TRỌNG CHỖ NÀY] PHÂN QUYỀN NÚT BẤM ---
+        // --- PHÂN QUYỀN NÚT BẤM ---
         if (PhotonNetwork.IsMasterClient)
         {
-            // Nếu là Host: Hiện nút Về Lobby, tắt Text chờ
             _btnReturnLobby.gameObject.SetActive(true);
-
         }
         else
         {
-            // Nếu là Client: Tắt nút Về Lobby, hiện Text "Đang chờ Trưởng phòng..."
             _btnReturnLobby.gameObject.SetActive(false);
         }
 
-        // Nút MainMenu (Thoát game) thì ai cũng có quyền bấm
         _btnMainMenu.gameObject.SetActive(true);
 
-        // 2. Kiểm tra Active trước khi chạy Coroutine
         if (gameObject.activeInHierarchy)
         {
             StartCoroutine(FadeInRoutine());
@@ -130,43 +126,48 @@ public class GameResultUI : MonoBehaviour
 
     private void OnReturnLobbyClicked()
     {
-        Debug.Log("Click: Quay lại phòng chờ (Giữ kết nối Photon)");
-
-        // KHI BẬT TÍNH NĂNG ĐỒNG BỘ SCENE CỦA PHOTON (AutomaticallySyncScene = true), 
-        // BẠN PHẢI DÙNG PHOTONNETWORK ĐỂ LOAD SCENE, KHÔNG DÙNG SCENE MANAGER HAY SCENE LOADER CỦA BẠN.
-
-        // _sceneLoader.LoadSceneAsync("LobbyGameScene").Forget();  <-- XOÁ DÒNG NÀY
+        Debug.Log("Click: Return to Lobby Room (Keep Photon Connection)");
 
         if (PhotonNetwork.IsMasterClient)
         {
-            // Dọn dẹp túi đồ và trạng thái trước khi về
-            // (Nên bắn 1 Event để báo UI/Các hệ thống khác dọn dẹp nếu cần)
-
-            // Lệnh này sẽ yêu cầu TẤT CẢ mọi người trong phòng cùng load Scene Lobby
             PhotonNetwork.LoadLevel("LobbyGameScene");
         }
     }
 
     private void OnMainMenuClicked()
     {
-        // 1. Vô hiệu hóa nút để tránh bấm nhiều lần
+        // 1. Vô hiệu hóa nút
         _btnMainMenu.interactable = false;
         _btnReturnLobby.interactable = false;
 
         // 2. Tắt tự động đồng bộ Scene
         PhotonNetwork.AutomaticallySyncScene = false;
 
-        // 3. Nếu đang trong phòng thì rời phòng, còn không thì về thẳng MainMenu
-        if (PhotonNetwork.InRoom)
+        // 3. Ngắt Voice
+        var voiceClient = UnityEngine.Object.FindFirstObjectByType<Photon.Voice.PUN.PunVoiceClient>();
+        if (voiceClient != null)
         {
-            // Báo cho PhotonNetworkManager biết mục tiêu sau khi LeaveRoom xong là về MainMenu
-            PlayerPrefs.SetString("TargetSceneAfterLeave", "MainMenu");
-            PhotonNetwork.LeaveRoom();
+            voiceClient.Disconnect();
+            Debug.Log("🔇 [Voice] Safely disconnected before leaving.");
+        }
+
+        // ================================================================
+        // [FIX CHÍ MẠNG]: Dùng Disconnect thay vì LeaveRoom để tránh bị 
+        // dội lại OnLeftRoom() của các UI khác, ép LoadSceneAsync("MainMenu")
+        // ================================================================
+        if (PhotonNetwork.IsConnected)
+        {
+            PhotonNetwork.Disconnect();
+        }
+
+        // Bất chấp Photon làm gì, ta cứ LoadScene MainMenu
+        if (_sceneLoader != null)
+        {
+            _sceneLoader.LoadSceneAsync("MainMenu").Forget();
         }
         else
         {
-            if (_sceneLoader != null) _sceneLoader.LoadSceneAsync("MainMenu").Forget();
-            else UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
+            UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
         }
     }
 }

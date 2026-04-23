@@ -4,15 +4,17 @@ import { authMiddleware } from "../../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
-// Apply authentication middleware to all routes
 router.use(authMiddleware);
 
-// Admin routes (/api/web/moon-events)
+/**
+ * Moon Event Routes
+ */
+
 router.get("/", MoonEventController.getAllEvents);
 router.get("/:id", MoonEventController.getEventById);
 router.post("/", MoonEventController.createEvent);
 router.put("/:id", MoonEventController.updateEvent);
-router.patch("/:id/toggle-active", MoonEventController.toggleActive);
+router.patch("/:id/status", MoonEventController.toggleEventStatus);
 router.delete("/:id", MoonEventController.deleteEvent);
 
 export default router;

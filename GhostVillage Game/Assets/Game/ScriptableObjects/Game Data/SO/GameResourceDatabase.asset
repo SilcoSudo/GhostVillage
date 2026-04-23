@@ -12,14 +12,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d427e944b5c9f44f8af237faf4fa73b, type: 3}
   m_Name: GameResourceDatabase
   m_EditorClassIdentifier: Assembly-CSharp::Game.Core.Database.GameResourceDatabaseSO
-  items:
+  mandatoryConsumables:
+  - entityId: ITEM_MEDKIT
+    prefab: {fileID: 135329721425972406, guid: 21fefe87b2e17944f8520aa7d386f2fe, type: 3}
+  - entityId: ITEM_BATTERY
+    prefab: {fileID: 3305748995870398695, guid: 569670a14aba36f4093910bea43afd52, type: 3}
+  randomConsumables:
+  - entityId: ITEM_WHISTLE
+    prefab: {fileID: 3550927388312022083, guid: cf7c961e4a151d346a159150c761d42a, type: 3}
+  mandatoryEquipments:
   - entityId: ITEM_FLASHLIGHT
     prefab: {fileID: 7723053562602984848, guid: 50b849f38cc225a44ba541096021650f, type: 3}
-  - entityId: ITEM_FLASHLIGHT_Hand
-    prefab: {fileID: 7024614330379377522, guid: 1b117bcded2c1474b92c35134ab8145c, type: 3}
-  - entityId: ITEM_POTION
-    prefab: {fileID: 6617366009198203666, guid: 6d8941f04ea4e72428d46e386b06bce8, type: 3}
-  - entityId: Potion_Hand
-    prefab: {fileID: 5531813679393782470, guid: e0868c15efabe0e409b33bcde0bed52f, type: 3}
-  monsters: []
-  puzzles: []
+  randomEquipments: []
+  monsters:
+  - entityId: BOSS_MADA
+    prefab: {fileID: 5167604229924277683, guid: 42c02c1145627644796c13aaf79c330b, type: 3}
+  - entityId: MINION_DROWNED
+    prefab: {fileID: 2041089602458688669, guid: 49a5e38fcde8bc341aff4e9af89b6145, type: 3}
+  - entityId: OngKe
+    prefab: {fileID: 4856024847922469503, guid: 5ce3407ee56d3c3489a24738de5df1ed, type: 3}
+  - entityId: VongNhi
+    prefab: {fileID: 4100079312764719314, guid: febb4a69dc94512458ef3c61e0fa7396, type: 3}
+  puzzles:
+  - entityId: PUZZLE_FIND_DOLL
+    prefab: {fileID: 8126756268081071111, guid: f0aa56b0f0b6cab4480a1f0f89562a60, type: 3}
+  - entityId: PUZZLE_FIX_LIGHT
+    prefab: {fileID: 8891307657192998306, guid: abe4dd02f1be2524f8b7e1bdbe4194dd, type: 3}
+  - entityId: PUZZLE_BatGa
+    prefab: {fileID: 6453574431910901216, guid: 71719b55dcaa8644297cb3dba014dc7f, type: 3}
+  - entityId: PUZZLE_KeoCo
+    prefab: {fileID: 5770537936977570188, guid: 3318fa6afc809b948b658dbc0b457a25, type: 3}
+  - entityId: PUZZLE_Sliding
+    prefab: {fileID: 5770537936977570188, guid: 3318fa6afc809b948b658dbc0b457a25, type: 3}

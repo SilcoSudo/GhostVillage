@@ -1,7 +1,7 @@
 using System;
+using System.Text.RegularExpressions;
 using Cysharp.Threading.Tasks;
 using Game.Core.Network;
-using Game.Core.ReactiveRepo;
 using Game.Core.Scene;
 using Game.Domain.Authentication;
 using Game.Domain.Authentication.DTOs;
@@ -16,19 +16,63 @@ namespace Game.UI.Login
         [SerializeField] private string sceneToLoad = "MainMenu";
         private readonly AuthService _authService;
         private readonly ISceneLoaderService _sceneLoader;
-        private readonly PlayerDataSyncService _syncService;
+        private readonly GameSession _session; // THAY SYNC SERVICE BẰNG SESSION
         private readonly INetworkService _network;
         private readonly GlobalUIManager _globalUI;
         private LocalCallbackServer _callbackServer;
 
         // [SỬA] Inject thêm Network và GlobalUI
-        public LoginController(AuthService authService, ISceneLoaderService sceneLoader, PlayerDataSyncService syncService, INetworkService network, GlobalUIManager globalUI)
+        public LoginController(AuthService authService, ISceneLoaderService sceneLoader, INetworkService network, GlobalUIManager globalUI, GameSession session)
         {
             _authService = authService;
             _sceneLoader = sceneLoader;
-            _syncService = syncService;
             _network = network;
             _globalUI = globalUI;
+            _session = session;
+        }
+
+        /// <summary>
+        /// Bộ lọc (Filter) kiểm tra dữ liệu thô đầu vào
+        /// </summary>
+        private bool ValidateInput(string email, string password)
+        {
+            // 1. Check rỗng
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                _globalUI.ShowError("Error", "Email cannot be empty!");
+                return false;
+            }
+
+            // 2. Check chuẩn format Email bằng Regex
+            string emailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+            if (!Regex.IsMatch(email, emailPattern))
+            {
+                _globalUI.ShowError("Error", "Invalid email format!");
+                return false;
+            }
+
+            // 3. Check mật khẩu rỗng
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                _globalUI.ShowError("Error", "Password cannot be empty!");
+                return false;
+            }
+
+            // 4. Check độ dài tối thiểu của mật khẩu (Ví dụ Backend set min là 6)
+            if (password.Length < 6)
+            {
+                _globalUI.ShowError("Error", "Password must be at least 6 characters long!");
+                return false;
+            }
+
+            // Có thể thêm check độ dài tối đa để chống spam input quá dài
+            if (password.Length > 32)
+            {
+                _globalUI.ShowError("Error", "Password must not exceed 32 characters!");
+                return false;
+            }
+
+            return true; // Pass qua toàn bộ filter
         }
 
         /// <summary>
@@ -36,48 +80,90 @@ namespace Game.UI.Login
         /// </summary>
         public async void HandleLogin(string email, string password, LoginUIManager view)
         {
-            view.SetInteractable(false);
-            view.SetStatus("Connecting to API...");
-
-            var response = await _authService.LoginAsync(email, password);
-
-            if (response != null)
+            // [MỚI] Thực thi bộ lọc Input trước khi làm bất cứ điều gì
+            if (!ValidateInput(email, password))
             {
-                // [FIX 1] Thay vì gọi HidePanel() (hàm không tồn tại), 
-                // ta truyền gameObject của view vào hàm ShowPanel() của chính nó 
-                // (hoặc nếu LoginUIManager có gameObject cha chứa toàn bộ UI thì tắt nó đi)
-                view.gameObject.SetActive(false);
+                return; // Ngắt luồng ngay lập tức, không gửi Request đi
+            }
 
-                _globalUI.ShowLoading(true, "Đang đồng bộ dữ liệu...");
-                await _syncService.SyncAllDataAsync(response);
+            view.SetInteractable(false);
+            _globalUI.ShowLoading(true, "Validating..."); // Bật bảng loading che màn hình
 
-                _globalUI.ShowLoading(true, "Đang kết nối Máy Chủ Trò Chơi...");
+            try
+            {
+                var response = await _authService.LoginAsync(email, password);
 
-                // [FIX 2] Truy cập đúng cấu trúc của LoginResponseDTO
-                string nickName = response.player != null && response.player.profile != null
-                                  ? response.player.profile.displayName
-                                  : "Player_" + UnityEngine.Random.Range(1000, 9999);
-
-
-                // ✅ TRUYỀN TOKEN TỬ BACKEND
-                bool connected = await _network.ConnectAsync(nickName, response.token);
-
-                if (connected)
+                // Nếu response != null, nghĩa là Backend trả về token đàng hoàng
+                if (response != null && !string.IsNullOrEmpty(response.token))
                 {
-                    await _sceneLoader.LoadSceneAsync(sceneToLoad);
-                    _globalUI.ShowLoading(false); // Xong hết mới tắt
+                    view.gameObject.SetActive(false);
+
+                    // [FIX CỰC KỲ QUAN TRỌNG]: Phải lưu Token VÀO TRƯỚC rồi mới Fetch, nếu không hàm Fetch sẽ lấy Token cũ!
+                    _session.Token = response.token;
+                    _authService.SaveToken(response.token);
+
+                    _globalUI.ShowLoading(true, "Fetching character data...");
+                    var profileResponse = await _authService.FetchMyProfileAsync();
+
+                    if (profileResponse != null && profileResponse.profile != null)
+                    {
+                        _session.DisplayName = profileResponse.profile.displayName;
+                        _session.UID = profileResponse.uid;
+                        _session.Token = response.token;
+
+                        _authService.SaveToken(response.token);
+                        PlayerPrefs.SetString("UserId", profileResponse.userId);
+                        PlayerPrefs.Save();
+                    }
+
+                    _globalUI.ShowLoading(true, "Connecting to Server...");
+
+                    string nickName = (profileResponse != null && profileResponse.profile != null)
+                                      ? profileResponse.profile.displayName
+                                      : "Player_" + UnityEngine.Random.Range(1000, 9999);
+
+                    bool connected = await _network.ConnectAsync(nickName, response.token);
+
+                    if (connected)
+                    {
+                        await _sceneLoader.LoadSceneAsync(sceneToLoad);
+                        _globalUI.ShowLoading(false);
+                    }
+                    else
+                    {
+                        // Lỗi kết nối Photon
+                        _globalUI.ShowLoading(false);
+                        view.gameObject.SetActive(true);
+                        _globalUI.ShowError("Error", "Can not connect to Photon Server. Please try again!");
+                        view.SetInteractable(true);
+                    }
                 }
                 else
                 {
+                    // TRƯỜNG HỢP BE TRẢ VỀ {success: false} (Sai pass, chưa verify...) => response bị null
                     _globalUI.ShowLoading(false);
-                    view.gameObject.SetActive(true); // Bật lại UI
-                    view.SetStatus("<color=red>Lỗi kết nối Photon!</color>");
+                    _globalUI.ShowError("Login failed", "Wrong Email/Password or Account not verified!");
                     view.SetInteractable(true);
                 }
             }
-            else
+            catch (Exception ex)
             {
-                view.SetStatus("<color=red>Login Failed!</color>");
+                // TRƯỜNG HỢP SERVER BE CHẾT NGẮC HOẶC MẤT MẠNG INTERNET
+                _globalUI.ShowLoading(false);
+
+                string errorMessage = "Cannot connect to server. Please check your internet connection or try again later!";
+
+                // Vớt vát thêm nếu Exception có chứa text lỗi sâu hơn từ APIClient
+                if (ex.Message.Contains("Invalid password") || ex.Message.Contains("User not found"))
+                {
+                    errorMessage = "Wrong Email or Password!";
+                }
+                else if (ex.Message.Contains("ACCOUNT_NOT_VERIFIED"))
+                {
+                    errorMessage = "Account not verified!";
+                }
+
+                _globalUI.ShowError("System Error", errorMessage);
                 view.SetInteractable(true);
             }
         }
@@ -88,12 +174,13 @@ namespace Game.UI.Login
         public async UniTask HandleGoogleLogin(LoginUIManager view)
         {
             view.SetInteractable(false);
-            view.SetStatus("Initializing Google Login...");
 
             try
             {
                 _callbackServer?.Stop();
-                await UniTask.Delay(500);
+                // TĂNG DELAY ĐỂ PORT CÓ THỜI GIAN RELEASE (TIME_WAIT)
+                // Windows cần tối thiểu 2 giây để port thực sự free
+                await UniTask.Delay(2000);
 
                 _callbackServer = new LocalCallbackServer(8888);
                 _callbackServer.Start(async (authCode) =>
@@ -107,11 +194,9 @@ namespace Game.UI.Login
                 {
                     Debug.Log($"[LoginController] Opening Google OAuth: {authUrlResponse.authUrl}");
                     Application.OpenURL(authUrlResponse.authUrl);
-                    view.SetStatus("🌐 Browser opened.\n⏳ Waiting for authorization...");
                 }
                 else
                 {
-                    view.SetStatus($"<color=red>Error: Failed to get auth URL</color>");
                     view.SetInteractable(true);
                     _callbackServer.Stop();
                 }
@@ -119,7 +204,6 @@ namespace Game.UI.Login
             catch (Exception ex)
             {
                 Debug.LogError($"[LoginController] Google Login error: {ex.Message}");
-                view.SetStatus($"<color=red>Error: {ex.Message}</color>");
                 view.SetInteractable(true);
                 _callbackServer?.Stop();
             }
@@ -129,11 +213,9 @@ namespace Game.UI.Login
         {
             if (string.IsNullOrEmpty(code))
             {
-                if (view != null) view.SetStatus("<color=red>Invalid authorization code</color>");
                 return;
             }
 
-            if (view != null) view.SetStatus("🔄 Processing authorization...");
 
             var response = await _authService.HandleGoogleCallbackAsync(code.Trim());
 
@@ -143,7 +225,6 @@ namespace Game.UI.Login
                 {
                     if (view != null)
                     {
-                        view.SetStatus("⚠️ Please complete your profile");
                         view.SetInteractable(true);
                     }
                     HandleProfileIncomplete(response.token, view);
@@ -154,29 +235,63 @@ namespace Game.UI.Login
                 {
                     if (view != null)
                     {
-                        view.SetStatus("<color=red>❌ You must be at least 13 years old to play</color>");
                         view.SetInteractable(true);
                     }
                     return;
                 }
 
-                if (response.data != null)
+                string authToken = !string.IsNullOrEmpty(response.token)
+                    ? response.token
+                    : (!string.IsNullOrEmpty(response.playerData?.token)
+                        ? response.playerData.token
+                        : response.data?.token);
+
+                if (!string.IsNullOrEmpty(authToken))
                 {
-                    // Tương tự Email Login, che màn hình lại
+                    // Che màn hình lại
                     if (view != null) view.gameObject.SetActive(false);
 
-                    _globalUI.ShowLoading(true, "Đang đồng bộ dữ liệu...");
-                    await _syncService.SyncAllDataAsync(response.data);
+                    // --- BƯỚC MỚI: FETCH PROFILE BẰNG TOKEN TỪ GOOGLE LOGIN ---
+                    _globalUI.ShowLoading(true, "Fetching character data...");
 
-                    _globalUI.ShowLoading(true, "Đang kết nối Máy Chủ Trò Chơi...");
+                    // Lưu token vào session trước để hàm Fetch có thể dùng
+                    _session.Token = authToken;
 
-                    // Lấy nickname từ response.data
-                    string nickName = response.data.player != null && response.data.player.profile != null
-                                      ? response.data.player.profile.displayName
+                    // LƯU TOKEN VÀO PLAYERPREFS ĐỂ PERSISTENT SAU KHI RESTART
+                    _authService.SaveToken(authToken);
+
+                    var profileResponse = await _authService.FetchMyProfileAsync();
+
+                    _globalUI.ShowLoading(true, "Connecting to Server...");
+
+                    // Lấy nickname từ profile vừa fetch
+                    string nickName = (profileResponse != null && profileResponse.profile != null)
+                                      ? profileResponse.profile.displayName
                                       : "Player_" + UnityEngine.Random.Range(1000, 9999);
 
-                    // ✅ TRUYỀN TOKEN TỪ RESPONSE DATA
-                    bool connected = await _network.ConnectAsync(nickName, response.data.token);
+                    // LƯU displayName VÀO SESSION ĐỂ TRÁNH BỊ MẤT THÔNG TIN
+                    if (profileResponse != null && profileResponse.profile != null)
+                    {
+                        _session.DisplayName = profileResponse.profile.displayName;
+                        // [FIX Ở ĐÂY]: Ép buộc cập nhật lại UID mới vào Session
+                        // (Tùy thuộc vào model DTO của sếp đặt tên là userId hay uid)
+                        _session.UID = profileResponse.uid; // Hoặc profileResponse.uid nếu BE trả về kiểu đó
+
+                        if (!string.IsNullOrEmpty(response?.token))
+                            _session.Token = response.token;
+
+                        _authService.SaveToken(_session.Token);
+
+                        // [FIX BẤT TỬ]
+                        string finalMongoId = profileResponse.userId;
+
+
+                        PlayerPrefs.SetString("UserId", finalMongoId);
+                        PlayerPrefs.Save();
+                    }
+
+                    // Connect Photon
+                    bool connected = await _network.ConnectAsync(nickName, authToken);
 
                     if (connected)
                     {
@@ -189,10 +304,13 @@ namespace Game.UI.Login
                         if (view != null)
                         {
                             view.gameObject.SetActive(true);
-                            view.SetStatus("<color=red>Lỗi kết nối Photon!</color>");
                             view.SetInteractable(true);
                         }
                     }
+                }
+                else if (view != null)
+                {
+                    view.SetInteractable(true);
                 }
             }
             else
@@ -202,7 +320,6 @@ namespace Game.UI.Login
 
                 if (view != null)
                 {
-                    view.SetStatus($"<color=red>❌ Error: {errorMsg}</color>");
                     view.SetInteractable(true);
                 }
             }
@@ -228,7 +345,6 @@ namespace Game.UI.Login
             if (birthdayPanel == null)
             {
                 Debug.LogError("[LoginController] BirthdayVerifyPanel not found!");
-                view.SetStatus("<color=red>Error: Birthday panel not available</color>");
                 return;
             }
 
@@ -237,10 +353,11 @@ namespace Game.UI.Login
             if (profileCompletionPanel != null)
             {
                 // Create and initialize controller
+                // [FIX] TRUYỀN SESSION VÀO THAY VÌ SYNCSERVICE
                 var profileController = new ProfileCompletionController(
                     _authService,
                     _sceneLoader,
-                    _syncService);
+                    _session);
 
                 profileController.Initialize(token);
                 profileCompletionPanel.Initialize(profileController, view);
@@ -251,7 +368,6 @@ namespace Game.UI.Login
             else
             {
                 Debug.LogError("[LoginController] ProfileCompletionUI component not found on BirthdayVerifyPanel!");
-                view.SetStatus("<color=red>Error: Profile UI component not available</color>");
             }
         }
     }

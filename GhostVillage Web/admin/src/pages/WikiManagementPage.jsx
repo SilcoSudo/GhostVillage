@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { 
   Search, Plus, Edit2, Trash2, Star, 
   BookOpen, Loader2, AlertCircle 
@@ -14,6 +15,7 @@ import "../pages/assets/styles/WikiManagement.css";
  * Trang quản lý Wiki với table, filters, và CRUD operations
  */
 const WikiManagementPage = () => {
+  const { t, i18n } = useTranslation();
   // State
   const [wikis, setWikis] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -62,7 +64,7 @@ const WikiManagementPage = () => {
       }
     } catch (err) {
       console.error("Error fetching wikis:", err);
-      setError(err.response?.data?.message || "Lỗi khi tải danh sách wiki");
+      setError(err.response?.data?.message || t("wiki.errors.loadList"));
     } finally {
       setLoading(false);
     }
@@ -95,7 +97,7 @@ const WikiManagementPage = () => {
       }
     } catch (err) {
       console.error("Error toggling featured:", err);
-      setError("Lỗi khi thay đổi trạng thái featured");
+      setError(t("wiki.errors.toggleFeatured"));
     }
   };
 
@@ -129,7 +131,7 @@ const WikiManagementPage = () => {
       }
     } catch (err) {
       console.error("Error deleting wiki:", err);
-      setError("Lỗi khi xóa wiki");
+      setError(t("wiki.errors.delete"));
     }
   };
 
@@ -145,7 +147,7 @@ const WikiManagementPage = () => {
    */
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("vi-VN", {
+    return date.toLocaleDateString(i18n.language?.startsWith("vi") ? "vi-VN" : "en-US", {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
@@ -174,11 +176,11 @@ const WikiManagementPage = () => {
   const getStatusLabel = (status) => {
     switch (status) {
       case "published":
-        return "Published";
+        return t("wiki.status.published");
       case "draft":
-        return "Draft";
+        return t("wiki.status.draft");
       case "archived":
-        return "Archived";
+        return t("wiki.status.archived");
       default:
         return status;
     }
@@ -191,9 +193,9 @@ const WikiManagementPage = () => {
         <div className="wiki-management-header">
           <h1>
             <BookOpen size={28} />
-            Quản lý Wiki
+            {t("wiki.managementTitle")}
           </h1>
-          <p>Quản lý wiki articles, guides, và database entries</p>
+          <p>{t("wiki.managementSubtitle")}</p>
         </div>
 
         {/* Toolbar */}
@@ -204,7 +206,7 @@ const WikiManagementPage = () => {
               <Search className="search-icon" size={20} />
               <input
                 type="text"
-                placeholder="Tìm kiếm wiki..."
+                placeholder={t("wiki.search")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="search-input"
@@ -218,7 +220,7 @@ const WikiManagementPage = () => {
                 onChange={(e) => setFilterCategory(e.target.value)}
                 className="filter-select"
               >
-                <option value="all">Tất cả danh mục</option>
+                <option value="all">{t("wiki.allCategories")}</option>
                 <option value="Monster Database">Monster Database</option>
                 <option value="Map Guide">Map Guide</option>
                 <option value="Item Database">Item Database</option>
@@ -238,10 +240,10 @@ const WikiManagementPage = () => {
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="filter-select"
               >
-                <option value="all">Tất cả trạng thái</option>
-                <option value="published">Published</option>
-                <option value="draft">Draft</option>
-                <option value="archived">Archived</option>
+                <option value="all">{t("common.all")}</option>
+                <option value="published">{t("wiki.status.published")}</option>
+                <option value="draft">{t("wiki.status.draft")}</option>
+                <option value="archived">{t("wiki.status.archived")}</option>
               </select>
             </div>
           </div>
@@ -252,7 +254,7 @@ const WikiManagementPage = () => {
             className="btn-create"
           >
             <Plus size={20} />
-            <span>Tạo Wiki mới</span>
+            <span>{t("wiki.createNew")}</span>
           </button>
         </div>
 
@@ -276,20 +278,20 @@ const WikiManagementPage = () => {
               <table className="wiki-table">
                 <thead>
                   <tr>
-                    <th>Tiêu đề</th>
-                    <th>Danh mục</th>
-                    <th>Tác giả</th>
-                    <th>Trạng thái</th>
+                    <th>{t("wiki.titleColumn")}</th>
+                    <th>{t("wiki.categoryColumn")}</th>
+                    <th>{t("wiki.authorColumn")}</th>
+                    <th>{t("common.status")}</th>
                     <th>Featured</th>
-                    <th>Ngày tạo</th>
-                    <th>Thao tác</th>
+                    <th>{t("wiki.createdColumn")}</th>
+                    <th>{t("common.actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredWikis.length === 0 ? (
                     <tr>
                       <td colSpan="7" className="empty-state">
-                        Không tìm thấy wiki nào
+                        {t("wiki.noData")}
                       </td>
                     </tr>
                   ) : (
@@ -312,7 +314,7 @@ const WikiManagementPage = () => {
 
                         {/* Author */}
                         <td className="author-cell">
-                          {wiki.author?.fullname || "Unknown"}
+                          {wiki.author?.fullname || t("wiki.unknownAuthor")}
                         </td>
 
                         {/* Status */}
@@ -327,7 +329,7 @@ const WikiManagementPage = () => {
                           <button
                             onClick={() => handleToggleFeatured(wiki)}
                             className={`featured-btn ${wiki.isFeatured ? "active" : ""}`}
-                            title={wiki.isFeatured ? "Remove from featured" : "Add to featured"}
+                            title={wiki.isFeatured ? t("wiki.removeFeatured") : t("wiki.addFeatured")}
                           >
                             <Star size={18} fill={wiki.isFeatured ? "currentColor" : "none"} />
                           </button>
@@ -343,14 +345,14 @@ const WikiManagementPage = () => {
                           <button
                             onClick={() => handleEdit(wiki)}
                             className="action-btn btn-edit"
-                            title="Chỉnh sửa"
+                            title={t("common.edit")}
                           >
                             <Edit2 size={16} />
                           </button>
                           <button
                             onClick={() => handleDelete(wiki)}
                             className="action-btn btn-delete"
-                            title="Xóa"
+                            title={t("common.delete")}
                           >
                             <Trash2 size={16} />
                           </button>
@@ -370,11 +372,11 @@ const WikiManagementPage = () => {
                   disabled={pagination.currentPage === 1}
                   className="pagination-btn"
                 >
-                  Trước
+                  {t("common.previous")}
                 </button>
 
                 <span className="pagination-info">
-                  Trang {pagination.currentPage} / {pagination.totalPages}
+                  {t("common.pageOf", { page: pagination.currentPage, total: pagination.totalPages })}
                 </span>
 
                 <button
@@ -382,7 +384,7 @@ const WikiManagementPage = () => {
                   disabled={pagination.currentPage === pagination.totalPages}
                   className="pagination-btn"
                 >
-                  Sau
+                  {t("common.next")}
                 </button>
               </div>
             )}
@@ -418,8 +420,8 @@ const WikiManagementPage = () => {
 
       {showDeleteModal && selectedWiki && (
         <DeleteConfirmModal
-          title="Xóa Wiki"
-          message={`Bạn có chắc chắn muốn xóa wiki "${selectedWiki.title}"? Hành động này không thể hoàn tác.`}
+          title={t("wiki.deleteTitle")}
+          message={t("wiki.deleteMessage", { title: selectedWiki.title })}
           onConfirm={confirmDelete}
           onClose={() => {
             setShowDeleteModal(false);

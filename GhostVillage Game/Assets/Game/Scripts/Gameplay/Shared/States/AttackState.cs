@@ -1,5 +1,6 @@
 using UnityEngine;
 using GhostVillage.Gameplay.Base;
+using Photon.Pun;
 
 namespace GhostVillage.Gameplay.Shared
 {
@@ -10,20 +11,22 @@ namespace GhostVillage.Gameplay.Shared
     {
         private readonly MonsterBase monster;
         private readonly float attackRange = 1.5f; // Tầm tấn công
-        private readonly float attackDamage = 10f; // Sát thương
         private readonly float attackCooldown = 1f; // Cooldown tấn công (giây)
+        private readonly bool useJumpscareAttack;
 
         private float lastAttackTime = 0f;
         private bool hasAttackedThisFrame = false;
         private float lastDebugLogTime = 0f; // Để tránh spam log
         private bool isFirstEnter = true; // Track lần Enter đầu tiên
+        private float activeJumpscareUntil = 0f;
+        private int activeVictimViewId = -1;
 
-        public AttackState(MonsterBase monster, float attackRange = 1.5f, float attackDamage = 10f, float attackCooldown = 1f)
+        public AttackState(MonsterBase monster, float attackRange = 1.5f, float attackCooldown = 1f, bool useJumpscareAttack = false)
         {
             this.monster = monster;
             this.attackRange = attackRange;
-            this.attackDamage = attackDamage;
             this.attackCooldown = attackCooldown;
+            this.useJumpscareAttack = useJumpscareAttack;
         }
 
         public void Enter()
@@ -102,35 +105,94 @@ namespace GhostVillage.Gameplay.Shared
         }
 
         /// <summary>
-        /// Thực hiện tấn công
+        /// Thực hiện tấn công - OngKe knock player thay vì damage
         /// </summary>
         private void PerformAttack()
         {
             Vector3 playerPos = monster.GetPlayerPosition();
             float distanceToPlayer = Vector3.Distance(monster.transform.position, playerPos);
 
-            // Check khoảng cách tấn công
-            if (distanceToPlayer <= attackRange)
+            if (distanceToPlayer > attackRange)
             {
-                Debug.Log($"💥 AttackState: ĐÃ ĐÁNH TRÚNG PLAYER! Damage: {attackDamage}");
+                Debug.Log($"⚠️ AttackState: Tấn công nhưng không trúng (Distance: {distanceToPlayer:F1}m > {attackRange}m)");
+                return;
+            }
 
-                // TODO: Damage player (implement sau)
-                // player.TakeDamage(attackDamage);
+            Debug.Log("💥 AttackState: ĐÃ HIT PLAYER! -> Knock state");
 
-                hasAttackedThisFrame = true;
+            PlayerKnockedState knockedState = TryGetTargetKnockedState(playerPos);
+            if (knockedState != null)
+            {
+                if (!knockedState.isKnocked)
+                {
+                    if (useJumpscareAttack)
+                    {
+                        TriggerJumpscareAttack(knockedState);
+                    }
+                    else
+                    {
+                        knockedState.GetKnocked();
+                        Debug.Log($"✓ Player knocked: {knockedState.name}");
+                    }
+                }
             }
             else
             {
-                Debug.Log($"⚠️ AttackState: Tấn công nhưng không trúng (Distance: {distanceToPlayer:F1}m > {attackRange}m)");
+                Debug.LogWarning("⚠️ AttackState: HIT nhưng không tìm thấy PlayerKnockedState trên collider mục tiêu.");
             }
+
+            hasAttackedThisFrame = true;
         }
 
-        /// <summary>
-        /// Set attack damage
-        /// </summary>
-        public void SetAttackDamage(float damage)
+        private PlayerKnockedState TryGetTargetKnockedState(Vector3 playerPos)
         {
-            // attackDamage = damage; // Không thể vì field là readonly
+            Vector3 dirToPlayer = (playerPos - monster.transform.position).normalized;
+
+            // Ưu tiên raycast thẳng từ quái tới player.
+            if (Physics.Raycast(monster.transform.position, dirToPlayer, out RaycastHit hit, attackRange + 0.75f))
+            {
+                PlayerKnockedState byRay = hit.collider.GetComponentInParent<PlayerKnockedState>();
+                if (byRay != null) return byRay;
+            }
+
+            // Fallback: quét quanh vị trí player do một số prefab có collider con/lệch tâm.
+            Collider[] nearby = Physics.OverlapSphere(playerPos, 1.5f);
+            foreach (var col in nearby)
+            {
+                PlayerKnockedState byOverlap = col.GetComponentInParent<PlayerKnockedState>();
+                if (byOverlap != null) return byOverlap;
+            }
+
+            return null;
+        }
+
+        private void TriggerJumpscareAttack(PlayerKnockedState knockedState)
+        {
+            PhotonView monsterPv = monster.GetComponent<PhotonView>();
+            PhotonView victimPv = knockedState.GetComponent<PhotonView>();
+
+            if (monsterPv == null || victimPv == null)
+            {
+                // Fallback để không bị mất sát thương nếu prefab thiếu PhotonView.
+                knockedState.GetKnocked();
+                Debug.LogWarning("⚠️ AttackState: Thiếu PhotonView, fallback sang knock trực tiếp.");
+                return;
+            }
+
+            bool sameVictimStillInProgress =
+                activeVictimViewId == victimPv.ViewID &&
+                Time.time < activeJumpscareUntil;
+
+            if (sameVictimStillInProgress)
+            {
+                return;
+            }
+
+            victimPv.RPC("ReceiveJumpscareRPC", RpcTarget.All, monsterPv.ViewID);
+            activeVictimViewId = victimPv.ViewID;
+            activeJumpscareUntil = Time.time + 2.6f;
+
+            Debug.Log($"👁️ AttackState: Trigger jumpscare for {knockedState.name}");
         }
     }
 }

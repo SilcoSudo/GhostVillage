@@ -1,57 +1,59 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Container, Row, Col, Card, Spinner, Alert } from 'react-bootstrap';
-import { CheckCircle, XCircle } from 'lucide-react';
-import { useAuth } from '../../../app/context/AuthContext';
-import { toast } from 'react-hot-toast';
+import React, { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { Container, Row, Col, Card, Spinner, Alert } from "react-bootstrap";
+import { CheckCircle, XCircle } from "lucide-react";
+import { useAuth } from "../../../app/context/AuthContext";
+import { toast } from "react-hot-toast";
 
 const AuthCallbackPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const [status, setStatus] = useState('processing'); // processing, success, error
-  const [message, setMessage] = useState('');
+  const [status, setStatus] = useState("processing"); // processing, success, error
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const success = searchParams.get('success');
-    const error = searchParams.get('error');
+    const success = searchParams.get("success");
+    const error = searchParams.get("error");
 
-    if (success === 'true') {
-      setStatus('success');
-      setMessage('Successfully signed in with Google!');
-      toast.success('Welcome! You have been signed in.');
-      
+    if (success === "true") {
+      setStatus("success");
+      setMessage(t("auth.authCallbackPage.messages.success"));
+      toast.success(t("auth.authCallbackPage.toastSuccess"));
+
       // Redirect after a short delay
       setTimeout(() => {
-        navigate('/', { replace: true });
+        navigate("/", { replace: true });
       }, 2000);
     } else if (error) {
-      setStatus('error');
-      
+      setStatus("error");
+
       switch (error) {
-        case 'oauth_failed':
-          setMessage('Failed to authenticate with Google. Please try again.');
+        case "oauth_failed":
+          setMessage(t("auth.authCallbackPage.messages.oauthFailed"));
           break;
-        case 'access_denied':
-          setMessage('Access was denied. Please grant permission to continue.');
+        case "access_denied":
+          setMessage(t("auth.authCallbackPage.messages.accessDenied"));
           break;
         default:
-          setMessage('An error occurred during authentication.');
+          setMessage(t("auth.authCallbackPage.messages.generic"));
       }
-      
-      toast.error('Authentication failed');
-      
+
+      toast.error(t("auth.authCallbackPage.toastError"));
+
       // Redirect to login after delay
       setTimeout(() => {
-        navigate('/login', { replace: true });
+        navigate("/login", { replace: true });
       }, 3000);
     } else {
       // No specific status, redirect based on auth state
       setTimeout(() => {
         if (user) {
-          navigate('/', { replace: true });
+          navigate("/", { replace: true });
         } else {
-          navigate('/login', { replace: true });
+          navigate("/login", { replace: true });
         }
       }, 1000);
     }
@@ -59,38 +61,50 @@ const AuthCallbackPage = () => {
 
   const renderIcon = () => {
     switch (status) {
-      case 'success':
+      case "success":
         return <CheckCircle size={48} className="text-success mb-3" />;
-      case 'error':
+      case "error":
         return <XCircle size={48} className="text-danger mb-3" />;
       default:
-        return <Spinner animation="border" size="lg" className="text-primary mb-3" />;
+        return (
+          <Spinner animation="border" size="lg" className="text-primary mb-3" />
+        );
     }
   };
 
   const renderMessage = () => {
     switch (status) {
-      case 'success':
+      case "success":
         return (
           <Alert variant="success" className="text-center">
-            <Alert.Heading>Success!</Alert.Heading>
+            <Alert.Heading>
+              {t("auth.authCallbackPage.successHeading")}
+            </Alert.Heading>
             <p>{message}</p>
-            <small className="text-muted">Redirecting to homepage...</small>
+            <small className="text-muted">
+              {t("auth.authCallbackPage.successRedirect")}
+            </small>
           </Alert>
         );
-      case 'error':
+      case "error":
         return (
           <Alert variant="danger" className="text-center">
-            <Alert.Heading>Authentication Failed</Alert.Heading>
+            <Alert.Heading>
+              {t("auth.authCallbackPage.errorHeading")}
+            </Alert.Heading>
             <p>{message}</p>
-            <small className="text-muted">Redirecting to login page...</small>
+            <small className="text-muted">
+              {t("auth.authCallbackPage.errorRedirect")}
+            </small>
           </Alert>
         );
       default:
         return (
           <div className="text-center">
-            <h5>Processing authentication...</h5>
-            <p className="text-muted">Please wait while we complete your sign-in.</p>
+            <h5>{t("auth.authCallbackPage.processingHeading")}</h5>
+            <p className="text-muted">
+              {t("auth.authCallbackPage.processingMessage")}
+            </p>
           </div>
         );
     }

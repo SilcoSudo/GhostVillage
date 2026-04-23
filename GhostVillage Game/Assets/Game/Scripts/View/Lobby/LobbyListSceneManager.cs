@@ -94,7 +94,7 @@ namespace Game.UI.Lobby
                 _passwordModal.SetActive(true);
                 if (_txtPasswordError != null)
                 {
-                    _txtPasswordError.text = "Mật khẩu không đúng, vui lòng thử lại!";
+                    _txtPasswordError.text = "Wrong Password, please try again!";
                     _txtPasswordError.color = Color.red;
                 }
 
@@ -105,7 +105,7 @@ namespace Game.UI.Lobby
             }
             else
             {
-                _globalUI.ShowError("Lỗi hệ thống", $"Không thể vào phòng: {errorReason}");
+                _globalUI.ShowError("System Error", $"Cannot join room: {errorReason}");
             }
         }
 
@@ -164,22 +164,47 @@ namespace Game.UI.Lobby
 
         /// <summary>
         /// Xu ly lenh xac nhan tao phong.
-        /// Logic: Trim khoang trang, kiem tra ten phong hop le va ngan chan double-click bang loading.
+        /// Logic: Kiem tra Input hop le, chi cho phep chu/so, block ky tu dac biet, gioi han do dai pass.
         /// </summary>
         public void OnConfirmCreateClick()
         {
             string roomName = _inputLobbyName.text.Trim();
+            string password = _inputPassword.text;
+
+            // 1. Bắt lỗi rỗng
             if (string.IsNullOrEmpty(roomName))
             {
-                Debug.LogWarning("[UI] Room name cannot be empty.");
+                if (_globalUI != null) _globalUI.ShowError("Error", "Room name cannot be empty!");
                 return;
             }
 
+            // 2. Bắt lỗi độ dài tên phòng (ngắn quá hoặc dài quá nhìn UI sẽ rất gớm)
+            if (roomName.Length < 3 || roomName.Length > 20)
+            {
+                if (_globalUI != null) _globalUI.ShowError("Error", "Room name must be between 3 and 20 characters!");
+                return;
+            }
+
+            // 3. Bắt lỗi ký tự đặc biệt (Chỉ cho phép Chữ không dấu/có dấu, Số và Khoảng trắng)
+            if (!System.Text.RegularExpressions.Regex.IsMatch(roomName, @"^[a-zA-Z0-9 ]+$"))
+            {
+                if (_globalUI != null) _globalUI.ShowError("Error", "Room name can only contain letters, numbers, and spaces!");
+                return;
+            }
+
+            // 4. Giới hạn độ dài Password (Mặc dù Photon cho max ping, nhưng UI mình set 16 cho đẹp)
+            if (password.Length > 16)
+            {
+                if (_globalUI != null) _globalUI.ShowError("Error", "Password cannot exceed 16 characters!");
+                return;
+            }
+
+            // Mọi thứ qua cửa kiểm duyệt ngon lành -> Gọi mạng
             _globalUI.ShowLoading(true);
             _createLobbyPopup.SetActive(false);
 
             Debug.Log($"[UI] Sending create lobby request: {roomName}");
-            _network.CreateLobby(roomName, _inputPassword.text, 4);
+            _network.CreateLobby(roomName, password, 4);
         }
 
         /// <summary>
@@ -222,16 +247,16 @@ namespace Game.UI.Lobby
         {
             if (_pendingLobby == null)
             {
-                Debug.LogError("[UI] Pending lobby is null. Cannot join.");
-                _globalUI.ShowLoading(false);
+                if (_globalUI != null) _globalUI.ShowError("Lỗi Hệ Thống", "Dữ liệu phòng bị mất, vui lòng thử lại!");
                 return;
             }
 
             string enteredPass = _inputJoinPassword.text;
+
+            // Bắt lỗi không nhập pass mà đòi vào phòng kín
             if (string.IsNullOrEmpty(enteredPass))
             {
-                Debug.LogWarning("[UI] Password cannot be empty.");
-                _globalUI.ShowLoading(false);
+                if (_globalUI != null) _globalUI.ShowError("Lỗi Nhập Liệu", "Vui lòng nhập mật khẩu để vào phòng!");
                 return;
             }
 

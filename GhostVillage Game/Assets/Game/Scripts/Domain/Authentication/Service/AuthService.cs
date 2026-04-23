@@ -1,6 +1,8 @@
 using Cysharp.Threading.Tasks;
+using Game.Core.Network;
 using Game.Core.Network.API;
 using Game.Domain.Authentication.DTOs;
+using GhostVillage.Domain.Profile;
 using System;
 using UnityEngine;
 
@@ -9,11 +11,16 @@ namespace Game.Domain.Authentication
     public class AuthService
     {
         private readonly APIClient _apiClient;
+        private readonly GameSession _session; // THÊM DÒNG NÀY
         private const int MIN_AGE = 13;
 
         private const string TOKEN_KEY = "AccessToken";
 
-        public AuthService(APIClient apiClient) => _apiClient = apiClient;
+        public AuthService(APIClient apiClient, GameSession session)
+        {
+            _apiClient = apiClient;
+            _session = session;
+        }
 
 
         public async UniTask<LoginResponseDTO> LoginAsync(string email, string password)
@@ -23,12 +30,47 @@ namespace Game.Domain.Authentication
 
             // Gọi API (Lưu ý: APIClient cần update để hỗ trợ POST, code ở dưới*)
             var response = await _apiClient.PostAsync<LoginResponseDTO>("/api/auth/login", jsonBody);
-            // TỰ ĐỘNG LƯU: Nếu login thành công
+
             if (response != null && !string.IsNullOrEmpty(response.token))
             {
+                _session.Token = response.token;
                 SaveToken(response.token);
             }
+
             return response; // Trả về DTO cho Controller xử lý tiếp
+        }
+
+
+        public async UniTask<FullProfileDTO> FetchMyProfileAsync()
+        {
+            if (string.IsNullOrEmpty(_session.Token))
+            {
+                _session.EnsureTokenLoaded();
+            }
+
+            if (string.IsNullOrEmpty(_session.Token))
+            {
+                Debug.LogWarning("[AuthService] No token available - user not authenticated");
+                return null;
+            }
+
+            // [FIX CHÍ MẠNG 1]: Sửa lại endpoint cho chuẩn với Backend
+            var response = await _apiClient.GetAsyncWithAuth<FullProfileDTO>("/api/game/player", _session.Token);
+
+            if (response != null && response.profile != null)
+            {
+                // [FIX CHÍ MẠNG 2]: Phải nạp UID vào Session thì Photon Chat và kết bạn mới xài được!
+                _session.UID = response.uid;
+                _session.DisplayName = response.profile.displayName;
+
+                Debug.Log($"<color=green>[AuthService] Nạp Profile thành công! UID: {_session.UID} | Name: {_session.DisplayName}</color>");
+            }
+            else
+            {
+                Debug.LogError("<color=red>[AuthService] Fetch Profile thất bại hoặc API trả về rỗng!</color>");
+            }
+
+            return response;
         }
 
         // ===== GOOGLE OAUTH METHODS (NEW) =====
@@ -43,7 +85,7 @@ namespace Game.Domain.Authentication
             {
                 Debug.Log("[AuthService] Requesting Google OAuth URL...");
                 var response = await _apiClient.GetAsync<GoogleAuthUrlResponseDTO>("/api/game/auth/google");
-                
+
                 // Debug: Log the response details
                 if (response != null)
                 {
@@ -53,7 +95,7 @@ namespace Game.Domain.Authentication
                 {
                     Debug.LogError("[AuthService] Response is NULL!");
                 }
-                
+
                 if (response != null && !string.IsNullOrEmpty(response.authUrl))
                 {
                     Debug.Log("[AuthService] Google OAuth URL received");
@@ -137,7 +179,7 @@ namespace Game.Domain.Authentication
         }
 
         // Hàm hỗ trợ lưu Token an toàn
-        private void SaveToken(string token)
+        public void SaveToken(string token)
         {
             PlayerPrefs.SetString(TOKEN_KEY, token);
             PlayerPrefs.Save();

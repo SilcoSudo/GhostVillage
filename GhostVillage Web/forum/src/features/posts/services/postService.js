@@ -12,6 +12,12 @@ export const getPost = async (postId) => {
   return response.data;
 };
 
+// Check whether the current user can create a post
+export const checkPostingRestriction = async () => {
+  const response = await axios.get("/web/forum/posting-restriction");
+  return response.data;
+};
+
 // Create post
 export const createPost = async (postData) => {
   const response = await axios.post("/web/forum", postData);
@@ -42,8 +48,17 @@ export const toggleBookmark = async (postId) => {
   return response.data;
 };
 
+// Report post
+export const reportPost = async ({ postId, reason, customReason = "" }) => {
+  const response = await axios.post(`/web/forum/${postId}/report`, {
+    reason,
+    customReason,
+  });
+  return response.data;
+};
+
 // Get user's posts
 export const getUserPosts = async (userId, params = {}) => {
-  const response = await axios.get(`/users/${userId}/posts`, { params });
+  const response = await axios.get(`/web/user/${userId}/posts`, { params });
   return response.data;
 };

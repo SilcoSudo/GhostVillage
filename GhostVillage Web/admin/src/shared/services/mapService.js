@@ -12,7 +12,12 @@ const mapService = {
    */
   getAllMaps: async (params = {}) => {
     try {
-      const response = await axios.get("/maps", { params });
+      const response = await axios.get("/maps", {
+        params: {
+          ...params,
+          _ts: Date.now(),
+        },
+      });
       return response.data;
     } catch (error) {
       console.error("Error fetching maps:", error);
@@ -27,7 +32,9 @@ const mapService = {
    */
   getMapById: async (id) => {
     try {
-      const response = await axios.get(`/maps/${id}`);
+      const response = await axios.get(`/maps/${id}`, {
+        params: { _ts: Date.now() },
+      });
       return response.data;
     } catch (error) {
       console.error(`Error fetching map ${id}:`, error);

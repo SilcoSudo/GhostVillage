@@ -5,11 +5,68 @@ import { useCreatePost, useUpdatePost } from "../hooks/usePosts";
 import { toast } from "react-hot-toast";
 import { X } from "lucide-react";
 import TiptapEditor from "./TiptapEditor";
-import { uploadImage } from "../services/uploadService";
+import { uploadMedia } from "../services/uploadService";
+import { checkPostingRestriction } from "../services/postService";
 import "./CreatePostModal.css";
 
+const MAX_POST_IMAGES = 10;
+const MAX_POST_VIDEOS = 1;
+const MAX_POST_BODY_LENGTH = 20000;
+
+const getMediaCounts = (mediaList = []) => {
+  const imageCount = mediaList.filter(
+    (media) => media?.type === "image",
+  ).length;
+  const videoCount = mediaList.filter(
+    (media) => media?.type === "video",
+  ).length;
+  return { imageCount, videoCount };
+};
+
+const formatRestrictedDuration = (remainingSeconds, language) => {
+  const seconds = Math.max(0, Math.ceil(Number(remainingSeconds) || 0));
+  if (!seconds) return "";
+
+  const isVietnamese = String(language || "")
+    .toLowerCase()
+    .startsWith("vi");
+  const hours = Math.max(1, Math.ceil(seconds / 3600));
+
+  if (isVietnamese) {
+    return `${hours} giờ`;
+  }
+
+  return `${hours} ${hours === 1 ? "hour" : "hours"}`;
+};
+
+const getSubmitErrorMessage = (error, t, language) => {
+  const response = error?.response;
+  const responseData = response?.data || {};
+  const nestedData = responseData?.data || {};
+
+  const remainingSeconds =
+    nestedData.remainingSeconds ??
+    nestedData.lockSeconds ??
+    responseData.remainingSeconds ??
+    responseData.lockSeconds ??
+    0;
+
+  if (response?.status === 403) {
+    const durationLabel = formatRestrictedDuration(remainingSeconds, language);
+    if (durationLabel) {
+      return t("post.create.errors.postingRestricted", {
+        duration: durationLabel,
+      });
+    }
+
+    return t("post.create.errors.postingRestrictedFallback");
+  }
+
+  return responseData?.message || t("post.create.errors.saveFailed");
+};
+
 const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const createPostMutation = useCreatePost();
   const updatePostMutation = useUpdatePost();
   const isEditMode = mode === "edit" && post;
@@ -35,6 +92,9 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
   ];
 
   const [errors, setErrors] = useState({});
+
+  const getPlainTextLength = (value = "") =>
+    value.replace(/<[^>]*>/g, "").length;
 
   // Load post data when editing
   useEffect(() => {
@@ -83,13 +143,17 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
     const newErrors = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = "Title is required";
+      newErrors.title = t("post.create.validation.titleRequired");
     }
 
     if (!formData.body.trim()) {
-      newErrors.body = "Content is required";
+      newErrors.body = t("post.create.validation.bodyRequired");
     } else if (formData.body.trim().length < 10) {
-      newErrors.body = "Content must be at least 10 characters";
+      newErrors.body = t("post.create.validation.bodyMinLength");
+    } else if (getPlainTextLength(formData.body) > MAX_POST_BODY_LENGTH) {
+      newErrors.body = t("post.create.validation.bodyMaxLength", {
+        max: MAX_POST_BODY_LENGTH,
+      });
     }
 
     setErrors(newErrors);
@@ -103,7 +167,24 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
       return;
     }
 
+    const { imageCount, videoCount } = getMediaCounts(uploadedImages);
+    if (imageCount > MAX_POST_IMAGES) {
+      toast.error(
+        t("post.create.errors.maxImagesReached", { max: MAX_POST_IMAGES }),
+      );
+      return;
+    }
+
+    if (videoCount > MAX_POST_VIDEOS) {
+      toast.error(
+        t("post.create.errors.maxVideosReached", { max: MAX_POST_VIDEOS }),
+      );
+      return;
+    }
+
     try {
+      await checkPostingRestriction();
+
       setIsUploading(true);
 
       // Upload all media files first
@@ -112,7 +193,7 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
         if (media.file) {
           // Upload to Cloudinary
           try {
-            const result = await uploadImage(media.file);
+            const result = await uploadMedia(media.file);
             uploadedMedia.push({
               url: result.url,
               type: media.type,
@@ -120,7 +201,10 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
             });
           } catch (error) {
             toast.error(
-              `Failed to upload ${media.file.name}: ${error.response?.data?.message || "Upload failed"}`,
+              t("post.create.errors.uploadFailed", {
+                name: media.file.name,
+                message: t("post.create.errors.uploadFailedFallback"),
+              }),
             );
             setIsUploading(false);
             return; // Stop if any upload fails
@@ -150,10 +234,10 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
 
       if (isEditMode) {
         await updatePostMutation.mutateAsync({ postId: post._id, postData });
-        toast.success("Post updated successfully!");
+        toast.success(t("post.create.success.updated"));
       } else {
         await createPostMutation.mutateAsync(postData);
-        toast.success("Post created successfully!");
+        toast.success(t("post.create.success.created"));
       }
 
       // Reset form
@@ -163,11 +247,8 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
       onHide();
     } catch (error) {
       setIsUploading(false);
-      console.error("❌ Failed to save post:", error);
-      toast.error(
-        error.response?.data?.message ||
-          `Failed to ${isEditMode ? "update" : "create"} post`,
-      );
+      console.error("Failed to save post:", error);
+      toast.error(getSubmitErrorMessage(error, t, i18n.language));
     }
   };
 
@@ -208,6 +289,15 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
       const files = Array.from(e.target.files);
       if (!files.length) return;
 
+      const { imageCount } = getMediaCounts(uploadedImages);
+      const remainingImageSlots = MAX_POST_IMAGES - imageCount;
+      if (remainingImageSlots <= 0) {
+        toast.error(
+          t("post.create.errors.maxImagesReached", { max: MAX_POST_IMAGES }),
+        );
+        return;
+      }
+
       const allowedTypes = [
         "image/jpeg",
         "image/png",
@@ -221,25 +311,46 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
       const validFiles = files.filter((file) => {
         if (!allowedTypes.includes(file.type)) {
           toast.error(
-            `${file.name}: Invalid type. Allowed: ${allowedTypes.map((t) => t.split("/")[1].toUpperCase()).join(", ")}`,
+            t("post.create.errors.invalidImageType", {
+              name: file.name,
+              types: allowedTypes
+                .map((item) => item.split("/")[1].toUpperCase())
+                .join(", "),
+            }),
           );
           return false;
         }
         if (file.size > 5 * 1024 * 1024) {
-          toast.error(`${file.name}: Too large. Max 5MB.`);
+          toast.error(
+            t("post.create.errors.imageTooLarge", {
+              name: file.name,
+              maxSize: 5,
+            }),
+          );
           return false;
         }
         return true;
       });
 
+      if (validFiles.length > remainingImageSlots) {
+        toast.error(
+          t("post.create.errors.imageSlotsLeft", {
+            count: remainingImageSlots,
+            plural: remainingImageSlots > 1 ? "s" : "",
+          }),
+        );
+      }
+
+      const filesToAdd = validFiles.slice(0, remainingImageSlots);
+
       // Save files locally (don't upload yet)
-      for (const file of validFiles) {
+      for (const file of filesToAdd) {
         const preview = URL.createObjectURL(file);
         setUploadedImages((prev) => [
           ...prev,
           { file, preview, type: "image" },
         ]);
-        toast.success(`${file.name} added!`);
+        toast.success(t("post.create.success.mediaAdded", { name: file.name }));
       }
     };
 
@@ -256,28 +367,58 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
       const files = Array.from(e.target.files);
       if (!files.length) return;
 
+      const { videoCount } = getMediaCounts(uploadedImages);
+      const remainingVideoSlots = MAX_POST_VIDEOS - videoCount;
+      if (remainingVideoSlots <= 0) {
+        toast.error(
+          t("post.create.errors.maxVideosReached", { max: MAX_POST_VIDEOS }),
+        );
+        return;
+      }
+
       const allowedTypes = ["video/mp4", "video/webm", "video/ogg"];
 
       const validFiles = files.filter((file) => {
         if (!allowedTypes.includes(file.type)) {
-          toast.error(`${file.name}: Invalid type. Allowed: MP4, WebM, OGG`);
+          toast.error(
+            t("post.create.errors.invalidVideoType", {
+              name: file.name,
+              types: "MP4, WebM, OGG",
+            }),
+          );
           return false;
         }
-        if (file.size > 50 * 1024 * 1024) {
-          toast.error(`${file.name}: Too large. Max 50MB.`);
+        if (file.size > 20 * 1024 * 1024) {
+          toast.error(
+            t("post.create.errors.videoTooLarge", {
+              name: file.name,
+              maxSize: 20,
+            }),
+          );
           return false;
         }
         return true;
       });
 
+      if (validFiles.length > remainingVideoSlots) {
+        toast.error(
+          t("post.create.errors.videoSlotsLeft", {
+            count: remainingVideoSlots,
+            plural: remainingVideoSlots > 1 ? "s" : "",
+          }),
+        );
+      }
+
+      const filesToAdd = validFiles.slice(0, remainingVideoSlots);
+
       // Save files locally (don't upload yet)
-      for (const file of validFiles) {
+      for (const file of filesToAdd) {
         const preview = URL.createObjectURL(file);
         setUploadedImages((prev) => [
           ...prev,
           { file, preview, type: "video" },
         ]);
-        toast.success(`${file.name} added!`);
+        toast.success(t("post.create.success.mediaAdded", { name: file.name }));
       }
     };
 
@@ -327,7 +468,7 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
       {isUploading && (
         <div className="modal-loading-overlay">
           <Spinner animation="border" role="status" />
-          <p>Uploading...</p>
+          <p>{t("post.create.uploading")}</p>
         </div>
       )}
 
@@ -428,8 +569,17 @@ const CreatePostModal = ({ show, onHide, post = null, mode = "create" }) => {
               <div className="invalid-feedback d-block">{errors.body}</div>
             )}
             <Form.Text className="char-counter">
-              {formData.body.replace(/<[^>]*>/g, "").length}{" "}
+              {getPlainTextLength(formData.body)}{" "}
               {t("post.create.contentCounter")}
+              {` / ${MAX_POST_BODY_LENGTH}`}
+            </Form.Text>
+            <Form.Text className="char-counter d-block">
+              {t("post.create.mediaSummary", {
+                imageCount: getMediaCounts(uploadedImages).imageCount,
+                maxImages: MAX_POST_IMAGES,
+                videoCount: getMediaCounts(uploadedImages).videoCount,
+                maxVideos: MAX_POST_VIDEOS,
+              })}
             </Form.Text>
           </Form.Group>
 

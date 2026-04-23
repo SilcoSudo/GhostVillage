@@ -57,6 +57,8 @@ const MatchSchema = new mongoose.Schema(
       type: Number,
       required: true, // Thời gian chơi tính bằng giây
     },
+    moonEventId: { type: String, default: "EVENT_MOON_DEFAULT" },
+    moonEventName: { type: String, default: "Normal Moon" },
     playerResults: [PlayerResultSchema], // Nhúng mảng kết quả vào đây
   },
   {

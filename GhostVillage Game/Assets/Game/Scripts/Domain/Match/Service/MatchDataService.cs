@@ -31,17 +31,17 @@ namespace Game.Domain.Match.Services
                 // Vì APIClient chỉ trả về data khi success = true, nên nếu response != null nghĩa là OK.
                 if (response != null && !string.IsNullOrEmpty(response._id))
                 {
-                    Debug.Log($"✅ [MatchService] Lưu kết quả thành công! Match ID: {response._id}");
+                    Debug.Log($" [MatchService] Lưu kết quả thành công! Match ID: {response._id}");
                 }
                 else
                 {
                     // Trường hợp này hiếm khi xảy ra nếu APIClient chạy đúng
-                    Debug.LogError($"❌ [MatchService] Có lỗi (Response null)");
+                    Debug.LogError($" [MatchService] Có lỗi (Response null)");
                 }
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"❌ [MatchService] Exception: {ex.Message}");
+                Debug.LogError($" [MatchService] Exception: {ex.Message}");
             }
         }
     }

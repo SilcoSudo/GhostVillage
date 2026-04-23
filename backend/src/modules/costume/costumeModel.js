@@ -13,8 +13,12 @@ const CostumeSchema = new mongoose.Schema(
       unique: true,
       uppercase: true,
       trim: true,
-      match: [/^COSTUME_[A-Z0-9_]+$/, "Costume ID phải theo format: COSTUME_XXX"],
-      comment: "Mã định danh costume (VD: COSTUME_GHOST_KIMONO, COSTUME_SKELETON_SUIT)",
+      match: [
+        /^COSTUME_[A-Z0-9_]+$/,
+        "Costume ID phải theo format: COSTUME_XXX",
+      ],
+      comment:
+        "Mã định danh costume (VD: COSTUME_GHOST_KIMONO, COSTUME_SKELETON_SUIT)",
     },
     name: {
       type: String,
@@ -81,7 +85,6 @@ const CostumeSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true,
-      index: true,
       comment: "Trạng thái hoạt động (admin toggle)",
     },
     isExclusive: {
@@ -131,7 +134,7 @@ const CostumeSchema = new mongoose.Schema(
   {
     timestamps: true,
     collection: "costumes",
-  }
+  },
 );
 
 // Indexes
@@ -203,11 +206,7 @@ CostumeSchema.statics = {
     const skip = (page - 1) * limit;
 
     const [data, total] = await Promise.all([
-      this.find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
+      this.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
       this.countDocuments(query),
     ]);
 

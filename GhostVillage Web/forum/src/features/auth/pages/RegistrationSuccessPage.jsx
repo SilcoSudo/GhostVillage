@@ -1,23 +1,26 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { useAuth } from '../../../app/hooks/useAuth';
-import FogEffect from '../components/FogEffect';
-import api from '../../../shared/services/axios';
-import './Auth.css';
+import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { useAuth } from "../../../app/hooks/useAuth";
+import FogEffect from "../components/FogEffect";
+import api from "../../../shared/services/axios";
+import "./Auth.css";
 
 const RegistrationSuccessPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [countdown, setCountdown] = useState(60);
   const [resendLoading, setResendLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const email = localStorage.getItem('pendingVerificationEmail');
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
+  const email = localStorage.getItem("pendingVerificationEmail");
 
   // Auto-redirect if email is already verified (no pending email in localStorage)
   useEffect(() => {
     if (!email) {
       // No pending email = already verified, redirect to home
-      navigate('/');
+      navigate("/");
     }
   }, [email, navigate]);
 
@@ -32,26 +35,30 @@ const RegistrationSuccessPage = () => {
 
   const handleResendVerification = async () => {
     if (!email) {
-      setMessage('Email address not found. Please try registering again.');
+      setMessage(t("auth.registrationSuccessPage.errors.emailNotFound"));
+      setMessageType("error");
       return;
     }
 
     try {
       setResendLoading(true);
-      setMessage('');
+      setMessage("");
+      setMessageType("");
 
-      const response = await api.post('/web/auth/resend-verification', {
-        email: email
+      const response = await api.post("/web/auth/resend-verification", {
+        email: email,
       });
 
       if (response.data.success) {
-        setMessage('New verification link sent! Please check your inbox.');
+        setMessage(t("auth.registrationSuccessPage.successMessage"));
+        setMessageType("success");
         setCountdown(60);
       }
     } catch (error) {
+      setMessageType("error");
       setMessage(
         error.response?.data?.message ||
-        'Failed to resend verification email. Please try again later.'
+          t("auth.registrationSuccessPage.errors.resendFailed"),
       );
     } finally {
       setResendLoading(false);
@@ -61,17 +68,17 @@ const RegistrationSuccessPage = () => {
   return (
     <div className="login-page">
       <div className="login-form-section">
-        <div className="login-form-wrapper" style={{ textAlign: 'center' }}>
-          <h2>Registration Successful!</h2>
-          <p className="form-subtitle" style={{ marginBottom: '20px' }}>
-            We have sent a verification link to your email.
+        <div className="login-form-wrapper" style={{ textAlign: "center" }}>
+          <h2>{t("auth.registrationSuccessPage.title")}</h2>
+          <p className="form-subtitle" style={{ marginBottom: "20px" }}>
+            {t("auth.registrationSuccessPage.subtitle")}
           </p>
-          <p>Please check your inbox (and spam folder) to activate your account.</p>
+          <p>{t("auth.registrationSuccessPage.description")}</p>
 
           {message && (
             <div
-              className={`alert-message ${message.includes('thành công') ? 'alert-success' : 'alert-danger'}`}
-              style={{ marginTop: '15px' }}
+              className={`alert-message ${messageType === "success" ? "alert-success" : "alert-danger"}`}
+              style={{ marginTop: "15px" }}
             >
               {message}
             </div>
@@ -82,13 +89,17 @@ const RegistrationSuccessPage = () => {
               className="btn-signin"
               onClick={handleResendVerification}
               disabled={resendLoading}
-              style={{ marginTop: '20px' }}
+              style={{ marginTop: "20px" }}
             >
-              {resendLoading ? 'Sending...' : 'Request New Verification Link'}
+              {resendLoading
+                ? t("auth.registrationSuccessPage.loadingButton")
+                : t("auth.registrationSuccessPage.resendButton")}
             </button>
           ) : (
-            <p style={{ marginTop: '15px', color: '#666' }}>
-              Request new link in {countdown} seconds
+            <p style={{ marginTop: "15px", color: "#666" }}>
+              {t("auth.registrationSuccessPage.countdown", {
+                count: countdown,
+              })}
             </p>
           )}
         </div>

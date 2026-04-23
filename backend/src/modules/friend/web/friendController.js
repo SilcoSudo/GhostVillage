@@ -104,7 +104,11 @@ class FriendController {
       });
     } catch (error) {
       console.error("Add friend error:", error);
-      res.status(400).json({
+      const isLimitError =
+        error.message?.includes("maximum number of friends") ||
+        error.message?.includes("Friend limit reached");
+      const statusCode = isLimitError ? 409 : 400;
+      res.status(statusCode).json({
         success: false,
         message: error.message || "Failed to send friend request",
       });
@@ -121,48 +125,22 @@ class FriendController {
       const { friendshipId, relatedUserId } = req.body;
       const io = req.app.get("io");
 
-      // Allow either friendshipId or relatedUserId
-      let friendship;
-      let error = null;
+      const requestId = friendshipId || relatedUserId;
 
-      if (friendshipId) {
-        // Try with friendshipId first
-        try {
-          friendship = await FriendService.acceptFriendRequest(
-            friendshipId,
-            io,
-          );
-        } catch (err) {
-          error = err;
-          // If not found, try treating friendshipId as relatedUserId
-          // (for old notifications that store userId instead of friendshipId)
-          try {
-            friendship = await FriendService.acceptFriendRequestByUserId(
-              req.user._id,
-              friendshipId,
-              io,
-            );
-            error = null; // Clear error if second attempt succeeds
-          } catch (err2) {
-            error = err2;
-          }
-        }
-      } else if (relatedUserId) {
-        friendship = await FriendService.acceptFriendRequestByUserId(
-          req.user._id,
-          relatedUserId,
-          io,
-        );
-      } else {
+      if (!requestId) {
         return res.status(400).json({
           success: false,
-          message: "Either friendshipId or relatedUserId is required",
+          message: "friendshipId or relatedUserId is required",
         });
       }
 
-      if (error) {
-        throw error;
-      }
+      const friendship = friendshipId
+        ? await FriendService.acceptFriendRequest(friendshipId, io)
+        : await FriendService.acceptFriendRequestByUserId(
+            req.user._id,
+            relatedUserId,
+            io,
+          );
 
       res.status(200).json({
         success: true,
@@ -187,43 +165,26 @@ class FriendController {
     try {
       const { friendshipId, relatedUserId } = req.body;
 
-      // Allow either friendshipId or relatedUserId
-      let result;
-      let error = null;
+      const requestId = friendshipId || relatedUserId;
 
-      if (friendshipId) {
-        // Try with friendshipId first
-        try {
-          result = await FriendService.rejectFriendRequest(friendshipId);
-        } catch (err) {
-          error = err;
-          // If not found, try treating friendshipId as relatedUserId
-          // (for old notifications that store userId instead of friendshipId)
-          try {
-            result = await FriendService.rejectFriendRequestByUserId(
-              req.user._id,
-              friendshipId,
-            );
-            error = null; // Clear error if second attempt succeeds
-          } catch (err2) {
-            error = err2;
-          }
-        }
-      } else if (relatedUserId) {
-        result = await FriendService.rejectFriendRequestByUserId(
-          req.user._id,
-          relatedUserId,
-        );
-      } else {
+      if (!requestId) {
         return res.status(400).json({
           success: false,
-          message: "Either friendshipId or relatedUserId is required",
+          message: "friendshipId or relatedUserId is required",
         });
       }
 
-      if (error) {
-        throw error;
-      }
+      const result = friendshipId
+        ? await FriendService.rejectFriendRequest(
+            friendshipId,
+            req.user._id,
+            io,
+          )
+        : await FriendService.rejectFriendRequestByUserId(
+            req.user._id,
+            relatedUserId,
+            io,
+          );
 
       res.status(200).json({
         success: true,

@@ -102,6 +102,16 @@
   margin-bottom: 1.25rem;
 }
 
+.modal-section-title {
+  margin: 0 0 0.85rem;
+  color: #B5A642;
+  font-family: 'Courier New', monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
 .form-group:last-of-type {
   margin-bottom: 0;
 }

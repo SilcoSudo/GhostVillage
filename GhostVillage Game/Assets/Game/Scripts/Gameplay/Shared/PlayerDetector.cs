@@ -18,6 +18,9 @@ namespace GhostVillage.Gameplay.Shared
         private bool playerDetected = false;
         private Vector3 lastDetectedPlayerPos = Vector3.zero;
 
+        // Biến thêm vào ĐỂ CHỐNG SPAM LOG (chỉ in log 1 lần mỗi giây)
+        private float debugLogTimer = 0f;
+
         private void Start()
         {
             // Tìm player trong scene
@@ -27,6 +30,11 @@ namespace GhostVillage.Gameplay.Shared
                 playerTransform = playerGO.transform;
                 lastDetectedPlayerPos = playerGO.transform.position;
             }
+
+            if (playerTransform == null)
+            {
+                Debug.LogError("<color=cyan>[PlayerDetector] Không tìm thấy Player trong scene! Hãy chắc chắn Player có tag 'Player'.</color>");
+            }
         }
 
         private void Update()
@@ -34,54 +42,94 @@ namespace GhostVillage.Gameplay.Shared
             DetectPlayerInCone();
         }
 
+
+
+        /// <summary>
+        /// Xoay detection cone theo hướng di chuyển (LookForward)
+        /// </summary>
+        public void UpdateDetectionDirection(Vector3 movementDirection)
+        {
+            if (movementDirection.sqrMagnitude > 0.01f)
+            {
+                // Xoay transform để detection cone theo hướng di chuyển
+                Quaternion targetRot = Quaternion.LookRotation(movementDirection.normalized);
+                transform.rotation = Quaternion.Lerp(transform.rotation, targetRot, Time.deltaTime * 5f);
+            }
+        }
+
         /// <summary>
         /// Cone casting để detect player (hình nón)
         /// </summary>
         private void DetectPlayerInCone()
         {
-            if (playerTransform == null)
+            bool shouldLog = Time.time > debugLogTimer;
+
+            // Tìm tất cả Player trên map
+            var players = GameObject.FindGameObjectsWithTag("Player");
+            Transform closestVisiblePlayer = null;
+            float minDistance = float.MaxValue;
+
+            foreach (var p in players)
             {
-                playerDetected = false;
-                return;
+                // [FIX CHÍ MẠNG 1]: Quét dọc theo cây object để tìm KnockedState, 
+                // đề phòng tag "Player" nằm ở cả Root lẫn các Hitbox con.
+                var ks = p.GetComponentInParent<PlayerKnockedState>();
+                if (ks == null) ks = p.GetComponentInChildren<PlayerKnockedState>();
+
+                // Nếu tìm thấy và đang Knocked -> Bỏ qua thằng chết luôn
+                if (ks != null && ks.isKnocked) continue;
+
+                Vector3 directionToPlayer = p.transform.position - transform.position;
+                float distanceToPlayer = directionToPlayer.magnitude;
+
+                // 2. Lọc Cự ly (Quá xa -> Bỏ)
+                if (distanceToPlayer > detectionRange) continue;
+
+                // 3. Lọc Góc Nhìn (Nằm sau lưng -> Bỏ)
+                Vector3 forward = transform.forward;
+                float angleToPlayer = Vector3.Angle(forward, directionToPlayer);
+                if (angleToPlayer > detectionAngle / 2f) continue;
+
+                // 4. Lọc Vật Cản (Núp sau tường -> Bỏ)
+                Vector3 raycastOrigin = transform.position + Vector3.up * raycastHeight;
+                Vector3 rayDirection = directionToPlayer.normalized;
+
+                // Bắn tia raycast xem có kẹt tường (obstacleMask) không
+                if (!Physics.Raycast(raycastOrigin, rayDirection, distanceToPlayer, obstacleMask))
+                {
+                    // Lọt qua 4 bước trên = NHÌN THẤY BẰNG MẮT THẬT!
+                    // Ưu tiên khóa mục tiêu vào đứa gần nhất
+                    if (distanceToPlayer < minDistance)
+                    {
+                        minDistance = distanceToPlayer;
+                        closestVisiblePlayer = p.transform;
+                    }
+                }
             }
 
-            Vector3 directionToPlayer = playerTransform.position - transform.position;
-            float distanceToPlayer = directionToPlayer.magnitude;
-
-            // Check khoảng cách
-            if (distanceToPlayer > detectionRange)
+            // CHỐT HẠ KẾT QUẢ QUÉT
+            if (closestVisiblePlayer != null)
             {
-                playerDetected = false;
-                return;
+                if (!playerDetected && shouldLog)
+                {
+                    Debug.Log("<color=green>[Detector Log]</color> ĐÃ QUÉT VÀ KHÓA MỤC TIÊU SỐNG MỚI!");
+                    debugLogTimer = Time.time + 1f;
+                }
+                playerDetected = true;
+                playerTransform = closestVisiblePlayer; // Snap vào đúng cái thằng ĐANG THẤY TRƯỚC MẶT
+                lastDetectedPlayerPos = closestVisiblePlayer.position;
             }
-
-            // Check góc (có trong hình nón không)
-            Vector3 forward = transform.forward;
-            float angleToPlayer = Vector3.Angle(forward, directionToPlayer);
-
-            if (angleToPlayer > detectionAngle / 2f)
+            else
             {
+                if (playerDetected && shouldLog)
+                {
+                    Debug.Log("<color=yellow>[Detector Log]</color> KHÔNG THẤY MỤC TIÊU NÀO CÒN SỐNG TRONG TẦM NHÌN!");
+                    debugLogTimer = Time.time + 1f;
+                }
                 playerDetected = false;
-                return;
+                // Lưu ý: Đéo set playerTransform = null ở đây để nó còn nhớ điểm cuối cùng mà Investigate
+                playerTransform = null;
             }
-
-            // Raycast check line of sight
-            Vector3 raycastOrigin = transform.position + Vector3.up * raycastHeight;
-            Vector3 rayDirection = directionToPlayer.normalized;
-
-            // Vẽ debug ray
-            Debug.DrawRay(raycastOrigin, rayDirection * distanceToPlayer, Color.yellow);
-
-            if (Physics.Raycast(raycastOrigin, rayDirection, distanceToPlayer, obstacleMask))
-            {
-                // Có vật cản giữa monster và player
-                playerDetected = false;
-                return;
-            }
-
-            // Thấy player rồi
-            playerDetected = true;
-            lastDetectedPlayerPos = playerTransform.position;
         }
 
         /// <summary>
@@ -98,6 +146,14 @@ namespace GhostVillage.Gameplay.Shared
         public Vector3 GetPlayerPosition()
         {
             return playerTransform != null ? playerTransform.position : Vector3.zero;
+        }
+
+        /// <summary>
+        /// Lấy Transform của player (dùng cho skill cần tham chiếu trực tiếp)
+        /// </summary>
+        public Transform GetPlayerTransform()
+        {
+            return playerTransform;
         }
 
         /// <summary>
@@ -163,7 +219,7 @@ namespace GhostVillage.Gameplay.Shared
                 Gizmos.color = Color.red;
                 Gizmos.DrawLine(monsterPos, playerTransform.position);
                 Gizmos.DrawSphere(playerTransform.position, 0.3f);
-                
+
                 // Vẽ raycast origin point
                 Gizmos.color = Color.yellow;
                 Vector3 raycastOrigin = transform.position + Vector3.up * raycastHeight;

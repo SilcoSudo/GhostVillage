@@ -1,8 +1,15 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  Link,
+  useParams,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../app/hooks/useAuth";
 import api from "../../../shared/services/axios";
 import FriendActions from "../../friend/FriendActions";
+import { getAvatarUrl, cacheAvatar } from "../../../shared/utils/avatarCache";
 import {
   User,
   Mail,
@@ -25,15 +32,17 @@ import {
   Users,
 } from "lucide-react";
 import "./ProfilePage.css";
-import PostDetailModal from '../../posts/components/PostDetailModal';
-import PostCard from '../../posts/components/PostCard';
-import ChangePasswordModal from '../../../shared/components/modals/ChangePasswordModal';
-import './ProfilePage.css';
+import PostDetailModal from "../../posts/components/PostDetailModal";
+import PostCard from "../../posts/components/PostCard";
+import ChangePasswordModal from "../../../shared/components/modals/ChangePasswordModal";
+import "./ProfilePage.css";
 
 const ProfilePage = () => {
+  const { t, i18n } = useTranslation();
   const { id } = useParams();
   const { user: currentUser, refreshUser } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [profileUser, setProfileUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -50,9 +59,41 @@ const ProfilePage = () => {
   const [uploading, setUploading] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [showPostModal, setShowPostModal] = useState(false);
+  const [scrollToComments, setScrollToComments] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const dateLocale = i18n.language?.startsWith("vi") ? "vi-VN" : "en-US";
+
+  const sortedFriends = useMemo(() => {
+    const friends = profileUser?.friends || [];
+
+    return [...friends].sort((friendA, friendB) => {
+      const onlineA = Boolean(friendA.isOnline);
+      const onlineB = Boolean(friendB.isOnline);
+
+      if (onlineA !== onlineB) {
+        return Number(onlineB) - Number(onlineA);
+      }
+
+      return (friendA.fullname || "").localeCompare(
+        friendB.fullname || "",
+        i18n.language?.startsWith("vi") ? "vi" : "en",
+        {
+          sensitivity: "base",
+        },
+      );
+    });
+  }, [profileUser?.friends, i18n.language]);
 
   const isOwnProfile = currentUser && (id ? currentUser._id === id : true);
+
+  useEffect(() => {
+    const postId = searchParams.get("postId");
+    const shouldScroll = searchParams.get("scrollToComments") === "1";
+
+    setSelectedPostId(postId);
+    setShowPostModal(Boolean(postId));
+    setScrollToComments(Boolean(postId && shouldScroll));
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -77,12 +118,14 @@ const ProfilePage = () => {
           setNewBio(response.data.data.bio || "");
           setNewAvatar(response.data.data.avatar || "");
         } else {
-          setError(response.data.message || "Subject not found");
+          setError(
+            response.data.message || t("profile.errors.subjectNotFound"),
+          );
         }
       } catch (err) {
         console.error("Error fetching profile:", err);
         setError(
-          err.response?.data?.message || "Connection to database failed",
+          err.response?.data?.message || t("profile.errors.connectionFailed"),
         );
       } finally {
         setLoading(false);
@@ -103,21 +146,21 @@ const ProfilePage = () => {
         refreshUser();
       }
     } catch (err) {
-      alert("Failed to update name");
+      alert(t("profile.errors.failedUpdateName"));
     }
   };
 
   const handleUpdateProfile = async () => {
     if (!newName.trim()) {
-      alert("Name cannot be empty");
+      alert(t("profile.errors.nameEmpty"));
       return;
     }
     if (newName.length > 100) {
-      alert("Name cannot exceed 100 characters");
+      alert(t("profile.errors.nameTooLong"));
       return;
     }
     if (newBio.length > 500) {
-      alert("Bio cannot exceed 500 characters");
+      alert(t("profile.errors.bioTooLong"));
       return;
     }
 
@@ -131,16 +174,26 @@ const ProfilePage = () => {
 
       if (response.data.success) {
         const updatedData = response.data.data;
-        setProfileUser(updatedData);
+        setProfileUser((prev) =>
+          prev
+            ? {
+                ...prev,
+                ...updatedData,
+                friends: prev.friends || updatedData.friends || [],
+              }
+            : updatedData,
+        );
         setIsEditingName(false);
         setIsEditingBio(false);
         setIsEditingAvatar(false);
         refreshUser();
-        alert("Profile updated successfully!");
+        alert(t("profile.success.updated"));
       }
     } catch (err) {
       console.error("Update error:", err);
-      alert(err.response?.data?.message || "Failed to update profile");
+      alert(
+        err.response?.data?.message || t("profile.errors.failedUpdateProfile"),
+      );
     } finally {
       setUpdating(false);
     }
@@ -152,13 +205,13 @@ const ProfilePage = () => {
 
     // Validate file type
     if (!["image/jpeg", "image/png", "image/gif"].includes(file.type)) {
-      alert("Only JPEG, PNG, and GIF images are allowed");
+      alert(t("profile.errors.onlyImageTypes"));
       return;
     }
 
     // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert("File size cannot exceed 5MB");
+      alert(t("profile.errors.fileTooLarge"));
       return;
     }
 
@@ -174,7 +227,7 @@ const ProfilePage = () => {
 
   const handleUploadAvatar = async () => {
     if (!avatarFile) {
-      alert("Please select an image first");
+      alert(t("profile.errors.selectImageFirst"));
       return;
     }
 
@@ -191,15 +244,25 @@ const ProfilePage = () => {
 
       if (response.data.success) {
         const updatedData = response.data.data;
-        setProfileUser(updatedData);
+        setProfileUser((prev) =>
+          prev
+            ? {
+                ...prev,
+                ...updatedData,
+                friends: prev.friends || updatedData.friends || [],
+              }
+            : updatedData,
+        );
         setAvatarFile(null);
         setAvatarPreview("");
         refreshUser();
-        alert("Avatar uploaded successfully!");
+        alert(t("profile.success.avatarUploaded"));
       }
     } catch (err) {
       console.error("Upload error:", err);
-      alert(err.response?.data?.message || "Failed to upload avatar");
+      alert(
+        err.response?.data?.message || t("profile.errors.failedUploadAvatar"),
+      );
     } finally {
       setUploading(false);
     }
@@ -217,25 +280,42 @@ const ProfilePage = () => {
         });
       }
     } catch (err) {
-      alert("Failed to update visibility");
+      alert(t("profile.errors.failedUpdateVisibility"));
     }
   };
 
-  const handlePostClick = (postId) => {
+  const handlePostClick = (postId, shouldScrollComments = false) => {
     setSelectedPostId(postId);
     setShowPostModal(true);
+
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.set("postId", postId);
+
+    if (shouldScrollComments) {
+      nextSearchParams.set("scrollToComments", "1");
+    } else {
+      nextSearchParams.delete("scrollToComments");
+    }
+
+    setScrollToComments(shouldScrollComments);
+    setSearchParams(nextSearchParams);
   };
 
   const handleClosePostModal = () => {
     setShowPostModal(false);
     setSelectedPostId(null);
+
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete("postId");
+    nextSearchParams.delete("scrollToComments");
+    setSearchParams(nextSearchParams);
   };
 
   if (loading) {
     return (
       <div className="profile-loading">
         <div className="horror-spinner"></div>
-        <p>RETRACING FOOTAGE...</p>
+        <p>{t("profile.loading")}</p>
       </div>
     );
   }
@@ -243,13 +323,10 @@ const ProfilePage = () => {
   if (error || !profileUser) {
     return (
       <div className="profile-error">
-        <h2>404 - SUBJECT NOT FOUND</h2>
-        <p>
-          {error ||
-            "The requested profile does not exist in the village records."}
-        </p>
+        <h2>{t("profile.notFoundTitle")}</h2>
+        <p>{error || t("profile.notFoundMessage")}</p>
         <button onClick={() => navigate("/")} className="btn-horror">
-          RETURN TO SAFETY
+          {t("profile.buttons.returnHome")}
         </button>
       </div>
     );
@@ -279,36 +356,49 @@ const ProfilePage = () => {
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   className="horror-input-small"
-                  placeholder="Enter display name"
+                  placeholder={t("profile.placeholders.displayName")}
                   maxLength={100}
                 />
-                <button onClick={handleUpdateProfile} className="btn-horror-save" disabled={updating}>
-                  {updating ? 'SAVING...' : 'SAVE'}
+                <button
+                  onClick={handleUpdateProfile}
+                  className="btn-horror-save"
+                  disabled={updating}
+                >
+                  {updating
+                    ? t("profile.buttons.saving")
+                    : t("profile.buttons.save")}
                 </button>
-                <button onClick={() => setIsEditingName(false)} className="btn-horror-cancel">
-                  CANCEL
+                <button
+                  onClick={() => setIsEditingName(false)}
+                  className="btn-horror-cancel"
+                >
+                  {t("profile.buttons.cancel")}
                 </button>
               </div>
             ) : (
               <div className="name-display-group">
                 <h1 className="profile-name">
-                  {profileUser.fullname || 'Anonymous Subject'}
+                  {profileUser.fullname || t("profile.anonymousSubject")}
                 </h1>
                 {isOwnProfile && (
-                  <Edit2 
-                    size={20} 
-                    className="edit-inline-icon" 
+                  <Edit2
+                    size={20}
+                    className="edit-inline-icon"
                     onClick={() => setIsEditingName(true)}
-                    title="Edit display name"
+                    title={t("profile.actions.editDisplayName")}
                   />
                 )}
               </div>
             )}
             <div className="profile-badges">
               {profileUser.role === "admin" && (
-                <span className="badge admin-badge">WARDEN</span>
+                <span className="badge admin-badge">
+                  {t("profile.badges.warden")}
+                </span>
               )}
-              <span className="badge rank-badge">EXPLORER</span>
+              <span className="badge rank-badge">
+                {t("profile.badges.explorer")}
+              </span>
             </div>
           </div>
 
@@ -327,7 +417,7 @@ const ProfilePage = () => {
         {/* Sidebar Info */}
         <div className="profile-sidebar">
           <div className="profile-card info-card">
-            <h3>LOG DATA</h3>
+            <h3>{t("profile.headings.logData")}</h3>
             <ul className="info-list">
               <li>
                 <Mail size={16} />
@@ -340,7 +430,7 @@ const ProfilePage = () => {
                   <button
                     className="icon-btn-inline"
                     onClick={toggleEmailVisibility}
-                    title="Toggle Visibility"
+                    title={t("profile.actions.toggleVisibility")}
                   >
                     {profileUser.emailVisibility ? (
                       <Eye size={14} />
@@ -353,10 +443,11 @@ const ProfilePage = () => {
               <li>
                 <Calendar size={16} />
                 <span>
-                  Joined{" "}
-                  {new Date(
-                    profileUser.createdAt || Date.now(),
-                  ).toLocaleDateString()}
+                  {t("profile.labels.joinedDate", {
+                    date: new Date(
+                      profileUser.createdAt || Date.now(),
+                    ).toLocaleDateString(dateLocale),
+                  })}
                 </span>
               </li>
               <li
@@ -364,8 +455,12 @@ const ProfilePage = () => {
                 onClick={() => setActiveTab("friends")}
               >
                 <Users size={16} />
-                <span>Friends: {profileUser.friends?.length || 0}</span>
-                <span className="view-link">VIEW</span>
+                <span>
+                  {t("profile.labels.friendsCount", {
+                    count: profileUser.friends?.length || 0,
+                  })}
+                </span>
+                <span className="view-link">{t("profile.view")}</span>
               </li>
               {profileUser.bio && (
                 <li className="bio-item">
@@ -376,15 +471,21 @@ const ProfilePage = () => {
           </div>
 
           <div className="profile-card stats-card">
-            <h3>VITAL SIGNS</h3>
+            <h3>{t("profile.headings.vitalSigns")}</h3>
             <div className="stats-mini-grid">
               <div className="stat-mini-item">
-                <span className="stat-value">{profileUser.pagination?.total || profileUser.posts?.length || 0}</span>
-                <span className="stat-label">POSTS</span>
+                <span className="stat-value">
+                  {profileUser.pagination?.total ||
+                    profileUser.posts?.length ||
+                    0}
+                </span>
+                <span className="stat-label">{t("profile.labels.posts")}</span>
               </div>
               <div className="stat-mini-item">
                 <span className="stat-value">0</span>
-                <span className="stat-label">ACHIEVEMENTS</span>
+                <span className="stat-label">
+                  {t("profile.labels.achievements")}
+                </span>
               </div>
             </div>
           </div>
@@ -398,14 +499,14 @@ const ProfilePage = () => {
               onClick={() => setActiveTab("activity")}
             >
               <History size={16} />
-              ACTIVITY
+              {t("profile.tabs.activity")}
             </button>
             <button
               className={`tab-btn ${activeTab === "posts" ? "active" : ""}`}
               onClick={() => setActiveTab("posts")}
             >
               <BookOpen size={16} />
-              POSTS
+              {t("profile.tabs.posts")}
             </button>
             {isOwnProfile && (
               <button
@@ -413,7 +514,7 @@ const ProfilePage = () => {
                 onClick={() => setActiveTab("saved")}
               >
                 <Bookmark size={16} />
-                SAVED
+                {t("profile.tabs.saved")}
               </button>
             )}
             <button
@@ -421,7 +522,7 @@ const ProfilePage = () => {
               onClick={() => setActiveTab("friends")}
             >
               <Users size={16} />
-              FRIENDS
+              {t("profile.tabs.friends")}
             </button>
             {isOwnProfile && (
               <button
@@ -429,7 +530,7 @@ const ProfilePage = () => {
                 onClick={() => setActiveTab("settings")}
               >
                 <SettingsIcon size={16} />
-                SETTINGS
+                {t("profile.tabs.settings")}
               </button>
             )}
           </div>
@@ -437,42 +538,46 @@ const ProfilePage = () => {
           <div className="profile-feed-container">
             {activeTab === "activity" && (
               <div className="activity-history">
-                <h4 className="feed-title">GAME MATCH HISTORY</h4>
+                <h4 className="feed-title">
+                  {t("profile.headings.gameMatchHistory")}
+                </h4>
                 <div className="empty-feed">
                   <History size={48} />
-                  <p>NO MATCH DATA FOUND</p>
-                  <span>
-                    The subject has not participated in any recorded matches.
-                  </span>
+                  <p>{t("profile.empty.noMatchData")}</p>
+                  <span>{t("profile.empty.matchDescription")}</span>
                 </div>
               </div>
             )}
 
             {activeTab === "posts" && (
               <div className="posts-list">
-                <h4 className="feed-title">PUBLISHED POSTS</h4>
+                <h4 className="feed-title">
+                  {t("profile.headings.publishedPosts")}
+                </h4>
                 {profileUser?.posts && profileUser.posts.length > 0 ? (
                   <>
                     <div className="posts-feed">
                       {profileUser.posts.map((post) => (
-                        <PostCard 
-                          key={post._id} 
+                        <PostCard
+                          key={post._id}
                           post={post}
                           onPostUpdate={() => {}}
+                          onOpenDetail={handlePostClick}
                         />
                       ))}
                     </div>
-                    {profileUser.pagination && profileUser.pagination.hasMore && (
-                      <button className="btn-horror-outline load-more-btn">
-                        LOAD MORE
-                      </button>
-                    )}
+                    {profileUser.pagination &&
+                      profileUser.pagination.hasMore && (
+                        <button className="btn-horror-outline load-more-btn">
+                          {t("profile.buttons.loadMore")}
+                        </button>
+                      )}
                   </>
                 ) : (
                   <div className="empty-feed">
                     <BookOpen size={48} />
-                    <p>NO POSTS RECORDED</p>
-                    <span>This folder is currently empty.</span>
+                    <p>{t("posts.noPostsRecorded")}</p>
+                    <span>{t("profile.empty.postsDescription")}</span>
                   </div>
                 )}
               </div>
@@ -480,37 +585,82 @@ const ProfilePage = () => {
 
             {activeTab === "saved" && (
               <div className="saved-posts">
-                <h4 className="feed-title">ARCHIVED / SAVED</h4>
+                <h4 className="feed-title">
+                  {t("profile.headings.archivedSaved")}
+                </h4>
                 <div className="empty-feed">
                   <Bookmark size={48} />
-                  <p>NO SAVED CONTENT</p>
-                  <span>Only the warden can see this archive.</span>
+                  <p>{t("profile.empty.noSavedContent")}</p>
+                  <span>{t("profile.empty.onlyWardenArchive")}</span>
                 </div>
               </div>
             )}
 
             {activeTab === "friends" && (
-              <div className="friends-list">
-                <h4 className="feed-title">ACCOMPLICES / FRIENDS</h4>
-                <div className="empty-feed">
-                  <Users size={48} />
-                  <p>NO ACCOMPLICES FOUND</p>
-                  <span>This subject wanders the village alone.</span>
-                </div>
+              <div className="profile-friends-section">
+                <h4 className="feed-title">
+                  {t("profile.headings.accomplicesFriends")}
+                </h4>
+                {sortedFriends.length > 0 ? (
+                  <div className="profile-friends-list">
+                    {sortedFriends.map((friend) => (
+                      <Link
+                        key={friend._id}
+                        to={`/profile/${friend._id}`}
+                        className={`profile-friend-item ${!friend.isOnline ? "is-offline" : ""}`}
+                        title={`${t("viewProfile")} ${friend.fullname}`}
+                      >
+                        <div className="profile-friend-avatar">
+                          {friend.avatar ? (
+                            <img
+                              src={getAvatarUrl(friend._id, friend.avatar)}
+                              alt={friend.fullname}
+                              onLoad={() =>
+                                cacheAvatar(friend._id, friend.avatar)
+                              }
+                              crossOrigin="anonymous"
+                            />
+                          ) : (
+                            <div className="profile-friend-avatar-fallback">
+                              <User size={18} strokeWidth={1.5} />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="profile-friend-info">
+                          <h5 className="profile-friend-name">
+                            {friend.fullname}
+                          </h5>
+                        </div>
+
+                        <span className="view-link">{t("viewProfile")}</span>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-feed">
+                    <Users size={48} />
+                    <p>{t("profile.empty.noAccomplicesFound")}</p>
+                    <span>{t("profile.empty.subjectWandersAlone")}</span>
+                  </div>
+                )}
               </div>
             )}
 
             {activeTab === "settings" && isOwnProfile && (
               <div className="profile-settings-section">
-                <h4 className="feed-title">ACCOUNT PREFERENCES</h4>
+                <h4 className="feed-title">
+                  {t("profile.headings.accountPreferences")}
+                </h4>
                 <div className="settings-grid">
                   <div className="settings-group">
                     <label>
-                      <UserCheck size={16} /> PROFILE DETAILS
+                      <UserCheck size={16} />{" "}
+                      {t("profile.labels.profileDetails")}
                     </label>
                     <div className="profile-edit-form">
                       <div className="form-group">
-                        <label>Display Name</label>
+                        <label>{t("profile.labels.displayName")}</label>
                         <input
                           type="text"
                           value={newName}
@@ -518,21 +668,21 @@ const ProfilePage = () => {
                             setNewName(e.target.value.slice(0, 100))
                           }
                           className="horror-input"
-                          placeholder="Enter display name"
+                          placeholder={t("profile.placeholders.displayName")}
                           maxLength={100}
                         />
                         <span className="char-count">{newName.length}/100</span>
                       </div>
 
                       <div className="form-group">
-                        <label>Bio</label>
+                        <label>{t("profile.labels.bio")}</label>
                         <textarea
                           value={newBio}
                           onChange={(e) =>
                             setNewBio(e.target.value.slice(0, 500))
                           }
                           className="horror-input"
-                          placeholder="Enter bio (optional)"
+                          placeholder={t("profile.placeholders.bio")}
                           maxLength={500}
                           rows={3}
                         />
@@ -540,7 +690,7 @@ const ProfilePage = () => {
                       </div>
 
                       <div className="form-group">
-                        <label>Avatar Upload</label>
+                        <label>{t("profile.labels.avatarUpload")}</label>
                         <div className="avatar-upload-section">
                           <input
                             type="file"
@@ -550,12 +700,15 @@ const ProfilePage = () => {
                             disabled={uploading}
                           />
                           <span className="file-info">
-                            Supported: JPEG, PNG, GIF (Max 5MB)
+                            {t("profile.labels.supportedImageTypes")}
                           </span>
 
                           {avatarPreview && (
                             <div className="avatar-preview">
-                              <img src={avatarPreview} alt="Avatar preview" />
+                              <img
+                                src={avatarPreview}
+                                alt={t("profile.labels.avatarPreview")}
+                              />
                             </div>
                           )}
 
@@ -565,26 +718,30 @@ const ProfilePage = () => {
                               onClick={handleUploadAvatar}
                               disabled={uploading}
                             >
-                              {uploading ? "UPLOADING..." : "UPLOAD AVATAR"}
+                              {uploading
+                                ? t("profile.buttons.uploading")
+                                : t("profile.buttons.uploadAvatar")}
                             </button>
                           )}
                         </div>
                       </div>
 
                       <div className="form-group">
-                        <label>Avatar URL (Alternative)</label>
+                        <label>
+                          {t("profile.labels.avatarUrlAlternative")}
+                        </label>
                         <input
                           type="text"
                           value={newAvatar}
                           onChange={(e) => setNewAvatar(e.target.value)}
                           className="horror-input"
-                          placeholder="Or enter image URL directly"
+                          placeholder={t("profile.placeholders.avatarUrl")}
                         />
                         {newAvatar && !avatarFile && (
                           <div className="avatar-preview">
                             <img
                               src={newAvatar}
-                              alt="Avatar preview"
+                              alt={t("profile.labels.avatarPreview")}
                               onError={(e) => (e.target.style.display = "none")}
                             />
                           </div>
@@ -597,7 +754,9 @@ const ProfilePage = () => {
                           onClick={handleUpdateProfile}
                           disabled={updating}
                         >
-                          {updating ? "SAVING..." : "SAVE CHANGES"}
+                          {updating
+                            ? t("profile.buttons.saving")
+                            : t("profile.buttons.saveChanges")}
                         </button>
                         <button
                           className="btn-horror-outline"
@@ -608,36 +767,43 @@ const ProfilePage = () => {
                           }}
                           disabled={updating}
                         >
-                          CANCEL
+                          {t("profile.buttons.cancel")}
                         </button>
                       </div>
                     </div>
                   </div>
 
                   <div className="settings-group">
-                    <label><Lock size={16} /> SECURITY</label>
-                    <button className="btn-horror-outline" onClick={() => setShowChangePasswordModal(true)}>
-                      CHANGE PASSWORD
+                    <label>
+                      <Lock size={16} /> {t("profile.labels.security")}
+                    </label>
+                    <button
+                      className="btn-horror-outline"
+                      onClick={() => setShowChangePasswordModal(true)}
+                    >
+                      {t("profile.buttons.changePassword")}
                     </button>
                     <button
                       className="btn-horror-outline"
                       onClick={() => navigate("/forgot-password")}
                     >
-                      FORGOT PASSWORD?
+                      {t("profile.buttons.forgotPassword")}
                     </button>
                   </div>
 
                   <div className="settings-group">
                     <label>
-                      <Shield size={16} /> PRIVACY
+                      <Shield size={16} /> {t("profile.labels.privacy")}
                     </label>
                     <div className="setting-toggle">
-                      <span>Show email to others</span>
+                      <span>{t("profile.labels.showEmailToOthers")}</span>
                       <button
                         className={`toggle-btn ${profileUser.emailVisibility ? "on" : "off"}`}
                         onClick={toggleEmailVisibility}
                       >
-                        {profileUser.emailVisibility ? "ENABLED" : "DISABLED"}
+                        {profileUser.emailVisibility
+                          ? t("profile.status.enabled")
+                          : t("profile.status.disabled")}
                       </button>
                     </div>
                   </div>
@@ -653,6 +819,7 @@ const ProfilePage = () => {
         show={showPostModal}
         onHide={handleClosePostModal}
         postId={selectedPostId}
+        scrollToComments={scrollToComments}
       />
 
       {/* Change Password Modal */}
@@ -660,7 +827,7 @@ const ProfilePage = () => {
         <ChangePasswordModal
           onClose={() => setShowChangePasswordModal(false)}
           onSuccess={() => {
-            console.log('Password changed successfully');
+            console.log("Password changed successfully");
           }}
         />
       )}

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { X, Loader2, Plus, Upload, Image as ImageIcon } from "lucide-react";
 import wikiService from "../../shared/services/wikiService";
 import uploadService from "../../shared/services/uploadService";
@@ -9,6 +10,7 @@ import "../assets/styles/Modal.css";
  * Modal để tạo Wiki mới với Rich Text Editor & Image Upload
  */
 const CreateWikiModal = ({ onClose, onSuccess }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     title: "",
     slug: "",
@@ -100,13 +102,13 @@ const CreateWikiModal = ({ onClose, onSuccess }) => {
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      setError("Vui lòng chọn file ảnh");
+      setError(t("wikiModal.errors.imageType"));
       return;
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      setError("Kích thước ảnh không được vượt quá 5MB");
+      setError(t("wikiModal.errors.imageSize"));
       return;
     }
 
@@ -130,7 +132,7 @@ const CreateWikiModal = ({ onClose, onSuccess }) => {
       }));
     } catch (err) {
       console.error("Error uploading image:", err);
-      setError("Lỗi khi upload ảnh");
+      setError(t("wikiModal.errors.uploadFailed"));
     } finally {
       setUploadingImage(false);
     }
@@ -144,17 +146,17 @@ const CreateWikiModal = ({ onClose, onSuccess }) => {
 
     // Validation
     if (!formData.title.trim()) {
-      setError("Tiêu đề không được để trống");
+      setError(t("wikiModal.errors.titleRequired"));
       return;
     }
 
     if (!formData.slug.trim()) {
-      setError("Slug không được để trống");
+      setError(t("wikiModal.errors.slugRequired"));
       return;
     }
 
     if (!formData.content.trim()) {
-      setError("Nội dung không được để trống");
+      setError(t("wikiModal.errors.contentRequired"));
       return;
     }
 
@@ -169,7 +171,7 @@ const CreateWikiModal = ({ onClose, onSuccess }) => {
       }
     } catch (err) {
       console.error("Error creating wiki:", err);
-      setError(err.response?.data?.message || "Lỗi khi tạo wiki");
+      setError(err.response?.data?.message || t("wikiModal.errors.createFailed"));
     } finally {
       setLoading(false);
     }
@@ -180,7 +182,7 @@ const CreateWikiModal = ({ onClose, onSuccess }) => {
       <div className="modal-container" style={{ maxWidth: "800px" }}>
         {/* Header */}
         <div className="modal-header">
-          <h2>Tạo Wiki mới</h2>
+          <h2>{t("wikiModal.createTitle")}</h2>
           <button onClick={onClose} className="modal-close-btn">
             <X size={24} />
           </button>
@@ -194,7 +196,7 @@ const CreateWikiModal = ({ onClose, onSuccess }) => {
           {/* Title */}
           <div className="form-group">
             <label className="form-label">
-              Tiêu đề <span className="required">*</span>
+              {t("wiki.titleColumn")} <span className="required">*</span>
             </label>
             <input
               type="text"
@@ -202,7 +204,7 @@ const CreateWikiModal = ({ onClose, onSuccess }) => {
               value={formData.title}
               onChange={handleTitleChange}
               className="form-input"
-              placeholder="Nhập tiêu đề wiki"
+              placeholder={t("wikiModal.titlePlaceholder")}
               required
             />
           </div>
@@ -221,14 +223,14 @@ const CreateWikiModal = ({ onClose, onSuccess }) => {
               placeholder="auto-generated-slug"
               required
             />
-            <p className="form-helper">URL-friendly version của tiêu đề</p>
+            <p className="form-helper">{t("wikiModal.slugHelper")}</p>
           </div>
 
           {/* Category & Status */}
           <div className="stats-grid">
             <div className="form-group">
               <label className="form-label">
-                Danh mục <span className="required">*</span>
+                {t("wiki.categoryColumn")} <span className="required">*</span>
               </label>
               <select
                 name="category"
@@ -247,7 +249,7 @@ const CreateWikiModal = ({ onClose, onSuccess }) => {
 
             <div className="form-group">
               <label className="form-label">
-                Trạng thái <span className="required">*</span>
+                {t("common.status")} <span className="required">*</span>
               </label>
               <select
                 name="status"
@@ -265,24 +267,24 @@ const CreateWikiModal = ({ onClose, onSuccess }) => {
 
           {/* Excerpt */}
           <div className="form-group">
-            <label className="form-label">Mô tả ngắn (Excerpt)</label>
+            <label className="form-label">{t("wikiModal.excerpt")}</label>
             <textarea
               name="excerpt"
               value={formData.excerpt}
               onChange={handleChange}
               rows="2"
               className="form-textarea"
-              placeholder="Mô tả ngắn về nội dung wiki"
+              placeholder={t("wikiModal.excerptPlaceholder")}
               maxLength="500"
             />
-            <p className="form-helper">{formData.excerpt.length}/500 ký tự</p>
+            <p className="form-helper">{t("wikiModal.charCount", { count: formData.excerpt.length, max: 500 })}</p>
           </div>
 
           {/* Content with Image Upload */}
           <div className="form-group">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
               <label className="form-label" style={{ marginBottom: 0 }}>
-                Nội dung <span className="required">*</span>
+                {t("common.description")} <span className="required">*</span>
               </label>
               <label className="image-upload-btn">
                 <input
@@ -297,7 +299,7 @@ const CreateWikiModal = ({ onClose, onSuccess }) => {
                 ) : (
                   <ImageIcon size={16} />
                 )}
-                <span>{uploadingImage ? "Đang tải..." : "Upload ảnh"}</span>
+                <span>{uploadingImage ? t("wikiModal.uploading") : t("wikiModal.uploadImage")}</span>
               </label>
             </div>
             <textarea
@@ -306,24 +308,24 @@ const CreateWikiModal = ({ onClose, onSuccess }) => {
               onChange={handleChange}
               rows="12"
               className="form-textarea"
-              placeholder="Nhập nội dung wiki (hỗ trợ Markdown)"
+              placeholder={t("wikiModal.contentPlaceholder")}
               required
             />
             <p className="form-helper">
-              Hỗ trợ Markdown: **bold**, *italic*, [link](url), ![image](url)
+              {t("wikiModal.markdownHelp")}
             </p>
           </div>
 
           {/* Tags */}
           <div className="form-group">
-            <label className="form-label">Tags</label>
+            <label className="form-label">{t("wikiModal.tags")}</label>
             <input
               type="text"
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleTagInput}
               className="form-input"
-              placeholder="Nhập tag và nhấn Enter hoặc dấu phẩy"
+              placeholder={t("wikiModal.tagsPlaceholder")}
             />
             {formData.tags.length > 0 && (
               <div className="tags-container">
@@ -353,7 +355,7 @@ const CreateWikiModal = ({ onClose, onSuccess }) => {
                 onChange={handleChange}
                 className="form-checkbox"
               />
-              <span>Featured (Nổi bật)</span>
+              <span>{t("wikiModal.featured")}</span>
             </label>
           </div>
 
@@ -366,7 +368,7 @@ const CreateWikiModal = ({ onClose, onSuccess }) => {
                 onChange={handleChange}
                 className="form-checkbox"
               />
-              <span>Công khai</span>
+              <span>{t("wikiModal.public")}</span>
             </label>
           </div>
 
@@ -378,7 +380,7 @@ const CreateWikiModal = ({ onClose, onSuccess }) => {
               className="modal-btn modal-btn-cancel"
               disabled={loading}
             >
-              Hủy
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
@@ -388,12 +390,12 @@ const CreateWikiModal = ({ onClose, onSuccess }) => {
               {loading ? (
                 <>
                   <Loader2 className="spinner" size={18} />
-                  <span>Đang tạo...</span>
+                  <span>{t("wikiModal.creating")}</span>
                 </>
               ) : (
                 <>
                   <Plus size={18} />
-                  <span>Tạo Wiki</span>
+                  <span>{t("wikiModal.createButton")}</span>
                 </>
               )}
             </button>

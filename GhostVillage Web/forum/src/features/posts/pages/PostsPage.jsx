@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Spinner, Alert, Button } from 'react-bootstrap';
-import { Plus, FileText } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router-dom';
-import { usePosts } from '../hooks/usePosts';
-import { useAuth } from '../../../app/context/AuthContext';
-import PostCard from '../components/PostCard';
-import CreatePostModal from '../components/CreatePostModal';
-import PostDetailModal from '../components/PostDetailModal';
-import './PostsPage.css';
+import React, { useState, useEffect } from "react";
+import { Container, Row, Col, Spinner, Alert, Button } from "react-bootstrap";
+import { Plus, FileText } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
+import { usePosts } from "../hooks/usePosts";
+import { useAuth } from "../../../app/context/AuthContext";
+import PostCard from "../components/PostCard";
+import CreatePostModal from "../components/CreatePostModal";
+import PostDetailModal from "../components/PostDetailModal";
+import "./PostsPage.css";
 
 const PostsPage = () => {
   const { t } = useTranslation();
@@ -16,42 +16,64 @@ const PostsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [page, setPage] = useState(1);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('General');
+  const [selectedCategory, setSelectedCategory] = useState("General");
   const [showSharedPost, setShowSharedPost] = useState(false);
   const [sharedPostId, setSharedPostId] = useState(null);
-  
+  const [sharedScrollToComments, setSharedScrollToComments] = useState(false);
+
   // Check for postId in URL params
   useEffect(() => {
-    const postId = searchParams.get('postId');
+    const postId = searchParams.get("postId");
     if (postId) {
       setSharedPostId(postId);
+      setSharedScrollToComments(searchParams.get("scrollToComments") === "1");
       setShowSharedPost(true);
+    } else {
+      setShowSharedPost(false);
+      setSharedPostId(null);
+      setSharedScrollToComments(false);
     }
   }, [searchParams]);
+
+  const handleOpenSharedPost = (postId, shouldScrollComments = false) => {
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.set("postId", postId);
+
+    if (shouldScrollComments) {
+      nextSearchParams.set("scrollToComments", "1");
+    } else {
+      nextSearchParams.delete("scrollToComments");
+    }
+
+    setSearchParams(nextSearchParams);
+  };
 
   const handleCloseSharedPost = () => {
     setShowSharedPost(false);
     setSharedPostId(null);
-    // Remove postId from URL
-    searchParams.delete('postId');
-    setSearchParams(searchParams);
+    setSharedScrollToComments(false);
+
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete("postId");
+    nextSearchParams.delete("scrollToComments");
+    setSearchParams(nextSearchParams);
   };
 
-  const { data, isLoading, isError, error } = usePosts({ 
-    page, 
+  const { data, isLoading, isError, error } = usePosts({
+    page,
     limit: 10,
-    category: selectedCategory 
+    category: selectedCategory,
   });
 
   const posts = data?.data?.posts || [];
   const hasMore = data?.data?.pagination?.hasMore || false;
-  
+
   const categories = [
-    { key: 'General', label: t('posts.categories.general') },
-    { key: 'Discussion', label: t('posts.categories.discussion') },
-    { key: 'Trading', label: t('posts.categories.trading') },
-    { key: 'Team Up', label: t('posts.categories.teamUp') },
-    { key: 'Bug Report', label: t('posts.categories.bugReport') }
+    { key: "General", label: t("posts.categories.general") },
+    { key: "Discussion", label: t("posts.categories.discussion") },
+    { key: "Trading", label: t("posts.categories.trading") },
+    { key: "Team Up", label: t("posts.categories.teamUp") },
+    { key: "Bug Report", label: t("posts.categories.bugReport") },
   ];
 
   if (isLoading && page === 1) {
@@ -64,7 +86,7 @@ const PostsPage = () => {
               <div className="spinner-ring"></div>
               <div className="spinner-ring"></div>
             </div>
-            <p className="loading-text">{t('common.loading')}</p>
+            <p className="loading-text">{t("common.loading")}</p>
           </div>
         </Container>
       </div>
@@ -75,10 +97,13 @@ const PostsPage = () => {
     return (
       <Container className="posts-page py-4">
         <Alert variant="danger">
-          <Alert.Heading>{t('common.error')}</Alert.Heading>
-          <p>{error?.message || 'Failed to load posts'}</p>
-          <Button variant="outline-danger" onClick={() => window.location.reload()}>
-            {t('common.retry')}
+          <Alert.Heading>{t("common.error")}</Alert.Heading>
+          <p>{error?.message || t("posts.failedToLoadPosts")}</p>
+          <Button
+            variant="outline-danger"
+            onClick={() => window.location.reload()}
+          >
+            {t("common.retry")}
           </Button>
         </Alert>
       </Container>
@@ -96,7 +121,11 @@ const PostsPage = () => {
                 {categories.map((category) => (
                   <Button
                     key={category.key}
-                    variant={selectedCategory === category.key ? 'primary' : 'outline-secondary'}
+                    variant={
+                      selectedCategory === category.key
+                        ? "primary"
+                        : "outline-secondary"
+                    }
                     className="category-tab-btn flex-fill"
                     onClick={() => {
                       setSelectedCategory(category.key);
@@ -114,14 +143,18 @@ const PostsPage = () => {
               <div className="no-posts text-center py-5">
                 <div className="empty-feed">
                   <FileText size={48} />
-                  <p>{t('posts.noPostsRecorded')}</p>
-                  <span>{t('posts.noPosts')}</span>
+                  <p>{t("posts.noPostsRecorded")}</p>
+                  <span>{t("posts.noPosts")}</span>
                 </div>
               </div>
             ) : (
               <>
                 {posts.map((post) => (
-                  <PostCard key={post._id} post={post} />
+                  <PostCard
+                    key={post._id}
+                    post={post}
+                    onOpenDetail={handleOpenSharedPost}
+                  />
                 ))}
 
                 {/* Load More */}
@@ -138,10 +171,10 @@ const PostsPage = () => {
                           <div className="mini-blood-spinner">
                             <div className="mini-ring"></div>
                           </div>
-                          <span className="ms-2">{t('common.loading')}</span>
+                          <span className="ms-2">{t("common.loading")}</span>
                         </>
                       ) : (
-                        t('common.loadMore')
+                        t("common.loadMore")
                       )}
                     </Button>
                   </div>
@@ -154,10 +187,10 @@ const PostsPage = () => {
 
       {/* Floating Action Button */}
       {user && (
-        <button 
+        <button
           className="floating-create-btn"
           onClick={() => setShowCreateModal(true)}
-          aria-label="Create Post"
+          aria-label={t("posts.createPost")}
         >
           <Plus size={24} />
         </button>
@@ -165,9 +198,9 @@ const PostsPage = () => {
 
       {/* Create Post Modal */}
       {showCreateModal && (
-        <CreatePostModal 
-          show={showCreateModal} 
-          onHide={() => setShowCreateModal(false)} 
+        <CreatePostModal
+          show={showCreateModal}
+          onHide={() => setShowCreateModal(false)}
         />
       )}
 
@@ -177,7 +210,7 @@ const PostsPage = () => {
           show={showSharedPost}
           onHide={handleCloseSharedPost}
           postId={sharedPostId}
-          scrollToComments={false}
+          scrollToComments={sharedScrollToComments}
         />
       )}
     </div>

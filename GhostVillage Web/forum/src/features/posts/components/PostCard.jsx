@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Card, Button, Dropdown, Carousel } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   Heart,
   MessageCircle,
@@ -22,16 +22,19 @@ import {
   useDeletePost,
   useToggleLike,
   useToggleBookmark,
+  useReportPost,
 } from "../hooks/usePosts";
 import { linkifyHtmlContent } from "../../../shared/utils/linkify";
 import { removeImagesAndVideosFromHtml } from "../../../shared/utils/mediaExtractor";
 import { getAvatarUrl, cacheAvatar } from "../../../shared/utils/avatarCache";
 import ShareModal from "./ShareModal";
+import ReportPostModal from "./ReportPostModal";
 import "./PostCard.css";
 
-const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
+const PostCard = ({ post, onPostUpdate, isSavedPostsPage, onOpenDetail }) => {
   const { t, i18n } = useTranslation();
   const { user, refetchUser } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Check if current user has liked/bookmarked based on array
   const userLiked =
@@ -83,6 +86,7 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [failedAvatars, setFailedAvatars] = useState({});
   const [scrollToComments, setScrollToComments] = useState(false);
 
@@ -90,6 +94,30 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
   const deletePostMutation = useDeletePost();
   const toggleLikeMutation = useToggleLike();
   const toggleBookmarkMutation = useToggleBookmark();
+  const reportPostMutation = useReportPost();
+  const authorDisplayName =
+    post?.author?.username || post?.author?.fullname || t("posts.anonymous");
+  const isPostEdited = Boolean(post?.isEdited || post?.editedAt);
+  const useLocalDetailModal = typeof onOpenDetail !== "function";
+
+  useEffect(() => {
+    if (!useLocalDetailModal) return;
+
+    const requestedPostId = searchParams.get("postId");
+    const shouldShowDetail =
+      requestedPostId && String(requestedPostId) === String(post._id);
+
+    if (shouldShowDetail) {
+      setShowDetailModal(true);
+      setScrollToComments(searchParams.get("scrollToComments") === "1");
+      return;
+    }
+
+    if (showDetailModal) {
+      setShowDetailModal(false);
+      setScrollToComments(false);
+    }
+  }, [post._id, searchParams, showDetailModal, useLocalDetailModal]);
 
   const handleAvatarError = (authorId) => {
     setFailedAvatars((prev) => ({ ...prev, [authorId]: true }));
@@ -154,6 +182,35 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
     setShowShareModal(true);
   };
 
+  const handleReportSubmit = async ({ reason, customReason }) => {
+    await reportPostMutation.mutateAsync({
+      postId: post._id,
+      reason,
+      customReason,
+    });
+    setShowReportModal(false);
+  };
+
+  const openDetailModal = (shouldScrollComments = false) => {
+    if (typeof onOpenDetail === "function") {
+      onOpenDetail(post._id, shouldScrollComments);
+      return;
+    }
+
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.set("postId", post._id);
+
+    if (shouldScrollComments) {
+      nextSearchParams.set("scrollToComments", "1");
+    } else {
+      nextSearchParams.delete("scrollToComments");
+    }
+
+    setSearchParams(nextSearchParams);
+    setScrollToComments(shouldScrollComments);
+    setShowDetailModal(true);
+  };
+
   return (
     <Card className="post-card">
       <Card.Body>
@@ -167,7 +224,7 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
               {post?.author?.avatar && !failedAvatars[post.author._id] ? (
                 <img
                   src={getAvatarUrl(post.author._id, post.author.avatar)}
-                  alt={post.author.username}
+                  alt={authorDisplayName}
                   className="post-avatar"
                   onError={() => handleAvatarError(post.author._id)}
                   onLoad={() =>
@@ -186,7 +243,7 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
                 to={`/profile/${post?.author?._id}`}
                 className="post-author-name"
               >
-                {post?.author?.username || t("posts.anonymous")}
+                {authorDisplayName}
               </Link>
               <div className="post-meta">
                 <span className="post-date">
@@ -195,6 +252,11 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
                     locale,
                   })}
                 </span>
+                {isPostEdited && (
+                  <span className="post-edited-indicator">
+                    {t("common.edited")}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -223,8 +285,9 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
                 </>
               ) : (
                 <>
-                  <Dropdown.Item>{t("posts.report")}</Dropdown.Item>
-                  <Dropdown.Item>{t("posts.hide")}</Dropdown.Item>
+                  <Dropdown.Item onClick={() => setShowReportModal(true)}>
+                    {t("posts.report")}
+                  </Dropdown.Item>
                 </>
               )}
             </Dropdown.Menu>
@@ -237,8 +300,7 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
             <div
               className="post-content-link"
               onClick={() => {
-                setScrollToComments(false);
-                setShowDetailModal(true);
+                openDetailModal(false);
               }}
               style={{ cursor: "pointer" }}
             >
@@ -247,8 +309,7 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
             <div
               className="post-content-link"
               onClick={() => {
-                setScrollToComments(false);
-                setShowDetailModal(true);
+                openDetailModal(false);
               }}
               style={{ cursor: "pointer" }}
             >
@@ -277,20 +338,6 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
                     ) {
                       blocks.push(content);
                       if (blocks.length === 3) break;
-                    }
-                  }
-                  if (blocks.length < 3) {
-                    for (let child of doc.body.childNodes) {
-                      const content = child.textContent;
-                      if (
-                        !blockTags.includes(child.nodeName) &&
-                        child.nodeType === 3 &&
-                        content &&
-                        content.trim()
-                      ) {
-                        blocks.push(content);
-                        if (blocks.length === 3) break;
-                      }
                     }
                   }
                   // Đếm số block thực sự có nội dung
@@ -349,8 +396,8 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
                     <img
                       className="carousel-image"
                       src={src}
-                      alt={`Slide ${index + 1}`}
-                      onClick={() => setShowDetailModal(true)}
+                      alt={t("posts.mediaSlideAlt", { index: index + 1 })}
+                      onClick={() => openDetailModal(false)}
                     />
                     {mediaImages.length > 1 && (
                       <div className="image-counter">
@@ -367,12 +414,14 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
             <div className="post-videos">
               {mediaVideos.map((src, index) => (
                 <div key={index} className="video-wrapper">
-                  <iframe
+                  <video
                     src={src}
-                    title={`Video ${index + 1}`}
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
+                    title={t("posts.mediaVideoTitle", {
+                      index: index + 1,
+                    })}
+                    controls
+                    preload="metadata"
+                    playsInline
                   />
                 </div>
               ))}
@@ -399,8 +448,7 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
             variant="link"
             className="post-action-btn"
             onClick={() => {
-              setScrollToComments(true);
-              setShowDetailModal(true);
+              openDetailModal(true);
             }}
           >
             <MessageCircle size={18} />
@@ -436,12 +484,17 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
       )}
 
       {/* Detail Modal */}
-      {showDetailModal && (
+      {showDetailModal && useLocalDetailModal && (
         <PostDetailModal
           show={showDetailModal}
           onHide={() => {
             setShowDetailModal(false);
             setScrollToComments(false);
+
+            const nextSearchParams = new URLSearchParams(searchParams);
+            nextSearchParams.delete("postId");
+            nextSearchParams.delete("scrollToComments");
+            setSearchParams(nextSearchParams);
           }}
           postId={post._id}
           scrollToComments={scrollToComments}
@@ -465,6 +518,17 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage }) => {
           show={showShareModal}
           onHide={() => setShowShareModal(false)}
           post={post}
+        />
+      )}
+
+      {showReportModal && (
+        <ReportPostModal
+          show={showReportModal}
+          onHide={() => setShowReportModal(false)}
+          onSubmit={handleReportSubmit}
+          isSubmitting={Boolean(
+            reportPostMutation.isPending || reportPostMutation.isLoading,
+          )}
         />
       )}
     </Card>

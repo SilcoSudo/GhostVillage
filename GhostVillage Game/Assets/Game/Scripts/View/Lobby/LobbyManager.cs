@@ -13,6 +13,8 @@ using Hashtable = ExitGames.Client.Photon.Hashtable;
 using Game.Scripts.View.Lobby.Session;
 using Game.Core.Scene;
 using Game.Core.Network;
+using VContainer.Unity;
+using Game.Domain.Perk.Controllers;
 
 namespace Game.Scripts.UI.Lobby
 {
@@ -30,6 +32,10 @@ namespace Game.Scripts.UI.Lobby
         [Inject] private IMapDataService _mapService;
         [Inject] private INetworkService _network;
         [Inject] private ISceneLoaderService _sceneLoader;
+        [Inject] private IObjectResolver _resolver;
+        [Inject] private PerkController _perkController;
+        [Inject] private ProfileService _profileService;
+        [Inject] private GameSession _session;
 
         private List<MapConfigDTO> _cachedMaps = new List<MapConfigDTO>();
         private int _currentMapIndex = 0;
@@ -45,12 +51,17 @@ namespace Game.Scripts.UI.Lobby
             _globalUI.ShowLoading(true);
             BindUIEvents();
 
+            _globalUI.OnLobbyExitClicked = HandleExitLobby;
+
             try
             {
                 // Wait for room connection and map data fetch
-                await UniTask.WhenAll(WaitForInRoom(), FetchLobbyResources());
-
-
+                await UniTask.WhenAll(
+                    WaitForInRoom(),
+                    FetchLobbyResources(),
+                    FetchAndLoadPerksToPhoton(),
+                    FetchAndRenderDailyQuests()
+                );
 
                 // --- [LOGIC RESET] ---
                 if (PhotonNetwork.IsMasterClient)
@@ -114,21 +125,29 @@ namespace Game.Scripts.UI.Lobby
             // Kiểm tra an toàn thiết bị nhập liệu
             if (Keyboard.current == null || _uiManager == null) return;
 
-            // --- 1. ESC Key Logic (Menu / Exit Chat) ---
+            // --- 1. ESC Key Logic ---
             if (Keyboard.current.escapeKey.wasPressedThisFrame)
             {
-                // Ưu tiên 1: Nếu đang chat thì ESC để thoát chat
                 if (_uiManager.IsChatFocused())
                 {
                     _uiManager.DeFocusChat();
                 }
-                // Ưu tiên 2: Nếu không chat thì bật/tắt Menu thoát
                 else
                 {
-                    _uiManager.ToggleEscMenu();
+                    if (_globalUI.IsEscMenuOpen())
+                    {
+                        _globalUI.CloseEscMenu(); // Lobby khóa chuột khi đóng ESC
+                    }
+                    else
+                    {
+                        _globalUI.OpenEscMenu(GlobalUIManager.EscMenuType.Lobby, true);
+                    }
                 }
-                return; // Ngắt luôn để không dính các phím khác
+                return;
             }
+
+            // --- Chặn các phím khác nếu Menu đang mở ---
+            if (_globalUI.IsEscMenuOpen()) return;
 
             // --- 2. Chat Toggle Logic (Enter) ---
             if (Keyboard.current.enterKey.wasPressedThisFrame)
@@ -162,6 +181,94 @@ namespace Game.Scripts.UI.Lobby
                     ToggleReady();
                 }
             }
+        }
+
+        public override void OnDisable()
+        {
+            base.OnDisable();
+            // RÚT ỐNG RA KHI RỜI SCENE
+            if (_globalUI != null) _globalUI.OnLobbyExitClicked -= HandleExitLobby;
+        }
+
+        #endregion
+
+        #region Perk Logic (Chạy Ngầm)
+
+        // HÀM MỚI: TẢI PERK VÀ ĐÓNG GÓI VÀO PHOTON
+        private async UniTask FetchAndLoadPerksToPhoton()
+        {
+            if (_perkController == null) return;
+
+            await _perkController.FetchPerkDataAsync();
+            var data = _perkController.PerkData.Value;
+
+            if (data == null || data.equippedPerks == null || data.equippedPerks.Count == 0)
+            {
+                Debug.Log("<color=yellow>[LobbyManager]</color> Người chơi này không mặc Perk nào.");
+                return;
+            }
+
+            // 1. Khởi tạo Base Stats mặc định
+            float p_MaxStam = 1f;
+            float p_StamRegen = 1f;
+            float p_SprintDrain = 1f;
+            float p_BattDrain = 1f;
+            float p_Vis = 1f;
+            float p_Preserve = 0f;
+            float p_RevSpeed = 1f;
+
+            // Cờ cho các kỹ năng đặc biệt
+            bool p_XRay = false;
+            bool p_AutoRevive = false;
+            bool p_RelicBearer = false;
+            bool p_AncestralVow = false;
+
+            // 2. Quét qua file JSON và tính toán
+            foreach (var perkId in data.equippedPerks)
+            {
+                var perkDetail = data.unlockedPerksDetails.Find(p => p.perkId == perkId);
+                if (perkDetail != null && perkDetail.modifiers != null)
+                {
+                    var mod = perkDetail.modifiers;
+
+                    // Nhóm tính % (Multiplier)
+                    if (mod.maxStaminaMult > 0) p_MaxStam *= mod.maxStaminaMult;
+                    if (mod.staminaRegenMult > 0) p_StamRegen *= mod.staminaRegenMult;
+                    if (mod.sprintStaminaDrainMult > 0) p_SprintDrain *= mod.sprintStaminaDrainMult;
+                    if (mod.batteryDrainMult > 0) p_BattDrain *= mod.batteryDrainMult;
+                    if (mod.bossDetectionRangeMult > 0) p_Vis *= mod.bossDetectionRangeMult;
+                    if (mod.reviveSpeedMult > 0) p_RevSpeed *= mod.reviveSpeedMult;
+
+                    // Nhóm cộng dồn (Additive)
+                    if (mod.preserveItemChance > 0) p_Preserve += mod.preserveItemChance;
+
+                    // Nhóm Cờ (Booleans) cho kỹ năng kích hoạt
+                    if (perkId == "PERK_EPIC_PROPHETIC_SIGHT") p_XRay = true;
+                    if (perkId == "PERK_EPIC_SPECTRAL_REFLEX") p_AutoRevive = true;
+                    if (perkId == "PERK_RARE_RELIC_BEARER") p_RelicBearer = true;
+                    if (perkId == "PERK_RARE_ANCESTRAL_VOW") p_AncestralVow = true;
+                }
+            }
+
+            // 3. Nạp vào Balo Photon bằng ĐÚNG TÊN KEY mà PlayerStatsManager chờ
+            var props = new Hashtable
+    {
+        { "Perk_IDs", data.equippedPerks.ToArray() },
+        { "P_MaxStam", p_MaxStam },
+        { "P_StamRegen", p_StamRegen },
+        { "P_SprintDrain", p_SprintDrain },
+        { "P_BattDrain", p_BattDrain },
+        { "P_Vis", p_Vis },
+        { "P_Preserve", p_Preserve },
+        { "P_RevSpeed", p_RevSpeed },
+        { "P_XRay", p_XRay },
+        { "P_AutoRevive", p_AutoRevive },
+        { "P_RelicBearer", p_RelicBearer },
+        { "P_AncestralVow", p_AncestralVow }
+    };
+
+            PhotonNetwork.LocalPlayer.SetCustomProperties(props);
+            Debug.Log($"<color=green>[LobbyManager]</color> Đã nạp {data.equippedPerks.Count} Perks. X-Ray: {p_XRay}");
         }
 
         #endregion
@@ -212,7 +319,11 @@ namespace Game.Scripts.UI.Lobby
 
         public void OpenMapPicker()
         {
-            if (_cachedMaps.Count == 0) return;
+            if (_cachedMaps == null || _cachedMaps.Count == 0)
+            {
+                Debug.LogWarning("⚠️ [Lobby] Chưa tải được danh sách Map, không thể mở Picker!");
+                return;
+            }
             UpdatePickerUI();
             _uiManager.ShowMapPicker(true);
         }
@@ -274,7 +385,7 @@ namespace Game.Scripts.UI.Lobby
                     // Lưu Config vào Singleton để mang sang Scene Game
                     if (GameDataTransfer.Instance != null)
                     {
-                        GameDataTransfer.Instance.SetMapConfig(config);
+                        GameDataTransfer.Instance.SetMapId(config.identityConfig.mapId);
                     }
                     else
                     {
@@ -350,8 +461,39 @@ namespace Game.Scripts.UI.Lobby
             string mapId = (string)PhotonNetwork.CurrentRoom.CustomProperties[MAP_KEY];
             var config = _cachedMaps.First(m => m.identityConfig.mapId == mapId);
 
-            Debug.Log($"Loading Scene: {config.identityConfig.sceneName}");
-            PhotonNetwork.LoadLevel(config.identityConfig.sceneName);
+            string requestedScene = config.identityConfig.sceneName;
+            string playableScene = ResolvePlayableSceneName(requestedScene);
+
+            if (!Application.CanStreamedLevelBeLoaded(playableScene))
+            {
+                Debug.LogError($"[LobbyManager] Scene not found in Build Profiles: requested='{requestedScene}', resolved='{playableScene}'. Add scene to Build Profiles.");
+                _globalUI.ShowError("Scene Not Found", $"Scene '{playableScene}' not in Build Profiles. GO to File > Build Profiles to add scene.");
+                return;
+            }
+
+            Debug.Log($"Loading Scene: {playableScene} (requested: {requestedScene})");
+
+            if (_globalUI != null)
+            {
+                _globalUI.ShowLoading(true, "Loading map...");
+            }
+
+            PhotonNetwork.LoadLevel(playableScene);
+        }
+
+        private string ResolvePlayableSceneName(string sceneName)
+        {
+            if (string.IsNullOrWhiteSpace(sceneName))
+                return sceneName;
+
+            if (Application.CanStreamedLevelBeLoaded(sceneName))
+                return sceneName;
+
+            // Backward-compat aliases from older map config values.
+            if (sceneName == "Map_Ong_Ke")
+                return "Scene_Game_OngKe";
+
+            return sceneName;
         }
 
         #endregion
@@ -366,7 +508,6 @@ namespace Game.Scripts.UI.Lobby
                 _cachedMaps = maps;
                 Debug.Log($"Loaded {_cachedMaps.Count} maps.");
             }
-            _uiManager.AddMission("Sống sót qua đêm đầu tiên", false);
         }
 
         private void SetupRoomUI()
@@ -395,6 +536,25 @@ namespace Game.Scripts.UI.Lobby
             _uiManager.AddChatMessage(senderName, message, isMe);
         }
 
+        // =========================================================
+        // [MỚI] NHẬN LỆNH KICK TỪ CHỦ PHÒNG VÀ TỰ BAY MÀU
+        // =========================================================
+        [PunRPC]
+        public void RPC_GetKicked()
+        {
+            Debug.Log("<color=red>[Photon] Bạn đã bị chủ phòng Kick!</color>");
+
+            // Ngắt kết nối Voice trước để tránh lỗi hóc xương
+            var voiceClient = Photon.Voice.PUN.PunVoiceClient.Instance;
+            if (voiceClient != null && voiceClient.Client.InRoom)
+            {
+                voiceClient.Client.OpLeaveRoom(false);
+            }
+
+            // Tự động out phòng. Khi out xong, hàm OnLeftRoom (đã có sẵn ở trên) sẽ tự đá sếp về màn LobbyList!
+            PhotonNetwork.LeaveRoom();
+        }
+
         private async UniTask WaitForInRoom()
         {
             while (!PhotonNetwork.InRoom) await UniTask.Yield();
@@ -407,7 +567,16 @@ namespace Game.Scripts.UI.Lobby
                 int spawnIndex = (PhotonNetwork.LocalPlayer.ActorNumber - 1) % _spawnPoints.Count;
                 Transform spawn = _spawnPoints[spawnIndex];
 
-                PhotonNetwork.Instantiate(_playerPrefabName, spawn.position, spawn.rotation);
+                // 1. Dùng Photon để sinh ra Player trên mạng
+                GameObject playerObj = PhotonNetwork.Instantiate(_playerPrefabName, spawn.position, spawn.rotation);
+
+                // 2. NGAY LẬP TỨC: Ép VContainer quét thằng Player này và Inject các thứ (như PlayerInputActions) vào nó!
+                if (playerObj != null && _resolver != null)
+                {
+                    _resolver.InjectGameObject(playerObj);
+                    Debug.Log("[LobbyManager] Đã Inject VContainer vào Player vừa sinh ra.");
+                }
+
                 if (_sceneCamera) _sceneCamera.gameObject.SetActive(false);
             }
         }
@@ -422,11 +591,12 @@ namespace Game.Scripts.UI.Lobby
 
         private void HandleExitLobby()
         {
+            if (!PhotonNetwork.InRoom)
+            {
+                _sceneLoader.LoadSceneAsync("LobbyListScene");
+                return;
+            }
             Debug.Log("[LobbyManager] User requested exit. Leaving room...");
-
-            // Tắt UI Menu
-            _uiManager.ShowEscMenu(false);
-
             // Hiện Loading
             _globalUI.ShowLoading(true);
 
@@ -441,6 +611,30 @@ namespace Game.Scripts.UI.Lobby
 
             // Chuyển cảnh về danh sách phòng
             _sceneLoader.LoadSceneAsync("LobbyListScene");
+        }
+
+        // =========================================================
+        // [MỚI] LOGIC KÉO DAILY QUEST VỀ LOBBY ĐỂ LÀM TO-DO LIST
+        // =========================================================
+        private async UniTask FetchAndRenderDailyQuests()
+        {
+            if (_profileService == null || _uiManager == null) return;
+
+            try
+            {
+                // Gọi API lấy Data. Có Inject GameSession rồi nên móc Token ra xài thoải mái!
+                var profileData = await _profileService.GetAchievementsAsync(_session.Token);
+
+                if (profileData != null && profileData.dailyQuests != null)
+                {
+                    _uiManager.RenderDailyQuests(profileData.dailyQuests);
+                    Debug.Log($"<color=cyan>[LobbyManager]</color> Đã kéo thành công {profileData.dailyQuests.Count} nhiệm vụ dán lên bảng To-Do!");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"<color=orange>[LobbyManager]</color> Lỗi nạp bảng nhiệm vụ: {e.Message}");
+            }
         }
 
         #endregion

@@ -3,27 +3,23 @@ import axiosInstance from './axios';
 const moonEventService = {
   /**
    * Get all moon events with filters
-   * @param {Object} params - Query parameters (category, status, search)
+   * @param {Object} params - Query parameters (isActive, search)
    * @returns {Promise<Array>} - List of moon events
    */
   getAllMoonEvents: async (params = {}) => {
     const queryParams = new URLSearchParams();
-    
-    if (params.category && params.category !== 'all') {
-      queryParams.append('category', params.category);
+
+    if (params.isActive && params.isActive !== 'all') {
+      queryParams.append('isActive', params.isActive);
     }
-    
-    if (params.status && params.status !== 'all') {
-      queryParams.append('status', params.status);
-    }
-    
+
     if (params.search) {
       queryParams.append('search', params.search);
     }
-    
+
     const queryString = queryParams.toString();
-    const url = queryString ? `/web/moon-events?${queryString}` : '/web/moon-events';
-    
+    const url = queryString ? `/moon-events?${queryString}` : '/moon-events';
+
     const response = await axiosInstance.get(url);
     return response.data;
   },
@@ -43,7 +39,7 @@ const moonEventService = {
    * @returns {Promise<Object>} - Moon Event object
    */
   getMoonEventById: async (id) => {
-    const response = await axiosInstance.get(`/web/moon-events/${id}`);
+    const response = await axiosInstance.get(`/moon-events/${id}`);
     return response.data;
   },
 
@@ -53,7 +49,7 @@ const moonEventService = {
    * @returns {Promise<Object>} - Created moon event
    */
   createMoonEvent: async (eventData) => {
-    const response = await axiosInstance.post('/web/moon-events', eventData);
+    const response = await axiosInstance.post('/moon-events', eventData);
     return response.data;
   },
 
@@ -64,17 +60,20 @@ const moonEventService = {
    * @returns {Promise<Object>} - Updated moon event
    */
   updateMoonEvent: async (id, eventData) => {
-    const response = await axiosInstance.put(`/web/moon-events/${id}`, eventData);
+    const response = await axiosInstance.put(`/moon-events/${id}`, eventData);
     return response.data;
   },
 
   /**
    * Toggle moon event active status
    * @param {string} id - Moon Event ID
+   * @param {boolean} isActive - New active status
    * @returns {Promise<Object>} - Updated moon event
    */
-  toggleMoonEventActive: async (id) => {
-    const response = await axiosInstance.patch(`/web/moon-events/${id}/toggle-active`);
+  toggleMoonEventActive: async (id, isActive) => {
+    const response = await axiosInstance.patch(`/moon-events/${id}/status`, {
+      isActive,
+    });
     return response.data;
   },
 
@@ -84,7 +83,7 @@ const moonEventService = {
    * @returns {Promise<Object>} - Deletion result
    */
   deleteMoonEvent: async (id) => {
-    const response = await axiosInstance.delete(`/web/moon-events/${id}`);
+    const response = await axiosInstance.delete(`/moon-events/${id}`);
     return response.data;
   },
 };

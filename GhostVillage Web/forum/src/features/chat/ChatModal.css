@@ -75,6 +75,14 @@
   color: var(--text-secondary, #a68b6a);
 }
 
+.chat-status.online {
+  color: var(--text-secondary, #a68b6a);
+}
+
+.chat-status.offline {
+  color: var(--text-tertiary, #6b5d4d);
+}
+
 .chat-header-actions {
   display: flex;
   gap: 6px;
@@ -220,6 +228,15 @@
   align-items: stretch;
 }
 
+.chat-character-count {
+  align-self: center;
+  min-width: 72px;
+  text-align: right;
+  font-size: 11px;
+  color: var(--text-tertiary, #6b5d4d);
+  flex-shrink: 0;
+}
+
 .chat-floating-input {
   flex: 1;
   border: 1px solid var(--border-color, #520000);
@@ -305,5 +322,9 @@
 
   .message-content {
     max-width: 80%;
+  }
+
+  .chat-character-count {
+    min-width: 60px;
   }
 }

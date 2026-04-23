@@ -7,8 +7,18 @@ public class InventoryUIManager : MonoBehaviour
 
     private InventoryManager _inventory;
 
-    // XÓA HÀM START CŨ ĐI
-    // Script này không tự đi tìm ai cả. Nó chờ được gọi.
+    // Auto-bind với InventoryManager.LocalInstance khi Start
+    private void Start()
+    {
+        if (InventoryManager.LocalInstance != null)
+        {
+            BindInventory(InventoryManager.LocalInstance);
+        }
+        else
+        {
+            Debug.LogWarning("[InventoryUI] InventoryManager.LocalInstance chưa được set!");
+        }
+    }
 
     public void BindInventory(InventoryManager inv)
     {
@@ -40,7 +50,7 @@ public class InventoryUIManager : MonoBehaviour
 
         for (int i = 0; i < slots.Length; i++)
         {
-            if (i < items.Count) slots[i].SetItem(items[i]);
+            if (i < items.Length && items[i] != null) slots[i].SetItem(items[i]);
             else slots[i].Clear();
         }
     }

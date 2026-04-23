@@ -14,6 +14,12 @@ public class KeyItemPickup : MonoBehaviourPun, IInteractable // Thêm MonoBehavi
     // SỬA: Thêm tham số actor
     public void Interact(GameObject actor)
     {
+        if (data == null)
+        {
+            Debug.LogError("[Pickup] Item data is missing.");
+            return;
+        }
+
         // Logic mới: Không cần tìm tất cả player. Actor chính là người bấm nút F.
         Debug.Log($"[Pickup] {actor.name} đang cố nhặt {data.itemName}");
 
@@ -36,10 +42,11 @@ public class KeyItemPickup : MonoBehaviourPun, IInteractable // Thêm MonoBehavi
         // Thêm vào túi đồ
         if (inventory.AddItem(data))
         {
-            // Nếu có Prefab cầm tay -> Gắn vào tay
-            if (data.itemHandModel != null)
+
+            if (!PhotonNetwork.IsConnected || photonView == null || photonView.ViewID == 0)
             {
-                player.AttachHeldItem(data.itemHandModel);
+                Destroy(gameObject);
+                return;
             }
 
             // Hủy vật phẩm dưới đất (Đồng bộ qua mạng)

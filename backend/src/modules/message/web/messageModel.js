@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+const MAX_MESSAGE_LENGTH = 2000;
+
 const messageSchema = new mongoose.Schema(
   {
     senderId: {
@@ -16,6 +18,7 @@ const messageSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      maxlength: MAX_MESSAGE_LENGTH,
     },
     isRead: {
       type: Boolean,

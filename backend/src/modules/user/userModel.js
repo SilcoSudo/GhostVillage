@@ -43,10 +43,38 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    moderation: {
+      violationCount: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      lastViolationAt: {
+        type: Date,
+        default: null,
+      },
+      mutedUntil: {
+        type: Date,
+        default: null,
+      },
+      lastAction: {
+        type: String,
+        enum: ["none", "warning", "mute", "merged_hide_only"],
+        default: "none",
+      },
+      lastActionAt: {
+        type: Date,
+        default: null,
+      },
+    },
     role: {
       type: String,
       enum: ["user", "admin"],
       default: "user",
+    },
+    currentSessionId: {
+      type: String,
+      default: null,
     },
     bookmarks: [
       {
@@ -82,14 +110,18 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    friends: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User"
-    }],
-    savedPosts: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Post"
-    }],
+    friends: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    savedPosts: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Post",
+      },
+    ],
   },
   { timestamps: true },
 );

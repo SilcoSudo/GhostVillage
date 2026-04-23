@@ -1,5 +1,4 @@
 using UnityEngine;
-using Game.Domain.Map.DTOs;
 
 namespace Game.Scripts.View.Lobby.Session
 {
@@ -7,15 +6,15 @@ namespace Game.Scripts.View.Lobby.Session
     {
         public static GameDataTransfer Instance { get; private set; }
 
-        // Biến này sẽ chứa Config của Map được chọn để mang sang Scene mới
-        public MapConfigDTO SelectedMapConfig { get; private set; }
+        // CHỈ LƯU MỖI CÁI ID ĐỂ SANG SCENE GAME TỰ FETCH
+        public string SelectedMapId { get; private set; }
 
         private void Awake()
         {
             if (Instance == null)
             {
                 Instance = this;
-                DontDestroyOnLoad(gameObject); // QUAN TRỌNG: Không bị hủy khi load scene
+                DontDestroyOnLoad(gameObject);
             }
             else
             {
@@ -23,10 +22,10 @@ namespace Game.Scripts.View.Lobby.Session
             }
         }
 
-        public void SetMapConfig(MapConfigDTO config)
+        public void SetMapId(string mapId)
         {
-            SelectedMapConfig = config;
-            Debug.Log($"[GameDataTransfer] Saved Config for: {config.identityConfig.displayName}");
+            SelectedMapId = mapId;
+            Debug.Log($"[GameDataTransfer] Đã nhận vé Map ID: {mapId}");
         }
     }
 }

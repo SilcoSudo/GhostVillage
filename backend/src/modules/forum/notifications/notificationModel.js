@@ -13,9 +13,11 @@ const notificationSchema = new mongoose.Schema(
       enum: [
         "friend_request",
         "friend_accepted",
+        "friend_rejected",
         "post_liked",
         "post_commented",
         "comment_replied",
+        "report_processed",
         "ticket_replied",
         "announcement",
       ],
@@ -29,6 +31,39 @@ const notificationSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    i18n: {
+      titleKey: {
+        type: String,
+        default: null,
+      },
+      titleParams: {
+        type: mongoose.Schema.Types.Mixed,
+        default: {},
+      },
+      messageKey: {
+        type: String,
+        default: null,
+      },
+      messageParams: {
+        type: mongoose.Schema.Types.Mixed,
+        default: {},
+      },
+    },
+    context: {
+      type: [
+        {
+          labelKey: {
+            type: String,
+            default: null,
+          },
+          value: {
+            type: String,
+            default: null,
+          },
+        },
+      ],
+      default: [],
+    },
     relatedUser: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -37,7 +72,7 @@ const notificationSchema = new mongoose.Schema(
     relatedEntity: {
       entityType: {
         type: String,
-        enum: ["post", "comment", "friend"],
+        enum: ["post", "comment", "friend", "ticket"],
         default: null,
       },
       entityId: {
@@ -59,7 +94,7 @@ const notificationSchema = new mongoose.Schema(
       default: null,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Index for faster queries

@@ -311,17 +311,17 @@ async function seedCostumes() {
     // Kết nối MongoDB
     console.log("🔄 Connecting to MongoDB...");
     await mongoose.connect(process.env.MONGO_URI);
-    console.log("✅ Connected to MongoDB");
+    console.log(" Connected to MongoDB");
 
     // Xóa dữ liệu cũ (optional)
     console.log("🗑️  Clearing old costume data...");
     await Costume.deleteMany({});
-    console.log("✅ Old data cleared");
+    console.log(" Old data cleared");
 
     // Insert dữ liệu mới
     console.log("📦 Seeding costume data...");
     const result = await Costume.insertMany(costumesData);
-    console.log(`✅ Successfully seeded ${result.length} costumes`);
+    console.log(` Successfully seeded ${result.length} costumes`);
 
     // Hiển thị thống kê
     const stats = await Costume.getStats();
@@ -341,7 +341,7 @@ async function seedCostumes() {
     console.log("\n✨ Seeding completed successfully!");
     process.exit(0);
   } catch (error) {
-    console.error("❌ Error seeding costumes:", error);
+    console.error(" Error seeding costumes:", error);
     process.exit(1);
   }
 }

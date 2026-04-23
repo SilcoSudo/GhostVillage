@@ -13,11 +13,14 @@ namespace Game.Core.Player.RayCast // namespace cũ của bạn là RayCast hay 
         [SerializeField] private LayerMask interactLayer;
 
         [Header("Held Item Settings")]
-        [SerializeField] private Transform heldItemParent;
+        [Tooltip("Kéo xương RightHand vào đây (mixamorig:RightHand)")]
+        [SerializeField] private Transform rightHandParent;
+
+
+        [Tooltip("Kéo một Transform rỗng nằm ngang ngực vào đây")]
+        [SerializeField] private Transform twoHandParent;
+
         private GameObject _currentHeldItem;
-
-        // Đã xóa: _uiManager (Vì chúng ta dùng Event, không cần reference trực tiếp)
-
         private PhotonView _pv;
         private IInteractable _currentInteractable;
 
@@ -34,22 +37,36 @@ namespace Game.Core.Player.RayCast // namespace cũ của bạn là RayCast hay 
             if (!_pv.IsMine) return;
 
             CheckInteractable();
+        }
 
-            if (Keyboard.current.fKey.wasPressedThisFrame && _currentInteractable != null)
+        public void TryInteract()
+        {
+            if (_currentInteractable != null)
             {
                 Debug.Log($"<color=cyan>[PlayerInteract]</color> Đang tương tác với: {_currentInteractable.GetPromptMessage()}");
 
-                // Truyền chính mình (this.gameObject) vào để vật phẩm biết ai nhặt
+                // Truyền chính mình (this.gameObject) vào để vật phẩm/người gục biết ai đang bấm
                 _currentInteractable.Interact(this.gameObject);
+                InteractionEvents.TriggerHover(_currentInteractable.GetPromptMessage(), true);
             }
         }
 
         // --- HÀM CẦM NẮM VẬT PHẨM ---
-        public void AttachHeldItem(GameObject heldPrefab)
+        public void AttachHeldItem(GameObject heldPrefab, HoldType holdType)
         {
-            if (heldPrefab == null || heldItemParent == null) return;
+            if (heldPrefab == null) return;
             DetachHeldItem();
-            _currentHeldItem = Instantiate(heldPrefab, heldItemParent);
+
+            // Chọn Parent tương ứng
+            Transform targetParent = (holdType == HoldType.TwoHands) ? twoHandParent : rightHandParent;
+
+            if (targetParent == null)
+            {
+                Debug.LogWarning($"<color=yellow>[PlayerInteract]</color> Thiếu điểm gắp đồ cho kiểu {holdType}!");
+                return;
+            }
+
+            _currentHeldItem = Instantiate(heldPrefab, targetParent);
             _currentHeldItem.transform.localPosition = Vector3.zero;
             _currentHeldItem.transform.localRotation = Quaternion.identity;
         }
@@ -66,13 +83,11 @@ namespace Game.Core.Player.RayCast // namespace cũ của bạn là RayCast hay 
         // --- HÀM KIỂM TRA TƯƠNG TÁC ---
         private void CheckInteractable()
         {
-            if (playerCamera == null) return; // Bỏ check _uiManager
+            if (playerCamera == null) return;
 
             Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
 
-            // Debug.DrawRay(ray.origin, ray.direction * interactRange, Color.red);
-
-            if (Physics.Raycast(ray, out RaycastHit hit, interactRange, interactLayer))
+            if (Physics.Raycast(ray, out RaycastHit hit, interactRange, interactLayer, QueryTriggerInteraction.Collide))
             {
                 var interactable = hit.collider.GetComponent<IInteractable>();
 
@@ -81,7 +96,6 @@ namespace Game.Core.Player.RayCast // namespace cũ của bạn là RayCast hay 
                     if (_currentInteractable != interactable)
                     {
                         _currentInteractable = interactable;
-                        // GỬI SỰ KIỆN TOÀN CỤ: "Tao thấy cái này nè!"
                         InteractionEvents.TriggerHover(interactable.GetPromptMessage(), true);
                     }
                     return;
@@ -92,7 +106,6 @@ namespace Game.Core.Player.RayCast // namespace cũ của bạn là RayCast hay 
             if (_currentInteractable != null)
             {
                 _currentInteractable = null;
-                // GỬI SỰ KIỆN TOÀN CỤ: "Hết thấy rồi, tắt dùm cái UI"
                 InteractionEvents.TriggerHover("", false);
             }
         }

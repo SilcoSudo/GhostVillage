@@ -1,10 +1,11 @@
 using UnityEngine;
 using TMPro;
-using UnityEngine.UI;
 using Photon.Pun;
-using VContainer;
 using Game.Domain.Match.DTO;
-using Cysharp.Threading.Tasks;
+using UnityEngine.InputSystem; // THÊM DÒNG NÀY ĐỂ BẮT PHÍM ESC
+using Game.Script.UI;
+using Game.Scripts.Gameplay.Core;
+using Game.Scripts.Core.Game; // THÊM DÒNG NÀY ĐỂ GỌI GLOBAL UI
 
 public class GameplayUIManager : MonoBehaviourPunCallbacks
 {
@@ -16,71 +17,111 @@ public class GameplayUIManager : MonoBehaviourPunCallbacks
     [SerializeField] private GameObject interactPanel;
     [SerializeField] private TextMeshProUGUI interactText;
 
-    [Header("ESC Menu")]
-    [SerializeField] private GameObject _escMenuModal;
-    [SerializeField] private Button _btnExitMatch;
-    [SerializeField] private Button _btnCloseEscMenu;
+    [Header("UI Groups to Hide on EndGame")]
+    [SerializeField] private GameObject _grpStamina;
+    [SerializeField] private GameObject _grpPerk;
 
-    // Inject service vào đây (nếu cần dùng cho logic thoát)
-    [Inject] private Game.Core.Scene.ISceneLoaderService _sceneLoader;
+    private GlobalUIManager _globalUI; // Biến giữ liên lạc với Sếp tổng UI
 
     private void Awake()
     {
         // Ẩn UI phụ
-        if (_escMenuModal) _escMenuModal.SetActive(false);
         if (interactPanel) interactPanel.SetActive(false);
         if (_resultUI) _resultUI.gameObject.SetActive(false);
-
-        // Setup Events
-        if (_btnExitMatch) _btnExitMatch.onClick.AddListener(OnExitMatchClicked);
-        if (_btnCloseEscMenu) _btnCloseEscMenu.onClick.AddListener(() => ShowEscMenu(false));
     }
+
+    [System.Obsolete]
+    private void Start()
+    {
+        // Tìm sếp tổng GlobalUI để sai vặt
+        _globalUI = FindObjectOfType<GlobalUIManager>();
+        if (_globalUI != null)
+        {
+            _globalUI.OnGameExitClicked += HandleExitMatch;
+        }
+
+    }
+
+    private void Update()
+    {
+        // ==========================================
+        // GÁNH TRỌNG TRÁCH MỞ MENU ESC IN-GAME TẠI ĐÂY
+        // ==========================================
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            if (_globalUI != null)
+            {
+                if (_globalUI.IsEscMenuOpen())
+                {
+                    _globalUI.CloseEscMenu();
+                }
+                else
+                {
+                    // LƯU Ý: Chuyền đúng tham số InGame
+                    _globalUI.OpenEscMenu(GlobalUIManager.EscMenuType.InGame, true);
+                }
+            }
+        }
+    }
+
+    // --- LOGIC THOÁT GAME ---
+    private void HandleExitMatch()
+    {
+        Debug.Log("[Gameplay] Nhận lệnh thoát từ ESC Modal! Đang rút lui...");
+        if (_globalUI != null) _globalUI.ShowLoading(true, "Đang rút lui...");
+
+        PhotonNetwork.LeaveRoom(); // Sút ra khỏi phòng
+    }
+
+    // Photon tự gọi hàm này khi đã LeaveRoom xong 100%
+    public override void OnLeftRoom()
+    {
+        Debug.Log("[Gameplay] Đã rời phòng an toàn. Trở về sảnh!");
+        UnityEngine.SceneManagement.SceneManager.LoadScene("LobbyListScene"); // Quăng về sảnh ngoài
+    }
+
 
     // --- EXTERNAL CALLS (GameManager gọi cái này) ---
     public void ShowGameResult(SaveMatchRequestDTO matchData)
     {
-        // 1. Tắt hết HUD
+        // 1. Tắt HUD (Không cần tìm InventoryUIManager nữa, vì chết đã tắt rồi)
         if (interactPanel) interactPanel.SetActive(false);
-        if (_escMenuModal) _escMenuModal.SetActive(false);
 
+        // ==========================================
+        // [FIX CHÍ MẠNG]: TẮT MẸ CÁI BẢNG ĐẾM MÁU QTE ĐI!
+        // ==========================================
+        if (ReviveQTEManager.Instance != null)
+        {
+            ReviveQTEManager.Instance.StopQTE();       // Dừng thanh quét mổ cò (nếu đang cứu)
+            ReviveQTEManager.Instance.HideVictimUI();  // Ẩn luôn thanh máu đếm ngược của nạn nhân
+        }
+
+        // ==========================================
+        // [FIX BUG XUYÊN UI]: Ép tắt Stamina và Perk ngay tại đây cho chắc cú!
+        // ==========================================
+        if (_grpStamina != null) _grpStamina.SetActive(false);
+        if (_grpPerk != null) _grpPerk.SetActive(false);
 
         // 2. Gọi hiển thị kết quả
         if (_resultUI != null)
         {
+            // Bật nguyên cục Canvas (nếu đang bị ẩn)
+            this.gameObject.SetActive(true);
+
             // TODO: Lấy ID thật từ Photon Player Properties
             string myUserId = "MY_ID";
+            if (PhotonNetwork.LocalPlayer.CustomProperties.ContainsKey("UserId"))
+                myUserId = (string)PhotonNetwork.LocalPlayer.CustomProperties["UserId"];
+
             _resultUI.Show(matchData, myUserId);
+
+            // Hiện chuột lên để click vào UI Result
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
         }
         else
         {
-            Debug.LogError("❌ Chưa kéo GameResultUI vào GameplayUIManager!");
-        }
-    }
-
-    // --- ESC MENU LOGIC ---
-    public void ToggleEscMenu()
-    {
-        // Không cho bật ESC khi đang hiện bảng kết quả
-        if (_resultUI != null && _resultUI.gameObject.activeSelf) return;
-
-        if (_escMenuModal) ShowEscMenu(!_escMenuModal.activeSelf);
-    }
-
-    private void ShowEscMenu(bool show)
-    {
-        _escMenuModal.SetActive(show);
-        Cursor.lockState = show ? CursorLockMode.None : CursorLockMode.Locked;
-        Cursor.visible = show;
-    }
-
-    private void OnExitMatchClicked()
-    {
-        ShowEscMenu(false);
-        PhotonNetwork.AutomaticallySyncScene = false;
-        if (PhotonNetwork.InRoom)
-        {
-            PlayerPrefs.SetString("TargetSceneAfterLeave", "LobbyListScene"); // Sửa thành LobbyListScene
-            PhotonNetwork.LeaveRoom();
+            Debug.LogError(" Chưa kéo GameResultUI vào GameplayUIManager! Bảng Result bị Null!");
         }
     }
 
@@ -88,18 +129,29 @@ public class GameplayUIManager : MonoBehaviourPunCallbacks
     public override void OnEnable()
     {
         base.OnEnable(); // BẮT BUỘC PHẢI CÓ ĐỂ PHOTON HOẠT ĐỘNG
-        // Khi UI được bật, đăng ký nghe sự kiện Raycast
         InteractionEvents.OnInteractHover += HandleInteractHover;
+        GameplayEvents.OnGameStateChanged += HandleGameStateChanged;
     }
 
     public override void OnDisable()
     {
         base.OnDisable(); // BẮT BUỘC PHẢI CÓ ĐỂ PHOTON HOẠT ĐỘNG
-        // Hủy đăng ký khi UI bị tắt để tránh lỗi Memory Leak
         InteractionEvents.OnInteractHover -= HandleInteractHover;
+        GameplayEvents.OnGameStateChanged -= HandleGameStateChanged;
     }
 
-    // Hàm này sẽ được gọi mỗi khi Player nhìn vào vật phẩm
+    // [BƯỚC 3]: TẮT STAMINA VÀ PERK KHI END GAME
+    private void HandleGameStateChanged(GameState state)
+    {
+        if (state == GameState.Ending)
+        {
+            if (_grpStamina != null) _grpStamina.SetActive(false);
+            if (_grpPerk != null) _grpPerk.SetActive(false);
+
+            Debug.Log("<color=cyan>[UI_HUD_Main]</color> Đã giấu thanh Stamina và Perk để hiện bảng Result!");
+        }
+    }
+
     private void HandleInteractHover(string prompt, bool isHovering)
     {
         if (interactPanel != null)

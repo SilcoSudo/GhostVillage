@@ -1,6 +1,6 @@
 using System;
 using Cysharp.Threading.Tasks;
-using Game.Core.ReactiveRepo;
+using Game.Core.Network;
 using Game.Core.Scene;
 using Game.Domain.Authentication;
 using Game.Domain.Authentication.DTOs;
@@ -16,18 +16,18 @@ namespace Game.UI.Login
     {
         private readonly AuthService _authService;
         private readonly ISceneLoaderService _sceneLoader;
-        private readonly PlayerDataSyncService _syncService;
+        private readonly GameSession _session;
         private string _token;
         private string _sceneToLoad = "MainMenu";
 
         public ProfileCompletionController(
             AuthService authService,
             ISceneLoaderService sceneLoader,
-            PlayerDataSyncService syncService)
+            GameSession session)
         {
             _authService = authService;
             _sceneLoader = sceneLoader;
-            _syncService = syncService;
+            _session = session;
         }
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace Game.UI.Login
             if (string.IsNullOrEmpty(_token))
             {
                 Debug.LogError("[ProfileCompletionController] Token is null!");
-                view.SetStatus("<color=red>❌ Error: Invalid session. Please sign in again.</color>");
+                view.SetStatus("<color=red> Error: Invalid session. Please sign in again.</color>");
                 view.SetInteractable(true);
                 return;
             }
@@ -60,32 +60,36 @@ namespace Game.UI.Login
                 // Submit date of birth to backend
                 var response = await _authService.CompleteDateOfBirthAsync(_token, dateOfBirth);
 
-                if (response != null && response.data != null)
+                if (response != null && !string.IsNullOrEmpty(response.token))
                 {
-                    view.SetStatus("✓ Profile updated! Loading game...");
+                    view.SetStatus("Profile updated! Loading game...");
+
+                    // Save new token to both memory and PlayerPrefs
+                    _authService.SaveToken(response.token);
+                    _session.Token = response.token;
 
                     // Get updated player data
-                    await _syncService.SyncAllDataAsync(response.data);
+                    await _authService.FetchMyProfileAsync();
+                    view.SetStatus("<color=green>Welcome to Ghost Village!</color>");
 
-                    view.SetStatus("<color=green>✓ Welcome to Ghost Village!</color>");
-                    
                     // Brief delay before scene load
                     await UniTask.Delay(1000);
-                    
+
                     await _sceneLoader.LoadSceneAsync(_sceneToLoad);
                 }
                 else
                 {
-                    // Server validation error (e.g., user too young)
+                    // Keep message generic because this branch can be any server-side failure,
+                    // not just age validation.
                     Debug.LogWarning("[ProfileCompletionController] Server rejected profile");
-                    view.SetStatus("<color=red>❌ This date of birth cannot be used.\nPlease try again with a valid age (13+).</color>");
+                    view.SetStatus("<color=red> Profile update failed. Please try again.</color>");
                     view.SetInteractable(true);
                 }
             }
             catch (Exception ex)
             {
                 Debug.LogError($"[ProfileCompletionController] Error: {ex.Message}");
-                view.SetStatus($"<color=red>❌ Error: {ex.Message}\n\nPlease try again.</color>");
+                view.SetStatus($"<color=red> Error: {ex.Message}\n\nPlease try again.</color>");
                 view.SetInteractable(true);
             }
         }

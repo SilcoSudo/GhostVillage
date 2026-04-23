@@ -49,5 +49,8 @@ MonoBehaviour:
   autoRun: 1
   autoInjectGameObjects: []
   _gameConfig: {fileID: 11400000, guid: 5b8660f54ebec2341827859a3be647e5, type: 2}
+  _shopItemDatabase: {fileID: 11400000, guid: 44513104477abe245a2873d82197b617, type: 2}
   _photonPrefab: {fileID: 7330448355312895030, guid: 2551b8290e1de2a46948984f13346ad8, type: 3}
-  _globalUIPrefab: {fileID: 8703634635463100096, guid: f69cc90b8b5c99846b5c1a5287d9fc32, type: 3}
+  _mainMixer: {fileID: 24100000, guid: 700c4ae183303ad4297018e2db84934b, type: 2}
+  _globalAudioManagerPrefab: {fileID: 1438887475096760048, guid: 8ce5f56ed5d15e14a8f077a723ef9cef, type: 3}
+  _globalUIPrefab: {fileID: 1674351361886837231, guid: f69cc90b8b5c99846b5c1a5287d9fc32, type: 3}

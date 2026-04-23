@@ -17,7 +17,19 @@
     "administration": "Administration",
     "collapse": "Collapse sidebar",
     "expand": "Expand sidebar",
-    "viewProfile": "View profile"
+    "viewProfile": "View profile",
+    "game": "Game"
+  },
+  "language": {
+    "switchLanguage": "Switch language"
+  },
+  "gameNav": {
+    "monsters": "Monster Management",
+    "maps": "Map Management",
+    "quests": "Quest Management",
+    "items": "Item Management",
+    "perks": "Perk Management",
+    "moonEvents": "Moon Event Management"
   },
   "dashboard": {
     "title": "Admin Dashboard",
@@ -31,7 +43,6 @@
     "wiki": "Wiki List",
     "activityLog": "Admin Activity Log",
     "gameVersion": "Game Version List",
-    "reportBug": "Report Bug",
     "manageProfiles": "Manage user profiles",
     "viewAllUsers": "View all users",
     "reviewPosts": "Review reported posts",
@@ -40,12 +51,78 @@
     "createAnnouncements": "Create and manage announcements",
     "manageWiki": "Manage wiki pages",
     "viewActivities": "View admin activities",
-    "manageVersions": "Manage game versions",
-    "reportBugDesc": "Report bugs and issues"
+    "manageVersions": "Manage game versions"
+  },
+  "tickets": {
+    "supportTickets": "Support Tickets",
+    "totalTickets": "Total tickets",
+    "ticketCountLabel": "tickets",
+    "rowInteractionHint": "Click on a row to view details. Change status directly from the last column.",
+    "searchPlaceholder": "Search by ticket ID, subject, user name...",
+    "loading": "Loading support tickets...",
+    "noTicketsFound": "No support tickets found",
+    "loadFailed": "Failed to load support tickets",
+    "updateFailed": "Failed to update ticket status",
+    "unknownUser": "Unknown",
+    "untitled": "Untitled",
+    "notAvailable": "N/A",
+    "allStatus": "All Status",
+    "open": "Open",
+    "inProgress": "In Progress",
+    "resolved": "Resolved",
+    "closed": "Closed",
+    "ticketId": "Ticket ID",
+    "subject": "Subject",
+    "user": "User",
+    "created": "Created",
+    "status": "Status",
+    "rowNumber": "No.",
+    "ticketDetail": "Ticket Details",
+    "originalMessage": "Original Message",
+    "sendReply": "Send Reply",
+    "typeReply": "Type your reply... (Ctrl+Enter to send)",
+    "replyFailed": "Failed to send reply. Please try again.",
+    "attachmentLabel": "Attachment {{index}}",
+    "unableToLoadAttachment": "Unable to load attachment",
+    "labels": {
+      "user": "User",
+      "admin": "Admin"
+    },
+    "statusLabels": {
+      "open": "Open",
+      "inProgress": "In Progress",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    }
+  },
+  "comments": {
+    "reported": "Reported Comments",
+    "reportedSubtitle": "Manage and review reported user comments",
+    "viewDetails": "View Details",
+    "commentDetail": "Comment Details",
+    "commentText": "Comment",
+    "author": "Author",
+    "postTitle": "Post",
+    "reportedBy": "Reported By",
+    "reason": "Reason",
+    "reportCount": "Total Reports",
+    "reportedDate": "Reported Date",
+    "createdDate": "Created Date",
+    "restore": "Restore Comment",
+    "restoreComment": "Restore Comment",
+    "restoreWarning": "Are you sure you want to restore this comment?",
+    "restoreWarningDesc": "The comment will be made visible to users again. This action can be undone.",
+    "recoveryNotes": "Recovery Notes (Optional)",
+    "recoveryNotesPlaceholder": "Enter notes about why this comment is being restored...",
+    "confirmRestore": "Restore Comment"
   },
   "users": {
+    "managementTitle": "Users Management",
     "searchPlaceholder": "Search users by name or email...",
     "totalUsers": "Total: {{count}} users",
+    "loading": "Loading users...",
+    "accountStatus": "Account Status",
+    "restoreAction": "Restore posting and commenting",
     "active": "Active",
     "banned": "Banned",
     "joinDate": "Join Date",
@@ -55,10 +132,25 @@
     "ban": "Ban",
     "unban": "Unban",
     "muteReason": "Mute Reason",
-    "noUsersFound": "No users found"
+    "noUsersFound": "No users found",
+    "status": {
+      "remaining": "Remaining: {{time}}",
+      "restricted": "Restricted",
+      "noRestriction": "No restriction",
+      "expired": "Expired"
+    },
+    "errors": {
+      "loadList": "Failed to load users",
+      "unmute": "Failed to unmute user"
+    }
   },
   "common": {
     "logout": "Logout",
+    "changePassword": "Change Password",
+    "all": "All",
+    "active": "Active",
+    "inactive": "Inactive",
+    "status": "Status",
     "actions": "Actions",
     "view": "View",
     "edit": "Edit",
@@ -66,16 +158,39 @@
     "create": "Create",
     "cancel": "Cancel",
     "save": "Save",
+    "close": "Close",
     "confirm": "Confirm",
+    "confirmDelete": "Confirm delete",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {{page}} / {{total}}",
+    "description": "Description",
+    "search": "Search...",
     "noData": "No data found",
     "loading": "Loading...",
+    "deleting": "Deleting...",
     "error": "Error",
-    "success": "Success"
+    "success": "Success",
+    "close": "Close",
+    "sending": "Sending..."
   },
   "wiki": {
     "title": "Game Wiki",
     "subtitle": "Manage game monsters, items, and maps",
     "search": "Search wiki entries...",
+    "managementTitle": "Wiki Management",
+    "managementSubtitle": "Manage wiki articles, guides, and database entries",
+    "allCategories": "All categories",
+    "createNew": "Create New Wiki",
+    "titleColumn": "Title",
+    "categoryColumn": "Category",
+    "authorColumn": "Author",
+    "createdColumn": "Created At",
+    "unknownAuthor": "Unknown",
+    "addFeatured": "Add to featured",
+    "removeFeatured": "Remove from featured",
+    "deleteTitle": "Delete Wiki",
+    "deleteMessage": "Are you sure you want to delete wiki \"{{title}}\"? This action cannot be undone.",
     "monsters": "Monsters",
     "items": "Items",
     "maps": "Maps",
@@ -85,7 +200,17 @@
     "view": "View Details",
     "edit": "Edit",
     "delete": "Delete",
-    "noData": "No wiki entries found"
+    "noData": "No wiki entries found",
+    "status": {
+      "published": "Published",
+      "draft": "Draft",
+      "archived": "Archived"
+    },
+    "errors": {
+      "loadList": "Failed to load wiki list",
+      "toggleFeatured": "Failed to change featured status",
+      "delete": "Failed to delete wiki"
+    }
   },
   "announcements": {
     "title": "Title",
@@ -106,6 +231,335 @@
     "deleteAnnouncement": "Delete Announcement",
     "content": "Content",
     "excerpt": "Excerpt",
-    "coverImage": "Cover Image"
+    "coverImage": "Cover Image",
+    "modal": {
+      "titleLabel": "Announcement Title",
+      "titlePlaceholder": "Enter announcement title...",
+      "contentPlaceholder": "Enter announcement content... (Rich Text Editor will be integrated here)",
+      "contentShortPlaceholder": "Enter announcement content...",
+      "excerptPlaceholder": "Brief summary (leave empty to auto-generate from content)",
+      "briefSummary": "Brief summary",
+      "richTextHint": "Rich Text Editor integration coming soon",
+      "optional": "optional",
+      "previewAlt": "Preview",
+      "uploadCover": "Click to upload cover image",
+      "uploadFormats": "JPG, PNG, GIF, WEBP (max 5MB)",
+      "pinAnnouncement": "Pin this announcement",
+      "setActive": "Set as active",
+      "uploading": "Uploading...",
+      "creating": "Creating...",
+      "saving": "Saving...",
+      "createButton": "Create Announcement",
+      "saveChanges": "Save Changes",
+      "deleteWarning": "Are you sure you want to delete this announcement? This action cannot be undone.",
+      "anonymous": "Anonymous",
+      "deleteInfo": "The announcement \"{{title}}\" will be permanently deleted.",
+      "errors": {
+        "titleRequired": "Title is required",
+        "contentRequired": "Content is required",
+        "uploadImageFailed": "Failed to upload image"
+      }
+    }
+  },
+  "monster": {
+    "title": "Monster Management",
+    "subtitle": "Manage monster data based on the latest backend schema",
+    "searchPlaceholder": "Search monsters...",
+    "empty": "No monsters found",
+    "deleteTitle": "Delete Monster Confirmation",
+    "deleteMessage": "Are you sure you want to delete monster \"{{name}}\"? The monster will be deactivated.",
+    "columns": {
+      "name": "Monster Name",
+      "type": "Type",
+      "movement": "Movement",
+      "combat": "Combat",
+      "detection": "Detection"
+    },
+    "errors": {
+      "loadList": "Failed to load monster list",
+      "toggleStatus": "Failed to update status",
+      "delete": "Failed to delete monster"
+    }
+  },
+  "map": {
+    "title": "Map Management",
+    "subtitle": "Manage map metadata and status in the game",
+    "searchPlaceholder": "Search maps...",
+    "empty": "No maps found",
+    "sceneLabel": "Scene",
+    "bossLabel": "Boss",
+    "minionsLabel": "Minions",
+    "baseRewardLabel": "Base Reward",
+    "noDescription": "No description",
+    "notConfiguredName": "Unnamed map",
+    "notConfigured": "(not configured)",
+    "none": "(none)",
+    "errors": {
+      "loadList": "Failed to load map list",
+      "toggleStatus": "Failed to update status"
+    }
+  },
+  "quest": {
+    "title": "Quest Management",
+    "subtitle": "Manage quests based on in-game runtime schema",
+    "searchPlaceholder": "Search quests...",
+    "allTypes": "All quest types",
+    "add": "Add Quest",
+    "empty": "No quests found",
+    "rewardDetails": "Reward Details",
+    "noDescription": "(No description)",
+    "coinLabel": "Coin",
+    "expLabel": "EXP",
+    "titleIdLabel": "Title ID",
+    "none": "(none)",
+    "deleteTitle": "Delete Quest Confirmation",
+    "deleteMessage": "Are you sure you want to delete quest \"{{name}}\" ({{id}})? This action cannot be undone.",
+    "stats": {
+      "total": "Total Quests",
+      "types": "Quest Types"
+    },
+    "columns": {
+      "name": "Quest Name",
+      "type": "Type",
+      "action": "Action",
+      "target": "Target",
+      "reward": "Reward"
+    },
+    "errors": {
+      "loadList": "Failed to load quest list",
+      "toggleStatus": "Failed to update status",
+      "delete": "Failed to delete quest"
+    }
+  },
+  "item": {
+    "title": "Item Management",
+    "subtitle": "Manage items by game schema: itemId, itemName, itemType, prefabName, stats",
+    "searchPlaceholder": "Search items...",
+    "allTypes": "All types",
+    "add": "Add Item",
+    "empty": "No items found",
+    "deleteTitle": "Delete Item Confirmation",
+    "deleteMessage": "Are you sure you want to delete item \"{{name}}\" ({{id}})?",
+    "columns": {
+      "name": "Item Name",
+      "type": "Type"
+    },
+    "errors": {
+      "loadList": "Failed to load item list",
+      "toggleStatus": "Failed to update status",
+      "delete": "Failed to delete item"
+    }
+  },
+  "perk": {
+    "title": "Perk Management",
+    "subtitle": "Manage perks, update details, and toggle activation",
+    "searchPlaceholder": "Search perks by ID, name, or prefab...",
+    "allRarity": "All rarity",
+    "empty": "No perks found",
+    "columns": {
+      "name": "Perk Name"
+    },
+    "errors": {
+      "loadList": "Failed to load perk list",
+      "toggleStatus": "Failed to update perk status"
+    }
+  },
+  "moonEvent": {
+    "title": "MOON EVENT MANAGEMENT",
+    "create": "Create Event",
+    "update": "Update Event",
+    "creating": "Creating...",
+    "updating": "Updating...",
+    "editTitle": "Edit Moon Event",
+    "createFirst": "Create First Event",
+    "searchPlaceholder": "Search by Event ID or Name...",
+    "loading": "Loading moon events...",
+    "empty": "No moon events found",
+    "environmentModifiers": "Environment Modifiers",
+    "globalLightIntensity": "Global Light Intensity",
+    "fogDensity": "Fog Density",
+    "monsterBuffMultipliers": "Monster Buff Multipliers",
+    "speed": "Speed",
+    "detectionRange": "Detection Range",
+    "chaseRange": "Chase Range",
+    "cooldown": "Cooldown",
+    "detect": "Detect",
+    "chase": "Chase",
+    "rewardMultipliers": "Reward Multipliers",
+    "coin": "Coin",
+    "activate": "Click to activate",
+    "deactivate": "Click to deactivate",
+    "deleteTitle": "Delete Moon Event",
+    "deleteMessage": "Are you sure you want to delete \"{{name}}\" ({{id}})? This action cannot be undone.",
+    "columns": {
+      "eventId": "Event ID",
+      "name": "Event Name",
+      "weight": "Weight"
+    },
+    "errors": {
+      "loadList": "Failed to fetch moon events",
+      "toggleStatus": "Failed to toggle event status",
+      "delete": "Failed to delete moon event",
+      "create": "Failed to create moon event",
+      "update": "Failed to update moon event"
+    }
+  },
+  "activityLog": {
+    "title": "Activity Log",
+    "subtitle": "Track system history, admin actions, and errors",
+    "searchPlaceholder": "Search logs...",
+    "empty": "No logs found",
+    "system": "System",
+    "na": "N/A",
+    "detailTitle": "Log Detail",
+    "stats": {
+      "total": "Total Logs",
+      "today": "Today",
+      "week": "This Week",
+      "errors": "Errors"
+    },
+    "filters": {
+      "allActions": "All actions",
+      "allEntities": "All entities",
+      "allSeverity": "All severity"
+    },
+    "columns": {
+      "timestamp": "Timestamp",
+      "action": "Action",
+      "entityType": "Entity Type",
+      "entityId": "Entity ID",
+      "entityName": "Entity Name",
+      "severity": "Severity",
+      "user": "User",
+      "ipAddress": "IP Address",
+      "metadata": "Metadata"
+    },
+    "errors": {
+      "loadList": "Failed to load logs"
+    }
+  },
+  "monsterModal": {
+    "createTitle": "Create New Monster",
+    "editTitle": "Edit Monster",
+    "createButton": "Create Monster",
+    "creating": "Creating...",
+    "saving": "Saving...",
+    "monsterName": "Monster Name",
+    "monsterNamePlaceholder": "Boogeyman",
+    "monsterNameInput": "Enter monster name",
+    "monsterIdReadonly": "Monster ID (read-only)",
+    "sections": {
+      "basic": "1) Basic Information",
+      "movement": "2) Movement Config",
+      "combat": "3) Combat Config",
+      "detection": "4) Detection Config",
+      "specialSkill": "5) Special Skill Config"
+    },
+    "errors": {
+      "monsterIdRequired": "Monster ID is required",
+      "monsterNameRequired": "Monster name is required",
+      "prefabRequired": "Prefab Name is required",
+      "specialSkillJson": "Special Skill Config must be valid JSON",
+      "createFailed": "Failed to create monster",
+      "updateFailed": "Failed to update monster"
+    }
+  },
+  "mapModal": {
+    "title": "Edit Map by JSON",
+    "saveJson": "Save JSON",
+    "saving": "Saving...",
+    "sections": {
+      "identity": "1) identityConfig",
+      "consumable": "2) consumableConfig",
+      "equipment": "3) equipmentConfig",
+      "monsterSystem": "4) monsterSystemConfig",
+      "reward": "5) rewardConfig"
+    },
+    "errors": {
+      "displayNameRequired": "displayName is required",
+      "sceneNameRequired": "sceneName is required",
+      "rewardNonNegative": "baseExp/baseCoin cannot be negative",
+      "updateFailed": "Failed to update map"
+    }
+  },
+  "questModal": {
+    "createTitle": "Create New Quest",
+    "editTitle": "Edit Quest",
+    "createButton": "Create Quest",
+    "creating": "Creating...",
+    "saving": "Saving...",
+    "reward": "Reward",
+    "activateAfterCreate": "Activate quest immediately after create",
+    "activeLabel": "Quest is active",
+    "errors": {
+      "questIdRequired": "Quest ID is required",
+      "questNameRequired": "Quest name is required",
+      "actionTypeRequired": "Action Type is required",
+      "targetCount": "Target Count must be greater than 0",
+      "createFailed": "Failed to create quest",
+      "updateFailed": "Failed to update quest"
+    }
+  },
+  "itemModal": {
+    "createTitle": "Create New Item",
+    "editTitle": "Edit Item",
+    "createButton": "Create Item",
+    "creating": "Creating...",
+    "saving": "Saving...",
+    "activeLabel": "Activate item",
+    "itemIdReadonly": "Item ID (read-only)",
+    "sections": {
+      "basic": "1) Basic Information",
+      "stats": "2) Stats JSON"
+    },
+    "errors": {
+      "itemIdRequired": "Item ID is required",
+      "itemNameRequired": "Item name is required",
+      "prefabRequired": "Prefab Name is required",
+      "statsJson": "Stats must be valid JSON",
+      "createFailed": "Failed to create item",
+      "updateFailed": "Failed to update item"
+    }
+  },
+  "perkModal": {
+    "editTitle": "Edit Perk",
+    "saving": "Saving...",
+    "perkIdReadonly": "Perk ID (read-only)",
+    "errors": {
+      "nameRequired": "Perk name is required",
+      "prefabRequired": "Prefab ID is required",
+      "modifiersJson": "Modifiers must be valid JSON",
+      "updateFailed": "Failed to update perk"
+    }
+  },
+  "wikiModal": {
+    "createTitle": "Create New Wiki",
+    "editTitle": "Edit Wiki",
+    "createButton": "Create Wiki",
+    "creating": "Creating...",
+    "saving": "Saving...",
+    "titlePlaceholder": "Enter wiki title",
+    "slugHelper": "URL-friendly version of the title",
+    "excerpt": "Short description (Excerpt)",
+    "excerptPlaceholder": "Short description for wiki content",
+    "charCount": "{{count}}/{{max}} characters",
+    "uploadImage": "Upload image",
+    "uploading": "Uploading...",
+    "contentPlaceholder": "Enter wiki content (Markdown supported)",
+    "markdownHelp": "Markdown supported: **bold**, *italic*, [link](url), ![image](url)",
+    "tags": "Tags",
+    "tagsPlaceholder": "Enter tag then press Enter or comma",
+    "featured": "Featured",
+    "public": "Public",
+    "errors": {
+      "imageType": "Please choose an image file",
+      "imageSize": "Image size must be less than 5MB",
+      "uploadFailed": "Failed to upload image",
+      "titleRequired": "Title is required",
+      "slugRequired": "Slug is required",
+      "contentRequired": "Content is required",
+      "createFailed": "Failed to create wiki",
+      "updateFailed": "Failed to update wiki"
+    }
   }
 }

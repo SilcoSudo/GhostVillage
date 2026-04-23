@@ -15,7 +15,6 @@ namespace Game.Domain.Authentication.DTOs
     {
         public string token;
         public UserDTO user;
-        public PlayerDTO player;
     }
 
     [Serializable]
@@ -27,11 +26,10 @@ namespace Game.Domain.Authentication.DTOs
     }
 
     [Serializable]
-    public class PlayerDTO
+    public class MyProfileResponseDTO
     {
-        public string _id;
+        public string uid;
         public PlayerProfileDTO profile;
-        // inventory...
     }
 
     [Serializable]
@@ -67,7 +65,8 @@ namespace Game.Domain.Authentication.DTOs
         public string token;
         public UserDTO user;
         public bool profileComplete;  // Is dateOfBirth filled?
-        public LoginResponseDTO data; // Full player data if profile complete
+        public LoginResponseDTO data; // Legacy shape
+        public LoginResponseDTO playerData; // Current backend shape
     }
 
     /// <summary>
@@ -86,7 +85,8 @@ namespace Game.Domain.Authentication.DTOs
     [Serializable]
     public class CompleteProfileResponseDTO
     {
-        public LoginResponseDTO data;
+        public string token;
+        public UserDTO user;
     }
 
 }

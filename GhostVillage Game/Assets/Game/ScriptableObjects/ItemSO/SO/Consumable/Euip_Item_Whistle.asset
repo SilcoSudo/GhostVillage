@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e85ed012c9a4de47820e11107806a98, type: 3}
+  m_Name: Euip_Item_Whistle
+  m_EditorClassIdentifier: Assembly-CSharp::EquipmentItemSO
+  itemId: ITEM_WHISTLE
+  itemName: Whistle
+  description: 
+  itemType: 2
+  holdType: 1
+  itemIcon: {fileID: 21300000, guid: 13cc129637bbe3d43a77219201e375f7, type: 3}
+  itemWorldPrefab: {fileID: 3550927388312022083, guid: cf7c961e4a151d346a159150c761d42a, type: 3}
+  itemHandModel: {fileID: 4277909120394084061, guid: 54cbcbcb80229c347a1cbba195d8ea1a, type: 3}

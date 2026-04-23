@@ -1,248 +1,361 @@
-import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Eye, RotateCcw, Trash2 } from 'lucide-react';
-import CommentDetailModal from '../shared/components/modals/CommentDetailModal';
-import CommentRecoveryModal from '../shared/components/modals/CommentRecoveryModal';
-import './assets/styles/ReportedComment.css';
+import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Eye, RotateCcw } from "lucide-react";
+import CommentDetailModal from "../shared/components/modals/CommentDetailModal";
+import CommentRecoveryModal from "../shared/components/modals/CommentRecoveryModal";
+import axios from "../shared/services/axios";
+import "./assets/styles/ReportedComment.css";
 
 const ReportedCommentPage = () => {
   const { t } = useTranslation();
-  
-  // Mock data - Replace with API call later
-  const [reportedComments, setReportedComments] = useState([
-    {
-      id: 1,
-      commentText: 'This product is scam! Do not buy!',
-      author: 'John Doe',
-      postTitle: 'Amazing Product Review',
-      reportedBy: 'Admin User',
-      reason: 'Spam and harassment',
-      reportCount: 5,
-      content: 'This product is scam! Do not buy! I lost my money...',
-      createdAt: '2024-01-18',
-      reportedDate: '2024-01-20',
-      status: 'pending'
-    },
-    {
-      id: 2,
-      commentText: 'Offensive comment about users',
-      author: 'Jane Smith',
-      postTitle: 'Community Discussion',
-      reportedBy: 'Community Members',
-      reason: 'Offensive language',
-      reportCount: 8,
-      content: 'Offensive comment with inappropriate language and personal attacks...',
-      createdAt: '2024-01-15',
-      reportedDate: '2024-01-19',
-      status: 'pending'
-    },
-    {
-      id: 3,
-      commentText: 'Advertisement hidden in comment',
-      author: 'Bot Account',
-      postTitle: 'Tech Discussion',
-      reportedBy: 'Moderator',
-      reason: 'Spam advertisement',
-      reportCount: 3,
-      content: 'Check out my website: www.suspicious-ads.com for amazing deals!!!',
-      createdAt: '2024-01-10',
-      reportedDate: '2024-01-18',
-      status: 'pending'
-    },
-    {
-      id: 4,
-      commentText: 'Misinformation in comments',
-      author: 'Fake News Account',
-      postTitle: 'News Discussion',
-      reportedBy: 'Fact Checkers',
-      reason: 'Misinformation',
-      reportCount: 12,
-      content: 'False claim about current events without any sources or evidence...',
-      createdAt: '2024-01-05',
-      reportedDate: '2024-01-17',
-      status: 'pending'
-    },
-    {
-      id: 5,
-      commentText: 'Suspicious link in comment',
-      author: 'Unknown User',
-      postTitle: 'Software Discussion',
-      reportedBy: 'Security Team',
-      reason: 'Phishing link',
-      reportCount: 2,
-      content: 'Click here to claim your prize: phishing-link.com',
-      createdAt: '2024-01-12',
-      reportedDate: '2024-01-16',
-      status: 'pending'
-    }
-  ]);
+  const [reportedComments, setReportedComments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const [sortConfig, setSortConfig] = useState({ key: 'reportedDate', direction: 'desc' });
-  const [searchQuery, setSearchQuery] = useState('');
+  const [sortConfig, setSortConfig] = useState({
+    key: "hiddenAt",
+    direction: "desc",
+  });
+  const [userSearchQuery, setUserSearchQuery] = useState("");
   const [selectedComment, setSelectedComment] = useState(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [detailComment, setDetailComment] = useState(null);
   const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  const tr = (key, fallback) => {
+    const translated = t(key);
+    return translated === key ? fallback : translated;
+  };
+
+  const getLatestReport = (reports) => {
+    if (!Array.isArray(reports) || reports.length === 0) {
+      return null;
+    }
+
+    return [...reports].sort(
+      (a, b) => new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0),
+    )[0];
+  };
+
+  const normalizeReportedComment = (comment) => {
+    const reports = Array.isArray(comment?.reports) ? comment.reports : [];
+    const latestReport = getLatestReport(reports);
+    const reportCount = reports.length;
+    const isHidden = Boolean(comment?.isHiddenByModeration);
+
+    if (reportCount <= 0 || !isHidden) {
+      return null;
+    }
+
+    return {
+      id: comment?._id,
+      commentId: comment?._id,
+      postId: comment?.postId,
+      commentText: comment?.content || "",
+      author: comment?.author?.fullname || "Unknown",
+      authorAvatar: comment?.author?.avatar || null,
+      postTitle: comment?.postTitle || "Unknown post",
+      reportedBy: `${reportCount} ${reportCount === 1 ? "user" : "users"}`,
+      reason: latestReport?.reason || comment?.reason || "Reported content",
+      reportCount,
+      content: comment?.content || "",
+      createdAt:
+        comment?.createdAt ||
+        latestReport?.createdAt ||
+        new Date().toISOString(),
+      reportedDate:
+        latestReport?.createdAt || comment?.updatedAt || comment?.createdAt,
+      hiddenAt:
+        comment?.updatedAt || latestReport?.createdAt || comment?.createdAt,
+      updatedAt: comment?.updatedAt || comment?.createdAt || null,
+      reports,
+      status: "hidden",
+    };
+  };
+
+  const fetchReportedComments = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      let page = 1;
+      let hasMore = true;
+      const loadedComments = [];
+      const seenIds = new Set();
+
+      while (hasMore && page <= 20) {
+        const response = await axios.get("/web/forum/reported-comments", {
+          params: {
+            page,
+            limit: 100,
+          },
+        });
+
+        const comments = response?.data?.data?.comments || [];
+
+        comments.forEach((comment) => {
+          const id = String(comment?._id || "");
+          const normalizedComment = normalizeReportedComment(comment);
+
+          if (!id || seenIds.has(id) || !normalizedComment) {
+            return;
+          }
+
+          seenIds.add(id);
+          loadedComments.push(normalizedComment);
+        });
+
+        hasMore = Boolean(response?.data?.data?.pagination?.hasMore);
+        page += 1;
+      }
+
+      setReportedComments(loadedComments);
+    } catch (err) {
+      console.error("Error fetching reported comments:", err);
+      setError(
+        err?.response?.data?.message || "Failed to load reported comments",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReportedComments();
+  }, []);
 
   // Filter comments based on search
-  const filteredComments = reportedComments.filter(comment =>
-    comment.commentText.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    comment.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    comment.reason.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    comment.postTitle.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredComments = reportedComments.filter((comment) => {
+    const userQuery = userSearchQuery.toLowerCase().trim();
+
+    return (
+      !userQuery ||
+      String(comment.author || "")
+        .toLowerCase()
+        .includes(userQuery)
+    );
+  });
 
   // Sort comments
   const sortedComments = [...filteredComments].sort((a, b) => {
     const aValue = a[sortConfig.key];
     const bValue = b[sortConfig.key];
 
-    if (typeof aValue === 'string') {
-      return sortConfig.direction === 'asc'
+    if (sortConfig.key === "reportedDate" || sortConfig.key === "hiddenAt") {
+      const aTime = new Date(aValue || 0).getTime();
+      const bTime = new Date(bValue || 0).getTime();
+      return sortConfig.direction === "asc" ? aTime - bTime : bTime - aTime;
+    }
+
+    if (typeof aValue === "string") {
+      return sortConfig.direction === "asc"
         ? aValue.localeCompare(bValue)
         : bValue.localeCompare(aValue);
     }
 
-    return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+    return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
   });
 
   const handleSort = (key) => {
-    setSortConfig(prev => ({
+    setSortConfig((prev) => ({
       key,
-      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
     }));
   };
 
-  const openDetailModal = (comment) => {
-    setSelectedComment(comment);
-    setIsDetailModalOpen(true);
-  };
-
   const openRecoveryModal = (comment) => {
+    setError("");
     setSelectedComment(comment);
     setIsRecoveryModalOpen(true);
   };
 
-  const handleRestoreComment = () => {
-    if (selectedComment) {
-      setReportedComments(prev => prev.filter(c => c.id !== selectedComment.id));
-      setIsRecoveryModalOpen(false);
-      setSelectedComment(null);
-    }
+  const openDetailModal = (comment) => {
+    setError("");
+    setDetailComment(comment);
+    setIsDetailModalOpen(true);
   };
 
-  const handleDeleteComment = (commentId) => {
-    setReportedComments(prev => prev.filter(c => c.id !== commentId));
+  const closeRecoveryModal = () => {
+    setIsRecoveryModalOpen(false);
+    setSelectedComment(null);
+  };
+
+  const closeDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setDetailComment(null);
+  };
+
+  const handleRestoreComment = async (recoveryReason = "") => {
+    if (!selectedComment?.commentId || !selectedComment?.postId) {
+      setError("Invalid comment data. Please refresh and try again.");
+      return;
+    }
+
+    try {
+      setIsRestoring(true);
+      setError("");
+
+      await axios.patch(
+        `/web/forum/${selectedComment.postId}/comments/${selectedComment.commentId}/restore`,
+        {
+          recoveryReason: String(recoveryReason || "").trim(),
+        },
+      );
+
+      setReportedComments((prev) =>
+        prev.filter((c) => c.id !== selectedComment.id),
+      );
+      closeRecoveryModal();
+    } catch (err) {
+      console.error("Error restoring comment:", err);
+      setError(err?.response?.data?.message || "Failed to restore comment");
+    } finally {
+      setIsRestoring(false);
+    }
   };
 
   return (
     <div className="reported-comments-container">
       <div className="reported-comments-header">
-        <h1>{t('comments.reported') || 'Reported Comments'}</h1>
-        <p className="subtitle">{t('comments.reportedSubtitle') || 'Manage and review reported user comments'}</p>
+        <h1>{tr("comments.reported", "Reported Comments")}</h1>
+        <p className="subtitle">
+          {tr(
+            "comments.reportedSubtitle",
+            "Manage and review reported user comments",
+          )}
+        </p>
       </div>
 
       <div className="search-and-filter">
         <input
           type="text"
-          placeholder={t('common.search') || 'Search by comment, author, post, or reason...'}
+          placeholder="Search by user name..."
           className="search-input"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          value={userSearchQuery}
+          onChange={(e) => setUserSearchQuery(e.target.value)}
         />
       </div>
 
       <div className="reported-comments-table-wrapper">
-        <table className="reported-comments-table">
-          <thead>
-            <tr>
-              <th onClick={() => handleSort('commentText')} className="sortable">
-                {t('comments.commentText') || 'Comment'}
-              </th>
-              <th onClick={() => handleSort('author')} className="sortable">
-                {t('comments.author') || 'Author'}
-              </th>
-              <th onClick={() => handleSort('postTitle')} className="sortable">
-                {t('comments.postTitle') || 'Post'}
-              </th>
-              <th onClick={() => handleSort('reason')} className="sortable">
-                {t('comments.reason') || 'Report Reason'}
-              </th>
-              <th>{t('comments.reportCount') || 'Reports'}</th>
-              <th onClick={() => handleSort('reportedDate')} className="sortable">
-                {t('comments.reportedDate') || 'Reported Date'}
-              </th>
-              <th>{t('common.actions') || 'Actions'}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedComments.map(comment => (
-              <tr key={comment.id}>
-                <td className="comment-text-cell">
-                  <span className="comment-text">{comment.commentText}</span>
-                </td>
-                <td className="comment-author-cell">
-                  <span>{comment.author}</span>
-                </td>
-                <td className="comment-post-cell">
-                  <span className="post-link">{comment.postTitle}</span>
-                </td>
-                <td className="comment-reason-cell">
-                  <span className="reason-badge">{comment.reason}</span>
-                </td>
-                <td className="comment-report-count-cell">
-                  <span className="report-count-badge">{comment.reportCount}</span>
-                </td>
-                <td className="comment-date-cell">
-                  <span>{new Date(comment.reportedDate).toLocaleDateString()}</span>
-                </td>
-                <td className="comment-actions-cell">
-                  <button
-                    className="action-btn detail-btn"
-                    onClick={() => openDetailModal(comment)}
-                    title={t('common.view') || 'View Details'}
-                  >
-                    <Eye size={16} />
-                  </button>
-                  <button
-                    className="action-btn restore-btn"
-                    onClick={() => openRecoveryModal(comment)}
-                    title={t('comments.restore') || 'Restore Comment'}
-                  >
-                    <RotateCcw size={16} />
-                  </button>
-                  <button
-                    className="action-btn delete-btn"
-                    onClick={() => handleDeleteComment(comment.id)}
-                    title={t('common.delete') || 'Delete Comment'}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {sortedComments.length === 0 && (
+        {loading ? (
           <div className="empty-state">
-            <p>{t('common.noData') || 'No reported comments found'}</p>
+            <p>Loading reported comments...</p>
           </div>
+        ) : (
+          <>
+            <table className="reported-comments-table">
+              <thead>
+                <tr>
+                  <th
+                    onClick={() => handleSort("commentText")}
+                    className="sortable"
+                  >
+                    {tr("comments.commentText", "Comment")}
+                  </th>
+                  <th onClick={() => handleSort("author")} className="sortable">
+                    {tr("comments.author", "Author")}
+                  </th>
+                  <th
+                    onClick={() => handleSort("postTitle")}
+                    className="sortable"
+                  >
+                    {tr("comments.postTitle", "Post")}
+                  </th>
+                  <th onClick={() => handleSort("reason")} className="sortable">
+                    {tr("comments.reason", "Report Reason")}
+                  </th>
+                  <th>{tr("comments.reportCount", "Reports")}</th>
+                  <th
+                    onClick={() => handleSort("hiddenAt")}
+                    className="sortable"
+                  >
+                    {tr("comments.reportedDate", "Hidden Date")}
+                  </th>
+                  <th>{tr("common.actions", "Actions")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedComments.map((comment) => (
+                  <tr key={comment.id}>
+                    <td className="comment-text-cell">
+                      <span
+                        className="comment-text"
+                        title={comment.commentText || ""}
+                      >
+                        {comment.commentText}
+                      </span>
+                    </td>
+                    <td className="comment-author-cell">
+                      <span>{comment.author}</span>
+                    </td>
+                    <td className="comment-post-cell">
+                      <span className="post-link">{comment.postTitle}</span>
+                    </td>
+                    <td className="comment-reason-cell">
+                      <span className="reason-badge">{comment.reason}</span>
+                    </td>
+                    <td className="comment-report-count-cell">
+                      <span className="report-count-badge">
+                        {comment.reportCount}
+                      </span>
+                    </td>
+                    <td className="comment-date-cell">
+                      <span>
+                        {new Date(comment.hiddenAt).toLocaleDateString()}
+                      </span>
+                    </td>
+                    <td className="comment-actions-cell">
+                      <button
+                        className="action-btn view-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDetailModal(comment);
+                        }}
+                        title={tr("comments.viewDetails", "View Details")}
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <button
+                        className="action-btn restore-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openRecoveryModal(comment);
+                        }}
+                        title={tr("comments.restore", "Restore Comment")}
+                      >
+                        <RotateCcw size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {sortedComments.length === 0 && (
+              <div className="empty-state">
+                <p>
+                  {error || tr("common.noData", "No reported comments found")}
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
-
-      {/* Comment Detail Modal */}
-      <CommentDetailModal
-        isOpen={isDetailModalOpen}
-        comment={selectedComment}
-        onClose={() => setIsDetailModalOpen(false)}
-      />
 
       {/* Comment Recovery Modal */}
       <CommentRecoveryModal
         isOpen={isRecoveryModalOpen}
         comment={selectedComment}
-        onClose={() => setIsRecoveryModalOpen(false)}
+        onClose={closeRecoveryModal}
         onConfirm={handleRestoreComment}
+        isSubmitting={isRestoring}
+      />
+
+      <CommentDetailModal
+        isOpen={isDetailModalOpen}
+        comment={detailComment}
+        onClose={closeDetailModal}
       />
     </div>
   );

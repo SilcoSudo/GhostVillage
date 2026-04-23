@@ -1,18 +1,28 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import FriendAPI from "../services/friendApi.js";
+import { useAuth } from "../../app/hooks/useAuth";
+
+const isQueryEnabledForAuth = (requestedEnabled, isLoading, user) =>
+  Boolean(requestedEnabled && !isLoading && user);
 
 /**
  * useFriendList Hook
  * Fetch all accepted friends
  */
-export const useFriendList = () => {
+export const useFriendList = (options = {}) => {
+  const { user, loading } = useAuth();
+  const requestedEnabled =
+    options.enabled !== undefined ? options.enabled : true;
+
   return useQuery({
     queryKey: ["friends", "list"],
     queryFn: async () => {
       const response = await FriendAPI.getFriendList();
       return response.data.data;
     },
+    ...options,
+    enabled: isQueryEnabledForAuth(requestedEnabled, loading, user),
   });
 };
 
@@ -21,12 +31,15 @@ export const useFriendList = () => {
  * Fetch all incoming friend requests
  */
 export const usePendingFriendRequests = () => {
+  const { user, loading } = useAuth();
+
   return useQuery({
     queryKey: ["friends", "pending-requests"],
     queryFn: async () => {
       const response = await FriendAPI.getPendingRequests();
       return response.data.data;
     },
+    enabled: isQueryEnabledForAuth(true, loading, user),
   });
 };
 
@@ -35,12 +48,15 @@ export const usePendingFriendRequests = () => {
  * Fetch all sent friend requests
  */
 export const useSentFriendRequests = () => {
+  const { user, loading } = useAuth();
+
   return useQuery({
     queryKey: ["friends", "sent-requests"],
     queryFn: async () => {
       const response = await FriendAPI.getSentRequests();
       return response.data.data;
     },
+    enabled: isQueryEnabledForAuth(true, loading, user),
   });
 };
 
@@ -159,14 +175,19 @@ export const useUnfriend = () => {
  * @param {object} options - Additional query options (e.g., { enabled: false })
  */
 export const useFriendshipStatus = (targetUserId, options = {}) => {
+  const { user, loading } = useAuth();
+  const requestedEnabled =
+    options.enabled !== undefined ? options.enabled : !!targetUserId;
+
   return useQuery({
     queryKey: ["friends", "status", targetUserId],
     queryFn: async () => {
       const response = await FriendAPI.getFriendshipStatus(targetUserId);
       return response.data.data;
     },
-    enabled: options.enabled !== undefined ? options.enabled : !!targetUserId,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     ...options,
+    enabled:
+      isQueryEnabledForAuth(requestedEnabled, loading, user) && !!targetUserId,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 };

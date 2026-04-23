@@ -13,31 +13,52 @@ namespace Game.Core.Database
             public GameObject prefab;
         }
 
-        [Header("Consumables & Equipments")]
-        public List<ResourceEntry> items;
+        [Header("--- Consumables (Vật phẩm tiêu hao) ---")]
+        [Tooltip("Những món bắt buộc phải có trên map")]
+        public List<ResourceEntry> mandatoryConsumables;
+        [Tooltip("Những món xuất hiện hên xui")]
+        public List<ResourceEntry> randomConsumables;
 
-        [Header("Monsters")]
+        [Header("--- Equipments (Trang bị) ---")]
+        [Tooltip("Trang bị bắt buộc phải có")]
+        public List<ResourceEntry> mandatoryEquipments;
+        [Tooltip("Trang bị xuất hiện hên xui")]
+        public List<ResourceEntry> randomEquipments;
+
+        [Header("--- Monsters ---")]
         public List<ResourceEntry> monsters;
 
-        [Header("Puzzles")]
+        [Header("--- Puzzles ---")]
         public List<ResourceEntry> puzzles;
 
         // --- HÀM TÌM KIẾM NHANH ---
         public GameObject GetPrefabById(string id)
         {
-            // Tìm trong items
-            var item = items.Find(x => x.entityId == id);
-            if (item != null && item.prefab != null) return item.prefab;
+            // 1. Gộp tất cả các list chứa Item/Equipment lại để tìm kiếm một lượt
+            List<ResourceEntry>[] allItemLists = {
+                mandatoryConsumables, randomConsumables,
+                mandatoryEquipments, randomEquipments
+            };
 
-            // Tìm trong monsters
+            foreach (var list in allItemLists)
+            {
+                if (list == null) continue; // Tránh lỗi NullReference nếu list chưa được khởi tạo trên Inspector
+
+                var foundItem = list.Find(x => x.entityId == id);
+                if (foundItem != null && foundItem.prefab != null)
+                    return foundItem.prefab;
+            }
+
+            // 2. Tìm trong monsters
             var monster = monsters.Find(x => x.entityId == id);
             if (monster != null && monster.prefab != null) return monster.prefab;
 
-            // Tìm trong puzzles
+            // 3. Tìm trong puzzles
             var puzzle = puzzles.Find(x => x.entityId == id);
             if (puzzle != null && puzzle.prefab != null) return puzzle.prefab;
 
-            Debug.LogError($"❌ [ResourceDB] KHÔNG TÌM THẤY PREFAB CHO ID: {id}. Vui lòng check lại Scriptable Object!");
+            // Nếu quét hết tất cả mọi nơi mà vẫn không thấy
+            Debug.LogError($" [ResourceDB] KHÔNG TÌM THẤY PREFAB CHO ID: {id}. Vui lòng check lại Scriptable Object!");
             return null;
         }
     }

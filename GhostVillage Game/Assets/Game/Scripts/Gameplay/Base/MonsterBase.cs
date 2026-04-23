@@ -1,3 +1,4 @@
+using Game.Scripts.Gameplay.Core;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -41,6 +42,7 @@ namespace GhostVillage.Gameplay.Base
             if (navMeshAgent == null)
             {
                 navMeshAgent = gameObject.AddComponent<NavMeshAgent>();
+                navMeshAgent.agentTypeID = 0; // Humanoid type
             }
 
             // Cấu hình NavMeshAgent
@@ -90,6 +92,8 @@ namespace GhostVillage.Gameplay.Base
                 if (currentState.ShouldExit())
                 {
                     ExitCurrentState();
+                    // Không để currentState = null, mà phải set default state
+                    // Để tránh logic bị lẫn lộn ở controller (OngKeMonster, v.v.)
                 }
             }
         }
@@ -125,6 +129,19 @@ namespace GhostVillage.Gameplay.Base
         }
 
         /// <summary>
+        /// Set default state (gọi khi currentState timeout)
+        /// Để tránh state null khi OngKeMonster logic kiểm tra
+        /// </summary>
+        public virtual void SetDefaultState(IMonsterState defaultState)
+        {
+            if (currentState == null)
+            {
+                currentState = defaultState;
+                currentState.Enter();
+            }
+        }
+
+        /// <summary>
         /// Di chuyển quái đến vị trí đích
         /// </summary>
         public virtual void MoveTo(Vector3 destination)
@@ -133,6 +150,38 @@ namespace GhostVillage.Gameplay.Base
             {
                 navMeshAgent.SetDestination(destination);
             }
+        }
+
+        /// <summary>
+        /// Kiểm tra xem vị trí đích có reachable bằng NavMesh path hoàn chỉnh không.
+        /// </summary>
+        public bool CanReachDestination(Vector3 destination, float sampleDistance = 1.5f)
+        {
+            return TryGetReachableDestination(destination, out _, sampleDistance);
+        }
+
+        /// <summary>
+        /// Tìm một điểm đi được trên NavMesh gần vị trí mong muốn.
+        /// </summary>
+        public bool TryGetReachableDestination(Vector3 destination, out Vector3 reachableDestination, float sampleDistance = 1.5f)
+        {
+            reachableDestination = destination;
+
+            if (navMeshAgent == null || !navMeshAgent.isOnNavMesh)
+                return false;
+
+            if (!NavMesh.SamplePosition(destination, out NavMeshHit hit, sampleDistance, NavMesh.AllAreas))
+                return false;
+
+            NavMeshPath path = new NavMeshPath();
+            if (!navMeshAgent.CalculatePath(hit.position, path))
+                return false;
+
+            if (path.status != NavMeshPathStatus.PathComplete)
+                return false;
+
+            reachableDestination = hit.position;
+            return true;
         }
 
         /// <summary>
@@ -151,7 +200,7 @@ namespace GhostVillage.Gameplay.Base
         /// </summary>
         public virtual bool IsMoving()
         {
-            return navMeshAgent != null && navMeshAgent.isOnNavMesh && 
+            return navMeshAgent != null && navMeshAgent.isOnNavMesh &&
                    navMeshAgent.hasPath && navMeshAgent.remainingDistance > stoppingDistance;
         }
 
@@ -206,6 +255,22 @@ namespace GhostVillage.Gameplay.Base
         }
 
         /// <summary>
+        /// Getter cho NavMeshAgent
+        /// </summary>
+        public NavMeshAgent GetNavMeshAgent()
+        {
+            return navMeshAgent;
+        }
+
+        /// <summary>
+        /// Getter cho PlayerDetector
+        /// </summary>
+        public GhostVillage.Gameplay.Shared.PlayerDetector GetPlayerDetector()
+        {
+            return playerDetector;
+        }
+
+        /// <summary>
         /// Debug: vẽ hướng hiện tại
         /// </summary>
         protected virtual void OnDrawGizmos()
@@ -215,6 +280,23 @@ namespace GhostVillage.Gameplay.Base
                 Gizmos.color = Color.green;
                 Gizmos.DrawRay(monsterTransform.position, monsterTransform.forward);
             }
+        }
+
+        /// <summary>
+        /// [MỚI] Áp dụng các hiệu ứng từ sự kiện Trăng (Moon Event)
+        /// CHỈ CHỈNH SỬA TỐC ĐỘ DI CHUYỂN (An toàn cho mọi loại quái).
+        /// </summary>
+        public virtual void ApplyMoonModifiers(MoonEventManager moonManager)
+        {
+            if (moonManager == null || navMeshAgent == null) return;
+
+            // Lấy hệ số tốc độ từ Trăng
+            float speedMult = moonManager.GetMonsterSpeedMultiplier();
+
+            // Áp dụng thẳng vào NavMeshAgent
+            navMeshAgent.speed = moveSpeed * speedMult;
+
+            Debug.Log($"[MonsterBase] Đã buff Trăng cho <color=orange>{monsterName}</color> | Tốc độ mới: {navMeshAgent.speed} (Gốc: {moveSpeed} x {speedMult})");
         }
     }
 }

@@ -1,13 +1,15 @@
 using System.Collections.Generic;
 using Photon.Pun;
 using UnityEngine;
+using VContainer;
+using VContainer.Unity;
 
 public class PlayerSpawner : MonoBehaviour
 {
-
     [Header("Settings")]
     public string playerPrefabName = "Player";
 
+    [Inject] private IObjectResolver _resolver;
 
     public void SpawnLocalPlayer(MapDataManager mapData)
     {
@@ -20,14 +22,41 @@ public class PlayerSpawner : MonoBehaviour
             int spawnIndex = (PhotonNetwork.LocalPlayer.ActorNumber - 1) % spawnPoints.Count;
             Transform point = spawnPoints[spawnIndex];
 
-            // 3. Instantiate qua mạng
-            PhotonNetwork.Instantiate(
+            // 3. Instantiate qua mạng (Hứng lấy GameObject trả về)
+            GameObject playerObj = PhotonNetwork.Instantiate(
                 playerPrefabName,
                 point.position,
                 point.rotation
             );
 
-            Debug.Log($"<color=green>[Spawner]</color> Đã spawn Player tại điểm: {point.name}");
+            // 4. KIỂM TRA & CÀI ĐẶT CHO LOCAL PLAYER
+            if (playerObj != null)
+            {
+                playerObj.SetActive(true);
+
+                PhotonView pv = playerObj.GetComponent<PhotonView>();
+
+                // Tiêm VContainer cho TẤT CẢ các bản sao (để tụi nó nhận Dependencies nếu cần)
+                if (_resolver != null)
+                {
+                    _resolver.InjectGameObject(playerObj);
+                    Debug.Log($"<color=green>[Spawner]</color> Đã spawn & Inject Player tại: {point.name}");
+                }
+
+                // NHƯNG CHỈ BƠM DATA (Settings/Perks) VÀO NHÂN VẬT CỦA MÌNH (Local Player)
+                if (pv.IsMine)
+                {
+                    PlayerStatsManager stats = playerObj.GetComponent<PlayerStatsManager>();
+                    if (stats != null)
+                    {
+                        float savedSens = PlayerPrefs.GetFloat("MouseSensitivity", 2f);
+                        stats.SetLookSensitivity(savedSens);
+                        stats.ApplyPerkModifiersFromPhoton();
+
+                        Debug.Log("<color=yellow>[Spawner]</color> Đã nạp thành công Base Settings & Perks cho Local Player.");
+                    }
+                }
+            }
         }
         else
         {

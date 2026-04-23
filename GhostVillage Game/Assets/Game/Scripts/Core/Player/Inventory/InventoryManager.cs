@@ -4,6 +4,9 @@ using UnityEngine;
 using Game.Core.Player.RayCast;
 using Photon.Pun;
 using ExitGames.Client.Photon;
+using System.Linq;
+using GhostVillage.Gameplay.Shared;
+using Game.Scripts.Gameplay.Core;
 
 /// <summary>
 /// Quản lý túi đồ của người chơi, bao gồm logic nhặt, dùng, vứt item và đồng bộ mạng.
@@ -17,12 +20,15 @@ public class InventoryManager : MonoBehaviourPun
     public float dropForce = 3f;
 
     [Header("Data")]
-    public List<ItemDataSO> items = new List<ItemDataSO>();
+    public ItemDataSO[] items;
     public int currentSlotIndex = 0;
 
     // Biến nội bộ trạng thái
     private bool _isInventoryLocked = false;
     private PlayerInteract _playerInteract;
+
+    private Animator _animator;
+    private int _itemTypeHash;
 
     public static InventoryManager LocalInstance { get; private set; }
     #endregion
@@ -48,6 +54,9 @@ public class InventoryManager : MonoBehaviourPun
     private void Awake()
     {
         _playerInteract = GetComponent<PlayerInteract>();
+        _animator = GetComponentInChildren<Animator>();
+        _itemTypeHash = Animator.StringToHash("ItemType");
+        items = new ItemDataSO[maxSlots]; // KHỞI TẠO MẢNG
     }
 
     private void Start()
@@ -72,34 +81,103 @@ public class InventoryManager : MonoBehaviourPun
     #region Public Inventory API
 
     /// <summary>
+    /// Bắn toàn bộ đồ trong túi ra xung quanh (Dùng khi bị Gục hoặc Chết)
+    /// </summary>
+    public void DropAllItemsScattered()
+    {
+        if (!photonView.IsMine) return;
+
+        // Đếm xem trong mảng có bao nhiêu đồ thật
+        int actualItemCount = items.Count(i => i != null);
+        if (actualItemCount == 0) return;
+
+        Debug.Log($"<color=red>[Inventory]</color> Oạch! {photonView.Owner.NickName} rớt sạch đồ ra đất!");
+
+        // Lặp qua mảng bằng Length
+        for (int i = items.Length - 1; i >= 0; i--)
+        {
+            ItemDataSO itemToDrop = items[i];
+
+            // Bỏ qua nếu ô trống hoặc là Escape Tool
+            if (itemToDrop == null || itemToDrop.itemType == ItemType.EscapeTool) continue;
+
+            if (itemToDrop.itemWorldPrefab != null)
+            {
+                Vector2 randomCircle = UnityEngine.Random.insideUnitCircle * 1.5f;
+                Vector3 scatterPos = dropPosition.position + new Vector3(randomCircle.x, 0.5f, randomCircle.y);
+
+                float savedBattery = -1f;
+                if (itemToDrop is FlashlightItemSO flashlight) savedBattery = flashlight.currentBattery;
+                object[] customInitData = new object[1] { savedBattery };
+
+                GameObject droppedItem = PhotonNetwork.Instantiate(
+                    itemToDrop.itemWorldPrefab.name,
+                    scatterPos,
+                    UnityEngine.Random.rotation,
+                    0,
+                    customInitData
+                );
+
+                Rigidbody rb = droppedItem.GetComponent<Rigidbody>();
+                if (rb != null)
+                {
+                    Vector3 popForce = (Vector3.up * 3f) + (new Vector3(randomCircle.x, 0, randomCircle.y).normalized * 2f);
+                    rb.AddForce(popForce, ForceMode.Impulse);
+                }
+            }
+        }
+
+        ClearInventoryAndLock();
+    }
+
+    /// <summary>
     /// Thêm vật phẩm vào túi. Trả về true nếu thành công.
     /// </summary>
     public bool AddItem(ItemDataSO newItem)
     {
-        // Chặn nhặt đồ nếu túi bị khóa (trừ EscapeTool)
         if (_isInventoryLocked && newItem.itemType != ItemType.EscapeTool)
         {
             Debug.LogWarning("[Inventory] Túi đã bị khóa! Chỉ được nhặt Escape Tool.");
             return false;
         }
 
-        if (items.Count >= maxSlots) return false;
-
-        items.Add(newItem);
-        Debug.Log($"[Inventory] Đã nhặt: {newItem.itemName}");
-
-        OnGlobalItemAdded?.Invoke(newItem, this);
-        OnInventoryChanged?.Invoke();
-
-        // Tự động cầm món đồ mới nếu đang ở slot đó hoặc túi mới có 1 món
-        if (items.Count - 1 == currentSlotIndex || items.Count == 1)
+        // Tìm khe rỗng đầu tiên
+        int emptySlot = -1;
+        for (int i = 0; i < maxSlots; i++)
         {
-            currentSlotIndex = items.Count - 1;
-            EquipCurrentItem();
+            if (items[i] == null)
+            {
+                emptySlot = i;
+                break;
+            }
         }
 
-        // Sync nếu là KeyItem
-        if (newItem.itemType == ItemType.KeyItem)
+        if (emptySlot == -1) return false; // Túi đầy
+
+        ItemDataSO itemToStore = newItem;
+        if (newItem is FlashlightItemSO)
+        {
+            itemToStore = Instantiate(newItem);
+            itemToStore.name = newItem.name;
+        }
+
+        items[emptySlot] = itemToStore; // Nhét vào ô trống
+        Debug.Log($"[Inventory] Đã nhặt: {itemToStore.itemName} vào Slot {emptySlot + 1}");
+
+        OnGlobalItemAdded?.Invoke(itemToStore, this);
+        OnInventoryChanged?.Invoke();
+
+        // Nếu tay đang không cầm gì, tự động chuyển sang đồ mới nhặt
+        if (items[currentSlotIndex] == null)
+        {
+            SelectSlot(emptySlot);
+        }
+        else
+        {
+            ForceEquipCurrentItem();
+        }
+
+        if (itemToStore.itemType == ItemType.KeyItem)
         {
             SyncKeyCountToNetwork();
         }
@@ -107,25 +185,37 @@ public class InventoryManager : MonoBehaviourPun
         return true;
     }
 
+
     /// <summary>
     /// Xóa vật phẩm khỏi túi. Trả về true nếu thành công.
     /// </summary>
+
     public bool RemoveItem(ItemDataSO item)
     {
-        // Không cho phép vứt Escape Tool
         if (item.itemType == ItemType.EscapeTool)
         {
-            Debug.LogWarning("Không thể vứt vật phẩm thoát hiểm!");
+            Debug.LogWarning("[Inventory] Không thể vứt vật phẩm thoát hiểm!");
             return false;
         }
 
-        if (!items.Contains(item)) return false;
+        bool found = false;
+        for (int i = 0; i < maxSlots; i++)
+        {
+            if (items[i] == item)
+            {
+                items[i] = null; // Làm rỗng ô đó
+                found = true;
+                break;
+            }
+        }
 
-        items.Remove(item);
+        if (!found) return false;
+
+        Debug.Log($"<color=orange>[Inventory] Vừa xóa {item.itemName}. Slot giữ nguyên: {currentSlotIndex + 1}</color>");
+
         OnInventoryChanged?.Invoke();
-        EquipCurrentItem();
+        ForceEquipCurrentItem(); // Cập nhật lại tay (nếu đang cầm ô vừa bị xóa thì tay sẽ tự buông thõng xuống)
 
-        // Sync lại nếu vừa mất KeyItem
         if (item.itemType == ItemType.KeyItem)
         {
             SyncKeyCountToNetwork();
@@ -139,14 +229,64 @@ public class InventoryManager : MonoBehaviourPun
     /// </summary>
     public void UseItem(int slotIndex)
     {
-        if (slotIndex < 0 || slotIndex >= items.Count) return;
+        if (slotIndex < 0 || slotIndex >= items.Length || items[slotIndex] == null) return;
 
         ItemDataSO itemToUse = items[slotIndex];
+
+        // ========================================================
+        // GỌI HÀM SỬ DỤNG GỐC CỦA TẤT CẢ CÁC ITEM (Medkit, Đèn Pin, Còi, Cục Pin)
+        // ========================================================
         bool consumed = itemToUse.OnUse(this.gameObject);
 
+        // Nếu hàm OnUse trả về True (Tức là xài thành công, là vật phẩm tiêu hao), thì xóa nó đi
         if (consumed)
         {
             RemoveItem(itemToUse);
+        }
+    }
+
+
+    /// <summary>
+    /// Hàm này được gọi từ file WhistleItemSO thông qua việc móc PhotonView của nhân vật
+    /// </summary>
+    [PunRPC]
+    public void RpcBlowWhistle(Vector3 position)
+    {
+        // ========================================================
+        // 1. TẤT CẢ CLIENT ĐỀU PHÁT ÂM THANH TỪ VỊ TRÍ NGƯỜI THỔI CÒI
+        // ========================================================
+        AudioSource audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            // Nếu người chơi chưa có màng loa, gắn cho nó 1 cái loa 3D
+            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.spatialBlend = 1f; // 100% 3D Sound để định vị phương hướng
+            audioSource.minDistance = 5f;
+            audioSource.maxDistance = 50f;
+            audioSource.rolloffMode = AudioRolloffMode.Linear;
+        }
+
+        // Mượn AudioManager để lấy âm thanh còi
+        var audioManager = UnityEngine.Object.FindFirstObjectByType<GameAudioManager>();
+        if (audioManager != null)
+        {
+            AudioClip clip = audioManager.GetClip("Item_Whistle"); // ID âm thanh của sếp
+            if (clip != null)
+            {
+                audioSource.PlayOneShot(clip);
+            }
+            else
+            {
+                Debug.LogWarning("<color=yellow>[Inventory]</color> Không tìm thấy âm thanh 'Item_Whistle' trong AudioManager!");
+            }
+        }
+
+        // ========================================================
+        // 2. CHỈ MASTER CLIENT MỚI ĐƯỢC CHỌC VÀO AI CỦA QUÁI VẬT
+        // ========================================================
+        if (PhotonNetwork.IsMasterClient)
+        {
+            MonsterEvents.AlertPlayerSpotted(position);
         }
     }
 
@@ -163,7 +303,7 @@ public class InventoryManager : MonoBehaviourPun
     /// </summary>
     public void DropCurrentItem()
     {
-        if (currentSlotIndex >= items.Count) return;
+        if (currentSlotIndex >= items.Length || items[currentSlotIndex] == null) return;
 
         ItemDataSO itemToDrop = items[currentSlotIndex];
 
@@ -180,14 +320,23 @@ public class InventoryManager : MonoBehaviourPun
 
             if (resourceCheck == null)
             {
-                Debug.LogError($"❌ LỖI: Không tìm thấy Prefab '{prefabName}' trong Resources!");
+                Debug.LogError($" LỖI: Không tìm thấy Prefab '{prefabName}' trong Resources!");
                 return;
             }
+
+            // Lấy lượng pin hiện tại (nếu là đèn pin)
+            float savedBattery = -1f;
+            if (itemToDrop is FlashlightItemSO flashlight) savedBattery = flashlight.currentBattery;
+
+            // Truyền lượng pin qua mạng cho cái Model rớt dưới đất
+            object[] customInitData = new object[1] { savedBattery };
 
             GameObject droppedItem = PhotonNetwork.Instantiate(
                 prefabName,
                 dropPosition.position,
-                dropPosition.rotation
+                dropPosition.rotation,
+                0, // group
+                customInitData // <-- Bí kíp truyền hồn nằm ở đây
             );
 
             Rigidbody rb = droppedItem.GetComponent<Rigidbody>();
@@ -204,20 +353,24 @@ public class InventoryManager : MonoBehaviourPun
     public void SelectSlot(int index)
     {
         if (index < 0 || index >= maxSlots) return;
-        if (currentSlotIndex == index) return;
+
+        Debug.Log($"<color=yellow>[Inventory] Yêu cầu chuyển sang Slot: {index + 1} (Đang ở {currentSlotIndex + 1})</color>");
+
+        // Vẫn check để tối ưu, nhưng ta xài biến cờ
+        bool needToUpdate = (currentSlotIndex != index);
 
         currentSlotIndex = index;
-        OnSlotChanged?.Invoke(currentSlotIndex);
-        EquipCurrentItem();
+
+        if (needToUpdate)
+        {
+            OnSlotChanged?.Invoke(currentSlotIndex);
+        }
+
+        // BẮT BUỘC gọi để đồng bộ tay, dù có bấm trùng nút số 1 đi nữa
+        ForceEquipCurrentItem();
     }
 
-    public void ScrollSlot(float direction)
-    {
-        if (direction > 0)
-            SelectSlot((currentSlotIndex + 1) % maxSlots);
-        else if (direction < 0)
-            SelectSlot((currentSlotIndex - 1 + maxSlots) % maxSlots);
-    }
+
 
     #endregion
 
@@ -250,7 +403,7 @@ public class InventoryManager : MonoBehaviourPun
     /// </summary>
     public void ClearInventoryAndLock()
     {
-        items.Clear();
+        Array.Clear(items, 0, items.Length);
         _isInventoryLocked = true;
 
         if (_playerInteract != null) _playerInteract.DetachHeldItem();
@@ -275,21 +428,33 @@ public class InventoryManager : MonoBehaviourPun
     /// <summary>
     /// Gắn/Tháo model item trên tay nhân vật (Visual).
     /// </summary>
-    private void EquipCurrentItem()
+    /// <summary>
+    /// Gắn/Tháo model item trên tay nhân vật (Visual).
+    /// </summary>
+    private void ForceEquipCurrentItem()
     {
         if (_playerInteract == null) return;
 
-        if (currentSlotIndex < items.Count)
+        if (currentSlotIndex < maxSlots && items[currentSlotIndex] != null) // CÓ CHECK NULL
         {
             ItemDataSO item = items[currentSlotIndex];
             if (item.itemHandModel != null)
-                _playerInteract.AttachHeldItem(item.itemHandModel);
+            {
+                Debug.Log($"<color=cyan>[Inventory] Đang cầm món: {item.itemName} (Tay: {item.holdType})</color>");
+                _playerInteract.AttachHeldItem(item.itemHandModel, item.holdType);
+                if (_animator != null) _animator.SetInteger(_itemTypeHash, (int)item.holdType);
+            }
             else
+            {
                 _playerInteract.DetachHeldItem();
+                if (_animator != null) _animator.SetInteger(_itemTypeHash, 0);
+            }
         }
         else
         {
+            Debug.Log("<color=cyan>[Inventory] Tay Không (Slot rỗng)</color>");
             _playerInteract.DetachHeldItem();
+            if (_animator != null) _animator.SetInteger(_itemTypeHash, 0);
         }
     }
 
@@ -301,12 +466,17 @@ public class InventoryManager : MonoBehaviourPun
         if (!photonView.IsMine) return;
 
         int count = 0;
-        foreach (var i in items)
+        // Đổi qua dùng vòng for cho an toàn với mảng cố định
+        for (int i = 0; i < items.Length; i++)
         {
-            if (i.itemType == ItemType.KeyItem) count++;
+            // BẮT BUỘC PHẢI CHECK NULL TRƯỚC KHI ĐỌC ITEM TYPE
+            if (items[i] != null && items[i].itemType == ItemType.KeyItem)
+            {
+                count++;
+            }
         }
 
-        Hashtable props = new Hashtable();
+        ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable();
         props["KeyCount"] = count;
         PhotonNetwork.LocalPlayer.SetCustomProperties(props);
 

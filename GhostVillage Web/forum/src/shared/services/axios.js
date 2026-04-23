@@ -17,7 +17,7 @@ instance.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // Response interceptor
@@ -26,10 +26,11 @@ instance.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem("token");
-      window.location.href = "/login";
+      sessionStorage.removeItem("token");
+      window.dispatchEvent(new Event("auth:unauthorized"));
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default instance;

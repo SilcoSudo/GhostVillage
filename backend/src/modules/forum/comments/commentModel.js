@@ -1,5 +1,10 @@
 import mongoose from "mongoose";
 
+const normalizeRecommendedAction = (label) => {
+  const normalizedLabel = String(label || "").toLowerCase();
+  return normalizedLabel === "no_violation" ? "keep" : "remove";
+};
+
 const commentSchema = new mongoose.Schema(
   {
     post: {
@@ -31,9 +36,68 @@ const commentSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
-    isDeleted: {
+    isHiddenByModeration: {
       type: Boolean,
       default: false,
+    },
+    isEdited: {
+      type: Boolean,
+      default: false,
+    },
+    reports: [
+      {
+        reporter: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        reason: {
+          type: String,
+          trim: true,
+          required: true,
+        },
+        aiModeration: {
+          isValidReport: {
+            type: Boolean,
+            default: false,
+          },
+          label: {
+            type: String,
+            enum: ["spam", "scam", "abuse", "adult", "misinfo", "no_violation"],
+            default: "no_violation",
+          },
+          confidence: {
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 1,
+          },
+          reason: {
+            type: String,
+            default: "",
+          },
+          evidence: {
+            type: [String],
+            default: [],
+          },
+          recommendedAction: {
+            type: String,
+            enum: ["keep", "remove"],
+            default: "keep",
+            set: function () {
+              return normalizeRecommendedAction(this?.label);
+            },
+          },
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    editedAt: {
+      type: Date,
+      default: null,
     },
   },
   {
@@ -44,6 +108,22 @@ const commentSchema = new mongoose.Schema(
 // Index for efficient querying
 commentSchema.index({ post: 1, parentId: 1, createdAt: -1 });
 commentSchema.index({ post: 1, createdAt: -1 });
+
+commentSchema.pre("validate", function (next) {
+  if (!Array.isArray(this.reports)) {
+    next();
+    return;
+  }
+
+  this.reports.forEach((report) => {
+    if (!report?.aiModeration) return;
+    report.aiModeration.recommendedAction = normalizeRecommendedAction(
+      report.aiModeration.label,
+    );
+  });
+
+  next();
+});
 
 const Comment = mongoose.model("Comment", commentSchema);
 
