@@ -43,7 +43,6 @@ const EditMapModal = ({ map, onClose, onSuccess }) => {
     displayName: "",
     thumbnailUrl: "",
     shortDescription: "",
-    isActive: true,
 
     // 2) consumableConfig (2 JSON)
     consumableMandatoryJson: "[]",
@@ -74,7 +73,6 @@ const EditMapModal = ({ map, onClose, onSuccess }) => {
       displayName: map.identityConfig?.displayName || "",
       thumbnailUrl: map.identityConfig?.thumbnailUrl || "",
       shortDescription: map.identityConfig?.shortDescription || "",
-      isActive: map.identityConfig?.isActive ?? true,
 
       consumableMandatoryJson: pretty(map.consumableConfig?.mandatoryItems, []),
       consumableRandomJson: pretty(map.consumableConfig?.randomPoolConfig, {
@@ -102,13 +100,11 @@ const EditMapModal = ({ map, onClose, onSuccess }) => {
   }, [map]);
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]:
-        type === "checkbox"
-          ? checked
-          : type === "number"
+        type === "number"
           ? Number(value) || 0
           : value,
     }));
@@ -163,7 +159,7 @@ const EditMapModal = ({ map, onClose, onSuccess }) => {
           displayName: formData.displayName.trim(),
           thumbnailUrl: formData.thumbnailUrl.trim(),
           shortDescription: formData.shortDescription.trim(),
-          isActive: formData.isActive,
+          isActive: map.identityConfig?.isActive ?? true,
         },
         consumableConfig: {
           mandatoryItems: consumableMandatoryItems,
@@ -268,18 +264,6 @@ const EditMapModal = ({ map, onClose, onSuccess }) => {
               rows="3"
               className="form-textarea"
             />
-          </div>
-
-          <div className="form-group" style={{ marginBottom: "20px" }}>
-            <label style={{ display: "flex", alignItems: "center", gap: "8px", color: "#B5A642" }}>
-              <input
-                type="checkbox"
-                name="isActive"
-                checked={formData.isActive}
-                onChange={handleChange}
-              />
-              isActive
-            </label>
           </div>
 
           <h3 style={{ color: "#B5A642", marginBottom: "10px", fontSize: "0.95rem" }}>

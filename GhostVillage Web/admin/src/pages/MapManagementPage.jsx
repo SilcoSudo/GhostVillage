@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import mapService from "../shared/services/mapService";
 import EditMapModal from "./components/EditMapModal";
-import ToggleSwitch from "./components/ToggleSwitch";
 import "./assets/styles/MapManagement.css";
 
 /**
@@ -216,6 +215,21 @@ const MapManagementPage = () => {
                         {map.identityConfig?.mapId}
                       </p>
 
+                      {/* Status Control */}
+                      <div className="map-status-row">
+                        <span className="toggle-label">{t("common.status")}:</span>
+                        <select
+                          className="status-select"
+                          value={(map.identityConfig?.isActive || false).toString()}
+                          onChange={(e) =>
+                            handleToggleStatus(map, e.target.value === "true")
+                          }
+                        >
+                          <option value="true">{t("common.active")}</option>
+                          <option value="false">{t("common.inactive")}</option>
+                        </select>
+                      </div>
+
                       {/* Required Level */}
                       <div className="required-level">
                         <span className="required-level-label">{t("map.sceneLabel")}:</span>
@@ -253,15 +267,6 @@ const MapManagementPage = () => {
 
                       {/* Actions */}
                       <div className="map-actions">
-                        {/* Toggle Switch */}
-                        <div className="toggle-group">
-                          <span className="toggle-label">{t("common.status")}:</span>
-                          <ToggleSwitch
-                            checked={map.identityConfig?.isActive || false}
-                            onChange={(checked) => handleToggleStatus(map, checked)}
-                          />
-                        </div>
-
                         {/* Edit Button */}
                         <button
                           onClick={() => handleEdit(map)}
