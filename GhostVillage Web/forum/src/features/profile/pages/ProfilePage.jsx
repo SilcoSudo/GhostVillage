@@ -536,6 +536,7 @@ const ProfilePage = () => {
                           post={post}
                           onPostUpdate={() => {}}
                           onOpenDetail={handlePostClick}
+                          showViewDetailAction={true}
                         />
                       ))}
                     </div>
@@ -593,6 +594,7 @@ const ProfilePage = () => {
                         onPostUpdate={handleSavedPostUpdate}
                         onOpenDetail={handlePostClick}
                         isSavedPostsPage={true}
+                        showViewDetailAction={true}
                       />
                     ))}
                   </div>
@@ -748,12 +750,6 @@ const ProfilePage = () => {
                       onClick={() => setShowChangePasswordModal(true)}
                     >
                       {t("profile.buttons.changePassword")}
-                    </button>
-                    <button
-                      className="btn-horror-outline"
-                      onClick={() => navigate("/forgot-password")}
-                    >
-                      {t("profile.buttons.forgotPassword")}
                     </button>
                   </div>
 

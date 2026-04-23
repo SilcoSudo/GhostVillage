@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Eye, ThumbsUp } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import PropTypes from 'prop-types';
 
 const WikiCard = ({ wiki, featured = false }) => {
@@ -58,10 +58,6 @@ const WikiCard = ({ wiki, featured = false }) => {
             <Eye size={14} />
             <span>{wiki.views || 0}</span>
           </div>
-          <div className="meta-item">
-            <ThumbsUp size={14} />
-            <span>{wiki.likes || 0}</span>
-          </div>
           {wiki.author && (
             <div className="meta-author">
               {wiki.author.avatar && (
@@ -101,7 +97,6 @@ WikiCard.propTypes = {
     coverImage: PropTypes.string,
     isFeatured: PropTypes.bool,
     views: PropTypes.number,
-    likes: PropTypes.number,
     tags: PropTypes.arrayOf(PropTypes.string),
     author: PropTypes.shape({
       fullname: PropTypes.string,

@@ -20,7 +20,7 @@
 .wiki-management-container {
   width: 100%;
   min-height: 100vh;
-  padding: 16px;
+  padding: 36px 16px 16px;
   background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
   color: var(--text-secondary);
   font-family: 'Courier New', Courier, monospace;
@@ -542,7 +542,7 @@
 
 @media (max-width: 768px) {
   .wiki-management-container {
-    padding: 12px;
+    padding: 20px 12px 12px;
   }
 
   .wiki-toolbar {
