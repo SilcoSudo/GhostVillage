@@ -95,6 +95,45 @@ const SearchPage = () => {
     );
   };
 
+  const getPostPreview = (post = {}) => {
+    const htmlBody = post?.body || "";
+    const mediaImage = Array.isArray(post?.media)
+      ? post.media.find((item) => item?.type === "image" && item?.url)?.url
+      : "";
+    const coverImage = post?.coverImage || "";
+
+    const imageUrl = mediaImage || coverImage;
+
+    if (!htmlBody && imageUrl) {
+      return { imageUrl, excerpt: "" };
+    }
+
+    if (!htmlBody) {
+      return { imageUrl: imageUrl || "", excerpt: "" };
+    }
+
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlBody, "text/html");
+      const firstImage = doc.querySelector("img");
+      const previewImageUrl = imageUrl || firstImage?.getAttribute("src") || "";
+
+      doc.querySelectorAll("img, video, iframe").forEach((mediaEl) => mediaEl.remove());
+      const plainText = (doc.body.textContent || "").replace(/\s+/g, " ").trim();
+
+      return {
+        imageUrl: previewImageUrl,
+        excerpt: plainText.length > 150 ? `${plainText.substring(0, 150)}...` : plainText,
+      };
+    } catch (_error) {
+      const plainText = htmlBody.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+      return {
+        imageUrl,
+        excerpt: plainText.length > 150 ? `${plainText.substring(0, 150)}...` : plainText,
+      };
+    }
+  };
+
   return (
     <div className="search-page">
       <div className="search-header">
@@ -229,35 +268,50 @@ const SearchPage = () => {
                     })}
                   </h2>
                   <div className="results-list">
-                    {results.results.posts.items.map((post) => (
-                      <div key={post._id} className="result-item post-item">
-                        <h3>{post.title}</h3>
-                        <p className="result-excerpt">
-                          {post.body.substring(0, 150)}...
-                        </p>
-                        <div className="result-meta">
-                          <span className="category-badge">
-                            {post.category}
-                          </span>
-                          {post.author && (
-                            <span className="author">
-                              <User size={14} />
-                              {post.author.fullname || post.author.username}
-                            </span>
+                    {results.results.posts.items.map((post) => {
+                      const preview = getPostPreview(post);
+
+                      return (
+                        <Link
+                          key={post._id}
+                          to={`/posts?postId=${post._id}`}
+                          className="result-item post-item"
+                        >
+                          {preview.imageUrl && (
+                            <img
+                              src={preview.imageUrl}
+                              alt={post.title}
+                              className="result-image post-result-image"
+                            />
                           )}
-                          <span>
-                            <Calendar size={14} />
-                            {formatDate(post.createdAt)}
-                          </span>
-                          <span>
-                            {t("search.likes", { count: post.likesCount })}
-                          </span>
-                          <span>
-                            {t("search.comments", { count: post.commentCount })}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                          <h3>{post.title}</h3>
+                          {preview.excerpt && (
+                            <p className="result-excerpt">{preview.excerpt}</p>
+                          )}
+                          <div className="result-meta">
+                            <span className="category-badge">
+                              {post.category}
+                            </span>
+                            {post.author && (
+                              <span className="author">
+                                <User size={14} />
+                                {post.author.fullname || post.author.username}
+                              </span>
+                            )}
+                            <span>
+                              <Calendar size={14} />
+                              {formatDate(post.createdAt)}
+                            </span>
+                            <span>
+                              {t("search.likes", { count: post.likesCount })}
+                            </span>
+                            <span>
+                              {t("search.comments", { count: post.commentCount })}
+                            </span>
+                          </div>
+                        </Link>
+                      );
+                    })}
                   </div>
                 </div>
               )}

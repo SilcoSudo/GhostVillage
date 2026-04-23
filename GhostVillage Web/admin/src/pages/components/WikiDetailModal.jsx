@@ -30,7 +30,7 @@ const WikiDetailModal = ({ isOpen, item, itemType, onClose }) => {
         <div className="modal-header">
           <div className="header-content">
             <BookOpen size={20} className="header-icon" />
-            <h2>Wiki Entry Details</h2>
+            <h2>Wiki Entry</h2>
           </div>
           <button className="close-btn" onClick={onClose}>
             <X size={20} />
@@ -50,18 +50,6 @@ const WikiDetailModal = ({ isOpen, item, itemType, onClose }) => {
             <label className="section-label">Description</label>
             <div className="wiki-detail-description">
               {item.description}
-            </div>
-          </div>
-
-          {/* Info Box */}
-          <div className="info-box">
-            <div className="info-item">
-              <span className="info-label">Type</span>
-              <span className="info-value">{getTypeLabel()}</span>
-            </div>
-            <div className="info-item">
-              <span className="info-label">Entry ID</span>
-              <span className="info-value">#{item.id}</span>
             </div>
           </div>
         </div>
