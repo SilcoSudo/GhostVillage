@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
-import { ThumbsUp, Eye, Calendar, User, Tag } from "lucide-react";
+import { Eye, Calendar, User, Tag } from "lucide-react";
 import "../../../shared/assets/styles/WikiDetailPage.css";
 
 const WikiDetailPage = () => {
@@ -11,7 +11,6 @@ const WikiDetailPage = () => {
   const { slug } = useParams();
   const [wiki, setWiki] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [liked, setLiked] = useState(false);
 
   const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
@@ -29,21 +28,6 @@ const WikiDetailPage = () => {
       console.error("Error fetching wiki:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleLike = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      await axios.post(
-        `${API_BASE_URL}/web/wiki/${wiki._id}/like`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      setLiked(!liked);
-      setWiki({ ...wiki, likes: liked ? wiki.likes - 1 : wiki.likes + 1 });
-    } catch (error) {
-      console.error("Error liking wiki:", error);
     }
   };
 
@@ -104,10 +88,6 @@ const WikiDetailPage = () => {
           <div className="meta-item">
             <Eye size={16} />
             <span>{t("wiki.detail.views", { count: wiki.views })}</span>
-          </div>
-          <div className="meta-item">
-            <ThumbsUp size={16} />
-            <span>{t("wiki.detail.likes", { count: wiki.likes })}</span>
           </div>
         </div>
 
@@ -197,13 +177,6 @@ const WikiDetailPage = () => {
 
       {/* Action Buttons */}
       <div className="wiki-actions">
-        <button
-          className={`like-btn ${liked ? "liked" : ""}`}
-          onClick={handleLike}
-        >
-          <ThumbsUp size={20} />
-          {liked ? t("wiki.detail.liked") : t("wiki.detail.like")}
-        </button>
         <Link to="/wiki" className="back-btn">
           {t("wiki.detail.back")}
         </Link>
