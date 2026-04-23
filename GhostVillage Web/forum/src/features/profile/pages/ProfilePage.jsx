@@ -28,7 +28,6 @@ import {
   Shield,
   BookOpen,
   Bookmark,
-  History,
   Users,
 } from "lucide-react";
 import "./ProfilePage.css";
@@ -46,7 +45,10 @@ const ProfilePage = () => {
   const [profileUser, setProfileUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState("activity");
+  const [activeTab, setActiveTab] = useState("posts");
+  const [savedPosts, setSavedPosts] = useState([]);
+  const [savedPostsLoading, setSavedPostsLoading] = useState(false);
+  const [savedPostsError, setSavedPostsError] = useState("");
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [isEditingAvatar, setIsEditingAvatar] = useState(false);
@@ -134,6 +136,34 @@ const ProfilePage = () => {
 
     fetchProfile();
   }, [id, currentUser, isOwnProfile]);
+
+  useEffect(() => {
+    const fetchSavedPosts = async () => {
+      if (!isOwnProfile || activeTab !== "saved") return;
+
+      try {
+        setSavedPostsLoading(true);
+        setSavedPostsError("");
+
+        const response = await api.get("/web/user/saved-posts");
+        if (response.data.success) {
+          setSavedPosts(response.data?.data?.posts || []);
+        } else {
+          setSavedPosts([]);
+          setSavedPostsError(t("posts.failedToLoadSaved"));
+        }
+      } catch (err) {
+        console.error("Failed to fetch saved posts:", err);
+        setSavedPostsError(
+          err.response?.data?.message || t("posts.failedToLoadSaved"),
+        );
+      } finally {
+        setSavedPostsLoading(false);
+      }
+    };
+
+    fetchSavedPosts();
+  }, [activeTab, isOwnProfile, t]);
 
   const handleUpdateName = async () => {
     try {
@@ -309,6 +339,12 @@ const ProfilePage = () => {
     nextSearchParams.delete("postId");
     nextSearchParams.delete("scrollToComments");
     setSearchParams(nextSearchParams);
+  };
+
+  const handleSavedPostUpdate = (updatedPost) => {
+    setSavedPosts((prev) =>
+      prev.filter((post) => post._id !== updatedPost._id),
+    );
   };
 
   if (loading) {
@@ -495,13 +531,6 @@ const ProfilePage = () => {
         <div className="profile-main-content">
           <div className="profile-tabs">
             <button
-              className={`tab-btn ${activeTab === "activity" ? "active" : ""}`}
-              onClick={() => setActiveTab("activity")}
-            >
-              <History size={16} />
-              {t("profile.tabs.activity")}
-            </button>
-            <button
               className={`tab-btn ${activeTab === "posts" ? "active" : ""}`}
               onClick={() => setActiveTab("posts")}
             >
@@ -536,19 +565,6 @@ const ProfilePage = () => {
           </div>
 
           <div className="profile-feed-container">
-            {activeTab === "activity" && (
-              <div className="activity-history">
-                <h4 className="feed-title">
-                  {t("profile.headings.gameMatchHistory")}
-                </h4>
-                <div className="empty-feed">
-                  <History size={48} />
-                  <p>{t("profile.empty.noMatchData")}</p>
-                  <span>{t("profile.empty.matchDescription")}</span>
-                </div>
-              </div>
-            )}
-
             {activeTab === "posts" && (
               <div className="posts-list">
                 <h4 className="feed-title">
@@ -588,11 +604,42 @@ const ProfilePage = () => {
                 <h4 className="feed-title">
                   {t("profile.headings.archivedSaved")}
                 </h4>
-                <div className="empty-feed">
-                  <Bookmark size={48} />
-                  <p>{t("profile.empty.noSavedContent")}</p>
-                  <span>{t("profile.empty.onlyWardenArchive")}</span>
-                </div>
+
+                {savedPostsLoading && (
+                  <div className="empty-feed">
+                    <Bookmark size={48} />
+                    <p>{t("common.loading")}</p>
+                  </div>
+                )}
+
+                {!savedPostsLoading && savedPostsError && (
+                  <div className="empty-feed">
+                    <Bookmark size={48} />
+                    <p>{savedPostsError}</p>
+                  </div>
+                )}
+
+                {!savedPostsLoading && !savedPostsError && savedPosts.length === 0 && (
+                  <div className="empty-feed">
+                    <Bookmark size={48} />
+                    <p>{t("profile.empty.noSavedContent")}</p>
+                    <span>{t("profile.empty.onlyWardenArchive")}</span>
+                  </div>
+                )}
+
+                {!savedPostsLoading && !savedPostsError && savedPosts.length > 0 && (
+                  <div className="posts-feed">
+                    {savedPosts.map((post) => (
+                      <PostCard
+                        key={post._id}
+                        post={post}
+                        onPostUpdate={handleSavedPostUpdate}
+                        onOpenDetail={handlePostClick}
+                        isSavedPostsPage={true}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
