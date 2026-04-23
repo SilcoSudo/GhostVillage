@@ -455,7 +455,7 @@ namespace Game.UI.Friend
         private void SetupSentItem(GameObject obj, FriendProfileDTO data)
         {
             SetText(obj, "Txt_DisplayName", data.GetDisplayName());
-            SetText(obj, "Txt_Status", "Đang chờ...");
+            SetText(obj, "Txt_Status", "Waiting...");
             SetAvatar(obj, data.GetAvatar()); // <-- GỌI Ở ĐÂY
 
             var btnTakeBack = obj.transform.Find("Btn_TakeBack")?.GetComponent<Button>();

@@ -6,6 +6,7 @@ import {
   MessageCircle,
   Share2,
   Bookmark,
+  Eye,
   MoreVertical,
   User,
   Edit2,
@@ -31,7 +32,13 @@ import ShareModal from "./ShareModal";
 import ReportPostModal from "./ReportPostModal";
 import "./PostCard.css";
 
-const PostCard = ({ post, onPostUpdate, isSavedPostsPage, onOpenDetail }) => {
+const PostCard = ({
+  post,
+  onPostUpdate,
+  isSavedPostsPage,
+  onOpenDetail,
+  showViewDetailAction = false,
+}) => {
   const { t, i18n } = useTranslation();
   const { user, refetchUser } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -431,6 +438,17 @@ const PostCard = ({ post, onPostUpdate, isSavedPostsPage, onOpenDetail }) => {
 
         {/* Footer Actions */}
         <div className="post-footer">
+          {showViewDetailAction && (
+            <Button
+              variant="link"
+              className="post-action-btn"
+              onClick={() => openDetailModal(false)}
+              title={t("common.view")}
+            >
+              <Eye size={18} />
+            </Button>
+          )}
+
           <Button
             variant="link"
             className={`post-action-btn ${liked ? "active liked" : ""}`}
