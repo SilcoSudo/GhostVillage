@@ -47,9 +47,12 @@ namespace Game.Core.Scene
 
                 // 3. Chờ thêm 1 frame để script Scene mới hoàn tất Awake/Start
                 await UniTask.Yield();
-
-            // 4. Tắt Loading Overlay
-            if (globalUI != null) globalUI.ShowLoading(false);
+            }
+            finally
+            {
+                // 4. Tắt Loading Overlay
+                if (globalUI != null) globalUI.ShowLoading(false);
+            }
         }
     }
 }

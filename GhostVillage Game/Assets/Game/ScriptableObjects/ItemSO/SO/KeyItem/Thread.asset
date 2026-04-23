@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22ed1bb5c6dbced4fa17647576b5fcdc, type: 3}
+  m_Name: Thread
+  m_EditorClassIdentifier: Assembly-CSharp::KeyItemSO
+  itemId: ITEM_THREAD
+  itemName: Thread
+  description: This is your fate
+  itemType: 0
+  holdType: 1
+  itemIcon: {fileID: -1114416930, guid: cb7d772e7cb012542b1dacb6f3cfbbd0, type: 3}
+  itemWorldPrefab: {fileID: 4908752687630429573, guid: 0212b375393abb24cb8f6827429de6ba, type: 3}
+  itemHandModel: {fileID: 5111592067233787370, guid: f5506fdbd1c529b4380857bd0d096fea, type: 3}

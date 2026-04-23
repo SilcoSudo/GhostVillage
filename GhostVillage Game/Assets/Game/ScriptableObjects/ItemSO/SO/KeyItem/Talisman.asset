@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22ed1bb5c6dbced4fa17647576b5fcdc, type: 3}
+  m_Name: Talisman
+  m_EditorClassIdentifier: Assembly-CSharp::KeyItemSO
+  itemId: ITEM_TALISMAN
+  itemName: Talisman
+  description: Some magic form OngBay
+  itemType: 0
+  holdType: 1
+  itemIcon: {fileID: -1906762059, guid: c760d9c91cbcfcb4cbc963ec3b36a184, type: 3}
+  itemWorldPrefab: {fileID: 2396600044685604337, guid: 80bfc079c812056418004a43da72ed81, type: 3}
+  itemHandModel: {fileID: 4241528827489947885, guid: 9613d20dab46f6b4f80d3dff35228c2d, type: 3}
