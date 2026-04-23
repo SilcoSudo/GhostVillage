@@ -5,6 +5,11 @@ import http from "http";
 import { Server } from "socket.io";
 import { authenticateSocket } from "./middlewares/auth.middleware.js";
 import { startNotificationCleanup } from "./modules/forum/notifications/notificationCleanup.js";
+import {
+  getOnlineUserIds,
+  markUserOffline,
+  markUserOnline,
+} from "./services/presenceService.js";
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -21,11 +26,25 @@ io.use(authenticateSocket);
 // Socket.IO connection handlers
 io.on("connection", (socket) => {
   const userId = socket.userId;
+  const normalizedUserId = String(userId);
   console.log(`✓ User ${userId} connected (Socket ID: ${socket.id})`);
 
   // Join user to personal room
   socket.join(`user:${userId}`);
   socket.join(`user_${userId}`); // Alternative room format
+
+  const presence = markUserOnline(userId);
+
+  if (presence.becameOnline) {
+    io.emit("user:presence", {
+      userId: normalizedUserId,
+      isOnline: true,
+    });
+  }
+
+  socket.emit("presence:snapshot", {
+    onlineUserIds: getOnlineUserIds(),
+  });
 
   // Handle user joining their room (for receiving messages)
   socket.on("join:user", ({ userId: userIdToJoin }) => {
@@ -36,6 +55,15 @@ io.on("connection", (socket) => {
   // Handle disconnect
   socket.on("disconnect", () => {
     console.log(`✗ User ${userId} disconnected`);
+
+    const updatedPresence = markUserOffline(userId);
+
+    if (updatedPresence.becameOffline) {
+      io.emit("user:presence", {
+        userId: normalizedUserId,
+        isOnline: false,
+      });
+    }
   });
 
   // Handle errors

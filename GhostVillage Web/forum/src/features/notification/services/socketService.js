@@ -1,6 +1,6 @@
-import { io } from 'socket.io-client';
+import { io } from "socket.io-client";
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 let socket = null;
 let listeners = {};
@@ -11,7 +11,7 @@ let listeners = {};
  */
 export const initSocket = (token) => {
   if (socket?.connected) {
-    console.log('Socket already connected');
+    console.log("Socket already connected");
     return socket;
   }
 
@@ -26,27 +26,35 @@ export const initSocket = (token) => {
   });
 
   // Connection events
-  socket.on('connect', () => {
-    console.log('✓ Socket connected:', socket.id);
+  socket.on("connect", () => {
+    console.log("✓ Socket connected:", socket.id);
   });
 
-  socket.on('disconnect', () => {
-    console.log('✗ Socket disconnected');
+  socket.on("disconnect", () => {
+    console.log("✗ Socket disconnected");
   });
 
-  socket.on('error', (error) => {
-    console.error('Socket error:', error);
+  socket.on("error", (error) => {
+    console.error("Socket error:", error);
   });
 
   // Listen for notifications
-  socket.on('new_notification', (data) => {
-    console.log('📦 New notification:', data);
-    notifyListeners('notification', data);
+  socket.on("new_notification", (data) => {
+    console.log("📦 New notification:", data);
+    notifyListeners("notification", data);
   });
 
-  socket.on('new_announcement', (data) => {
-    console.log('📢 New announcement:', data);
-    notifyListeners('announcement', data);
+  socket.on("new_announcement", (data) => {
+    console.log("📢 New announcement:", data);
+    notifyListeners("announcement", data);
+  });
+
+  socket.on("presence:snapshot", (data) => {
+    notifyListeners("presence:snapshot", data);
+  });
+
+  socket.on("user:presence", (data) => {
+    notifyListeners("user:presence", data);
   });
 
   return socket;
@@ -66,7 +74,7 @@ export const disconnectSocket = () => {
   if (socket) {
     socket.disconnect();
     socket = null;
-    console.log('Socket disconnected');
+    console.log("Socket disconnected");
   }
 };
 
@@ -86,6 +94,14 @@ export const onNotification = (event, callback) => {
     listeners[event] = listeners[event].filter((cb) => cb !== callback);
   };
 };
+
+/**
+ * Subscribe to any socket event handled by the local listener registry
+ * @param {string} event - Event name
+ * @param {function} callback - Callback function
+ */
+export const onSocketEvent = (event, callback) =>
+  onNotification(event, callback);
 
 /**
  * Notify all listeners

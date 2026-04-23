@@ -807,6 +807,28 @@ class NotificationService {
       throw error;
     }
   }
+
+  /**
+   * Xóa notification friend_request gốc theo friendshipId và người nhận
+   */
+  static async deleteFriendRequestNotification(friendshipId, recipientUserId) {
+    try {
+      if (!friendshipId || !recipientUserId) {
+        return { deletedCount: 0 };
+      }
+
+      const result = await Notification.deleteMany({
+        userId: recipientUserId,
+        type: "friend_request",
+        "relatedEntity.entityId": friendshipId,
+      });
+
+      return result;
+    } catch (error) {
+      console.error("Error deleting friend request notification:", error);
+      return { deletedCount: 0 };
+    }
+  }
 }
 
 export default NotificationService;

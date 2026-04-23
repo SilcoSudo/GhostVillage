@@ -644,6 +644,7 @@
     "empty": "Bạn chưa có người bạn nào.",
     "guestTitle": "Phần bạn bè chỉ dành cho tài khoản đã đăng nhập",
     "guestMessage": "Đăng nhập để xem danh sách bạn bè và tính năng chat.",
+    "viewProfile": "Xem profile",
     "unfriend": "Hủy kết bạn",
     "openChat": "Mở chat"
   },
@@ -704,6 +705,7 @@
   },
   "chatModal": {
     "activeNow": "Đang hoạt động",
+    "offline": "Ngoại tuyến",
     "close": "Đóng",
     "loadingMessages": "Đang tải tin nhắn...",
     "connectedMessage": "Bạn đã kết nối trên GhostVillage",

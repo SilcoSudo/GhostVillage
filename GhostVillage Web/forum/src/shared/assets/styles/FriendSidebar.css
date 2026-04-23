@@ -4,7 +4,10 @@
   height: calc(100vh - 70px);
   background-color: var(--card-bg);
   border-left: 1px solid var(--border-color);
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
   padding: 16px;
   position: fixed;
   right: -300px;

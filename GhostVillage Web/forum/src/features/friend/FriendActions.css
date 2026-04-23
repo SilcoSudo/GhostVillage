@@ -20,26 +20,50 @@
 
 /* Add Friend Button */
 .friend-btn.add-friend {
-  background-color: #007bff;
-  color: white;
+  background: linear-gradient(
+    135deg,
+    var(--primary-dark, #520000) 0%,
+    var(--primary-color, #990000) 100%
+  );
+  color: var(--text-primary, #b5a642);
+  border-color: var(--border-color, #520000);
+  box-shadow: 0 4px 12px rgba(82, 0, 0, 0.25);
 }
 
 .friend-btn.add-friend:hover:not(:disabled) {
-  background-color: #0056b3;
+  background: linear-gradient(
+    135deg,
+    var(--primary-color, #990000) 0%,
+    var(--primary-light, #cc0000) 100%
+  );
+  color: #fff;
+  border-color: var(--card-border, #7a0000);
   transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3);
+  box-shadow: 0 0 16px rgba(153, 0, 0, 0.35);
 }
 
 /* Unfriend Button */
 .friend-btn.unfriend {
-  background-color: #28a745;
-  color: white;
+  background: linear-gradient(
+    135deg,
+    var(--primary-dark, #520000) 0%,
+    #4a2a1f 100%
+  );
+  color: var(--text-primary, #b5a642);
+  border-color: var(--border-color, #520000);
+  box-shadow: 0 4px 12px rgba(82, 0, 0, 0.22);
 }
 
 .friend-btn.unfriend:hover:not(:disabled) {
-  background-color: #218838;
+  background: linear-gradient(
+    135deg,
+    var(--primary-dark, #520000) 0%,
+    var(--primary-color, #990000) 100%
+  );
+  color: #fff;
+  border-color: var(--card-border, #7a0000);
   transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
+  box-shadow: 0 0 16px rgba(122, 0, 0, 0.38);
 }
 
 /* Pending Button */

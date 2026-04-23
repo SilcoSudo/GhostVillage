@@ -2,6 +2,7 @@ import Friend from "./friendModel.js";
 import User from "../../user/userModel.js";
 import Player from "../../player/playerModel.js";
 import NotificationService from "../../forum/notifications/notificationService.js";
+import { isUserOnline } from "../../../services/presenceService.js";
 import mongoose from "mongoose";
 
 class FriendService {
@@ -25,7 +26,7 @@ class FriendService {
           { userId: userId, status: "accepted" },
           { friendId: userId, status: "accepted" },
         ],
-      }).populate("userId friendId", "fullname email avatar bio");
+      }).populate("userId friendId", "fullname avatar bio");
 
       const validFriendships = friendships.filter(
         (f) => f.userId != null && f.friendId != null,
@@ -64,6 +65,7 @@ class FriendService {
           ...friend,
           friendshipId: friendship._id,
           acceptedAt: friendship.acceptedAt,
+          isOnline: isUserOnline(friend._id),
         };
       });
 
@@ -271,6 +273,11 @@ class FriendService {
       friendship.acceptedAt = new Date();
       await friendship.save();
 
+      await NotificationService.deleteFriendRequestNotification(
+        friendship._id,
+        friendship.friendId._id,
+      );
+
       // Send notification to requester (userA)
       await NotificationService.createFriendAcceptedNotification(
         friendship.friendId,
@@ -333,6 +340,11 @@ class FriendService {
       friendship.acceptedAt = new Date();
       await friendship.save();
 
+      await NotificationService.deleteFriendRequestNotification(
+        friendship._id,
+        friendship.friendId._id,
+      );
+
       // Send notification to requester (userA)
       await NotificationService.createFriendAcceptedNotification(
         friendship.friendId,
@@ -374,6 +386,11 @@ class FriendService {
 
       await Friend.findByIdAndDelete(friendshipId);
 
+      await NotificationService.deleteFriendRequestNotification(
+        friendship._id,
+        friendship.friendId._id,
+      );
+
       await NotificationService.createFriendRejectedNotification(
         friendship.friendId,
         friendship.userId,
@@ -405,6 +422,11 @@ class FriendService {
       }
 
       await Friend.findByIdAndDelete(friendship._id);
+
+      await NotificationService.deleteFriendRequestNotification(
+        friendship._id,
+        friendship.friendId._id,
+      );
 
       await NotificationService.createFriendRejectedNotification(
         friendship.friendId,

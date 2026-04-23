@@ -1,9 +1,15 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  Link,
+  useParams,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../app/hooks/useAuth";
 import api from "../../../shared/services/axios";
 import FriendActions from "../../friend/FriendActions";
+import { getAvatarUrl, cacheAvatar } from "../../../shared/utils/avatarCache";
 import {
   User,
   Mail,
@@ -56,6 +62,27 @@ const ProfilePage = () => {
   const [scrollToComments, setScrollToComments] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const dateLocale = i18n.language?.startsWith("vi") ? "vi-VN" : "en-US";
+
+  const sortedFriends = useMemo(() => {
+    const friends = profileUser?.friends || [];
+
+    return [...friends].sort((friendA, friendB) => {
+      const onlineA = Boolean(friendA.isOnline);
+      const onlineB = Boolean(friendB.isOnline);
+
+      if (onlineA !== onlineB) {
+        return Number(onlineB) - Number(onlineA);
+      }
+
+      return (friendA.fullname || "").localeCompare(
+        friendB.fullname || "",
+        i18n.language?.startsWith("vi") ? "vi" : "en",
+        {
+          sensitivity: "base",
+        },
+      );
+    });
+  }, [profileUser?.friends, i18n.language]);
 
   const isOwnProfile = currentUser && (id ? currentUser._id === id : true);
 
@@ -147,7 +174,15 @@ const ProfilePage = () => {
 
       if (response.data.success) {
         const updatedData = response.data.data;
-        setProfileUser(updatedData);
+        setProfileUser((prev) =>
+          prev
+            ? {
+                ...prev,
+                ...updatedData,
+                friends: prev.friends || updatedData.friends || [],
+              }
+            : updatedData,
+        );
         setIsEditingName(false);
         setIsEditingBio(false);
         setIsEditingAvatar(false);
@@ -209,7 +244,15 @@ const ProfilePage = () => {
 
       if (response.data.success) {
         const updatedData = response.data.data;
-        setProfileUser(updatedData);
+        setProfileUser((prev) =>
+          prev
+            ? {
+                ...prev,
+                ...updatedData,
+                friends: prev.friends || updatedData.friends || [],
+              }
+            : updatedData,
+        );
         setAvatarFile(null);
         setAvatarPreview("");
         refreshUser();
@@ -554,15 +597,53 @@ const ProfilePage = () => {
             )}
 
             {activeTab === "friends" && (
-              <div className="friends-list">
+              <div className="profile-friends-section">
                 <h4 className="feed-title">
                   {t("profile.headings.accomplicesFriends")}
                 </h4>
-                <div className="empty-feed">
-                  <Users size={48} />
-                  <p>{t("profile.empty.noAccomplicesFound")}</p>
-                  <span>{t("profile.empty.subjectWandersAlone")}</span>
-                </div>
+                {sortedFriends.length > 0 ? (
+                  <div className="profile-friends-list">
+                    {sortedFriends.map((friend) => (
+                      <Link
+                        key={friend._id}
+                        to={`/profile/${friend._id}`}
+                        className={`profile-friend-item ${!friend.isOnline ? "is-offline" : ""}`}
+                        title={`${t("viewProfile")} ${friend.fullname}`}
+                      >
+                        <div className="profile-friend-avatar">
+                          {friend.avatar ? (
+                            <img
+                              src={getAvatarUrl(friend._id, friend.avatar)}
+                              alt={friend.fullname}
+                              onLoad={() =>
+                                cacheAvatar(friend._id, friend.avatar)
+                              }
+                              crossOrigin="anonymous"
+                            />
+                          ) : (
+                            <div className="profile-friend-avatar-fallback">
+                              <User size={18} strokeWidth={1.5} />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="profile-friend-info">
+                          <h5 className="profile-friend-name">
+                            {friend.fullname}
+                          </h5>
+                        </div>
+
+                        <span className="view-link">{t("viewProfile")}</span>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-feed">
+                    <Users size={48} />
+                    <p>{t("profile.empty.noAccomplicesFound")}</p>
+                    <span>{t("profile.empty.subjectWandersAlone")}</span>
+                  </div>
+                )}
               </div>
             )}
 
