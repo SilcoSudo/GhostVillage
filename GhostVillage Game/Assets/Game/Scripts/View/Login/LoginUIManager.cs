@@ -165,7 +165,7 @@ namespace Game.UI.Login
             if (_loginButton != null) _loginButton.interactable = isEnable;
             if (_googleLoginButton != null) _googleLoginButton.interactable = isEnable;
             if (_togglePasswordButton != null) _togglePasswordButton.interactable = isEnable;
-            //if (_quitButton != null) _quitButton.interactable = isEnable;
+            if (_quitButton != null) _quitButton.interactable = isEnable;
         }
         #endregion
 
