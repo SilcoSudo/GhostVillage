@@ -319,7 +319,7 @@ namespace Game.Scripts.UI.Lobby
             var txtContent = chatItem.transform.Find("Txt_Content")?.GetComponent<TextMeshProUGUI>();
 
             // 3. Nhét chữ vào đúng lỗ
-            if (txtSender != null) txtSender.text = isMe ? "Tôi" : sender;
+            if (txtSender != null) txtSender.text = isMe ? "Me" : sender;
             if (txtContent != null) txtContent.text = message;
 
             // Cảnh báo nếu sếp đặt sai tên trong Hierarchy
