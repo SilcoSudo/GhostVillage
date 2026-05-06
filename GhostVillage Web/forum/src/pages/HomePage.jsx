@@ -8,7 +8,7 @@ const HomePage = () => {
   const { t } = useTranslation();
 
   const handlePlayGame = () => {
-    window.location.href = "/game";
+    window.location.href = "https://drive.google.com/uc?export=download&id=1pUMhwFnvaTMqTEOVOVDS8Hdna_Gq9sY2";
   };
 
   const majorFeatures = [

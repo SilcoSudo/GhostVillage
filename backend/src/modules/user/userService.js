@@ -1,4 +1,5 @@
 import User from "./userModel.js";
+import Player from "../player/playerModel.js";
 import {
   uploadToCloudinary,
   deleteFromCloudinary,
@@ -24,10 +25,28 @@ export const findUserById = async (userId) => {
  * Update user profile with given data
  */
 export const updateUserProfile = async (userId, updateData) => {
-  return await User.findByIdAndUpdate(userId, updateData, {
+  // 1. Cập nhật bảng User
+  const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
     new: true,
     runValidators: true,
   });
+
+  // 2. [THÊM MỚI] Kiểm tra nếu trong cục updateData có chứa fullname thì đồng bộ sang Player
+  if (updateData.fullname) {
+    try {
+      const trimmedName = updateData.fullname.trim();
+      await Player.findOneAndUpdate(
+        { userId: userId },
+        { $set: { "profile.displayName": trimmedName } }
+      );
+    } catch (error) {
+      console.log(
+        `[Sync Name Profile] Bỏ qua đồng bộ Player cho User ${userId}. Lỗi hoặc chưa có data.`
+      );
+    }
+  }
+
+  return updatedUser;
 };
 
 /**
